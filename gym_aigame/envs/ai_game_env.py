@@ -68,6 +68,12 @@ CELL_PIXELS=32
 
 
 
+# NOTE: we probably don't want to render at the same resolution for
+# machine learning and for human viewers
+
+
+
+
 class AIGameEnv(gym.Env):
     """
     2D grid world game environment
