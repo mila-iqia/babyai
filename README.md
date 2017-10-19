@@ -11,6 +11,20 @@ Requirements:
 - OpenAI gym
 - PyQT5
 
+To install, clone the repository and install dependencies with `pip3`:
+
+```python3
+git clone https://github.com/maximecb/gym-memory.git
+cd gym-memory
+pip3 install -e .
+```
+
+Then, to run the standalone UI application:
+
+```python3
+./main.py
+```
+
 Relevant Publications
 ---------------------
 
@@ -22,6 +36,6 @@ Relevant Publications
 
 [Grounded Language Learning in a Simulated 3D World](https://arxiv.org/abs/1706.06551)
 
-[Programmable Agents](https://arxiv.org/abs/1706.06383)
+[Programmable Agents](https://arxiv.org/abs/1706.06383), associated [RLSS 2017 talk by Nando de Freitas](http://videolectures.net/deeplearning2017_de_freitas_deep_control/)
 
 [FiLM: Visual Reasoning with a General Conditioning Layer](https://sites.google.com/view/deep-rl-bootcamp/lectures)
