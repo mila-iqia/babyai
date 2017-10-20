@@ -6,9 +6,10 @@ import gym
 import gym_aigame
 
 import sys
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 from PyQt5.QtWidgets import QLabel, QTextEdit
-from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout
+from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 
 class AIGameWindow(QMainWindow):
@@ -39,27 +40,40 @@ class AIGameWindow(QMainWindow):
 
 
         # Text edit boxes
-        missionBox = QTextEdit("General mission")
-        adviceBox = QTextEdit("Contextual advice")
+        self.missionBox = QTextEdit("General mission")
+        self.missionBox.textChanged.connect(self.setMission)
+        self.adviceBox = QTextEdit("Contextual advice")
+        self.adviceBox.textChanged.connect(self.setAdvice)
         textHBox = QHBoxLayout()
-        textHBox.addWidget(missionBox)
-        textHBox.addWidget(adviceBox)
+        textHBox.addWidget(self.missionBox)
+        textHBox.addWidget(self.adviceBox)
 
         # Row of buttons
-        stepModeBtn = QPushButton("Step Mode")
-        stepModeBtn.setCheckable(True)
-        liveModeBtn = QPushButton("MoveMode")
-        liveModeBtn.setCheckable(True)
-        nextStepBtn = QPushButton("Next Step")
-        addButton = QPushButton("+ Reward")
-        subButton = QPushButton("- Reward")
+
+        nextStepBtn = QPushButton("Step")
+        plusButton = QPushButton("+ Reward")
+        plusButton.clicked.connect(self.plusReward)
+        minusButton = QPushButton("- Reward")
+        minusButton.clicked.connect(self.minusReward)
+
+
+
+        slider = QSlider(Qt.Horizontal, self)
+        slider.setFocusPolicy(Qt.NoFocus)
+        slider.setMinimum(0)
+        slider.setMaximum(100)
+        slider.setValue(0)
+        slider.valueChanged.connect(self.setFrameRate)
+
+
+
         buttonHBox = QHBoxLayout()
         buttonHBox.addStretch(1)
-        buttonHBox.addWidget(stepModeBtn)
-        buttonHBox.addWidget(liveModeBtn)
         buttonHBox.addWidget(nextStepBtn)
-        buttonHBox.addWidget(addButton)
-        buttonHBox.addWidget(subButton)
+        buttonHBox.addWidget(slider)
+        buttonHBox.addStretch(1)
+        buttonHBox.addWidget(plusButton)
+        buttonHBox.addWidget(minusButton)
         buttonHBox.addStretch(1)
 
         # Create a main widget for the window
@@ -73,6 +87,24 @@ class AIGameWindow(QMainWindow):
 
         # Show the window
         self.show()
+
+    def setMission(self):
+        # TODO: connect to agent code
+        print('set mission: ' + self.missionBox.toPlainText())
+
+    def setAdvice(self):
+        # TODO: connect to agent code
+        print('set advice: ' + self.adviceBox.toPlainText())
+
+    def plusReward(self):
+        print('+Reward')
+
+    def minusReward(self):
+        print('-Reward')
+
+    def setFrameRate(self, value):
+        print('Sew frame rate: %s' % value)
+
 
 if __name__ == '__main__':
 
