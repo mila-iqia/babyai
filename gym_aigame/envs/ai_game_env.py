@@ -3,76 +3,9 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 import math
 import numpy as np
-
-def drawQuad(cX, cY, w):
-    verts = (
-        cX - W, cY - w,
-        cX - W, cY + w,
-        cX + W, cY + w,
-        cX + W, cY - w,
-    )
-
-    pyglet.graphics.draw(
-        4,
-        pyglet.gl.GL_LINE_LOOP,
-        ('v2i', verts)
-    )
-
-def drawCircle(cX, cY, r, n):
-    verts = []
-    for i in range(0, n):
-        a = (i / n) * 2 * math.pi
-        x = cX + r * math.cos(a)
-        y = cY + r * math.sin(a)
-        verts.append(x)
-        verts.append(y)
-
-    pyglet.graphics.draw(
-        n,
-        pyglet.gl.GL_LINE_LOOP,
-        ('v2f', verts)
-    )
-
-def drawArrow(cX, cY, dir, r):
-    """
-    Draw an equilateral triangle pointing in a given direction
-    dir: direction angle in radians
-    """
-
-    pyglet.gl.glPushMatrix()
-
-    pyglet.gl.glTranslatef(cX, cY, 0)
-    angleDegs = 360 * dir / (2 * math.pi)
-    pyglet.gl.glRotatef(angleDegs, 0, 0, 1)
-
-    verts = (
-        -r,  r * 0.75,
-         r,  0,
-        -r, -r * 0.75
-    )
-    pyglet.graphics.draw(
-        3,
-        pyglet.gl.GL_LINE_LOOP,
-        ('v2f', verts)
-    )
-
-    pyglet.gl.glPopMatrix()
-
-def dst2D(x0, y0, x1, y1):
-    return math.sqrt((x0 - x1) ** 2 + (y0 - y1) ** 2)
-
-# Rendering window size
-WINDOW_SIZE = 512
+from gym_aigame.envs.rendering import *
 
 CELL_PIXELS=32
-
-
-
-# NOTE: we probably don't want to render at the same resolution for
-# machine learning and for human viewers
-
-
-
 
 class AIGameEnv(gym.Env):
     """
@@ -85,8 +18,8 @@ class AIGameEnv(gym.Env):
     }
 
     def __init__(self, gridSize=8):
-        # For rendering
-        self.window = None
+        # For visual rendering
+        self.renderer = None
 
         self.action_space = spaces.Discrete(4)
 
@@ -163,11 +96,43 @@ class AIGameEnv(gym.Env):
 
     def _render(self, mode='human', close=False):
         #if close:
-        #    if self.window:
-        #        self.window.close()
+        #    if self.renderer:
+        #        self.renderer.close()
         #    return
 
-        #if self.window is None:
-        #    self.window = pyglet.window.Window(width=WINDOW_SIZE, height=WINDOW_SIZE)
+        width = self.gridSize * CELL_PIXELS
+        height = self.gridSize * CELL_PIXELS
 
-        pass
+        if self.renderer is None:
+            self.renderer = Renderer(width, height)
+
+        r = self.renderer
+        r.beginFrame()
+
+        # Draw grid lines
+        r.setLineColor(100, 100, 100)
+        for rowIdx in range(1, self.gridSize):
+            y = CELL_PIXELS * rowIdx
+            r.drawLine(0, y, width, y)
+        for colIdx in range(1, self.gridSize):
+            x = CELL_PIXELS * colIdx
+            r.drawLine(x, 0, x, height)
+
+
+        # Draw the agent
+        r.setLineColor(255, 0, 0)
+        r.setColor(255, 0, 0)
+        r.drawPolygon([
+
+            (0, 0),
+            (10, 20),
+            (20, 0)
+
+        ])
+
+
+
+        r.endFrame()
+
+        # TODO: rgb_array, return numpy array
+        return r

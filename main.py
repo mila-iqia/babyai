@@ -14,11 +14,25 @@ from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 
 class AIGameWindow(QMainWindow):
 
-    def __init__(self):
+    def __init__(
+        self,
+        missionEditCb,
+        adviceEditCb,
+        stepEnvCb,
+        plusRewardCb,
+        minusRewardCb
+    ):
         super().__init__()
         self.initUI()
 
+        self.missionEditCb = missionEditCb
+        self.adviceEditCb = adviceEditCb
+        self.stepEnvCb = stepEnvCb
+        self.plusRewardCb = plusRewardCb
+        self.minusRewardCb = minusRewardCb
+
     def initUI(self):
+        """Create and connect the UI elements"""
 
         self.resize(512, 512)
         self.setWindowTitle('Baby AI Game')
@@ -69,13 +83,13 @@ class AIGameWindow(QMainWindow):
         """Create the text edit boxes"""
 
         self.missionBox = QTextEdit()
-        self.missionBox.textChanged.connect(self.setMission)
+        self.missionBox.textChanged.connect(self.missionEdit)
         vboxLeft = QVBoxLayout()
         vboxLeft.addWidget(QLabel("General mission"))
         vboxLeft.addWidget(self.missionBox)
 
         self.adviceBox = QTextEdit()
-        self.adviceBox.textChanged.connect(self.setAdvice)
+        self.adviceBox.textChanged.connect(self.adviceEdit)
         vboxRight = QVBoxLayout()
         vboxRight.addWidget(QLabel("Contextual advice"))
         vboxRight.addWidget(self.adviceBox)
@@ -90,7 +104,7 @@ class AIGameWindow(QMainWindow):
         """Create the row of UI buttons"""
 
         stepButton = QPushButton("Step")
-        stepButton.clicked.connect(self.manualStep)
+        stepButton.clicked.connect(self.stepButton)
 
         plusButton = QPushButton("+ Reward")
         plusButton.clicked.connect(self.plusReward)
@@ -110,7 +124,6 @@ class AIGameWindow(QMainWindow):
         self.fpsLabel.setAlignment(Qt.AlignCenter)
         self.fpsLabel.setMinimumSize(80, 10)
 
-
         # Assemble the buttons into a horizontal layout
         hbox = QHBoxLayout()
         hbox.addStretch(1)
@@ -124,24 +137,24 @@ class AIGameWindow(QMainWindow):
 
         return hbox
 
-    def setMission(self):
-        # TODO: connect to agent code
-        print('set mission: ' + self.missionBox.toPlainText())
+    def missionEdit(self):
+        self.missionEditCb(self.missionBox.toPlainText())
 
-    def setAdvice(self):
-        # TODO: connect to agent code
-        print('set advice: ' + self.adviceBox.toPlainText())
-
-    def manualStep(self):
-        print('manual step')
+    def adviceEdit(self):
+        self.adviceEditCb(self.adviceBox.toPlainText())
 
     def plusReward(self):
-        print('+Reward')
+        self.plusRewardCb()
 
     def minusReward(self):
-        print('-Reward')
+        self.minusRewardCb()
+
+    def stepButton(self):
+        self.stepEnvCb()
 
     def setFrameRate(self, value):
+        """Set the frame rate limit. Zero for manual stepping."""
+
         print('Set frame rate: %s' % value)
 
         if value == 0:
@@ -151,11 +164,53 @@ class AIGameWindow(QMainWindow):
         else:
             self.fpsLabel.setText("%s FPS" % value)
 
-if __name__ == '__main__':
+    def setPixmap(self, pixmap):
+        """Set the image to be displayed in the image area"""
+        self.imgLabel.setPixmap(pixmap)
+
+def main():
+
+    window = None
+    env = None
+
+    def missionEdit(text):
+        print('new mission: ' + text)
+
+    def adviceEdit(text):
+        print('new advice: ' + text)
+
+    def plusReward():
+        print('+ reward')
+
+    def minusReward():
+        print('- reward')
+
+    def stepEnv():
+        print('step')
+
+        obs, reward, done, info = env.step(0)
+
+        env.render()
+        window.setPixmap(env.renderer.getPixmap())
+
+    # Create the application window
+    app = QApplication(sys.argv)
+    window = AIGameWindow(
+        missionEditCb = missionEdit,
+        adviceEditCb = adviceEdit,
+        stepEnvCb = stepEnv,
+        plusRewardCb = plusReward,
+        minusRewardCb = minusReward
+    )
 
     env = gym.make('AI-Game-v0')
-    env.reset()
+    obs = env.reset()
 
-    app = QApplication(sys.argv)
-    ex = AIGameWindow()
+    env.render()
+    window.setPixmap(env.renderer.getPixmap())
+
+    # Run the application
     sys.exit(app.exec_())
+
+if __name__ == '__main__':
+    main()
