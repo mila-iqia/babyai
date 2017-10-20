@@ -118,17 +118,31 @@ class AIGameEnv(gym.Env):
             x = CELL_PIXELS * colIdx
             r.drawLine(x, 0, x, height)
 
-
         # Draw the agent
+        r.push()
+        r.translate(
+            CELL_PIXELS * (self.agentPos[0] + 0.5),
+            CELL_PIXELS * (self.agentPos[1] + 0.5)
+        )
+        r.rotate(0)
         r.setLineColor(255, 0, 0)
         r.setColor(255, 0, 0)
         r.drawPolygon([
-
-            (0, 0),
-            (10, 20),
-            (20, 0)
-
+            (-10, -12),
+            (  0,  12),
+            ( 10, -12)
         ])
+        r.pop()
+
+
+
+
+        # Green circle for temporary goal
+        r.setLineColor(0, 255, 0)
+        r.setColor(0, 255, 0)
+        r.drawCircle(CELL_PIXELS * 7.5, CELL_PIXELS * 7.5, 10)
+
+
 
 
 

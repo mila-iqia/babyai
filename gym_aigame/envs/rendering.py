@@ -25,6 +25,18 @@ class Renderer:
 
     # TODO: function to downsample and get numpy array
 
+    def push(self):
+        self.painter.save()
+
+    def pop(self):
+        self.painter.restore()
+
+    def rotate(self, degrees):
+        self.painter.rotate(degrees)
+
+    def translate(self, x, y):
+        self.painter.translate(x, y)
+
     def setLineColor(self, r, g, b):
         self.painter.setPen(QColor(r, g, b))
 
@@ -37,10 +49,6 @@ class Renderer:
     def drawCircle(self, x, y, r):
         center = QPoint(x, y)
         self.painter.drawEllipse(center, r, r)
-
-    # TODO
-    # Could use .save .restore as push pop
-    # Have rotate transform
 
     def drawPolygon(self, points):
         """Takes a list of points (tuples) as input"""
