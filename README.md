@@ -9,6 +9,7 @@ Requirements:
 - Python 3
 - numpy
 - OpenAI gym
+- PyTorch
 - PyQT5
 
 To install, clone the repository and install dependencies with `pip3`:

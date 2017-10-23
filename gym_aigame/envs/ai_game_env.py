@@ -156,6 +156,9 @@ class AIGameEnv(gym.Env):
             if self.getGrid(newPos[0], newPos[1]) == None:
                 self.agentPos = newPos
 
+        else:
+            assert False, "unknown action"
+
         if self.stepCount >= self.maxSteps:
             done = True
 

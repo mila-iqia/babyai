@@ -4,7 +4,7 @@ from __future__ import division, print_function
 
 import gym
 import gym_aigame
-
+import training
 import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
@@ -146,9 +146,7 @@ class AIGameWindow(QMainWindow):
         return hbox
 
     def keyPressEvent(self, e):
-        if e.key() == Qt.Key_Escape:
-            self.close()
-        elif e.key() == Qt.Key_Left:
+        if e.key() == Qt.Key_Left:
             self.actionCb(0)
         elif e.key() == Qt.Key_Right:
             self.actionCb(1)
