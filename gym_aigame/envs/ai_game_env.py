@@ -137,8 +137,15 @@ class AIGameEnv(gym.Env):
         elif action == 2:
             u, v = self.getDirVec()
             newPos = (self.agentPos[0] + u, self.agentPos[1] + v)
-            if self.getGrid(newPos[0], newPos[1]) == None:
+
+            targetCell = self.getGrid(newPos[0], newPos[1])
+
+            if targetCell == None:
                 self.agentPos = newPos
+
+            if targetCell == 'GOAL':
+                done = True
+                reward = 1000
 
         # Back
         elif action == 3:

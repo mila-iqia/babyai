@@ -245,8 +245,13 @@ def main():
         print('step')
 
         obs, reward, done, info = env.step(action)
-
         showEnv(obs)
+        print(reward)
+
+        if done:
+            env.reset()
+            obs = env.reset()
+            showEnv(obs)
 
     # Create the application window
     app = QApplication(sys.argv)
