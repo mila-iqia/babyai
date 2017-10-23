@@ -20,7 +20,8 @@ class AIGameWindow(QMainWindow):
         adviceEditCb,
         stepEnvCb,
         plusRewardCb,
-        minusRewardCb
+        minusRewardCb,
+        actionCb
     ):
         super().__init__()
         self.initUI()
@@ -30,6 +31,7 @@ class AIGameWindow(QMainWindow):
         self.stepEnvCb = stepEnvCb
         self.plusRewardCb = plusRewardCb
         self.minusRewardCb = minusRewardCb
+        self.actionCb = actionCb
 
     def initUI(self):
         """Create and connect the UI elements"""
@@ -57,24 +59,30 @@ class AIGameWindow(QMainWindow):
 
         # Show the application window
         self.show()
+        self.setFocus()
 
     def createImageArea(self):
         """Create the image area to render into"""
 
+        # Full render view (large view)
         self.imgLabel = QLabel()
         self.imgLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
 
-        img = QImage(256, 256, QImage.Format_ARGB32_Premultiplied)
-        painter = QPainter()
-        painter.begin(img)
-        painter.setBrush(QColor(0, 0, 0))
-        painter.drawRect(0, 0, 255, 255)
-        painter.end()
-        self.imgLabel.setPixmap(QPixmap.fromImage(img))
+        # Agent observation view (small view)
+        self.obsLabel = QLabel()
+        self.obsLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+
+        # Center the agent view vertically
+        vbox = QVBoxLayout()
+        vbox.addStretch(1)
+        vbox.addWidget(self.obsLabel)
+        vbox.addStretch(1)
 
         hbox = QHBoxLayout()
-        hbox.addStretch(1)
+        #hbox.addStretch(1)
         hbox.addWidget(self.imgLabel)
+        hbox.addStretch(1)
+        hbox.addLayout(vbox)
         hbox.addStretch(1)
 
         return hbox
@@ -137,6 +145,31 @@ class AIGameWindow(QMainWindow):
 
         return hbox
 
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Escape:
+            self.close()
+        elif e.key() == Qt.Key_Left:
+            self.actionCb(0)
+        elif e.key() == Qt.Key_Right:
+            self.actionCb(1)
+        elif e.key() == Qt.Key_Up:
+            self.actionCb(2)
+        elif e.key() == Qt.Key_Down:
+            self.actionCb(3)
+
+    def mousePressEvent(self, event):
+        """
+        Clear the focus of the text boxes if somewhere
+        else on the window is clicked
+        """
+
+        focused = QApplication.focusWidget()
+        if focused == self.missionBox:
+            self.missionBox.clearFocus()
+        if focused == self.adviceBox:
+            self.adviceBox.clearFocus()
+        QMainWindow.mousePressEvent(self, event)
+
     def missionEdit(self):
         self.missionEditCb(self.missionBox.toPlainText())
 
@@ -165,8 +198,12 @@ class AIGameWindow(QMainWindow):
             self.fpsLabel.setText("%s FPS" % value)
 
     def setPixmap(self, pixmap):
-        """Set the image to be displayed in the image area"""
+        """Set the image to be displayed in the full render area"""
         self.imgLabel.setPixmap(pixmap)
+
+    def setObsPixmap(self, pixmap):
+        """Set the image to be displayed in the agent observation area"""
+        self.obsLabel.setPixmap(pixmap)
 
 def main():
 
@@ -185,13 +222,31 @@ def main():
     def minusReward():
         print('- reward')
 
-    def stepEnv():
-        print('step')
-
-        obs, reward, done, info = env.step(0)
-
+    def showEnv(obs):
+        # Render and display the environment
         env.render()
         window.setPixmap(env.renderer.getPixmap())
+
+        # Display the agent's view
+        obsW = obs.shape[0]
+        obsH = obs.shape[1]
+        obsImg = QImage(obsW, obsH, QImage.Format_ARGB32_Premultiplied)
+        for y in range(0, obsH):
+            for x in range(0, obsW):
+                r = int(obs[x, y, 0])
+                g = int(obs[x, y, 1])
+                b = int(obs[x, y, 2])
+                # ARGB
+                pix = (255 << 24) + (r << 16) + (g << 8) + (b << 0)
+                obsImg.setPixel(x, y, pix)
+        window.setObsPixmap(QPixmap.fromImage(obsImg))
+
+    def stepEnv(action=None):
+        print('step')
+
+        obs, reward, done, info = env.step(action)
+
+        showEnv(obs)
 
     # Create the application window
     app = QApplication(sys.argv)
@@ -200,14 +255,13 @@ def main():
         adviceEditCb = adviceEdit,
         stepEnvCb = stepEnv,
         plusRewardCb = plusReward,
-        minusRewardCb = minusReward
+        minusRewardCb = minusReward,
+        actionCb = stepEnv
     )
 
     env = gym.make('AI-Game-v0')
     obs = env.reset()
-
-    env.render()
-    window.setPixmap(env.renderer.getPixmap())
+    showEnv(obs)
 
     # Run the application
     sys.exit(app.exec_())

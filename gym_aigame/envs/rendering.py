@@ -1,5 +1,6 @@
+import numpy as np
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor, QPolygon
-from PyQt5.QtCore import QPoint
+from PyQt5.QtCore import QPoint, QSize
 
 class Renderer:
 
@@ -23,7 +24,32 @@ class Renderer:
     def getPixmap(self):
         return QPixmap.fromImage(self.img)
 
-    # TODO: function to downsample and get numpy array
+    def getArray(self, size):
+        """
+        Get a numpy array of RGB pixel values.
+        The size argument should be (w,h,3)
+        """
+
+        assert size[0] > 0 and size[0] <= self.width
+        assert size[1] > 0 and size[1] <= self.height
+        assert size[2] == 3
+
+        # Get a downsampled version of the image
+        scaled = self.img.scaled(QSize(size[0], size[1]))
+
+        # Copy the pixel data to a numpy array
+        output = np.ndarray(shape=size)
+        for y in range(0, size[1]):
+            for x in range(0, size[0]):
+                pix = scaled.pixel(x, y)
+                r = (pix >> 16) & 0xFF
+                g = (pix >>  8) & 0xFF
+                b = (pix >>  0) & 0xFF
+                output[x, y, 0] = r
+                output[x, y, 1] = g
+                output[x, y, 2] = b
+
+        return output
 
     def push(self):
         self.painter.save()

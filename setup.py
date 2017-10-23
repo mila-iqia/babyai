@@ -6,7 +6,7 @@ setup(
     keywords='memory, environment, agent, rl, openaigym, openai-gym, gym',
     install_requires=[
         'gym>=0.9.0',
-        'pyqt5',
-        'numpy'
+        'numpy>=1.10.0'
+        'pyqt5'
     ]
 )
