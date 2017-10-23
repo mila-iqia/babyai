@@ -1,4 +1,5 @@
 import numpy as np
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor, QPolygon
 from PyQt5.QtCore import QPoint, QSize
 
@@ -35,7 +36,10 @@ class Renderer:
         assert size[2] == 3
 
         # Get a downsampled version of the image
-        scaled = self.img.scaled(QSize(size[0], size[1]))
+        scaled = self.img.scaled(
+            QSize(size[0], size[1]),
+            transformMode = Qt.SmoothTransformation
+        )
 
         # Copy the pixel data to a numpy array
         output = np.ndarray(shape=size)

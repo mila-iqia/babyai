@@ -12,7 +12,9 @@ Requirements:
 - PyTorch
 - PyQT5
 
-To install, clone the repository and install dependencies with `pip3`:
+Start by manually installing [PyTorch](http://pytorch.org/).
+
+Then, clone the repository and install the other dependencies with `pip3`:
 
 ```python3
 git clone https://github.com/maximecb/gym-memory.git
@@ -20,7 +22,7 @@ cd gym-memory
 pip3 install -e .
 ```
 
-Then, to run the standalone UI application:
+To run the standalone UI application:
 
 ```python3
 ./main.py

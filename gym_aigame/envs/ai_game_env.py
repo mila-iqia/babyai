@@ -5,9 +5,11 @@ import math
 import numpy as np
 from gym_aigame.envs.rendering import *
 
+# Size in pixels of a cell in the human view
 CELL_PIXELS = 32
 
-IMG_ARRAY_SIZE = (100,100,3)
+# Size of the image given as an observation to the agent
+IMG_ARRAY_SIZE = (160, 160, 3)
 
 class AIGameEnv(gym.Env):
     """
@@ -19,7 +21,7 @@ class AIGameEnv(gym.Env):
         'video.frames_per_second' : 10
     }
 
-    def __init__(self, gridSize=8):
+    def __init__(self, gridSize=20):
         assert (gridSize >= 4)
 
         # For visual rendering
@@ -230,9 +232,16 @@ class AIGameEnv(gym.Env):
                 elif cell == 'GOAL':
                     r.setLineColor(0, 255, 0)
                     r.setColor(0, 255, 0)
-                    r.drawCircle(CELL_PIXELS * (i+0.5), CELL_PIXELS * (j+0.5), 10)
+                    r.drawPolygon([
+                        ((i+0) * CELL_PIXELS, (j+1) * CELL_PIXELS),
+                        ((i+1) * CELL_PIXELS, (j+1) * CELL_PIXELS),
+                        ((i+1) * CELL_PIXELS, (j+0) * CELL_PIXELS),
+                        ((i+0) * CELL_PIXELS, (j+0) * CELL_PIXELS)
+                    ])
                 else:
                     assert cell == None
+
+                #r.drawCircle(CELL_PIXELS * (i+0.5), CELL_PIXELS * (j+0.5), 10)
 
         r.endFrame()
 
