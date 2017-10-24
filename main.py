@@ -2,15 +2,16 @@
 
 from __future__ import division, print_function
 
-import gym
-import gym_aigame
-import training
 import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 from PyQt5.QtWidgets import QLabel, QTextEdit, QFrame
 from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
+
+import gym
+import gym_aigame
+from training import selectAction
 
 class AIGameWindow(QMainWindow):
 
@@ -211,17 +212,27 @@ def main():
     window = None
     env = None
 
+    state = {
+        "image": None,
+        "mission": "",
+        "advice": ""
+    }
+
     def missionEdit(text):
         print('new mission: ' + text)
+        state['mission'] = text
 
     def adviceEdit(text):
         print('new advice: ' + text)
+        state['advice'] = text
 
     def plusReward():
         print('+ reward')
+        # TODO: hook this up to something
 
     def minusReward():
         print('- reward')
+        # TODO: hook this up to something
 
     def showEnv(obs):
         # Render and display the environment
@@ -245,14 +256,21 @@ def main():
     def stepEnv(action=None):
         print('step')
 
+        # If no manual action was specified by the user
+        if action == None:
+            action = selectAction(state['mission'], state['advice'], state['image'])
+
         obs, reward, done, info = env.step(action)
         showEnv(obs)
         print(reward)
+
+        state['image'] = obs
 
         if done:
             env.reset()
             obs = env.reset()
             showEnv(obs)
+            state['image'] = obs
 
     # Create the application window
     app = QApplication(sys.argv)
@@ -268,6 +286,7 @@ def main():
     env = gym.make('AI-Game-v0')
     obs = env.reset()
     showEnv(obs)
+    state['image'] = obs
 
     # Initial mission is hardcoded
     window.setMission("Get to the green goal square")
