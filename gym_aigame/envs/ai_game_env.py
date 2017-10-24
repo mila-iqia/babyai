@@ -11,6 +11,86 @@ CELL_PIXELS = 32
 # Size of the image given as an observation to the agent
 IMG_ARRAY_SIZE = (160, 160, 3)
 
+COLORS = {
+    'red'   : (255, 0, 0),
+    'green' : (0, 255, 0),
+    'blue'  : (0, 0, 255),
+    'purple': (112, 39, 195),
+    'grey'  : (100, 100, 100)
+}
+
+class WorldObj:
+    """
+    Base class for grid world objects
+    """
+
+    def __init__(self, type, color):
+        assert color in COLORS, color
+        self.type = type
+        self.color = color
+        self.contains = None
+
+    def canOverlap(self):
+        """Can the agent overlap with this?"""
+        return False
+
+    def canPickup(self):
+        """Can the agent pick this up?"""
+        return False
+
+    def canContain(self):
+        """Can this contain another object?"""
+        return False
+
+    def render(self, r):
+        assert False
+
+    def _setColor(self, r):
+        c = COLORS[self.color]
+        r.setLineColor(c[0], c[1], c[2])
+        r.setColor(c[0], c[1], c[2])
+
+class Goal(WorldObj):
+    def __init__(self):
+        super(Goal, self).__init__('goal', 'green')
+
+    def render(self, r):
+        self._setColor(r)
+        r.drawPolygon([
+            (0          , CELL_PIXELS),
+            (CELL_PIXELS, CELL_PIXELS),
+            (CELL_PIXELS,           0),
+            (0          ,           0)
+        ])
+
+class Wall(WorldObj):
+    def __init__(self):
+        super(Wall, self).__init__('wall', 'grey')
+
+    def render(self, r):
+        self._setColor(r)
+        r.drawPolygon([
+            (0          , CELL_PIXELS),
+            (CELL_PIXELS, CELL_PIXELS),
+            (CELL_PIXELS,           0),
+            (0          ,           0)
+        ])
+
+class Ball(WorldObj):
+    def __init__(self, color='blue'):
+        super(Ball, self).__init__('ball', color)
+
+    def render(self, r):
+        self._setColor(r)
+        r.drawCircle(CELL_PIXELS * 0.5, CELL_PIXELS * 0.5, 10)
+
+    def canPickup(self):
+        return True
+
+
+
+
+
 class AIGameEnv(gym.Env):
     """
     2D grid world game environment
@@ -29,11 +109,11 @@ class AIGameEnv(gym.Env):
 
         self.action_space = spaces.Discrete(4)
 
-        sizePixels = gridSize * CELL_PIXELS
+        # The observations are RGB images
         self.observation_space = spaces.Box(
             low=0,
             high=255,
-            shape= (sizePixels, sizePixels, 3)
+            shape = IMG_ARRAY_SIZE
         )
 
         self.reward_range = (-1, 1000)
@@ -43,26 +123,12 @@ class AIGameEnv(gym.Env):
         self.maxSteps = 100
         self.startPos = (1, 1)
 
-        # Initialize the grid
-        self.grid = [None] * gridSize * gridSize
-
-        # TODO: May want to move this to seed function?
-        # Could store original grid for reset
-        # Place walls around the edges
-        for i in range(0, gridSize):
-            self.setGrid(i, 0, 'WALL')
-            self.setGrid(i, gridSize - 1, 'WALL')
-            self.setGrid(0, i, 'WALL')
-            self.setGrid(gridSize - 1, i, 'WALL')
-
-        self.setGrid(gridSize - 2, gridSize - 2, 'GOAL')
-
         # Initialize the state
-        self.reset()
         self.seed()
+        self.reset()
 
     def _reset(self):
-        # Agent position
+        # Place the agent in the starting position
         self.agentPos = self.startPos
 
         # Agent direction, initially pointing right (+x axis)
@@ -81,8 +147,28 @@ class AIGameEnv(gym.Env):
 
     def _seed(self, seed=None):
         """
-        The seed function sets the random elements of the environment.
+        The seed function sets the random elements of the environment,
+        and initializes the world.
         """
+
+        gridSz = self.gridSize
+
+        # Initialize the grid
+        self.grid = [None] * gridSz * gridSz
+
+        # Place walls around the edges
+        for i in range(0, gridSz):
+            self.setGrid(i, 0, Wall())
+            self.setGrid(i, gridSz - 1, Wall())
+            self.setGrid(0, i, Wall())
+            self.setGrid(gridSz - 1, i, Wall())
+
+        self.setGrid(4, 8, Ball('blue'))
+
+
+
+        # Place a goal in the bottom-left corner
+        self.setGrid(gridSz - 2, gridSz - 2, Goal())
 
         self.np_random, _ = seeding.np_random(seed)
 
@@ -142,10 +228,9 @@ class AIGameEnv(gym.Env):
 
             targetCell = self.getGrid(newPos[0], newPos[1])
 
-            if targetCell == None:
+            if targetCell == None or targetCell.canOverlap():
                 self.agentPos = newPos
-
-            if targetCell == 'GOAL':
+            elif targetCell.type == 'goal':
                 done = True
                 reward = 1000
 
@@ -171,10 +256,10 @@ class AIGameEnv(gym.Env):
         return obs, reward, done, {}
 
     def _render(self, mode='human', close=False):
-        #if close:
-        #    if self.renderer:
-        #        self.renderer.close()
-        #    return
+        if close:
+            #if self.renderer:
+            #    self.renderer.close()
+            return
 
         width = self.gridSize * CELL_PIXELS
         height = self.gridSize * CELL_PIXELS
@@ -220,30 +305,16 @@ class AIGameEnv(gym.Env):
         for j in range(0, self.gridSize):
             for i in range(0, self.gridSize):
                 cell = self.getGrid(i, j)
-                if cell == 'WALL':
-                    r.setLineColor(100, 100, 100)
-                    r.setColor(100, 100, 100)
-                    r.drawPolygon([
-                        ((i+0) * CELL_PIXELS, (j+1) * CELL_PIXELS),
-                        ((i+1) * CELL_PIXELS, (j+1) * CELL_PIXELS),
-                        ((i+1) * CELL_PIXELS, (j+0) * CELL_PIXELS),
-                        ((i+0) * CELL_PIXELS, (j+0) * CELL_PIXELS)
-                    ])
-                elif cell == 'GOAL':
-                    r.setLineColor(0, 255, 0)
-                    r.setColor(0, 255, 0)
-                    r.drawPolygon([
-                        ((i+0) * CELL_PIXELS, (j+1) * CELL_PIXELS),
-                        ((i+1) * CELL_PIXELS, (j+1) * CELL_PIXELS),
-                        ((i+1) * CELL_PIXELS, (j+0) * CELL_PIXELS),
-                        ((i+0) * CELL_PIXELS, (j+0) * CELL_PIXELS)
-                    ])
-                else:
-                    assert cell == None
-
-                #r.drawCircle(CELL_PIXELS * (i+0.5), CELL_PIXELS * (j+0.5), 10)
+                if cell == None:
+                    continue
+                r.push()
+                r.translate(i * CELL_PIXELS, j * CELL_PIXELS)
+                cell.render(r)
+                r.pop()
 
         r.endFrame()
 
-        # TODO: rgb_array, return numpy array
+        if mode == 'rgb_array':
+            return r.getNumpyArray()
+
         return r

@@ -183,6 +183,9 @@ class AIGameWindow(QMainWindow):
     def stepButton(self):
         self.stepEnvCb()
 
+    def setMission(self, text):
+        self.missionBox.setPlainText(text)
+
     def setFrameRate(self, value):
         """Set the frame rate limit. Zero for manual stepping."""
 
@@ -265,6 +268,9 @@ def main():
     env = gym.make('AI-Game-v0')
     obs = env.reset()
     showEnv(obs)
+
+    # Initial mission is hardcoded
+    window.setMission("Get to the green goal square")
 
     # Run the application
     sys.exit(app.exec_())
