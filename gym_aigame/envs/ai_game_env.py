@@ -135,13 +135,21 @@ class AIGameEnv(gym.Env):
         'video.frames_per_second' : 10
     }
 
+    # Possible actions
+    NUM_ACTIONS = 5
+    ACTION_LEFT = 0
+    ACTION_RIGHT = 1
+    ACTION_FORWARD = 2
+    ACTION_BACK = 3
+    ACTION_PICKUP = 4
+
     def __init__(self, gridSize=20):
         assert (gridSize >= 4)
 
         # For visual rendering
         self.renderer = None
 
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(AIGameEnv.NUM_ACTIONS)
 
         # The observations are RGB images
         self.observation_space = spaces.Box(
@@ -200,8 +208,6 @@ class AIGameEnv(gym.Env):
         self.setGrid(4, 8, Ball('blue'))
         self.setGrid(12, 3, Key('yellow'))
 
-
-
         # Place a goal in the bottom-left corner
         self.setGrid(gridSz - 2, gridSz - 2, Goal())
 
@@ -247,17 +253,17 @@ class AIGameEnv(gym.Env):
         done = False
 
         # Rotate left
-        if action == 0:
+        if action == AIGameEnv.ACTION_LEFT:
             self.agentDir -= 1
             if self.agentDir < 0:
                 self.agentDir += 4
 
         # Rotate right
-        elif action == 1:
+        elif action == AIGameEnv.ACTION_RIGHT:
             self.agentDir = (self.agentDir + 1) % 4
 
-        # Forward
-        elif action == 2:
+        # Move forward
+        elif action == AIGameEnv.ACTION_FORWARD:
             u, v = self.getDirVec()
             newPos = (self.agentPos[0] + u, self.agentPos[1] + v)
 
@@ -269,14 +275,21 @@ class AIGameEnv(gym.Env):
                 done = True
                 reward = 1000
 
-        # Back
-        elif action == 3:
+        # Move backward
+        elif action == AIGameEnv.ACTION_BACK:
             u, v = self.getDirVec()
             u *= -1
             v *= -1
             newPos = (self.agentPos[0] + u, self.agentPos[1] + v)
             if self.getGrid(newPos[0], newPos[1]) == None:
                 self.agentPos = newPos
+
+        # Pick up an item
+        elif action == AIGameEnv.ACTION_PICKUP:
+            # TODO
+            u, v = self.getDirVec()
+            itemPos = (self.agentPos[0] + u, self.agentPos[1] + v)
+            pass
 
         else:
             assert False, "unknown action"

@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 
 import gym
-import gym_aigame
+from gym_aigame.envs import AIGameEnv
 from training import selectAction
 
 class AIGameWindow(QMainWindow):
@@ -148,13 +148,15 @@ class AIGameWindow(QMainWindow):
 
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Left:
-            self.actionCb(0)
+            self.actionCb(AIGameEnv.ACTION_LEFT)
         elif e.key() == Qt.Key_Right:
-            self.actionCb(1)
+            self.actionCb(AIGameEnv.ACTION_RIGHT)
         elif e.key() == Qt.Key_Up:
-            self.actionCb(2)
+            self.actionCb(AIGameEnv.ACTION_FORWARD)
         elif e.key() == Qt.Key_Down:
-            self.actionCb(3)
+            self.actionCb(AIGameEnv.ACTION_BACK)
+        elif e.key() == Qt.Key_Space:
+            self.actionCb(AIGameEnv.ACTION_PICKUP)
 
     def mousePressEvent(self, event):
         """
