@@ -16,6 +16,7 @@ COLORS = {
     'green' : (0, 255, 0),
     'blue'  : (0, 0, 255),
     'purple': (112, 39, 195),
+    'yellow': (255, 255, 0),
     'grey'  : (100, 100, 100)
 }
 
@@ -80,16 +81,49 @@ class Ball(WorldObj):
     def __init__(self, color='blue'):
         super(Ball, self).__init__('ball', color)
 
+    def canPickup(self):
+        return True
+
     def render(self, r):
         self._setColor(r)
         r.drawCircle(CELL_PIXELS * 0.5, CELL_PIXELS * 0.5, 10)
 
+class Key(WorldObj):
+    def __init__(self, color='blue'):
+        super(Key, self).__init__('ball', color)
+
     def canPickup(self):
         return True
 
+    def render(self, r):
+        self._setColor(r)
 
+        # Vertical quad
+        r.drawPolygon([
+            (16, 10),
+            (20, 10),
+            (20, 28),
+            (16, 28)
+        ])
 
+        # Teeth
+        r.drawPolygon([
+            (12, 19),
+            (16, 19),
+            (16, 21),
+            (12, 21)
+        ])
+        r.drawPolygon([
+            (12, 26),
+            (16, 26),
+            (16, 28),
+            (12, 28)
+        ])
 
+        r.drawCircle(18, 9, 6)
+        r.setLineColor(0, 0, 0)
+        r.setColor(0, 0, 0)
+        r.drawCircle(18, 9, 2)
 
 class AIGameEnv(gym.Env):
     """
@@ -164,6 +198,7 @@ class AIGameEnv(gym.Env):
             self.setGrid(gridSz - 1, i, Wall())
 
         self.setGrid(4, 8, Ball('blue'))
+        self.setGrid(12, 3, Key('yellow'))
 
 
 
