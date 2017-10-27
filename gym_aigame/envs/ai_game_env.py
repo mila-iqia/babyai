@@ -43,6 +43,10 @@ class WorldObj:
         """Can this contain another object?"""
         return False
 
+    def toggle(self, env):
+        """Method to trigger/toggle an action this object performs"""
+        return False
+
     def render(self, r):
         assert False
 
@@ -76,6 +80,52 @@ class Wall(WorldObj):
             (CELL_PIXELS,           0),
             (0          ,           0)
         ])
+
+class Door(WorldObj):
+    def __init__(self, color):
+        super(Door, self).__init__('door', color)
+        self.isOpen = False
+
+    def render(self, r):
+        c = COLORS[self.color]
+        r.setLineColor(c[0], c[1], c[2])
+        r.setColor(0, 0, 0)
+
+        if self.isOpen:
+            r.drawPolygon([
+                (CELL_PIXELS-2, CELL_PIXELS),
+                (CELL_PIXELS  , CELL_PIXELS),
+                (CELL_PIXELS  ,           0),
+                (CELL_PIXELS-2,           0)
+            ])
+            return
+
+        r.drawPolygon([
+            (0          , CELL_PIXELS),
+            (CELL_PIXELS, CELL_PIXELS),
+            (CELL_PIXELS,           0),
+            (0          ,           0)
+        ])
+        r.drawPolygon([
+            (2          , CELL_PIXELS-2),
+            (CELL_PIXELS-2, CELL_PIXELS-2),
+            (CELL_PIXELS-2,           2),
+            (2          ,           2)
+        ])
+        r.drawCircle(CELL_PIXELS * 0.75, CELL_PIXELS * 0.5, 2)
+
+    def toggle(self, env):
+        # If the player has the right key to open the door
+        if isinstance(env.carrying, Key) and env.carrying.color == self.color:
+            self.isOpen = True
+            # The key has been used, remove it from the agent
+            env.carrying = None
+            return True
+        return False
+
+    def canOverlap(self):
+        """The agent can only walk over this cell when the door is open"""
+        return self.isOpen
 
 class Ball(WorldObj):
     def __init__(self, color='blue'):
@@ -136,12 +186,13 @@ class AIGameEnv(gym.Env):
     }
 
     # Possible actions
-    NUM_ACTIONS = 5
+    NUM_ACTIONS = 6
     ACTION_LEFT = 0
     ACTION_RIGHT = 1
     ACTION_FORWARD = 2
     ACTION_BACK = 3
     ACTION_PICKUP = 4
+    ACTION_TOGGLE = 5
 
     def __init__(self, gridSize=20):
         assert (gridSize >= 4)
@@ -208,8 +259,19 @@ class AIGameEnv(gym.Env):
             self.setGrid(0, i, Wall())
             self.setGrid(gridSz - 1, i, Wall())
 
-        self.setGrid(4, 8, Ball('blue'))
+
+
+
+        #self.setGrid(4, 8, Ball('blue'))
+
         self.setGrid(12, 3, Key('yellow'))
+
+
+
+        self.setGrid(4, 8, Door('yellow'))
+
+
+
 
         # Place a goal in the bottom-left corner
         self.setGrid(gridSz - 2, gridSz - 2, Goal())
@@ -272,9 +334,7 @@ class AIGameEnv(gym.Env):
         elif action == AIGameEnv.ACTION_FORWARD:
             u, v = self.getDirVec()
             newPos = (self.agentPos[0] + u, self.agentPos[1] + v)
-
             targetCell = self.getGrid(newPos[0], newPos[1])
-
             if targetCell == None or targetCell.canOverlap():
                 self.agentPos = newPos
             elif targetCell.type == 'goal':
@@ -287,7 +347,8 @@ class AIGameEnv(gym.Env):
             u *= -1
             v *= -1
             newPos = (self.agentPos[0] + u, self.agentPos[1] + v)
-            if self.getGrid(newPos[0], newPos[1]) == None:
+            targetCell = self.getGrid(newPos[0], newPos[1])
+            if targetCell == None or targetCell.canOverlap():
                 self.agentPos = newPos
 
         # Pick up an item
@@ -297,6 +358,13 @@ class AIGameEnv(gym.Env):
             if cell and cell.canPickup() and self.carrying is None:
                 self.carrying = cell
                 self.setGrid(self.agentPos[0] + u, self.agentPos[1] + v, None)
+
+        # Trigger/activate an item
+        elif action == AIGameEnv.ACTION_TOGGLE:
+            u, v = self.getDirVec()
+            cell = self.getGrid(self.agentPos[0] + u, self.agentPos[1] + v)
+            if cell:
+                cell.toggle(self)
 
         else:
             assert False, "unknown action"

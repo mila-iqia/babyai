@@ -152,6 +152,8 @@ class AIGameWindow(QMainWindow):
             self.actionCb(AIGameEnv.ACTION_BACK)
         elif e.key() == Qt.Key_Space:
             self.actionCb(AIGameEnv.ACTION_PICKUP)
+        elif e.key() == Qt.Key_Return:
+            self.actionCb(AIGameEnv.ACTION_TOGGLE)
 
     def mousePressEvent(self, event):
         """
