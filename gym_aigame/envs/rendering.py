@@ -42,7 +42,7 @@ class Renderer:
         )
 
         # Copy the pixel data to a numpy array
-        output = np.ndarray(shape=shape)
+        output = np.ndarray(shape=shape, dtype='uint8')
         for y in range(0, shape[1]):
             for x in range(0, shape[0]):
                 pix = scaled.pixel(x, y)

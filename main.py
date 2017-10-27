@@ -40,74 +40,69 @@ class AIGameWindow(QMainWindow):
         self.resize(512, 512)
         self.setWindowTitle('Baby AI Game')
 
-        # Image widget to draw into
-        imgHBox = self.createImageArea()
+        # Full render view (large view)
+        self.imgLabel = QLabel()
+        self.imgLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
 
-        # Text edit boxes
-        textHBox = self.createTextEdits()
+        # Area on the right of the large view
+        rightBox = self.createRightArea()
 
-        # Row of buttons
-        buttonHBox = self.createButtons()
+        # Arrange widgets horizontally
+        hbox = QHBoxLayout()
+        hbox.addWidget(self.imgLabel)
+        hbox.addLayout(rightBox)
 
         # Create a main widget for the window
         mainWidget = QWidget(self)
         self.setCentralWidget(mainWidget)
-        vbox = QVBoxLayout()
-        vbox.addLayout(imgHBox)
-        vbox.addLayout(textHBox)
-        vbox.addLayout(buttonHBox)
-        mainWidget.setLayout(vbox)
+        mainWidget.setLayout(hbox)
 
         # Show the application window
         self.show()
         self.setFocus()
 
-    def createImageArea(self):
-        """Create the image area to render into"""
-
-        # Full render view (large view)
-        self.imgLabel = QLabel()
-        self.imgLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-
+    def createRightArea(self):
         # Agent observation view (small view)
         self.obsLabel = QLabel()
         self.obsLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
 
-        # Center the agent view vertically
-        vbox = QVBoxLayout()
-        vbox.addStretch(1)
-        vbox.addWidget(self.obsLabel)
-        vbox.addStretch(1)
-
-        hbox = QHBoxLayout()
-        #hbox.addStretch(1)
-        hbox.addWidget(self.imgLabel)
-        hbox.addStretch(1)
-        hbox.addLayout(vbox)
-        hbox.addStretch(1)
-
-        return hbox
-
-    def createTextEdits(self):
-        """Create the text edit boxes"""
-
         self.missionBox = QTextEdit()
+        self.missionBox.setMinimumSize(500, 100)
         self.missionBox.textChanged.connect(self.missionEdit)
-        vboxLeft = QVBoxLayout()
-        vboxLeft.addWidget(QLabel("General mission"))
-        vboxLeft.addWidget(self.missionBox)
 
         self.adviceBox = QTextEdit()
+        self.adviceBox.setMinimumSize(500, 100)
         self.adviceBox.textChanged.connect(self.adviceEdit)
-        vboxRight = QVBoxLayout()
-        vboxRight.addWidget(QLabel("Contextual advice"))
-        vboxRight.addWidget(self.adviceBox)
 
-        hbox = QHBoxLayout()
-        hbox.addLayout(vboxLeft)
-        hbox.addLayout(vboxRight)
+        buttonBox = self.createButtons()
 
-        return hbox
+        self.stepsLabel = QLabel()
+        self.stepsLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.stepsLabel.setAlignment(Qt.AlignCenter)
+        self.stepsLabel.setMinimumSize(60, 10)
+        stepsBox = QHBoxLayout()
+        stepsBox.addStretch(1)
+        stepsBox.addWidget(QLabel("Steps remaining"))
+        stepsBox.addWidget(self.stepsLabel)
+        stepsBox.addStretch(1)
+
+        # Center the agent view
+        obsBox = QHBoxLayout()
+        obsBox.addStretch(1)
+        obsBox.addWidget(self.obsLabel)
+        obsBox.addStretch(1)
+
+        # Stack everything up in a vetical layout
+        vbox = QVBoxLayout()
+        vbox.addLayout(obsBox)
+        vbox.addLayout(stepsBox)
+        vbox.addWidget(QLabel("General mission"))
+        vbox.addWidget(self.missionBox)
+        vbox.addWidget(QLabel("Contextual advice"))
+        vbox.addWidget(self.adviceBox)
+        vbox.addLayout(buttonBox)
+
+        return vbox
 
     def createButtons(self):
         """Create the row of UI buttons"""
@@ -115,11 +110,11 @@ class AIGameWindow(QMainWindow):
         stepButton = QPushButton("Step")
         stepButton.clicked.connect(self.stepButton)
 
-        plusButton = QPushButton("+ Reward")
-        plusButton.clicked.connect(self.plusReward)
-
         minusButton = QPushButton("- Reward")
         minusButton.clicked.connect(self.minusReward)
+
+        plusButton = QPushButton("+ Reward")
+        plusButton.clicked.connect(self.plusReward)
 
         slider = QSlider(Qt.Horizontal, self)
         slider.setFocusPolicy(Qt.NoFocus)
@@ -140,8 +135,8 @@ class AIGameWindow(QMainWindow):
         hbox.addWidget(slider)
         hbox.addWidget(self.fpsLabel)
         hbox.addStretch(1)
-        hbox.addWidget(plusButton)
         hbox.addWidget(minusButton)
+        hbox.addWidget(plusButton)
         hbox.addStretch(1)
 
         return hbox
@@ -209,6 +204,10 @@ class AIGameWindow(QMainWindow):
         """Set the image to be displayed in the agent observation area"""
         self.obsLabel.setPixmap(pixmap)
 
+    def setStepsRemaining(self, count):
+        """Set the steps remaining display"""
+        self.stepsLabel.setText(str(count))
+
 def main():
 
     window = None
@@ -254,6 +253,9 @@ def main():
                 pix = (255 << 24) + (r << 16) + (g << 8) + (b << 0)
                 obsImg.setPixel(x, y, pix)
         window.setObsPixmap(QPixmap.fromImage(obsImg))
+
+        # Set the steps remaining display
+        window.setStepsRemaining(env.getStepsRemaining())
 
     def stepEnv(action=None):
         print('step')

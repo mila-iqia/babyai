@@ -215,6 +215,9 @@ class AIGameEnv(gym.Env):
 
         return [seed]
 
+    def getStepsRemaining(self):
+        return self.maxSteps - self.stepCount
+
     def setGrid(self, i, j, v):
         assert i >= 0 and i < self.gridSize
         assert j >= 0 and j < self.gridSize
