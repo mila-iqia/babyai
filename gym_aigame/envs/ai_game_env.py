@@ -247,6 +247,8 @@ class AIGameEnv(gym.Env):
         and initializes the world.
         """
 
+        self.np_random, _ = seeding.np_random(seed)
+
         gridSz = self.gridSize
 
         # Initialize the grid
@@ -261,14 +263,16 @@ class AIGameEnv(gym.Env):
 
 
 
+        splitIdx = self.np_random.randint(2, gridSz-3)
+        for i in range(0, gridSz):
+            self.setGrid(splitIdx, i, Wall())
+        doorIdx = self.np_random.randint(1, gridSz-2)
+        self.setGrid(splitIdx, doorIdx, Door('yellow'))
 
-        #self.setGrid(4, 8, Ball('blue'))
-
-        self.setGrid(12, 3, Key('yellow'))
 
 
-
-        self.setGrid(4, 8, Door('yellow'))
+        self.setGrid(2, 14, Ball('blue'))
+        self.setGrid(1, 16, Key('yellow'))
 
 
 
@@ -276,7 +280,6 @@ class AIGameEnv(gym.Env):
         # Place a goal in the bottom-left corner
         self.setGrid(gridSz - 2, gridSz - 2, Goal())
 
-        self.np_random, _ = seeding.np_random(seed)
 
         return [seed]
 
