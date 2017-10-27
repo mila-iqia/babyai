@@ -176,6 +176,9 @@ class AIGameEnv(gym.Env):
         # Agent direction, initially pointing right (+x axis)
         self.agentDir = 0
 
+        # Item picked up, being carried
+        self.carrying = None
+
         # Step count since episode start
         self.stepCount = 0
 
@@ -289,10 +292,11 @@ class AIGameEnv(gym.Env):
 
         # Pick up an item
         elif action == AIGameEnv.ACTION_PICKUP:
-            # TODO
             u, v = self.getDirVec()
-            itemPos = (self.agentPos[0] + u, self.agentPos[1] + v)
-            pass
+            cell = self.getGrid(self.agentPos[0] + u, self.agentPos[1] + v)
+            if cell and cell.canPickup() and self.carrying is None:
+                self.carrying = cell
+                self.setGrid(self.agentPos[0] + u, self.agentPos[1] + v, None)
 
         else:
             assert False, "unknown action"
