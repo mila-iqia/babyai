@@ -1,7 +1,8 @@
+import math
+from copy import deepcopy
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
-import math
 import numpy as np
 from gym_aigame.envs.rendering import *
 
@@ -213,7 +214,7 @@ class AIGameEnv(gym.Env):
 
         # Environment configuration
         self.gridSize = gridSize
-        self.maxSteps = 100
+        self.maxSteps = 250
         self.startPos = (1, 1)
 
         # Initialize the state
@@ -235,6 +236,9 @@ class AIGameEnv(gym.Env):
 
         # Last step the environment was rendered
         self.lastRender = None
+
+        # Restore the initial grid
+        self.grid = deepcopy(self.seedGrid)
 
         # Return first observation
         self.render()
@@ -280,6 +284,8 @@ class AIGameEnv(gym.Env):
         # Place a goal in the bottom-left corner
         self.setGrid(gridSz - 2, gridSz - 2, Goal())
 
+        # Store a copy of the grid so we can restore it on reset
+        self.seedGrid = deepcopy(self.grid)
 
         return [seed]
 
