@@ -24,7 +24,7 @@ torch.manual_seed(1)
 
 class ActionGenerator(nn.Module):
     def __init__(self,
-        pathToWordEmbedding="GloveData\\glove50.txt",
+        pathToWordEmbedding="glove50.txt",
         hiddenSize_GM=100,
         batch_GM=1,
         numLayers_GM=1,
