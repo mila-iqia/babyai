@@ -11,28 +11,19 @@ from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 
 import gym
 from gym_aigame.envs import AIGameEnv
-from training import selectAction
+from training import State, selectAction, storeTrans
 
 class AIGameWindow(QMainWindow):
 
-    def __init__(
-        self,
-        missionEditCb,
-        adviceEditCb,
-        stepEnvCb,
-        plusRewardCb,
-        minusRewardCb,
-        actionCb
-    ):
+    def __init__(self):
         super().__init__()
         self.initUI()
 
-        self.missionEditCb = missionEditCb
-        self.adviceEditCb = adviceEditCb
-        self.stepEnvCb = stepEnvCb
-        self.plusRewardCb = plusRewardCb
-        self.minusRewardCb = minusRewardCb
-        self.actionCb = actionCb
+        self.env = gym.make('AI-Game-v0')
+
+        self.state = None
+
+        self.resetEnv()
 
     def initUI(self):
         """Create and connect the UI elements"""
@@ -108,7 +99,7 @@ class AIGameWindow(QMainWindow):
         """Create the row of UI buttons"""
 
         stepButton = QPushButton("Step")
-        stepButton.clicked.connect(self.stepButton)
+        stepButton.clicked.connect(self.stepEnv)
 
         minusButton = QPushButton("- Reward")
         minusButton.clicked.connect(self.minusReward)
@@ -143,17 +134,17 @@ class AIGameWindow(QMainWindow):
 
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Left:
-            self.actionCb(AIGameEnv.ACTION_LEFT)
+            self.stepEnv(AIGameEnv.ACTION_LEFT)
         elif e.key() == Qt.Key_Right:
-            self.actionCb(AIGameEnv.ACTION_RIGHT)
+            self.stepEnv(AIGameEnv.ACTION_RIGHT)
         elif e.key() == Qt.Key_Up:
-            self.actionCb(AIGameEnv.ACTION_FORWARD)
+            self.stepEnv(AIGameEnv.ACTION_FORWARD)
         elif e.key() == Qt.Key_Down:
-            self.actionCb(AIGameEnv.ACTION_BACK)
+            self.stepEnv(AIGameEnv.ACTION_BACK)
         elif e.key() == Qt.Key_Space:
-            self.actionCb(AIGameEnv.ACTION_PICKUP)
+            self.stepEnv(AIGameEnv.ACTION_PICKUP)
         elif e.key() == Qt.Key_Return:
-            self.actionCb(AIGameEnv.ACTION_TOGGLE)
+            self.stepEnv(AIGameEnv.ACTION_TOGGLE)
 
     def mousePressEvent(self, event):
         """
@@ -169,22 +160,22 @@ class AIGameWindow(QMainWindow):
         QMainWindow.mousePressEvent(self, event)
 
     def missionEdit(self):
-        self.missionEditCb(self.missionBox.toPlainText())
+        text = self.missionBox.toPlainText()
+        print('new mission: ' + text)
+        self.state = State(self.state.image, text, self.state.advice)
 
     def adviceEdit(self):
-        self.adviceEditCb(self.adviceBox.toPlainText())
+        text = self.adviceBox.toPlainText()
+        print('new advice: ' + text)
+        self.state = State(self.state.image, self.state.mission, text)
 
     def plusReward(self):
-        self.plusRewardCb()
+        print('+reward')
+        # TODO
 
     def minusReward(self):
-        self.minusRewardCb()
-
-    def stepButton(self):
-        self.stepEnvCb()
-
-    def setMission(self, text):
-        self.missionBox.setPlainText(text)
+        print('-reward')
+        # TODO
 
     def setFrameRate(self, value):
         """Set the frame rate limit. Zero for manual stepping."""
@@ -206,41 +197,19 @@ class AIGameWindow(QMainWindow):
         """Set the image to be displayed in the agent observation area"""
         self.obsLabel.setPixmap(pixmap)
 
-    def setStepsRemaining(self, count):
-        """Set the steps remaining display"""
-        self.stepsLabel.setText(str(count))
+    def resetEnv(self):
+        obs = self.env.reset()
 
-def main():
+        self.showEnv(obs)
 
-    window = None
-    env = None
+        mission = "Get to the green goal square"
+        self.state = State(obs, mission, "")
+        self.missionBox.setPlainText(mission)
 
-    state = {
-        "image": None,
-        "mission": "",
-        "advice": ""
-    }
-
-    def missionEdit(text):
-        print('new mission: ' + text)
-        state['mission'] = text
-
-    def adviceEdit(text):
-        print('new advice: ' + text)
-        state['advice'] = text
-
-    def plusReward():
-        print('+ reward')
-        # TODO: hook this up to something
-
-    def minusReward():
-        print('- reward')
-        # TODO: hook this up to something
-
-    def showEnv(obs):
+    def showEnv(self, obs):
         # Render and display the environment
-        env.render()
-        window.setPixmap(env.renderer.getPixmap())
+        self.env.render()
+        self.setPixmap(self.env.renderer.getPixmap())
 
         # Display the agent's view
         obsW = obs.shape[0]
@@ -254,51 +223,43 @@ def main():
                 # ARGB
                 pix = (255 << 24) + (r << 16) + (g << 8) + (b << 0)
                 obsImg.setPixel(x, y, pix)
-        window.setObsPixmap(QPixmap.fromImage(obsImg))
+        self.setObsPixmap(QPixmap.fromImage(obsImg))
 
         # Set the steps remaining display
-        window.setStepsRemaining(env.getStepsRemaining())
+        stepsRem = self.env.getStepsRemaining()
+        self.stepsLabel.setText(str(stepsRem))
 
-    def stepEnv(action=None):
+    def stepEnv(self, action=None):
         print('step')
+
+        prevState = self.state
 
         # If no manual action was specified by the user
         if action == None:
-            action = selectAction(state['mission'], state['advice'], state['image'])
+            action = selectAction(self.state)
 
-        obs, reward, done, info = env.step(action)
-        showEnv(obs)
+        obs, reward, done, info = self.env.step(action)
+
+        self.showEnv(obs)
+
         print(reward)
 
-        state['image'] = obs
+        newState = State(obs, prevState.mission, "")
+
+        storeTrans(prevState, action, newState, reward)
 
         if done:
-            env.reset()
-            obs = env.reset()
-            showEnv(obs)
-            state['image'] = obs
+            self.resetEnv()
 
+
+def main():
     # Create the application window
     app = QApplication(sys.argv)
-    window = AIGameWindow(
-        missionEditCb = missionEdit,
-        adviceEditCb = adviceEdit,
-        stepEnvCb = stepEnv,
-        plusRewardCb = plusReward,
-        minusRewardCb = minusReward,
-        actionCb = stepEnv
-    )
-
-    env = gym.make('AI-Game-v0')
-    obs = env.reset()
-    showEnv(obs)
-    state['image'] = obs
-
-    # Initial mission is hardcoded
-    window.setMission("Get to the green goal square")
+    window = AIGameWindow()
 
     # Run the application
     sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     main()
