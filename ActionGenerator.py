@@ -223,7 +223,9 @@ class ActionGenerator(nn.Module):
         fromVision=self.visual(image)
         mix=self.mixVisualAndText(fromVision,fromText)
         action=self.selectAction(mix)
-        return(action)
+        output=torch.max(action, 1)
+
+        return(output)
 
 
 
