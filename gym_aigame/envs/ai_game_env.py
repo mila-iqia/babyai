@@ -195,7 +195,7 @@ class AIGameEnv(gym.Env):
     ACTION_PICKUP = 4
     ACTION_TOGGLE = 5
 
-    def __init__(self, gridSize=20, numSubGoals=0, maxSteps=100):
+    def __init__(self, gridSize=8, numSubGoals=0, maxSteps=15):
         assert (gridSize >= 4)
 
         # For visual rendering
@@ -277,8 +277,8 @@ class AIGameEnv(gym.Env):
             self.setGrid(splitIdx, doorIdx, Door('yellow'))
 
         # TODO: avoid placing objects in front of doors
-        self.setGrid(2, 14, Ball('blue'))
-        self.setGrid(1, 16, Key('yellow'))
+        #self.setGrid(2, 14, Ball('blue'))
+        #self.setGrid(1, 16, Key('yellow'))
 
         # Place a goal in the bottom-left corner
         self.setGrid(gridSz - 2, gridSz - 2, Goal())

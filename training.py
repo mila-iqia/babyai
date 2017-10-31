@@ -41,7 +41,7 @@ def selectAction(state):
     img=Variable(cp.preProcessImage(state.image))
     #compute the action
     distribution = gen(img, mission, advice)
-    action = torch.max(distribution, 1)[-1].data[0]
+    action = int(torch.max(distribution, 1)[-1].data[0])
     #print(distribution)
     #print(action)
 
