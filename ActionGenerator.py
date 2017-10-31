@@ -223,9 +223,9 @@ class ActionGenerator(nn.Module):
         fromVision=self.visual(image)
         mix=self.mixVisualAndText(fromVision,fromText)
         action=self.selectAction(mix)
-        output=torch.max(action, 1)
-
-        return output[-1][0]
+        #output=torch.max(action, 1)
+        #max is not differentiable, we need to make it inside the train.py
+        return (action)
 
 
 
@@ -308,5 +308,6 @@ start = timeit.timeit()
 optimizer.step()
 end = timeit.timeit()
 print ("optim time",end - start)
-"""
+
 print("done")
+"""

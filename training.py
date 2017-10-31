@@ -1,5 +1,7 @@
 from collections import namedtuple, deque
 from ActionGenerator import *
+from torch.autograd import Variable
+import UsefulComputations as cp
 
 
 
@@ -34,12 +36,14 @@ def selectAction(state):
     print('selectAction')
 
     #preprocess the sentences
-    mission=gen.dico.seq2matrix(state.mission)
-    advice=gen.dico.seq2matrix(state.advice)
-
+    mission=Variable(gen.dico.seq2matrix(state.mission))
+    advice=Variable(gen.dico.seq2matrix(state.advice))
+    img=Variable(cp.preProcessImage(state.image))
     #compute the action
-    action=gen(state.image, mission, advice)
-
+    distribution=gen(img, mission, advice)
+    action=torch.max(distribution,1)[-1].int()
+    print(distribution)
+    print(action)
 
     # TODO: return the index of the action to perform
     return (action)
