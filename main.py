@@ -226,7 +226,7 @@ class AIGameWindow(QMainWindow):
         self.showEnv(obs)
 
         mission = "Get to the green goal square"
-        self.state = State(obs, mission, "")
+        self.state = State(obs, mission, mission)
         self.missionBox.setPlainText(mission)
 
     def showEnv(self, obs):
