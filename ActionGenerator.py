@@ -41,7 +41,7 @@ class ActionGenerator(nn.Module):
         super(ActionGenerator, self).__init__()
 
         #dictionnary for the Word Embedding
-        self.dico=we.dictionnary(pathToWordEmbedding)
+        self.dico=we.Dictionary(pathToWordEmbedding)
 
         #general mission parameters
         self.hiddenSize_GM=hiddenSize_GM
