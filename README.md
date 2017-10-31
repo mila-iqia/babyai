@@ -31,6 +31,8 @@ To run the standalone UI application:
 Relevant Publications
 ---------------------
 
+[Beating Atari with Natural Language Guided Reinforcement Learning](https://web.stanford.edu/class/cs224n/reports/2762090.pdf)
+
 [Deep Tamer](https://arxiv.org/abs/1709.10163)
 
 [Agent-Agnostic Human-in-the-Loop Reinforcement Learning](https://arxiv.org/abs/1701.04079)
