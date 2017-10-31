@@ -265,9 +265,7 @@ class AIGameWindow(QMainWindow):
 
         # If no manual action was specified by the user
         if action == None:
-            # FIXME
-            #action = selectAction(self.state)
-            action = 0
+            action = selectAction(self.state)
 
         obs, reward, done, info = self.env.step(action)
         #print(reward)
