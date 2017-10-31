@@ -45,13 +45,17 @@ class AIGameWindow(QMainWindow):
         # Full render view (large view)
         self.imgLabel = QLabel()
         self.imgLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        leftBox = QVBoxLayout()
+        leftBox.addStretch(1)
+        leftBox.addWidget(self.imgLabel)
+        leftBox.addStretch(1)
 
         # Area on the right of the large view
         rightBox = self.createRightArea()
 
         # Arrange widgets horizontally
         hbox = QHBoxLayout()
-        hbox.addWidget(self.imgLabel)
+        hbox.addLayout(leftBox)
         hbox.addLayout(rightBox)
 
         # Create a main widget for the window
