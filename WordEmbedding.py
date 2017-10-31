@@ -18,7 +18,12 @@ class Dictionary(object):
         print ("Done.",len(self.model)," words loaded!")
 
     def word2vec(self,word):
-        return (torch.from_numpy(self.model.loc[word].as_matrix()))
+        try:
+            vector=torch.from_numpy(self.model.loc[word].as_matrix())
+        except:
+            vector=torch.from_numpy(self.model.loc['error'].as_matrix())
+            print("UNKNOWN WORD : ",word)
+        return (vector)
 
     def seq2matrix (self,sequence):
         l=nltk.word_tokenize(sequence.lower())
