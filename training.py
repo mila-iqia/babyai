@@ -22,7 +22,7 @@ Trans = namedtuple('Trans', ['state', 'action', 'nextState', 'reward'])
 # Experience store
 expStore = deque()
 
-gen=ActionGenerator()
+gen = ActionGenerator()
 
 
 def selectAction(state):
@@ -30,14 +30,16 @@ def selectAction(state):
     Select the next action to be performed in an episode
     @state tuple containing (image, mission, advice)
     """
-    
+
+    print('selectAction')
+
     #preprocess the sentences
     mission=gen.dico.seq2matrix(state.mission)
     advice=gen.dico.seq2matrix(state.advice)
-    
+
     #compute the action
     action=gen(state.image, mission, advice)
-    
+
 
     # TODO: return the index of the action to perform
     return (action)
@@ -62,7 +64,7 @@ def storeTrans(state, action, nextState, reward):
 
 def train():
     # TODO: sample a minibatch from expStore
-    
+
 
 
 

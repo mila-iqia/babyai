@@ -195,12 +195,13 @@ class AIGameEnv(gym.Env):
     ACTION_PICKUP = 4
     ACTION_TOGGLE = 5
 
-    def __init__(self, gridSize=20):
+    def __init__(self, gridSize=20, numSubGoals=0, maxSteps=250):
         assert (gridSize >= 4)
 
         # For visual rendering
         self.renderer = None
 
+        # Actions are discrete integer values
         self.action_space = spaces.Discrete(AIGameEnv.NUM_ACTIONS)
 
         # The observations are RGB images
@@ -214,7 +215,8 @@ class AIGameEnv(gym.Env):
 
         # Environment configuration
         self.gridSize = gridSize
-        self.maxSteps = 250
+        self.numSubGoals = numSubGoals
+        self.maxSteps = maxSteps
         self.startPos = (1, 1)
 
         # Initialize the state
@@ -265,21 +267,18 @@ class AIGameEnv(gym.Env):
             self.setGrid(0, i, Wall())
             self.setGrid(gridSz - 1, i, Wall())
 
+        # TODO: support for multiple subgoals
+        # For now, we support only one splitting wall
+        if self.numSubGoals == 1:
+            splitIdx = self.np_random.randint(2, gridSz-3)
+            for i in range(0, gridSz):
+                self.setGrid(splitIdx, i, Wall())
+            doorIdx = self.np_random.randint(1, gridSz-2)
+            self.setGrid(splitIdx, doorIdx, Door('yellow'))
 
-
-        splitIdx = self.np_random.randint(2, gridSz-3)
-        for i in range(0, gridSz):
-            self.setGrid(splitIdx, i, Wall())
-        doorIdx = self.np_random.randint(1, gridSz-2)
-        self.setGrid(splitIdx, doorIdx, Door('yellow'))
-
-
-
+        # TODO: avoid placing objects in front of doors
         self.setGrid(2, 14, Ball('blue'))
         self.setGrid(1, 16, Key('yellow'))
-
-
-
 
         # Place a goal in the bottom-left corner
         self.setGrid(gridSz - 2, gridSz - 2, Goal())

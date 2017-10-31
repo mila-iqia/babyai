@@ -225,7 +225,7 @@ class ActionGenerator(nn.Module):
         action=self.selectAction(mix)
         output=torch.max(action, 1)
 
-        return(output)
+        return output[-1][0]
 
 
 
