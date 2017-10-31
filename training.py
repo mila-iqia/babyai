@@ -2,6 +2,7 @@ from collections import namedtuple, deque
 from ActionGenerator import *
 from torch.autograd import Variable
 import UsefulComputations as cp
+import torch
 
 
 
@@ -26,6 +27,9 @@ expStore = deque()
 
 gen = ActionGenerator()
 
+previousImage=None
+previousAdvice=None
+previousMission=None
 
 def selectAction(state):
     """
@@ -34,6 +38,8 @@ def selectAction(state):
     """
 
     print('selectAction')
+    
+    global previousImage,previousAdvice,previousMission
 
     #preprocess the sentences
     mission=Variable(gen.dico.seq2matrix(state.mission))
@@ -42,8 +48,23 @@ def selectAction(state):
     #compute the action
     distribution = gen(img, mission, advice)
     action = int(torch.max(distribution, 1)[-1].data[0])
-    #print(distribution)
-    #print(action)
+    print(distribution)
+    print(action)
+    
+    """"
+    try: 
+        print("diff mission", torch.mean(torch.abs(previousMission-mission)))
+        print("diff advice", torch.mean(torch.abs(previousAdvice-advice)))
+        print("diff image", torch.mean(torch.abs(previousImage-img)))
+    except:
+        print("no previous exemple")
+
+    previousMission=mission
+    previousAdvice=advice
+    previousImage=img
+    """ 
+    
+    
 
     # Return the index of the action to perform
     return action

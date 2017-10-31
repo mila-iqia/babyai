@@ -19,7 +19,7 @@ import UsefulComputations as cp
 import torch.nn.functional as F
 import timeit
 
-torch.manual_seed(1)
+torch.manual_seed(100)
 
 
 class ActionGenerator(nn.Module):
@@ -121,8 +121,8 @@ class ActionGenerator(nn.Module):
 
     def processGeneralMission(self, generalMission):
         #mat=we.seq2matrix(generalMission,self.dico)
-        hn = Variable(torch.randn(self.numLayers_GM*self.numDirections_GM,self.batch_GM, self.hiddenSize_GM))
-        cn = Variable(torch.randn(self.numLayers_GM*self.numDirections_GM,self.batch_GM, self.hiddenSize_GM))
+        hn = Variable(torch.zeros(self.numLayers_GM*self.numDirections_GM,self.batch_GM, self.hiddenSize_GM))
+        cn = Variable(torch.zeros(self.numLayers_GM*self.numDirections_GM,self.batch_GM, self.hiddenSize_GM))
         output, (hn,cn) = self.rnn_GM(generalMission,(hn, cn))
         #print("general",output.size(),"hidden",hn.size())
         return(output,(hn,cn))
@@ -220,6 +220,7 @@ class ActionGenerator(nn.Module):
 
     def forward(self,image,generalMission,advice):
         fromText=self.processText(generalMission,advice)
+        
         fromVision=self.visual(image)
         mix=self.mixVisualAndText(fromVision,fromText)
         action=self.selectAction(mix)
