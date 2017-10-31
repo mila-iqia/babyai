@@ -2,8 +2,11 @@
 
 from __future__ import division, print_function
 
+import time
 import sys
-from PyQt5.QtCore import Qt
+import threading
+
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 from PyQt5.QtWidgets import QLabel, QTextEdit, QFrame
 from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
@@ -19,11 +22,19 @@ class AIGameWindow(QMainWindow):
         super().__init__()
         self.initUI()
 
+        # By default, manual stepping only
+        self.fpsLimit = 0
+
         self.env = gym.make('AI-Game-v0')
 
         self.state = None
 
         self.resetEnv()
+
+        self.stepTimer = QTimer()
+        self.stepTimer.setInterval(0)
+        self.stepTimer.setSingleShot(False)
+        self.stepTimer.timeout.connect(self.stepClicked)
 
     def initUI(self):
         """Create and connect the UI elements"""
@@ -99,7 +110,7 @@ class AIGameWindow(QMainWindow):
         """Create the row of UI buttons"""
 
         stepButton = QPushButton("Step")
-        stepButton.clicked.connect(self.stepEnv)
+        stepButton.clicked.connect(self.stepClicked)
 
         minusButton = QPushButton("- Reward")
         minusButton.clicked.connect(self.minusReward)
@@ -177,17 +188,29 @@ class AIGameWindow(QMainWindow):
         print('-reward')
         # TODO
 
+    def stepClicked(self):
+        self.stepEnv(action=None)
+
     def setFrameRate(self, value):
         """Set the frame rate limit. Zero for manual stepping."""
 
         print('Set frame rate: %s' % value)
 
+        self.fpsLimit = int(value)
+
         if value == 0:
             self.fpsLabel.setText("Manual")
+            self.stepTimer.stop()
+
         elif value == 100:
             self.fpsLabel.setText("Fastest")
+            self.stepTimer.setInterval(0)
+            self.stepTimer.start()
+
         else:
             self.fpsLabel.setText("%s FPS" % value)
+            self.stepTimer.setInterval(int(1000 / self.fpsLimit))
+            self.stepTimer.start()
 
     def setPixmap(self, pixmap):
         """Set the image to be displayed in the full render area"""
@@ -207,6 +230,12 @@ class AIGameWindow(QMainWindow):
         self.missionBox.setPlainText(mission)
 
     def showEnv(self, obs):
+        stepsRem = self.env.getStepsRemaining()
+
+        # If the frame rate limit is high, don't redraw every step
+        if self.fpsLimit >= 20 and stepsRem % 3 != 0:
+            return
+
         # Render and display the environment
         self.env.render()
         self.setPixmap(self.env.renderer.getPixmap())
@@ -226,30 +255,47 @@ class AIGameWindow(QMainWindow):
         self.setObsPixmap(QPixmap.fromImage(obsImg))
 
         # Set the steps remaining display
-        stepsRem = self.env.getStepsRemaining()
         self.stepsLabel.setText(str(stepsRem))
 
     def stepEnv(self, action=None):
-        print('step')
+        #print('stepEnv')
+        #print('action=%s' % action)
 
         prevState = self.state
 
         # If no manual action was specified by the user
         if action == None:
-            action = selectAction(self.state)
+            # FIXME
+            #action = selectAction(self.state)
+            action = 0
 
         obs, reward, done, info = self.env.step(action)
+        #print(reward)
 
         self.showEnv(obs)
 
-        print(reward)
-
         newState = State(obs, prevState.mission, "")
 
+        # Store the state transition and reward
         storeTrans(prevState, action, newState, reward)
 
         if done:
             self.resetEnv()
+
+    def stepLoop(self):
+        """Auto stepping loop, runs in its own thread"""
+
+        print('stepLoop')
+
+        while True:
+            if self.fpsLimit == 0:
+                time.sleep(0.1)
+                continue
+
+            if self.fpsLimit < 100:
+                time.sleep(0.1)
+
+            self.stepEnv()
 
 
 def main():
