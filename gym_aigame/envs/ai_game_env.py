@@ -10,7 +10,7 @@ from gym_aigame.envs.rendering import *
 CELL_PIXELS = 32
 
 # Size of the image given as an observation to the agent
-IMG_ARRAY_SIZE = (160, 160, 3)
+IMG_ARRAY_SIZE = (3, 160, 160)
 
 COLORS = {
     'red'   : (255, 0, 0),
@@ -195,7 +195,7 @@ class AIGameEnv(gym.Env):
     ACTION_PICKUP = 4
     ACTION_TOGGLE = 5
 
-    def __init__(self, gridSize=20, numSubGoals=0, maxSteps=250):
+    def __init__(self, gridSize=20, numSubGoals=0, maxSteps=100):
         assert (gridSize >= 4)
 
         # For visual rendering

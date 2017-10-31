@@ -28,30 +28,30 @@ class Renderer:
     def getArray(self, shape=None):
         """
         Get a numpy array of RGB pixel values.
-        The size argument should be (w,h,3)
+        The size argument should be (3,w,h)
         """
 
-        assert shape[0] > 0 and shape[0] <= self.width
-        assert shape[1] > 0 and shape[1] <= self.height
-        assert shape[2] == 3
+        assert shape[0] == 3
+        assert shape[1] > 0 and shape[1] <= self.width
+        assert shape[2] > 0 and shape[2] <= self.height
 
         # Get a downsampled version of the image
         scaled = self.img.scaled(
-            QSize(shape[0], shape[1]),
+            QSize(shape[1], shape[2]),
             transformMode = Qt.SmoothTransformation
         )
 
         # Copy the pixel data to a numpy array
         output = np.ndarray(shape=shape, dtype='uint8')
-        for y in range(0, shape[1]):
-            for x in range(0, shape[0]):
+        for y in range(0, shape[2]):
+            for x in range(0, shape[1]):
                 pix = scaled.pixel(x, y)
                 r = (pix >> 16) & 0xFF
                 g = (pix >>  8) & 0xFF
                 b = (pix >>  0) & 0xFF
-                output[x, y, 0] = r
-                output[x, y, 1] = g
-                output[x, y, 2] = b
+                output[0, x, y] = r
+                output[1, x, y] = g
+                output[2, x, y] = b
 
         return output
 

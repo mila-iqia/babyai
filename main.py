@@ -233,22 +233,22 @@ class AIGameWindow(QMainWindow):
         stepsRem = self.env.getStepsRemaining()
 
         # If the frame rate limit is high, don't redraw every step
-        if self.fpsLimit >= 20 and stepsRem % 3 != 0:
-            return
+        #if self.fpsLimit >= 20 and stepsRem % 3 != 0:
+        #    return
 
         # Render and display the environment
         self.env.render()
         self.setPixmap(self.env.renderer.getPixmap())
 
         # Display the agent's view
-        obsW = obs.shape[0]
-        obsH = obs.shape[1]
+        obsW = obs.shape[1]
+        obsH = obs.shape[2]
         obsImg = QImage(obsW, obsH, QImage.Format_ARGB32_Premultiplied)
         for y in range(0, obsH):
             for x in range(0, obsW):
-                r = int(obs[x, y, 0])
-                g = int(obs[x, y, 1])
-                b = int(obs[x, y, 2])
+                r = int(obs[0, x, y])
+                g = int(obs[1, x, y])
+                b = int(obs[2, x, y])
                 # ARGB
                 pix = (255 << 24) + (r << 16) + (g << 8) + (b << 0)
                 obsImg.setPixel(x, y, pix)

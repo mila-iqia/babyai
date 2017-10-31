@@ -40,13 +40,13 @@ def selectAction(state):
     advice=Variable(gen.dico.seq2matrix(state.advice))
     img=Variable(cp.preProcessImage(state.image))
     #compute the action
-    distribution=gen(img, mission, advice)
-    action=torch.max(distribution,1)[-1].int()
-    print(distribution)
-    print(action)
+    distribution = gen(img, mission, advice)
+    action = torch.max(distribution, 1)[-1].data[0]
+    #print(distribution)
+    #print(action)
 
-    # TODO: return the index of the action to perform
-    return (action)
+    # Return the index of the action to perform
+    return action
 
 
 def storeTrans(state, action, nextState, reward):
