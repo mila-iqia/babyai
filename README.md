@@ -2,8 +2,7 @@
 
 Prototype of a game where a reinforcement learning agent is trained through natural language instructions.
 
-Installation
-------------
+## Installation
 
 Requirements:
 - Python 3
@@ -28,8 +27,10 @@ To run the standalone UI application:
 ./main.py
 ```
 
-Relevant Publications
----------------------
+## Relevant Materials
+------------------
+
+### Agents and Language
 
 [Beating Atari with Natural Language Guided Reinforcement Learning](https://web.stanford.edu/class/cs224n/reports/2762090.pdf)
 
@@ -44,3 +45,9 @@ Relevant Publications
 [Programmable Agents](https://arxiv.org/abs/1706.06383) and associated [RLSS 2017 talk by Nando de Freitas](http://videolectures.net/deeplearning2017_de_freitas_deep_control/)
 
 [FiLM: Visual Reasoning with a General Conditioning Layer](https://sites.google.com/view/deep-rl-bootcamp/lectures)
+
+### Reinforcement Learning
+
+[Deep RL Bootcamp lecture on Policy Gradients](https://www.youtube.com/watch?v=S_gwYj1Q-44)
+
+[Asynchronous Methods for Deep Reinforcement Learning (A3C)](https://arxiv.org/abs/1602.01783)
