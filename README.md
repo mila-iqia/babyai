@@ -28,7 +28,6 @@ To run the standalone UI application:
 ```
 
 ## Relevant Materials
-------------------
 
 ### Agents and Language
 
