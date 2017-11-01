@@ -245,14 +245,14 @@ class AIGameWindow(QMainWindow):
         self.setPixmap(self.env.renderer.getPixmap())
 
         # Display the agent's view
-        obsW = obs.shape[1]
-        obsH = obs.shape[2]
+        obsW = obs.shape[0]
+        obsH = obs.shape[1]
         obsImg = QImage(obsW, obsH, QImage.Format_ARGB32_Premultiplied)
         for y in range(0, obsH):
             for x in range(0, obsW):
-                r = int(obs[0, x, y])
-                g = int(obs[1, x, y])
-                b = int(obs[2, x, y])
+                r = int(obs[x, y, 0])
+                g = int(obs[x, y, 1])
+                b = int(obs[x, y, 2])
                 # ARGB
                 pix = (255 << 24) + (r << 16) + (g << 8) + (b << 0)
                 obsImg.setPixel(x, y, pix)

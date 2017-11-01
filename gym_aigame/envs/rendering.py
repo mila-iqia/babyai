@@ -31,27 +31,29 @@ class Renderer:
         The size argument should be (3,w,h)
         """
 
-        assert shape[0] == 3
-        assert shape[1] > 0 and shape[1] <= self.width
-        assert shape[2] > 0 and shape[2] <= self.height
+        width = shape[0]
+        height = shape[1]
+        assert shape[2] == 3
+        assert width > 0 and width <= self.width
+        assert height > 0 and height <= self.height
 
         # Get a downsampled version of the image
         scaled = self.img.scaled(
-            QSize(shape[1], shape[2]),
+            QSize(width, height),
             transformMode = Qt.SmoothTransformation
         )
 
         # Copy the pixel data to a numpy array
         output = np.ndarray(shape=shape, dtype='uint8')
-        for y in range(0, shape[2]):
-            for x in range(0, shape[1]):
+        for y in range(0, height):
+            for x in range(0, width):
                 pix = scaled.pixel(x, y)
                 r = (pix >> 16) & 0xFF
                 g = (pix >>  8) & 0xFF
                 b = (pix >>  0) & 0xFF
-                output[0, x, y] = r
-                output[1, x, y] = g
-                output[2, x, y] = b
+                output[x, y, 0] = r
+                output[x, y, 1] = g
+                output[x, y, 2] = b
 
         return output
 

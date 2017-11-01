@@ -10,7 +10,7 @@ from gym_aigame.envs.rendering import *
 CELL_PIXELS = 32
 
 # Size of the image given as an observation to the agent
-IMG_ARRAY_SIZE = (3, 160, 160)
+IMG_ARRAY_SIZE = (160, 160, 3)
 
 COLORS = {
     'red'   : (255, 0, 0),
