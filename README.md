@@ -47,6 +47,8 @@ To run the standalone UI application:
 
 ### Reinforcement Learning
 
+[A2C, PPO and ACKTR PyTorch Implementation](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr)
+
 [Deep RL Bootcamp lecture on Policy Gradients](https://www.youtube.com/watch?v=S_gwYj1Q-44)
 
 [Asynchronous Methods for Deep Reinforcement Learning (A3C)](https://arxiv.org/abs/1602.01783)
