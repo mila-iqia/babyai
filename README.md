@@ -47,8 +47,12 @@ To run the standalone UI application:
 
 ### Reinforcement Learning
 
-[A2C, PPO and ACKTR PyTorch Implementation](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr)
+[Surprise-Based Intrinsic Motivation for Deep Reinforcement Learning](https://arxiv.org/abs/1703.01732)
+
+[Count-Based Exploration with Neural Density Models](https://arxiv.org/abs/1703.01310)
+
+[Asynchronous Methods for Deep Reinforcement Learning (A3C)](https://arxiv.org/abs/1602.01783)
 
 [Deep RL Bootcamp lecture on Policy Gradients](https://www.youtube.com/watch?v=S_gwYj1Q-44)
 
-[Asynchronous Methods for Deep Reinforcement Learning (A3C)](https://arxiv.org/abs/1602.01783)
+[PyTorch Implementation of A2C, PPO and ACKTR](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr)
