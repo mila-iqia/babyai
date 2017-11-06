@@ -68,10 +68,6 @@ class AIGameWindow(QMainWindow):
         self.setFocus()
 
     def createRightArea(self):
-        # Agent observation view (small view)
-        self.obsLabel = QLabel()
-        self.obsLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-
         self.missionBox = QTextEdit()
         self.missionBox.setMinimumSize(500, 100)
         self.missionBox.textChanged.connect(self.missionEdit)
@@ -92,15 +88,8 @@ class AIGameWindow(QMainWindow):
         stepsBox.addWidget(self.stepsLabel)
         stepsBox.addStretch(1)
 
-        # Center the agent view
-        obsBox = QHBoxLayout()
-        obsBox.addStretch(1)
-        obsBox.addWidget(self.obsLabel)
-        obsBox.addStretch(1)
-
         # Stack everything up in a vetical layout
         vbox = QVBoxLayout()
-        vbox.addLayout(obsBox)
         vbox.addLayout(stepsBox)
         vbox.addWidget(QLabel("General mission"))
         vbox.addWidget(self.missionBox)
@@ -216,10 +205,6 @@ class AIGameWindow(QMainWindow):
         """Set the image to be displayed in the full render area"""
         self.imgLabel.setPixmap(pixmap)
 
-    def setObsPixmap(self, pixmap):
-        """Set the image to be displayed in the agent observation area"""
-        self.obsLabel.setPixmap(pixmap)
-
     def resetEnv(self):
         obs = self.env.reset()
 
@@ -239,20 +224,6 @@ class AIGameWindow(QMainWindow):
         # Render and display the environment
         self.env.render()
         self.setPixmap(self.env.renderer.getPixmap())
-
-        # Display the agent's view
-        obsW = obs.shape[0]
-        obsH = obs.shape[1]
-        obsImg = QImage(obsW, obsH, QImage.Format_ARGB32_Premultiplied)
-        for y in range(0, obsH):
-            for x in range(0, obsW):
-                r = int(obs[x, y, 0])
-                g = int(obs[x, y, 1])
-                b = int(obs[x, y, 2])
-                # ARGB
-                pix = (255 << 24) + (r << 16) + (g << 8) + (b << 0)
-                obsImg.setPixel(x, y, pix)
-        self.setObsPixmap(QPixmap.fromImage(obsImg))
 
         # Set the steps remaining display
         self.stepsLabel.setText(str(stepsRem))

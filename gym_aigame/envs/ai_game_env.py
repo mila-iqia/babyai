@@ -9,8 +9,13 @@ from gym_aigame.envs.rendering import *
 # Size in pixels of a cell in the human view
 CELL_PIXELS = 32
 
-# Size of the image given as an observation to the agent
-IMG_ARRAY_SIZE = (160, 160, 3)
+OBJ_TYPES = {
+    'wall' : 0,
+    'door' : 1,
+    'ball' : 2,
+    'key'  : 3,
+    'goal' : 4
+}
 
 COLORS = {
     'red'   : (255, 0, 0),
@@ -21,12 +26,26 @@ COLORS = {
     'grey'  : (100, 100, 100)
 }
 
+# Used to map colors to bit indices
+COLOR_IDXS = {
+    'red'   : 0,
+    'green' : 1,
+    'blue'  : 2,
+    'purple': 3,
+    'yellow': 4,
+    'grey'  : 5
+}
+
+# Number of bits used to encode each cell in the observation vector
+BITS_PER_CELL = len(OBJ_TYPES) + len(COLORS)
+
 class WorldObj:
     """
     Base class for grid world objects
     """
 
     def __init__(self, type, color):
+        assert type in OBJ_TYPES, type
         assert color in COLORS, color
         self.type = type
         self.color = color
@@ -205,8 +224,8 @@ class AIGameEnv(gym.Env):
         # The observations are RGB images
         self.observation_space = spaces.Box(
             low=0,
-            high=255,
-            shape = IMG_ARRAY_SIZE
+            high=1,
+            shape=(gridSize * gridSize * BITS_PER_CELL,)
         )
 
         self.reward_range = (-1, 1000)
@@ -241,8 +260,7 @@ class AIGameEnv(gym.Env):
         self.grid = deepcopy(self.seedGrid)
 
         # Return first observation
-        self.render()
-        obs = self.renderer.getArray(IMG_ARRAY_SIZE)
+        obs = self.getBitVector()
         return obs
 
     def _seed(self, seed=None):
@@ -363,11 +381,29 @@ class AIGameEnv(gym.Env):
         if self.stepCount >= self.maxSteps:
             done = True
 
-        # Render the environment to produce an observation
-        self.render()
-        obs = self.renderer.getArray(IMG_ARRAY_SIZE)
+        obs = self.getBitVector()
 
         return obs, reward, done, {}
+
+    def getBitVector(self):
+        """Produce a rendering of the world as a numpy boolean array"""
+
+        bits = np.zeros(self.gridSize ** 2 * BITS_PER_CELL, dtype=np.bool)
+
+        for j in range(0, self.gridSize):
+            for i in range(0, self.gridSize):
+                cell = self.getGrid(i, j)
+                if cell == None:
+                    continue
+
+                baseIdx = BITS_PER_CELL * (j * self.gridSize + i)
+                typeIdx = OBJ_TYPES[cell.type]
+                colorIdx = COLOR_IDXS[cell.color]
+
+                bits[baseIdx + typeIdx] = 1
+                bits[baseIdx + colorIdx] = 1
+
+        return bits
 
     def _render(self, mode='human', close=False):
         if close:
