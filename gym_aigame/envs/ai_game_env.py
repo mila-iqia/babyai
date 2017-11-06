@@ -363,7 +363,7 @@ class AIGameEnv(gym.Env):
                 self.agentPos = newPos
             elif targetCell.type == 'goal':
                 done = True
-                reward = 1000
+                reward = 1000 - self.stepCount
 
         # Pick up or trigger/activate an item
         elif action == AIGameEnv.ACTION_TOGGLE:
