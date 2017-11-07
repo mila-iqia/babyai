@@ -17,6 +17,9 @@ OBJ_TYPES = {
     'goal' : 4
 }
 
+# Size of the image given as an observation to the agent
+IMG_ARRAY_SIZE = (160, 160, 3)
+
 COLORS = {
     'red'   : (255, 0, 0),
     'green' : (0, 255, 0),
@@ -37,7 +40,13 @@ COLOR_IDXS = {
 }
 
 # Number of bits used to encode each cell in the observation vector
-BITS_PER_CELL = len(OBJ_TYPES) + len(COLORS)
+BITS_PER_CELL = len(OBJ_TYPES) + len(COLORS) + 1
+
+# Offset at which the color bits are encoded
+COLOR_BIT_OFS = len(OBJ_TYPES)
+
+# Offset at which the agent bit is encoded
+AGENT_BIT_OFS  = COLOR_BIT_OFS + len(COLORS)
 
 class WorldObj:
     """
@@ -388,7 +397,7 @@ class AIGameEnv(gym.Env):
     def getBitVector(self):
         """Produce a rendering of the world as a numpy boolean array"""
 
-        bits = np.zeros(self.gridSize ** 2 * BITS_PER_CELL, dtype=np.bool)
+        bits = np.zeros(self.gridSize ** 2 * BITS_PER_CELL, dtype=np.uint8)
 
         for j in range(0, self.gridSize):
             for i in range(0, self.gridSize):
@@ -401,7 +410,12 @@ class AIGameEnv(gym.Env):
                 colorIdx = COLOR_IDXS[cell.color]
 
                 bits[baseIdx + typeIdx] = 1
-                bits[baseIdx + colorIdx] = 1
+                bits[baseIdx + COLOR_BIT_OFS + colorIdx] = 1
+
+        # Mark the agent position
+        x, y = self.agentPos
+        agentBitIdx = BITS_PER_CELL * (y * self.gridSize + x) + AGENT_BIT_OFS
+        bits[agentBitIdx] = 1
 
         return bits
 
