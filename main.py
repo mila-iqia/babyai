@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-from __future__ import division, print_function
-
 import time
 import sys
 import threading
@@ -14,7 +12,7 @@ from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 
 import gym
 from gym_aigame.envs import AIGameEnv
-from training import State, selectAction, storeTrans
+from model.training import State, selectAction, storeTrans
 
 class AIGameWindow(QMainWindow):
 

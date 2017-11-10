@@ -1,5 +1,3 @@
-
-
 # -*- coding: utf-8 -*-
 """
 Created on Tue Oct 24 15:13:14 2017
@@ -14,17 +12,18 @@ from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import WordEmbedding as we
-import UsefulComputations as cp
 import torch.nn.functional as F
 import timeit
+
+import model.WordEmbedding as we
+import model.UsefulComputations as cp
 
 torch.manual_seed(100)
 
 
 class ActionGenerator(nn.Module):
     def __init__(self,
-        pathToWordEmbedding="glove50.txt",
+        pathToWordEmbedding="model/glove50.txt",
         hiddenSize_GM=100,
         batch_GM=1,
         numLayers_GM=1,
@@ -220,7 +219,7 @@ class ActionGenerator(nn.Module):
 
     def forward(self,image,generalMission,advice):
         fromText=self.processText(generalMission,advice)
-        
+
         fromVision=self.visual(image)
         mix=self.mixVisualAndText(fromVision,fromText)
         action=self.selectAction(mix)

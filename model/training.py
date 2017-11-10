@@ -1,10 +1,9 @@
 from collections import namedtuple, deque
-from ActionGenerator import *
 from torch.autograd import Variable
-import UsefulComputations as cp
 import torch
 
-
+import model.UsefulComputations as cp
+from model.ActionGenerator import *
 
 # Minibatch size
 BATCH_SIZE = 64
@@ -38,7 +37,7 @@ def selectAction(state):
     """
 
     print('selectAction')
-    
+
     global previousImage,previousAdvice,previousMission
 
     #preprocess the sentences
@@ -50,9 +49,9 @@ def selectAction(state):
     action = int(torch.max(distribution, 1)[-1].data[0])
     print(distribution)
     print(action)
-    
+
     """"
-    try: 
+    try:
         print("diff mission", torch.mean(torch.abs(previousMission-mission)))
         print("diff advice", torch.mean(torch.abs(previousAdvice-advice)))
         print("diff image", torch.mean(torch.abs(previousImage-img)))
@@ -62,9 +61,9 @@ def selectAction(state):
     previousMission=mission
     previousAdvice=advice
     previousImage=img
-    """ 
-    
-    
+    """
+
+
 
     # Return the index of the action to perform
     return action

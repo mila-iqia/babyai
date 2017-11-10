@@ -1,4 +1,5 @@
-glove50.txt
+model/glove50.txt
+rl/trained_models
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
