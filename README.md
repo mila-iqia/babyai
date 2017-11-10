@@ -31,6 +31,8 @@ To run the standalone UI application:
 
 ### Agents and Language
 
+[Zero-Shot Task Generalization with Multi-Task Deep Reinforcement Learning](https://arxiv.org/abs/1706.05064)
+
 [Beating Atari with Natural Language Guided Reinforcement Learning](https://web.stanford.edu/class/cs224n/reports/2762090.pdf)
 
 [Deep Tamer](https://arxiv.org/abs/1709.10163)

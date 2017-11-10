@@ -278,6 +278,11 @@ class AIGameEnv(gym.Env):
         and initializes the world.
         """
 
+        # By default, make things deterministic, always
+        # produce the same environment
+        if seed == None:
+            seed = 1337
+
         self.np_random, _ = seeding.np_random(seed)
 
         gridSz = self.gridSize
