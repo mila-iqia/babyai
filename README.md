@@ -27,6 +27,31 @@ To run the standalone UI application:
 ./main.py
 ```
 
+## About this Project
+
+The Baby AI Game is a game in which an agent existing in a simulated world
+will be trained to complete task through reinforcement learning as well
+as interactions from one or more human teachers. These interactions will take
+the form of natural language, and possibly other feedback, such as human
+teachers manually giving rewards to the agent, or pointing towards
+specific objects in the game using the mouse.
+
+The goal of the project is to explore ways in which deep learning can take
+inspiration from nature (ie: how human babies learn), and to make contributions
+to the field of reinforcement learning. In particular, language learning,
+as well as teaching agents to complete actions spanning many (eg: hundreds)
+of time steps, or macro-actions composed of multiple micro-actions, are
+still open research problems.
+
+Some possible approaches to be explored in this project include meta-Learning
+and curriculum learning, the use of intrinsic motivation (curiosity), and
+the use of pretraining to give agents a small core of built-in knowledge to
+allow them to learn from human agents. With respect to build-in knowledge,
+Yoshua Bengio believes that the ability for agents to understand pointing
+gestures in combination with language may be key.
+
+*TODO: find child development articles about pointing and naming if possible*
+
 ## Relevant Materials
 
 ### Agents and Language
