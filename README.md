@@ -57,4 +57,8 @@ To run the standalone UI application:
 
 [Deep RL Bootcamp lecture on Policy Gradients](https://www.youtube.com/watch?v=S_gwYj1Q-44)
 
+### Source Code
+
 [PyTorch Implementation of A2C, PPO and ACKTR](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr)
+
+[Deep NLP Models in PyTorch](https://github.com/DSKSD/DeepNLP-models-Pytorch)
