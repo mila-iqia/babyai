@@ -59,6 +59,14 @@ To run the standalone UI application:
 
 [Asynchronous Methods for Deep Reinforcement Learning (A3C)](https://arxiv.org/abs/1602.01783)
 
+### Meta-Learning
+
+[HyperNetworks](https://arxiv.org/abs/1609.09106)
+
+[Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks](https://arxiv.org/abs/1703.03400)
+
+[Learning to learn by gradient descent by gradient descent](https://arxiv.org/abs/1606.04474)
+
 ### Cognition, Infant Learning
 
 [A Roadmap for Cognitive Development in Humanoid Robots](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.667.2977&rep=rep1&type=pdf)
