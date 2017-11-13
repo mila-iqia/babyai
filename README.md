@@ -55,7 +55,7 @@ To run the standalone UI application:
 
 [Deep RL Bootcamp lecture on Policy Gradients](https://www.youtube.com/watch?v=S_gwYj1Q-44)
 
-[Proximal Policy Optimization (PPO) Algorithms](https://arxiv.org/abs/1707.06347)
+[Proximal Policy Optimization (PPO) Algorithms](https://arxiv.org/abs/1707.06347) and [blog post by OpenAI](https://blog.openai.com/openai-baselines-ppo/)
 
 [Asynchronous Methods for Deep Reinforcement Learning (A3C)](https://arxiv.org/abs/1602.01783)
 
