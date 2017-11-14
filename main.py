@@ -23,7 +23,8 @@ class AIGameWindow(QMainWindow):
         # By default, manual stepping only
         self.fpsLimit = 0
 
-        self.env = Annotator(gym.make('AI-Game-v0'))
+        self.env = gym.make('AI-Game-v0')
+        self.env = Annotator(self.env, saveOnClose=True)
 
         self.state = None
 

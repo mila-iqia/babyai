@@ -40,13 +40,16 @@ COLOR_IDXS = {
 }
 
 # Number of bits used to encode each cell in the observation vector
-BITS_PER_CELL = len(OBJ_TYPES) + len(COLORS) + 1
+BITS_PER_CELL = len(OBJ_TYPES) + len(COLORS) + 2
 
 # Offset at which the color bits are encoded
 COLOR_BIT_OFS = len(OBJ_TYPES)
 
 # Offset at which the agent bit is encoded
 AGENT_BIT_OFS  = COLOR_BIT_OFS + len(COLORS)
+
+# Offset at which the object-specific bit is encoded
+OBJ_BIT_OFS = AGENT_BIT_OFS + 1
 
 class WorldObj:
     """
@@ -169,7 +172,7 @@ class Ball(WorldObj):
 
 class Key(WorldObj):
     def __init__(self, color='blue'):
-        super(Key, self).__init__('ball', color)
+        super(Key, self).__init__('key', color)
 
     def canPickup(self):
         return True
@@ -416,6 +419,10 @@ class AIGameEnv(gym.Env):
 
                 bits[baseIdx + typeIdx] = 1
                 bits[baseIdx + COLOR_BIT_OFS + colorIdx] = 1
+
+                # Set a bit if this is an open door
+                if cell.type == 'door' and cell.isOpen:
+                    bits[baseIdx + OBJ_BIT_OFS] = 1
 
         # Mark the agent position
         x, y = self.agentPos

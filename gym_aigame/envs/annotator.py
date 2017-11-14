@@ -3,7 +3,7 @@ import gym
 from gym import Wrapper
 
 class Annotator(Wrapper):
-    def __init__(self, env):
+    def __init__(self, env, saveOnClose=False):
         super(Annotator, self).__init__(env)
 
         # Dictionary keyed by agent position and direction
@@ -13,11 +13,13 @@ class Annotator(Wrapper):
         # This is so we don't give the same advice/reward twice
         self.visited = set()
 
-        # Last agent position (before the last action taken)
-        self.lastPos = None
+        # Last agent state (before the last action taken)
+        self.lastState = None
 
         # Last action taken
         self.lastAction = None
+
+        self.saveOnClose = saveOnClose
 
         try:
             self.annotations = pickle.load(open("annotations.p", "rb"))
@@ -27,9 +29,10 @@ class Annotator(Wrapper):
 
     def _close(self):
         super(Annotator, self)._close()
-        print('Saving annotations')
 
-        pickle.dump(self.annotations, open("annotations.p", "wb"))
+        if self.saveOnClose:
+            print('Saving annotations')
+            pickle.dump(self.annotations, open("annotations.p", "wb"))
 
     def getStepsRemaining(self):
         return self.env.getStepsRemaining()
@@ -37,57 +40,66 @@ class Annotator(Wrapper):
     def setReward(self, val):
         """Sets the reward for the last state and action taken"""
 
-        assert self.lastPos is not None
+        assert self.lastState is not None
         assert self.lastAction is not None, "can't set reward, no action taken yet"
 
-        if self.lastPos not in self.annotations:
-            self.annotations[self.lastPos] = { 'rewards': {}, 'advice': '' }
+        if self.lastState not in self.annotations:
+            self.annotations[self.lastState] = { 'rewards': {}, 'advice': '' }
 
-        ann = self.annotations[self.lastPos]
+        ann = self.annotations[self.lastState]
         ann['rewards'][self.lastAction] = val
 
-        #print(self.lastPos)
-        #print(self.lastAction)
+        print(self.lastState)
+        print(self.lastAction)
 
     def setAdvice(self, text):
         """Set the advice to be provided to the agent in this state"""
 
-        curPos = (self.env.agentPos, self.env.agentDir)
+        curState = (self.env.agentPos, self.env.agentDir)
 
-        if curPos not in self.annotations:
-            self.annotations[curPos] = { 'rewards': {}, 'advice': '' }
+        if curState not in self.annotations:
+            self.annotations[curState] = { 'rewards': {}, 'advice': '' }
 
-        self.annotations[curPos]['advice'] = text
+        self.annotations[curState]['advice'] = text
+
+    def getCurState(self):
+
+        carrying = None
+        if self.env.carrying:
+            carrying = (self.env.carrying.type, self.env.carrying.color)
+
+        return (self.env.agentPos, self.env.agentDir, carrying)
 
     def _reset(self, **kwargs):
         obs = self.env.reset(**kwargs)
 
         self.visited = set()
 
-        self.lastPos = (self.env.agentPos, self.env.agentDir)
+        self.lastState = self.getCurState()
         self.lastAction = None
 
         return obs
 
     def _step(self, action):
 
-        self.lastPos = (self.env.agentPos, self.env.agentDir)
+        self.lastState = self.getCurState()
         self.lastAction = action
 
         obs, reward, done, info = self.env.step(action)
 
-        if self.lastPos in self.annotations:
-            ann = self.annotations[self.lastPos]
+        # If there are annotations for the previous state
+        if self.lastState in self.annotations:
+            ann = self.annotations[self.lastState]
 
-            posAction = (self.lastPos, action)
+            stateAction = (self.lastState, action)
 
             # Override the reward if one is specified for this action
-            if action in ann['rewards'] and posAction not in self.visited:
+            if action in ann['rewards'] and stateAction not in self.visited:
                 reward = ann['rewards'][action]
                 #print('overriding reward: %s' % reward)
 
                 # Mark this position and action combination as visited
-                self.visited.add(posAction)
+                self.visited.add(stateAction)
 
             # Provide advice observation
             info['advice'] = ann['advice']
