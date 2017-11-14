@@ -20,8 +20,6 @@ from storage import RolloutStorage
 
 args = get_args()
 
-import gym_aigame
-
 assert args.algo in ['ppo']
 
 num_updates = int(args.num_frames) // args.num_steps // args.num_processes

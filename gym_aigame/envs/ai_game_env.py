@@ -486,4 +486,4 @@ class AIGameEnv(gym.Env):
         if mode == 'rgb_array':
             return r.getNumpyArray()
 
-        return r
+        return r.getPixmap()

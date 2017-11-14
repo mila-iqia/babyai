@@ -1,13 +1,17 @@
 import os
 import numpy
 import gym
-
 from gym.spaces.box import Box
+
+import gym_aigame
+from gym_aigame.envs import AIGameEnv, Annotator
 
 def make_env(env_id, seed, rank, log_dir):
     def _thunk():
         env = gym.make(env_id)
         #env.seed(seed)
+
+        env = Annotator(env)
 
         return env
 

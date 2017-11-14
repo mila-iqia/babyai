@@ -103,21 +103,17 @@ class MLPPolicy(FFPolicy):
         self.obs_filter = ObsNorm((1, num_inputs), clip=5)
         self.action_space = action_space
 
-        self.a_fc1 = nn.Linear(num_inputs, 64)
-        self.a_fc2 = nn.Linear(64, 64)
+        LAYER_SIZE = 64
 
-        self.v_fc1 = nn.Linear(num_inputs, 64)
-        self.v_fc2 = nn.Linear(64, 64)
-        self.v_fc3 = nn.Linear(64, 1)
+        self.a_fc1 = nn.Linear(num_inputs, LAYER_SIZE)
+        self.a_fc2 = nn.Linear(LAYER_SIZE, LAYER_SIZE)
 
-        if action_space.__class__.__name__ == "Discrete":
-            num_outputs = action_space.n
-            self.dist = Categorical(64, num_outputs)
-        elif action_space.__class__.__name__ == "Box":
-            num_outputs = action_space.shape[0]
-            self.dist = DiagGaussian(64, num_outputs)
-        else:
-            raise NotImplementedError
+        self.v_fc1 = nn.Linear(num_inputs, LAYER_SIZE)
+        self.v_fc2 = nn.Linear(LAYER_SIZE, LAYER_SIZE)
+        self.v_fc3 = nn.Linear(LAYER_SIZE, 1)
+
+        num_outputs = action_space.n
+        self.dist = Categorical(LAYER_SIZE, num_outputs)
 
         self.train()
         self.reset_parameters()
@@ -125,33 +121,22 @@ class MLPPolicy(FFPolicy):
     def reset_parameters(self):
         self.apply(weights_init_mlp)
 
-        """
-        tanh_gain = nn.init.calculate_gain('tanh')
-        self.a_fc1.weight.data.mul_(tanh_gain)
-        self.a_fc2.weight.data.mul_(tanh_gain)
-        self.v_fc1.weight.data.mul_(tanh_gain)
-        self.v_fc2.weight.data.mul_(tanh_gain)
-        """
-
-        if self.dist.__class__.__name__ == "DiagGaussian":
-            self.dist.fc_mean.weight.data.mul_(0.01)
-
     def forward(self, inputs):
         inputs.data = self.obs_filter(inputs.data)
 
         x = self.v_fc1(inputs)
-        x = F.tanh(x)
+        x = F.relu(x)
 
         x = self.v_fc2(x)
-        x = F.tanh(x)
+        x = F.relu(x)
 
         x = self.v_fc3(x)
         value = x
 
         x = self.a_fc1(inputs)
-        x = F.tanh(x)
+        x = F.relu(x)
 
         x = self.a_fc2(x)
-        x = F.tanh(x)
+        x = F.relu(x)
 
         return value, x

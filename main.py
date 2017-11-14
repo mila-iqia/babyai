@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 
 import gym
-from gym_aigame.envs import AIGameEnv
+from gym_aigame.envs import AIGameEnv, Annotator
 from model.training import State, selectAction, storeTrans
 
 class AIGameWindow(QMainWindow):
@@ -23,7 +23,7 @@ class AIGameWindow(QMainWindow):
         # By default, manual stepping only
         self.fpsLimit = 0
 
-        self.env = gym.make('AI-Game-v0')
+        self.env = Annotator(gym.make('AI-Game-v0'))
 
         self.state = None
 
@@ -144,6 +144,11 @@ class AIGameWindow(QMainWindow):
         elif e.key() == Qt.Key_Space:
             self.stepEnv(AIGameEnv.ACTION_TOGGLE)
 
+        elif e.key() == Qt.Key_PageUp:
+            self.plusReward()
+        elif e.key() == Qt.Key_PageDown:
+            self.minusReward()
+
     def mousePressEvent(self, event):
         """
         Clear the focus of the text boxes if somewhere
@@ -166,14 +171,15 @@ class AIGameWindow(QMainWindow):
         text = self.adviceBox.toPlainText()
         print('new advice: ' + text)
         self.state = State(self.state.image, self.state.mission, text)
+        self.env.setAdvice(text)
 
     def plusReward(self):
         print('+reward')
-        # TODO
+        self.env.setReward(1)
 
     def minusReward(self):
         print('-reward')
-        # TODO
+        self.env.setReward(-1)
 
     def stepClicked(self):
         self.stepEnv(action=None)
@@ -215,13 +221,9 @@ class AIGameWindow(QMainWindow):
     def showEnv(self, obs):
         stepsRem = self.env.getStepsRemaining()
 
-        # If the frame rate limit is high, don't redraw every step
-        #if self.fpsLimit >= 20 and stepsRem % 3 != 0:
-        #    return
-
         # Render and display the environment
-        self.env.render()
-        self.setPixmap(self.env.renderer.getPixmap())
+        pixmap = self.env.render()
+        self.setPixmap(pixmap)
 
         # Set the steps remaining display
         self.stepsLabel.setText(str(stepsRem))
