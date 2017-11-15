@@ -16,15 +16,23 @@ Start by manually installing [PyTorch](http://pytorch.org/).
 Then, clone the repository and install the other dependencies with `pip3`:
 
 ```python3
-git clone https://github.com/maximecb/gym-memory.git
-cd gym-memory
+git clone https://github.com/maximecb/baby-ai-game.git
+cd baby-ai-game
 pip3 install -e .
 ```
 
-To run the standalone UI application:
+## Usage
 
-```python3
+To run the standalone, interactive UI application:
+
+```
 ./main.py
+```
+
+Offline training code implementing PPO can be run with:
+
+```
+python3 rl/main.py --env-name AI-Game-v0 --no-vis --num-processes 32 --algo ppo
 ```
 
 ## About this Project
