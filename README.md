@@ -6,24 +6,32 @@ Prototype of a game where a reinforcement learning agent is trained through natu
 
 Requirements:
 - Python 3
-- numpy
 - OpenAI gym
-- PyTorch
+- numpy
 - PyQT5
+- PyTorch
+- matplotlib
+- nltk
 
 Start by manually installing [PyTorch](http://pytorch.org/).
 
 Then, clone the repository and install the other dependencies with `pip3`:
 
-```python3
-git clone https://github.com/maximecb/baby-ai-game.git
-cd baby-ai-game
+```
+git clone https://github.com/maximecb/gym-memory.git
+cd gym-memory
 pip3 install -e .
+```
+
+Finally, decompress the glove50 data file:
+
+```
+gunzip -k model/glove50.txt.gz
 ```
 
 ## Usage
 
-To run the standalone, interactive UI application:
+To run the interactive UI application:
 
 ```
 ./main.py
