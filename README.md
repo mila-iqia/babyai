@@ -45,6 +45,8 @@ python3 rl/main.py --env-name AI-Game-v0 --no-vis --num-processes 32 --algo ppo
 
 ## About this Project
 
+You can find here a presentation of the project : [Baby AI Summary](https://docs.google.com/document/d/1WXY0HLHizxuZl0GMGY0j3FEqLaK1oX-66v-4PyZIvdU)
+
 The Baby AI Game is a game in which an agent existing in a simulated world
 will be trained to complete task through reinforcement learning as well
 as interactions from one or more human teachers. These interactions will take
