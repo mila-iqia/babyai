@@ -68,7 +68,7 @@ allow them to learn from human agents. With respect to build-in knowledge,
 Yoshua Bengio believes that the ability for agents to understand pointing
 gestures in combination with language may be key.
 
-*TODO: find child development articles about pointing and naming if possible*
+*TODO: find child development articles about pointing and naming if possible. If anyone can find this, please submit a PR.*
 
 ## Relevant Materials
 
@@ -109,6 +109,13 @@ gestures in combination with language may be key.
 [Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks](https://arxiv.org/abs/1703.03400)
 
 [Learning to learn by gradient descent by gradient descent](https://arxiv.org/abs/1606.04474)
+
+### Games
+
+[Learning Language Games through Interaction](https://arxiv.org/abs/1606.02447)
+
+[Nintendogs](https://www.youtube.com/watch?v=aXJ-wRTfKHA&feature=youtu.be&t=1m7s) (Nintendo DS game)
+
 
 ### Cognition, Infant Learning
 
