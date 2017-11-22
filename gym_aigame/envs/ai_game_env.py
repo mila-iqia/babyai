@@ -48,18 +48,6 @@ COLOR_IDXS = {
     'grey'  : 5
 }
 
-# Number of bits used to encode each cell in the observation vector
-BITS_PER_CELL = len(OBJ_TYPES) + len(COLORS) + 2
-
-# Offset at which the color bits are encoded
-COLOR_BIT_OFS = len(OBJ_TYPES)
-
-# Offset at which the agent bit is encoded
-AGENT_BIT_OFS  = COLOR_BIT_OFS + len(COLORS)
-
-# Offset at which the object-specific bit is encoded
-OBJ_BIT_OFS = AGENT_BIT_OFS + 1
-
 class WorldObj:
     """
     Base class for grid world objects
@@ -248,8 +236,8 @@ class AIGameEnv(gym.Env):
         # The observations are RGB images
         self.observation_space = spaces.Box(
             low=0,
-            high=1,
-            shape=(gridSize * gridSize * BITS_PER_CELL,)
+            high=255,
+            shape=IMG_ARRAY_SIZE
         )
 
         self.reward_range = (-1, 1000)

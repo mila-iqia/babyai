@@ -49,7 +49,7 @@ def main():
     obs_shape = envs.observation_space.shape
     obs_shape = (obs_shape[0] * args.num_stack, *obs_shape[1:])
 
-    actor_critic = MLPPolicy(obs_shape[0], envs.action_space)
+    actor_critic = CNNPolicy(obs_shape[0], envs.action_space)
 
     action_shape = 1
 
