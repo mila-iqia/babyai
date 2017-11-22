@@ -18,8 +18,8 @@ Start by manually installing [PyTorch](http://pytorch.org/).
 Then, clone the repository and install the other dependencies with `pip3`:
 
 ```
-git clone https://github.com/maximecb/gym-memory.git
-cd gym-memory
+git clone https://github.com/maximecb/baby-ai-game.git
+cd baby-ai-game
 pip3 install -e .
 ```
 
