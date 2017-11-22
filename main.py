@@ -68,11 +68,11 @@ class AIGameWindow(QMainWindow):
 
     def createRightArea(self):
         # Agent render view (partially observable)
-        self.miniImgLabel = QLabel()
-        self.miniImgLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.obsImgLabel = QLabel()
+        self.obsImgLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         miniViewBox = QHBoxLayout()
         miniViewBox.addStretch(1)
-        miniViewBox.addWidget(self.miniImgLabel)
+        miniViewBox.addWidget(self.obsImgLabel)
         miniViewBox.addStretch(1)
 
         self.missionBox = QTextEdit()
@@ -215,10 +215,6 @@ class AIGameWindow(QMainWindow):
             self.stepTimer.setInterval(int(1000 / self.fpsLimit))
             self.stepTimer.start()
 
-    def setPixmap(self, pixmap):
-        """Set the image to be displayed in the full render area"""
-        self.imgLabel.setPixmap(pixmap)
-
     def resetEnv(self):
         obs = self.env.reset()
 
@@ -233,7 +229,21 @@ class AIGameWindow(QMainWindow):
 
         # Render and display the environment
         pixmap = self.env.render()
-        self.setPixmap(pixmap)
+        self.imgLabel.setPixmap(pixmap)
+
+        # Display the agent's view
+        obsW = obs.shape[0]
+        obsH = obs.shape[1]
+        obsImg = QImage(obsW, obsH, QImage.Format_ARGB32_Premultiplied)
+        for y in range(0, obsH):
+            for x in range(0, obsW):
+                r = int(obs[x, y, 0])
+                g = int(obs[x, y, 1])
+                b = int(obs[x, y, 2])
+                # ARGB
+                pix = (255 << 24) + (r << 16) + (g << 8) + (b << 0)
+                obsImg.setPixel(x, y, pix)
+        self.obsImgLabel.setPixmap(QPixmap.fromImage(obsImg))
 
         # Set the steps remaining display
         self.stepsLabel.setText(str(stepsRem))

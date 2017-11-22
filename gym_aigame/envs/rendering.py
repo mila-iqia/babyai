@@ -25,29 +25,28 @@ class Renderer:
     def getPixmap(self):
         return QPixmap.fromImage(self.img)
 
-    def getArray(self, shape=None):
+    def getArray(self):
         """
         Get a numpy array of RGB pixel values.
         The size argument should be (3,w,h)
         """
 
-        width = shape[0]
-        height = shape[1]
-        assert shape[2] == 3
-        assert width > 0 and width <= self.width
-        assert height > 0 and height <= self.height
+        width = self.width
+        height = self.height
+
+        shape = (width, height, 3)
 
         # Get a downsampled version of the image
-        scaled = self.img.scaled(
-            QSize(width, height),
-            transformMode = Qt.SmoothTransformation
-        )
+        #scaled = self.img.scaled(
+        #    QSize(width, height),
+        #    transformMode = Qt.SmoothTransformation
+        #)
 
         # Copy the pixel data to a numpy array
         output = np.ndarray(shape=shape, dtype='uint8')
         for y in range(0, height):
             for x in range(0, width):
-                pix = scaled.pixel(x, y)
+                pix = self.img.pixel(x, y)
                 r = (pix >> 16) & 0xFF
                 g = (pix >>  8) & 0xFF
                 b = (pix >>  0) & 0xFF

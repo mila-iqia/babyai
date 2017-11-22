@@ -13,7 +13,7 @@ CELL_PIXELS = 32
 CELL_PIXELS_AGENT = 8
 
 # Number of cells (width and height) in the agent view
-AGENT_VIEW_SIZE = 8
+AGENT_VIEW_SIZE = 9
 
 # Size of the agent view in pixels
 AGENT_VIEW_PIXELS = AGENT_VIEW_SIZE * CELL_PIXELS_AGENT
@@ -239,6 +239,9 @@ class AIGameEnv(gym.Env):
         # Renderer object used to render the whole grid (full-scale)
         self.gridRender = None
 
+        # Renderer for partially observable agent view
+        self.agentRender = Renderer(AGENT_VIEW_PIXELS, AGENT_VIEW_PIXELS)
+
         # Actions are discrete integer values
         self.action_space = spaces.Discrete(AIGameEnv.NUM_ACTIONS)
 
@@ -278,7 +281,7 @@ class AIGameEnv(gym.Env):
         self.grid = deepcopy(self.seedGrid)
 
         # Return first observation
-        obs = self.getBitVector()
+        obs = self.renderAgent()
         return obs
 
     def _seed(self, seed=None):
@@ -404,39 +407,9 @@ class AIGameEnv(gym.Env):
         if self.stepCount >= self.maxSteps:
             done = True
 
-        obs = self.getBitVector()
+        obs = self.renderAgent()
 
         return obs, reward, done, {}
-
-    def getBitVector(self):
-        """Produce a rendering of the world as a numpy boolean array"""
-
-        bits = np.zeros(self.gridSize ** 2 * BITS_PER_CELL, dtype=np.uint8)
-
-        for j in range(0, self.gridSize):
-            for i in range(0, self.gridSize):
-                cell = self.getGrid(i, j)
-                if cell == None:
-                    continue
-
-                baseIdx = BITS_PER_CELL * (j * self.gridSize + i)
-                typeIdx = OBJ_TYPES[cell.type]
-                colorIdx = COLOR_IDXS[cell.color]
-
-                bits[baseIdx + typeIdx] = 1
-                bits[baseIdx + COLOR_BIT_OFS + colorIdx] = 1
-
-                # Set a bit if this is an open door
-                if cell.type == 'door' and cell.isOpen:
-                    bits[baseIdx + OBJ_BIT_OFS] = 1
-
-        # Mark the agent position
-        x, y = self.agentPos
-        agentBitIdx = BITS_PER_CELL * (y * self.gridSize + x) + AGENT_BIT_OFS
-        bits[agentBitIdx] = 1
-
-        return bits
-
 
     def renderTiles(self, r, tileSize, topX, topY, numX, numY):
         """
@@ -450,14 +423,17 @@ class AIGameEnv(gym.Env):
         width = self.gridSize * CELL_PIXELS
         height = self.gridSize * CELL_PIXELS
 
-        botX = min(topX + numX, self.gridSize)
-        botY = min(topY + numY, self.gridSize)
+        r.push()
 
         # Internally, we draw at the "large" full-grid resolution, but we
         # use the renderer to scale back to the desired size
-        r.push()
         r.scale(tileSize / CELL_PIXELS, tileSize / CELL_PIXELS)
         r.translate(-topX * CELL_PIXELS, -topY * CELL_PIXELS)
+
+        botX = min(topX + numX, self.gridSize)
+        botY = min(topY + numY, self.gridSize)
+        topX = max(topX, 0)
+        topY = max(topY, 0)
 
         # Draw grid lines
         r.setLineColor(100, 100, 100)
@@ -497,19 +473,51 @@ class AIGameEnv(gym.Env):
                 cell.render(r)
                 r.pop()
 
-        # Pop the grid scaling and translation
         r.pop()
-
 
     def renderAgent(self):
         """
         Render the agent's view (scaled down, partially observable)
         """
 
-        pass
+        r = self.agentRender
 
+        r.beginFrame()
 
+        # Facing right
+        if self.agentDir == 0:
+            topX = self.agentPos[0]
+            topY = self.agentPos[1] - AGENT_VIEW_SIZE // 2
+        # Facing down
+        elif self.agentDir == 1:
+            topX = self.agentPos[0] - AGENT_VIEW_SIZE // 2
+            topY = self.agentPos[1]
+            r.rotate(-90)
+            r.translate(-AGENT_VIEW_PIXELS, 0)
+        # Facing right
+        elif self.agentDir == 2:
+            topX = self.agentPos[0] - AGENT_VIEW_SIZE + 1
+            topY = self.agentPos[1] - AGENT_VIEW_SIZE // 2
+            r.rotate(-2 * 90)
+            r.translate(-AGENT_VIEW_PIXELS, -AGENT_VIEW_PIXELS)
+        # Facing up
+        elif self.agentDir == 3:
+            topX = self.agentPos[0] - AGENT_VIEW_SIZE // 2
+            topY = self.agentPos[1] - AGENT_VIEW_SIZE + 1
+            r.rotate(-3 * 90)
+            r.translate(0, -AGENT_VIEW_PIXELS)
 
+        # Render the whole grid
+        self.renderTiles(
+            r,
+            CELL_PIXELS_AGENT,
+            topX, topY,
+            AGENT_VIEW_SIZE, AGENT_VIEW_SIZE
+        )
+
+        r.endFrame()
+
+        return r.getArray()
 
     def _render(self, mode='human', close=False):
         """
@@ -542,6 +550,6 @@ class AIGameEnv(gym.Env):
         self.gridRender.endFrame()
 
         if mode == 'rgb_array':
-            return self.gridRender.getNumpyArray()
+            return self.gridRender.getArray()
 
         return self.gridRender.getPixmap()
