@@ -6,28 +6,46 @@ Prototype of a game where a reinforcement learning agent is trained through natu
 
 Requirements:
 - Python 3
-- numpy
 - OpenAI gym
-- PyTorch
+- numpy
 - PyQT5
+- PyTorch
+- matplotlib
+- nltk
 
 Start by manually installing [PyTorch](http://pytorch.org/).
 
 Then, clone the repository and install the other dependencies with `pip3`:
 
-```python3
+```
 git clone https://github.com/maximecb/gym-memory.git
 cd gym-memory
 pip3 install -e .
 ```
 
-To run the standalone UI application:
+Finally, decompress the glove50 data file:
 
-```python3
+```
+gunzip -k model/glove50.txt.gz
+```
+
+## Usage
+
+To run the interactive UI application:
+
+```
 ./main.py
 ```
 
+Offline training code implementing PPO can be run with:
+
+```
+python3 rl/main.py --env-name AI-Game-v0 --no-vis --num-processes 32 --algo ppo
+```
+
 ## About this Project
+
+You can find here a presentation of the project : [Baby AI Summary](https://docs.google.com/document/d/1WXY0HLHizxuZl0GMGY0j3FEqLaK1oX-66v-4PyZIvdU)
 
 The Baby AI Game is a game in which an agent existing in a simulated world
 will be trained to complete task through reinforcement learning as well
@@ -50,7 +68,7 @@ allow them to learn from human agents. With respect to build-in knowledge,
 Yoshua Bengio believes that the ability for agents to understand pointing
 gestures in combination with language may be key.
 
-*TODO: find child development articles about pointing and naming if possible*
+*TODO: find child development articles about pointing and naming if possible. If anyone can find this, please submit a PR.*
 
 ## Relevant Materials
 
@@ -91,6 +109,13 @@ gestures in combination with language may be key.
 [Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks](https://arxiv.org/abs/1703.03400)
 
 [Learning to learn by gradient descent by gradient descent](https://arxiv.org/abs/1606.04474)
+
+### Games
+
+[Learning Language Games through Interaction](https://arxiv.org/abs/1606.02447)
+
+[Nintendogs](https://www.youtube.com/watch?v=aXJ-wRTfKHA&feature=youtu.be&t=1m7s) (Nintendo DS game)
+
 
 ### Cognition, Infant Learning
 
