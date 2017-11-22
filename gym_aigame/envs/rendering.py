@@ -69,6 +69,9 @@ class Renderer:
     def translate(self, x, y):
         self.painter.translate(x, y)
 
+    def scale(self, x, y):
+        self.painter.scale(x, y)
+
     def setLineColor(self, r, g, b):
         self.painter.setPen(QColor(r, g, b))
 

@@ -6,8 +6,20 @@ from gym.utils import seeding
 import numpy as np
 from gym_aigame.envs.rendering import *
 
-# Size in pixels of a cell in the human view
+# Size in pixels of a cell in the full-scale human view
 CELL_PIXELS = 32
+
+# Size in pixels of a cell in the agent view (small-scale)
+CELL_PIXELS_AGENT = 8
+
+# Number of cells (width and height) in the agent view
+AGENT_VIEW_SIZE = 8
+
+# Size of the agent view in pixels
+AGENT_VIEW_PIXELS = AGENT_VIEW_SIZE * CELL_PIXELS_AGENT
+
+# Size of the image given as an observation to the agent
+IMG_ARRAY_SIZE = (AGENT_VIEW_PIXELS, AGENT_VIEW_PIXELS, 3)
 
 OBJ_TYPES = {
     'wall' : 0,
@@ -16,9 +28,6 @@ OBJ_TYPES = {
     'key'  : 3,
     'goal' : 4
 }
-
-# Size of the image given as an observation to the agent
-IMG_ARRAY_SIZE = (160, 160, 3)
 
 COLORS = {
     'red'   : (255, 0, 0),
@@ -227,8 +236,8 @@ class AIGameEnv(gym.Env):
     def __init__(self, gridSize=16, numSubGoals=1, maxSteps=100):
         assert (gridSize >= 4)
 
-        # For visual rendering
-        self.renderer = None
+        # Renderer object used to render the whole grid (full-scale)
+        self.gridRender = None
 
         # Actions are discrete integer values
         self.action_space = spaces.Discrete(AIGameEnv.NUM_ACTIONS)
@@ -264,9 +273,6 @@ class AIGameEnv(gym.Env):
 
         # Step count since episode start
         self.stepCount = 0
-
-        # Last step the environment was rendered
-        self.lastRender = None
 
         # Restore the initial grid
         self.grid = deepcopy(self.seedGrid)
@@ -431,55 +437,58 @@ class AIGameEnv(gym.Env):
 
         return bits
 
-    def _render(self, mode='human', close=False):
-        if close:
-            #if self.renderer:
-            #    self.renderer.close()
-            return
 
+    def renderTiles(self, r, tileSize, topX, topY, numX, numY):
+        """
+        Render a subset/window of tiles into a renderer object
+        :param r: target renderer object
+        :param topX: x-index of the top-left tile
+        :param topY: y-index of the top-left tile
+        """
+
+        # Total grid size
         width = self.gridSize * CELL_PIXELS
         height = self.gridSize * CELL_PIXELS
 
-        if self.renderer is None:
-            self.renderer = Renderer(width, height)
+        botX = min(topX + numX, self.gridSize)
+        botY = min(topY + numY, self.gridSize)
 
-        # Avoid rendering the same environment state twice
-        if self.lastRender == self.stepCount:
-            return
-        self.lastRender = self.stepCount
-
-        r = self.renderer
-        r.beginFrame()
+        # Internally, we draw at the "large" full-grid resolution, but we
+        # use the renderer to scale back to the desired size
+        r.push()
+        r.scale(tileSize / CELL_PIXELS, tileSize / CELL_PIXELS)
+        r.translate(-topX * CELL_PIXELS, -topY * CELL_PIXELS)
 
         # Draw grid lines
         r.setLineColor(100, 100, 100)
-        for rowIdx in range(1, self.gridSize):
+        for rowIdx in range(topY, botY):
             y = CELL_PIXELS * rowIdx
-            r.drawLine(0, y, width, y)
-        for colIdx in range(1, self.gridSize):
+            r.drawLine(topX * CELL_PIXELS, y, botX * CELL_PIXELS, y)
+        for colIdx in range(topX, botX):
             x = CELL_PIXELS * colIdx
-            r.drawLine(x, 0, x, height)
+            r.drawLine(x, topY * CELL_PIXELS, x, botY * CELL_PIXELS)
 
-        # Draw the agent
-        assert (self.agentDir >= 0 and self.agentDir < 4)
-        r.push()
-        r.translate(
-            CELL_PIXELS * (self.agentPos[0] + 0.5),
-            CELL_PIXELS * (self.agentPos[1] + 0.5)
-        )
-        r.rotate(self.agentDir * 90)
-        r.setLineColor(255, 0, 0)
-        r.setColor(255, 0, 0)
-        r.drawPolygon([
-            (-12, 10),
-            ( 12,  0),
-            (-12, -10)
-        ])
-        r.pop()
+        # Draw the agent if within the visible window of cells
+        if self.agentPos[0] >= topX and self.agentPos[0] < botX and \
+           self.agentPos[1] >= topY and self.agentPos[1] < botY:
+            r.push()
+            r.translate(
+                CELL_PIXELS * (self.agentPos[0] + 0.5),
+                CELL_PIXELS * (self.agentPos[1] + 0.5)
+            )
+            r.rotate(self.agentDir * 90)
+            r.setLineColor(255, 0, 0)
+            r.setColor(255, 0, 0)
+            r.drawPolygon([
+                (-12, 10),
+                ( 12,  0),
+                (-12, -10)
+            ])
+            r.pop()
 
         # Render the grid
-        for j in range(0, self.gridSize):
-            for i in range(0, self.gridSize):
+        for j in range(topY, botY):
+            for i in range(topX, botX):
                 cell = self.getGrid(i, j)
                 if cell == None:
                     continue
@@ -488,9 +497,51 @@ class AIGameEnv(gym.Env):
                 cell.render(r)
                 r.pop()
 
-        r.endFrame()
+        # Pop the grid scaling and translation
+        r.pop()
+
+
+    def renderAgent(self):
+        """
+        Render the agent's view (scaled down, partially observable)
+        """
+
+        pass
+
+
+
+
+    def _render(self, mode='human', close=False):
+        """
+        Render the whole-grid human view
+        """
+
+        if close:
+            #if self.gridRender:
+            #    self.gridRender.close()
+            return
+
+        if self.gridRender is None:
+            self.gridRender = Renderer(
+                self.gridSize * CELL_PIXELS,
+                self.gridSize * CELL_PIXELS
+            )
+
+        self.gridRender.beginFrame()
+
+        # Render the whole grid
+        self.renderTiles(
+            self.gridRender,
+            CELL_PIXELS,
+            0, 0,
+            self.gridSize, self.gridSize
+        )
+
+        # TODO: grey out what the agen't can't see?
+
+        self.gridRender.endFrame()
 
         if mode == 'rgb_array':
-            return r.getNumpyArray()
+            return self.gridRender.getNumpyArray()
 
-        return r.getPixmap()
+        return self.gridRender.getPixmap()

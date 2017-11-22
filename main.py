@@ -67,6 +67,14 @@ class AIGameWindow(QMainWindow):
         self.setFocus()
 
     def createRightArea(self):
+        # Agent render view (partially observable)
+        self.miniImgLabel = QLabel()
+        self.miniImgLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        miniViewBox = QHBoxLayout()
+        miniViewBox.addStretch(1)
+        miniViewBox.addWidget(self.miniImgLabel)
+        miniViewBox.addStretch(1)
+
         self.missionBox = QTextEdit()
         self.missionBox.setMinimumSize(500, 100)
         self.missionBox.textChanged.connect(self.missionEdit)
@@ -89,6 +97,7 @@ class AIGameWindow(QMainWindow):
 
         # Stack everything up in a vetical layout
         vbox = QVBoxLayout()
+        vbox.addLayout(miniViewBox)
         vbox.addLayout(stepsBox)
         vbox.addWidget(QLabel("General mission"))
         vbox.addWidget(self.missionBox)
