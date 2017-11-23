@@ -34,6 +34,7 @@ class Renderer:
         width = self.width
         height = self.height
 
+        rgbaShape = (width, height, 4)
         shape = (width, height, 3)
 
         # Get a downsampled version of the image
@@ -43,16 +44,22 @@ class Renderer:
         #)
 
         # Copy the pixel data to a numpy array
-        output = np.ndarray(shape=shape, dtype='uint8')
-        for y in range(0, height):
-            for x in range(0, width):
-                pix = self.img.pixel(x, y)
-                r = (pix >> 16) & 0xFF
-                g = (pix >>  8) & 0xFF
-                b = (pix >>  0) & 0xFF
-                output[x, y, 0] = r
-                output[x, y, 1] = g
-                output[x, y, 2] = b
+        #output = np.ndarray(shape=shape, dtype='uint8')
+        #for y in range(0, height):
+        #    for x in range(0, width):
+        #        pix = self.img.pixel(x, y)
+        #        r = (pix >> 16) & 0xFF
+        #        g = (pix >>  8) & 0xFF
+        #        b = (pix >>  0) & 0xFF
+        #        output[x, y, 0] = r
+        #        output[x, y, 1] = g
+        #        output[x, y, 2] = b
+
+        numBytes = self.width * self.height * 4
+        buf = self.img.bits().asstring(numBytes)
+        output = np.frombuffer(buf, dtype='uint8')
+        output = output.reshape(rgbaShape)
+        output = output[..., (2,1,0)]
 
         return output
 
