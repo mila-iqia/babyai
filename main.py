@@ -12,7 +12,7 @@ from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 
 import gym
 from gym_aigame.envs import AIGameEnv, Annotator
-from model.training import State, selectAction, storeTrans
+from model.training import State, selectAction
 
 class AIGameWindow(QMainWindow):
 
@@ -266,7 +266,7 @@ class AIGameWindow(QMainWindow):
         newState = State(obs, prevState.mission, "")
 
         # Store the state transition and reward
-        storeTrans(prevState, action, newState, reward)
+        #storeTrans(prevState, action, newState, reward)
 
         if done:
             self.resetEnv()

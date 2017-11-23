@@ -23,12 +23,6 @@ cd baby-ai-game
 pip3 install -e .
 ```
 
-Finally, decompress the glove50 data file:
-
-```
-gunzip -k model/glove50.txt.gz
-```
-
 ## Usage
 
 To run the interactive UI application:
