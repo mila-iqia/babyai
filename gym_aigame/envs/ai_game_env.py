@@ -221,7 +221,7 @@ class AIGameEnv(gym.Env):
     ACTION_FORWARD = 2
     ACTION_TOGGLE = 3
 
-    def __init__(self, gridSize=16, numSubGoals=1, maxSteps=100):
+    def __init__(self, gridSize=16, maxSteps=100):
         assert (gridSize >= 4)
 
         # Renderer object used to render the whole grid (full-scale)
@@ -244,7 +244,6 @@ class AIGameEnv(gym.Env):
 
         # Environment configuration
         self.gridSize = gridSize
-        self.numSubGoals = numSubGoals
         self.maxSteps = maxSteps
         self.startPos = (1, 1)
 
@@ -296,16 +295,6 @@ class AIGameEnv(gym.Env):
             self.setGrid(i, gridSz - 1, Wall())
             self.setGrid(0, i, Wall())
             self.setGrid(gridSz - 1, i, Wall())
-
-        # TODO: support for multiple subgoals
-        # For now, we support only one splitting wall
-        if self.numSubGoals == 1:
-            splitIdx = self.np_random.randint(2, gridSz-3)
-            for i in range(0, gridSz):
-                self.setGrid(splitIdx, i, Wall())
-            doorIdx = self.np_random.randint(1, gridSz-2)
-            self.setGrid(splitIdx, doorIdx, Door('yellow'))
-            self.setGrid(1, 12, Key('yellow'))
 
         # Place a goal in the bottom-left corner
         self.setGrid(gridSz - 2, gridSz - 2, Goal())

@@ -3,6 +3,7 @@
 import time
 import sys
 import threading
+from optparse import OptionParser
 
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
@@ -16,15 +17,14 @@ from model.training import State, selectAction
 
 class AIGameWindow(QMainWindow):
 
-    def __init__(self):
+    def __init__(self, env):
         super().__init__()
         self.initUI()
 
         # By default, manual stepping only
         self.fpsLimit = 0
 
-        self.env = gym.make('AI-Game-v0')
-        self.env = Annotator(self.env, saveOnClose=True)
+        self.env = env
 
         self.state = None
 
@@ -237,9 +237,9 @@ class AIGameWindow(QMainWindow):
         obsImg = QImage(obsW, obsH, QImage.Format_ARGB32_Premultiplied)
         for y in range(0, obsH):
             for x in range(0, obsW):
-                r = int(obs[x, y, 0])
-                g = int(obs[x, y, 1])
-                b = int(obs[x, y, 2])
+                r = int(obs[y, x, 0])
+                g = int(obs[y, x, 1])
+                b = int(obs[y, x, 2])
                 # ARGB
                 pix = (255 << 24) + (r << 16) + (g << 8) + (b << 0)
                 obsImg.setPixel(x, y, pix)
@@ -287,14 +287,24 @@ class AIGameWindow(QMainWindow):
             self.stepEnv()
 
 
-def main():
+def main(argv):
+
+    parser = OptionParser()
+    parser.add_option("-e", "--env-name", dest="env",
+                      help="gym environment to load", default='AIGame-v0')
+    (options, args) = parser.parse_args()
+
+    # Load the gym environment
+    env = gym.make(options.env)
+    env = Annotator(env, saveOnClose=True)
+
     # Create the application window
     app = QApplication(sys.argv)
-    window = AIGameWindow()
+    window = AIGameWindow(env)
 
     # Run the application
     sys.exit(app.exec_())
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
