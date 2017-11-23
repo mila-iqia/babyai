@@ -305,10 +305,7 @@ class AIGameEnv(gym.Env):
                 self.setGrid(splitIdx, i, Wall())
             doorIdx = self.np_random.randint(1, gridSz-2)
             self.setGrid(splitIdx, doorIdx, Door('yellow'))
-
-        # TODO: avoid placing objects in front of doors
-        #self.setGrid(2, 14, Ball('blue'))
-        self.setGrid(1, 12, Key('yellow'))
+            self.setGrid(1, 12, Key('yellow'))
 
         # Place a goal in the bottom-left corner
         self.setGrid(gridSz - 2, gridSz - 2, Goal())
