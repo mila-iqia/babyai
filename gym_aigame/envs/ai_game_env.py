@@ -411,6 +411,18 @@ class AIGameEnv(gym.Env):
         width = self.gridSize * CELL_PIXELS
         height = self.gridSize * CELL_PIXELS
 
+        # Draw background (out-of-world) tiles the same colors as walls
+        # so the agent understands these areas are not reachable
+        c = COLORS['grey']
+        r.setLineColor(c[0], c[1], c[2])
+        r.setColor(c[0], c[1], c[2])
+        r.drawPolygon([
+            (0    , height),
+            (width, height),
+            (width,      0),
+            (0    ,      0)
+        ])
+
         r.push()
 
         # Internally, we draw at the "large" full-grid resolution, but we
@@ -418,6 +430,17 @@ class AIGameEnv(gym.Env):
         r.scale(tileSize / CELL_PIXELS, tileSize / CELL_PIXELS)
         r.translate(-topX * CELL_PIXELS, -topY * CELL_PIXELS)
 
+        # Draw the background of the in-world cells black
+        r.setColor(0, 0, 0)
+        gridPixels = self.gridSize * CELL_PIXELS
+        r.drawPolygon([
+            (0    , gridPixels),
+            (gridPixels, gridPixels),
+            (gridPixels,      0),
+            (0    ,      0)
+        ])
+
+        # Compute the coordinates of grid cells to be drawn
         botX = min(topX + numX, self.gridSize)
         botY = min(topY + numY, self.gridSize)
         topX = max(topX, 0)
