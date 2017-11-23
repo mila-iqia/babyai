@@ -80,6 +80,8 @@ gestures in combination with language may be key.
 
 [Grounded Language Learning in a Simulated 3D World](https://arxiv.org/abs/1706.06551)
 
+[Mastering the Dungeon: Grounded Language Learning by Mechanical Turker Descent](https://arxiv.org/abs/1711.07950)
+
 [Programmable Agents](https://arxiv.org/abs/1706.06383) and associated [RLSS 2017 talk by Nando de Freitas](http://videolectures.net/deeplearning2017_de_freitas_deep_control/)
 
 [FiLM: Visual Reasoning with a General Conditioning Layer](https://sites.google.com/view/deep-rl-bootcamp/lectures)
