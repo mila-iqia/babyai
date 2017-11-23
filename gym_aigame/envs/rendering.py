@@ -9,11 +9,12 @@ class Renderer:
         self.width = width
         self.height = height
 
-        self.img = QImage(width, height, QImage.Format_ARGB32_Premultiplied)
+        self.img = QImage(width, height, QImage.Format_RGB888)
         self.painter = QPainter()
 
     def beginFrame(self):
         self.painter.begin(self.img)
+        self.painter.setRenderHint(QPainter.Antialiasing, False)
 
         # Clear the background
         self.painter.setBrush(QColor(0, 0, 0))
@@ -33,15 +34,7 @@ class Renderer:
 
         width = self.width
         height = self.height
-
-        rgbaShape = (width, height, 4)
         shape = (width, height, 3)
-
-        # Get a downsampled version of the image
-        #scaled = self.img.scaled(
-        #    QSize(width, height),
-        #    transformMode = Qt.SmoothTransformation
-        #)
 
         # Copy the pixel data to a numpy array
         #output = np.ndarray(shape=shape, dtype='uint8')
@@ -55,11 +48,10 @@ class Renderer:
         #        output[x, y, 1] = g
         #        output[x, y, 2] = b
 
-        numBytes = self.width * self.height * 4
+        numBytes = self.width * self.height * 3
         buf = self.img.bits().asstring(numBytes)
         output = np.frombuffer(buf, dtype='uint8')
-        output = output.reshape(rgbaShape)
-        output = output[..., (2,1,0)]
+        output = output.reshape(shape)
 
         return output
 
