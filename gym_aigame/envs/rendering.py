@@ -1,7 +1,7 @@
 import numpy as np
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor, QPolygon
-from PyQt5.QtCore import QPoint, QSize
+from PyQt5.QtCore import QPoint, QSize, QRect
 
 class Renderer:
 
@@ -70,11 +70,11 @@ class Renderer:
     def scale(self, x, y):
         self.painter.scale(x, y)
 
-    def setLineColor(self, r, g, b):
-        self.painter.setPen(QColor(r, g, b))
+    def setLineColor(self, r, g, b, a=255):
+        self.painter.setPen(QColor(r, g, b, a))
 
-    def setColor(self, r, g, b):
-        self.painter.setBrush(QColor(r, g, b))
+    def setColor(self, r, g, b, a=255):
+        self.painter.setBrush(QColor(r, g, b, a))
 
     def drawLine(self, x0, y0, x1, y1):
         self.painter.drawLine(x0, y0, x1, y1)
@@ -87,3 +87,6 @@ class Renderer:
         """Takes a list of points (tuples) as input"""
         points = map(lambda p: QPoint(p[0], p[1]), points)
         self.painter.drawPolygon(QPolygon(points))
+
+    def fillRect(self, x, y, width, height, r, g, b, a=255):
+        self.painter.fillRect(QRect(x, y, width, height), QColor(r, g, b, a))

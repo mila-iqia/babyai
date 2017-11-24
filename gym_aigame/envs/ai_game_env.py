@@ -335,8 +335,40 @@ class AIGameEnv(gym.Env):
         # Up (negative Y)
         elif self.agentDir == 3:
             return (0, -1)
+        else:
+            assert False
 
-        assert (False)
+    def getViewExts(self):
+        """
+        Get the extents of the square set of tiles visible to the agent
+        Note: the bottom extent indices are not included in the set
+        """
+
+        # Facing right
+        if self.agentDir == 0:
+            topX = self.agentPos[0]
+            topY = self.agentPos[1] - AGENT_VIEW_SIZE // 2
+        # Facing down
+        elif self.agentDir == 1:
+            topX = self.agentPos[0] - AGENT_VIEW_SIZE // 2
+            topY = self.agentPos[1]
+        # Facing right
+        elif self.agentDir == 2:
+            topX = self.agentPos[0] - AGENT_VIEW_SIZE + 1
+            topY = self.agentPos[1] - AGENT_VIEW_SIZE // 2
+        # Facing up
+        elif self.agentDir == 3:
+            topX = self.agentPos[0] - AGENT_VIEW_SIZE // 2
+            topY = self.agentPos[1] - AGENT_VIEW_SIZE + 1
+        else:
+            assert False
+
+        botX = min(topX + AGENT_VIEW_SIZE, self.gridSize)
+        botY = min(topY + AGENT_VIEW_SIZE, self.gridSize)
+        topX = max(topX, 0)
+        topY = max(topY, 0)
+
+        return (topX, topY, botX, botY)
 
     def _step(self, action):
         self.stepCount += 1
@@ -481,26 +513,22 @@ class AIGameEnv(gym.Env):
 
         r.beginFrame()
 
+        # Get the view extents of the agentt
+        topX, topY, botX, botY = self.getViewExts()
+
         # Facing right
         if self.agentDir == 0:
-            topX = self.agentPos[0]
-            topY = self.agentPos[1] - AGENT_VIEW_SIZE // 2
+            pass
         # Facing down
         elif self.agentDir == 1:
-            topX = self.agentPos[0] - AGENT_VIEW_SIZE // 2
-            topY = self.agentPos[1]
             r.rotate(-90)
             r.translate(-AGENT_VIEW_PIXELS, 0)
         # Facing right
         elif self.agentDir == 2:
-            topX = self.agentPos[0] - AGENT_VIEW_SIZE + 1
-            topY = self.agentPos[1] - AGENT_VIEW_SIZE // 2
             r.rotate(-2 * 90)
             r.translate(-AGENT_VIEW_PIXELS, -AGENT_VIEW_PIXELS)
         # Facing up
         elif self.agentDir == 3:
-            topX = self.agentPos[0] - AGENT_VIEW_SIZE // 2
-            topY = self.agentPos[1] - AGENT_VIEW_SIZE + 1
             r.rotate(-3 * 90)
             r.translate(0, -AGENT_VIEW_PIXELS)
 
@@ -532,6 +560,8 @@ class AIGameEnv(gym.Env):
                 self.gridSize * CELL_PIXELS
             )
 
+        r = self.gridRender
+
         self.gridRender.beginFrame()
 
         # Render the whole grid
@@ -542,7 +572,36 @@ class AIGameEnv(gym.Env):
             self.gridSize, self.gridSize
         )
 
-        # TODO: grey out what the agen't can't see?
+        # Grey out what the agen't can't see
+        topX, topY, botX, botY = self.getViewExts()
+        r.fillRect(
+            0,
+            0,
+            self.gridSize * CELL_PIXELS,
+            topY * CELL_PIXELS,
+            50, 50, 50, 200
+        )
+        r.fillRect(
+            0,
+            botY * CELL_PIXELS,
+            self.gridSize * CELL_PIXELS,
+            self.gridSize * CELL_PIXELS,
+            50, 50, 50, 200
+        )
+        r.fillRect(
+            0,
+            topY * CELL_PIXELS,
+            topX * CELL_PIXELS,
+            (botY - topY) * CELL_PIXELS,
+            50, 50, 50, 200
+        )
+        r.fillRect(
+            botX * CELL_PIXELS,
+            topY * CELL_PIXELS,
+            self.gridSize * CELL_PIXELS,
+            (botY - topY) * CELL_PIXELS,
+            50, 50, 50, 200
+        )
 
         self.gridRender.endFrame()
 
