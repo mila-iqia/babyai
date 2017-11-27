@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 
 import gym
-from gym_aigame.envs import AIGameEnv, Annotator
+from gym_aigame.envs import AIGameEnv, Annotator, Teacher
 from model.training import State, selectAction
 
 class AIGameWindow(QMainWindow):
@@ -296,7 +296,8 @@ def main(argv):
 
     # Load the gym environment
     env = gym.make(options.env)
-    env = Annotator(env, saveOnClose=True)
+    #env = Annotator(env, saveOnClose=True)
+    #env = Teacher(env)
 
     # Create the application window
     app = QApplication(sys.argv)

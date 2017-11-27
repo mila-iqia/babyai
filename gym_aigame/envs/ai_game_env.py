@@ -13,7 +13,7 @@ CELL_PIXELS = 32
 CELL_PIXELS_AGENT = 8
 
 # Number of cells (width and height) in the agent view
-AGENT_VIEW_SIZE = 9
+AGENT_VIEW_SIZE = 7
 
 # Size of the agent view in pixels
 AGENT_VIEW_PIXELS = AGENT_VIEW_SIZE * CELL_PIXELS_AGENT
@@ -203,6 +203,30 @@ class Key(WorldObj):
         r.setLineColor(0, 0, 0)
         r.setColor(0, 0, 0)
         r.drawCircle(18, 9, 2)
+
+
+
+
+
+class Grid:
+    """
+    Represent a grid and operations on it
+    """
+
+    def __init__(self, width, height):
+
+
+        self.width = width
+        self.height = height
+
+        self.array = None
+
+
+
+
+
+
+
 
 class AIGameEnv(gym.Env):
     """
