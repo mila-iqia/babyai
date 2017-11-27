@@ -1,5 +1,4 @@
 import math
-from copy import deepcopy
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
@@ -9,25 +8,11 @@ from gym_aigame.envs.rendering import *
 # Size in pixels of a cell in the full-scale human view
 CELL_PIXELS = 32
 
-# Size in pixels of a cell in the agent view (small-scale)
-CELL_PIXELS_AGENT = 8
-
 # Number of cells (width and height) in the agent view
 AGENT_VIEW_SIZE = 7
 
-# Size of the agent view in pixels
-AGENT_VIEW_PIXELS = AGENT_VIEW_SIZE * CELL_PIXELS_AGENT
-
-# Size of the image given as an observation to the agent
-IMG_ARRAY_SIZE = (AGENT_VIEW_PIXELS, AGENT_VIEW_PIXELS, 3)
-
-OBJ_TYPES = {
-    'wall' : 0,
-    'door' : 1,
-    'ball' : 2,
-    'key'  : 3,
-    'goal' : 4
-}
+# Size of the array given as an observation to the agent
+OBS_ARRAY_SIZE = (AGENT_VIEW_SIZE, AGENT_VIEW_SIZE, 3)
 
 COLORS = {
     'red'   : (255, 0, 0),
@@ -38,8 +23,8 @@ COLORS = {
     'grey'  : (100, 100, 100)
 }
 
-# Used to map colors to bit indices
-COLOR_IDXS = {
+# Used to map colors to integers
+COLOR_TO_IDX = {
     'red'   : 0,
     'green' : 1,
     'blue'  : 2,
@@ -48,14 +33,28 @@ COLOR_IDXS = {
     'grey'  : 5
 }
 
+IDX_TO_COLOR = dict(zip(COLOR_TO_IDX.values(), COLOR_TO_IDX.keys()))
+
+# Map of object type to integers
+OBJECT_TO_IDX = {
+    'empty' : 0,
+    'wall'  : 1,
+    'door'  : 2,
+    'ball'  : 3,
+    'key'   : 4,
+    'goal'  : 5
+}
+
+IDX_TO_OBJECT = dict(zip(OBJECT_TO_IDX.values(), OBJECT_TO_IDX.keys()))
+
 class WorldObj:
     """
     Base class for grid world objects
     """
 
     def __init__(self, type, color):
-        assert type in OBJ_TYPES, type
-        assert color in COLORS, color
+        assert type in OBJECT_TO_IDX, type
+        assert color in COLOR_TO_IDX, color
         self.type = type
         self.color = color
         self.contains = None
@@ -111,9 +110,9 @@ class Wall(WorldObj):
         ])
 
 class Door(WorldObj):
-    def __init__(self, color):
+    def __init__(self, color, isOpen=False):
         super(Door, self).__init__('door', color)
-        self.isOpen = False
+        self.isOpen = isOpen
 
     def render(self, r):
         c = COLORS[self.color]
@@ -232,6 +231,42 @@ class Grid:
         assert j >= 0 and j < self.height
         return self.grid[j * self.width + i]
 
+    def rotateLeft(self):
+        """
+        Rotate the grid to the left (counter-clockwise)
+        """
+
+        grid = Grid(self.width, self.height)
+
+        for j in range(0, self.height):
+            for i in range(0, self.width):
+                v = self.get(self.width - 1 - j, i)
+                grid.set(i, j, v)
+
+        return grid
+
+    def slice(self, topX, topY, width, height):
+        """
+        Get a subset of the grid
+        """
+
+        grid = Grid(width, height)
+
+        for j in range(0, height):
+            for i in range(0, width):
+                x = topX + i
+                y = topY + j
+
+                if x >= 0 and x < self.width and \
+                   y >= 0 and y < self.height:
+                    v = self.get(x, y)
+                else:
+                    v = Wall()
+
+                grid.set(i, j, v)
+
+        return grid
+
     def render(self, r, tileSize):
         """
         Render this grid at a given scale
@@ -295,21 +330,72 @@ class Grid:
 
         r.pop()
 
+    def encode(self):
+        """
+        Produce a compact numpy encoding of the grid
+        """
 
+        codeSize = self.width * self.height * 3
 
+        array = np.zeros(shape=(self.width, self.height, 3), dtype='uint8')
 
-    # TODO: rotate, slice, render
+        for j in range(0, self.height):
+            for i in range(0, self.width):
 
-    # TODO: encode, decode
+                v = self.get(i, j)
 
+                if v == None:
+                    continue
 
+                array[i, j, 0] = OBJECT_TO_IDX[v.type]
+                array[i, j, 1] = COLOR_TO_IDX[v.color]
 
+                if v.type == 'door' and v.isOpen:
+                    array[i, j, 2] = 1
 
+        return array
 
+    def decode(array):
+        """
+        Decode an array grid encoding back into a grid
+        """
 
+        width = array.shape[0]
+        height = array.shape[1]
+        assert array.shape[2] == 3
 
+        grid = Grid(width, height)
 
+        for j in range(0, height):
+            for i in range(0, width):
 
+                typeIdx  = array[i, j, 0]
+                colorIdx = array[i, j, 1]
+                openIdx  = array[i, j, 2]
+
+                if typeIdx == 0:
+                    continue
+
+                objType = IDX_TO_OBJECT[typeIdx]
+                color = IDX_TO_COLOR[colorIdx]
+                isOpen = True if openIdx == 1 else 0
+
+                if objType == 'wall':
+                    v = Wall()
+                elif objType == 'ball':
+                    v = Ball(color)
+                elif objType == 'key':
+                    v = Key(color)
+                elif objType == 'door':
+                    v = Door(color, isOpen)
+                elif objType == 'goal':
+                    v = Goal()
+                else:
+                    assert False, "unknown obj type in decode '%s'" % objType
+
+                grid.set(i, j, v)
+
+        return grid
 
 class AIGameEnv(gym.Env):
     """
@@ -332,8 +418,8 @@ class AIGameEnv(gym.Env):
         # Renderer object used to render the whole grid (full-scale)
         self.gridRender = None
 
-        # Renderer for partially observable agent view
-        self.agentRender = Renderer(AGENT_VIEW_PIXELS, AGENT_VIEW_PIXELS)
+        # Renderer used to render observations (small-scale agent view)
+        self.obsRender = None
 
         # Actions are discrete integer values
         self.action_space = spaces.Discrete(AIGameEnv.NUM_ACTIONS)
@@ -342,7 +428,7 @@ class AIGameEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=0,
             high=255,
-            shape=IMG_ARRAY_SIZE
+            shape=OBS_ARRAY_SIZE
         )
 
         self.reward_range = (-1, 1000)
@@ -394,7 +480,7 @@ class AIGameEnv(gym.Env):
         self.grid = self.seedGrid.copy()
 
         # Return first observation
-        obs = self.renderAgent()
+        obs = self._genObs()
         return obs
 
     def _seed(self, seed=None):
@@ -467,10 +553,8 @@ class AIGameEnv(gym.Env):
         else:
             assert False
 
-        botX = min(topX + AGENT_VIEW_SIZE, self.gridSize)
-        botY = min(topY + AGENT_VIEW_SIZE, self.gridSize)
-        topX = max(topX, 0)
-        topY = max(topY, 0)
+        botX = topX + AGENT_VIEW_SIZE
+        botY = topY + AGENT_VIEW_SIZE
 
         return (topX, topY, botX, botY)
 
@@ -517,66 +601,49 @@ class AIGameEnv(gym.Env):
         if self.stepCount >= self.maxSteps:
             done = True
 
-        obs = self.renderAgent()
+        obs = self._genObs()
 
         return obs, reward, done, {}
 
-
-
-
-
-
-
-    def renderAgent(self):
+    def _genObs(self):
         """
-        Render the agent's view (scaled down, partially observable)
+        Generate the agent's view (partially observable, low-resolution encoding)
         """
 
-        return None
+        topX, topY, botX, botY = self.getViewExts()
 
+        grid = self.grid.slice(topX, topY, AGENT_VIEW_SIZE, AGENT_VIEW_SIZE)
 
+        for i in range(self.agentDir):
+            grid = grid.rotateLeft()
 
-        r = self.agentRender
+        obs = grid.encode()
+
+        return obs
+
+    def getObsRender(self, obs):
+        """
+        Render an observation
+        """
+
+        if self.obsRender == None:
+            self.obsRender = Renderer(
+                AGENT_VIEW_SIZE * CELL_PIXELS // 2,
+                AGENT_VIEW_SIZE * CELL_PIXELS // 2
+            )
+
+        r = self.obsRender
 
         r.beginFrame()
 
-        # Get the view extents of the agentt
-        topX, topY, botX, botY = self.getViewExts()
-
-        # Facing right
-        if self.agentDir == 0:
-            pass
-        # Facing down
-        elif self.agentDir == 1:
-            r.rotate(-90)
-            r.translate(-AGENT_VIEW_PIXELS, 0)
-        # Facing right
-        elif self.agentDir == 2:
-            r.rotate(-2 * 90)
-            r.translate(-AGENT_VIEW_PIXELS, -AGENT_VIEW_PIXELS)
-        # Facing up
-        elif self.agentDir == 3:
-            r.rotate(-3 * 90)
-            r.translate(0, -AGENT_VIEW_PIXELS)
+        grid = Grid.decode(obs)
 
         # Render the whole grid
-        self.renderTiles(
-            r,
-            CELL_PIXELS_AGENT,
-            topX, topY,
-            AGENT_VIEW_SIZE, AGENT_VIEW_SIZE
-        )
+        grid.render(r, CELL_PIXELS // 2)
 
         r.endFrame()
 
-        return r.getArray()
-
-
-
-
-
-
-
+        return r.getPixmap()
 
     def _render(self, mode='human', close=False):
         """
@@ -596,10 +663,10 @@ class AIGameEnv(gym.Env):
 
         r = self.gridRender
 
-        self.gridRender.beginFrame()
+        r.beginFrame()
 
         # Render the whole grid
-        self.grid.render(self.gridRender, CELL_PIXELS)
+        self.grid.render(r, CELL_PIXELS)
 
         # Draw the agent
         r.push()
@@ -648,9 +715,9 @@ class AIGameEnv(gym.Env):
             50, 50, 50, 200
         )
 
-        self.gridRender.endFrame()
+        r.endFrame()
 
         if mode == 'rgb_array':
-            return self.gridRender.getArray()
+            return r.getArray()
 
-        return self.gridRender.getPixmap()
+        return r.getPixmap()

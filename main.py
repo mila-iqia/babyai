@@ -231,20 +231,9 @@ class AIGameWindow(QMainWindow):
         pixmap = self.env.render()
         self.imgLabel.setPixmap(pixmap)
 
-        # FIXME
-        # Display the agent's view
-        #obsW = obs.shape[0]
-        #obsH = obs.shape[1]
-        #obsImg = QImage(obsW, obsH, QImage.Format_ARGB32_Premultiplied)
-        #for y in range(0, obsH):
-        #    for x in range(0, obsW):
-        #        r = int(obs[y, x, 0])
-        #        g = int(obs[y, x, 1])
-        #        b = int(obs[y, x, 2])
-        #        # ARGB
-        #        pix = (255 << 24) + (r << 16) + (g << 8) + (b << 0)
-        #        obsImg.setPixel(x, y, pix)
-        #self.obsImgLabel.setPixmap(QPixmap.fromImage(obsImg))
+        # Render and display the agent's view
+        obsPixmap = self.env.getObsRender(obs)
+        self.obsImgLabel.setPixmap(obsPixmap)
 
         # Set the steps remaining display
         self.stepsLabel.setText(str(stepsRem))
@@ -265,9 +254,6 @@ class AIGameWindow(QMainWindow):
         self.showEnv(obs)
 
         newState = State(obs, prevState.mission, "")
-
-        # Store the state transition and reward
-        #storeTrans(prevState, action, newState, reward)
 
         if done:
             self.resetEnv()
