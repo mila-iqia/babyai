@@ -204,22 +204,42 @@ class Key(WorldObj):
         r.setColor(0, 0, 0)
         r.drawCircle(18, 9, 2)
 
-
-
-
-
 class Grid:
     """
     Represent a grid and operations on it
     """
 
     def __init__(self, width, height):
-
+        assert width >= 4
+        assert height >= 4
 
         self.width = width
         self.height = height
 
-        self.array = None
+        self.grid = [None] * width * height
+
+    def copy(self):
+        from copy import deepcopy
+        return deepcopy(self)
+
+    def set(self, i, j, v):
+        assert i >= 0 and i < self.width
+        assert j >= 0 and j < self.height
+        self.grid[j * self.width + i] = v
+
+    def get(self, i, j):
+        assert i >= 0 and i < self.width
+        assert j >= 0 and j < self.height
+        return self.grid[j * self.width + i]
+
+    def render(self, r):
+        pass
+
+
+    # TODO: rotate, slice, render
+
+    # TODO: encode, decode
+
 
 
 
@@ -246,8 +266,6 @@ class AIGameEnv(gym.Env):
     ACTION_TOGGLE = 3
 
     def __init__(self, gridSize=16, maxSteps=100):
-        assert (gridSize >= 4)
-
         # Renderer object used to render the whole grid (full-scale)
         self.gridRender = None
 
@@ -275,6 +293,27 @@ class AIGameEnv(gym.Env):
         self.seed()
         self.reset()
 
+    def _genGrid(self, width, height):
+        """
+        Generate a new grid
+        """
+
+        # Initialize the grid
+        grid = Grid(width, height)
+
+        # Place walls around the edges
+        for i in range(0, width):
+            grid.set(i, 0, Wall())
+            grid.set(i, height - 1, Wall())
+        for j in range(0, height):
+            grid.set(0, j, Wall())
+            grid.set(height - 1, j, Wall())
+
+        # Place a goal in the bottom-left corner
+        grid.set(width - 2, height - 2, Goal())
+
+        return grid
+
     def _reset(self):
         # Place the agent in the starting position
         self.agentPos = self.startPos
@@ -289,7 +328,7 @@ class AIGameEnv(gym.Env):
         self.stepCount = 0
 
         # Restore the initial grid
-        self.grid = deepcopy(self.seedGrid)
+        self.grid = self.seedGrid.copy()
 
         # Return first observation
         obs = self.renderAgent()
@@ -306,40 +345,18 @@ class AIGameEnv(gym.Env):
         if seed == None:
             seed = 1337
 
+        # Seed the random number generator
         self.np_random, _ = seeding.np_random(seed)
 
-        gridSz = self.gridSize
-
-        # Initialize the grid
-        self.grid = [None] * gridSz * gridSz
-
-        # Place walls around the edges
-        for i in range(0, gridSz):
-            self.setGrid(i, 0, Wall())
-            self.setGrid(i, gridSz - 1, Wall())
-            self.setGrid(0, i, Wall())
-            self.setGrid(gridSz - 1, i, Wall())
-
-        # Place a goal in the bottom-left corner
-        self.setGrid(gridSz - 2, gridSz - 2, Goal())
+        self.grid = self._genGrid(self.gridSize, self.gridSize)
 
         # Store a copy of the grid so we can restore it on reset
-        self.seedGrid = deepcopy(self.grid)
+        self.seedGrid = self.grid.copy()
 
         return [seed]
 
     def getStepsRemaining(self):
         return self.maxSteps - self.stepCount
-
-    def setGrid(self, i, j, v):
-        assert i >= 0 and i < self.gridSize
-        assert j >= 0 and j < self.gridSize
-        self.grid[j * self.gridSize + i] = v
-
-    def getGrid(self, i, j):
-        assert i >= 0 and i < self.gridSize
-        assert j >= 0 and j < self.gridSize
-        return self.grid[j * self.gridSize + i]
 
     def getDirVec(self):
         """
@@ -414,7 +431,7 @@ class AIGameEnv(gym.Env):
         elif action == AIGameEnv.ACTION_FORWARD:
             u, v = self.getDirVec()
             newPos = (self.agentPos[0] + u, self.agentPos[1] + v)
-            targetCell = self.getGrid(newPos[0], newPos[1])
+            targetCell = self.grid.get(newPos[0], newPos[1])
             if targetCell == None or targetCell.canOverlap():
                 self.agentPos = newPos
             elif targetCell.type == 'goal':
@@ -424,10 +441,10 @@ class AIGameEnv(gym.Env):
         # Pick up or trigger/activate an item
         elif action == AIGameEnv.ACTION_TOGGLE:
             u, v = self.getDirVec()
-            cell = self.getGrid(self.agentPos[0] + u, self.agentPos[1] + v)
+            cell = self.grid.get(self.agentPos[0] + u, self.agentPos[1] + v)
             if cell and cell.canPickup() and self.carrying is None:
                 self.carrying = cell
-                self.setGrid(self.agentPos[0] + u, self.agentPos[1] + v, None)
+                self.grid.set(self.agentPos[0] + u, self.agentPos[1] + v, None)
             elif cell:
                 cell.toggle(self)
 
@@ -518,7 +535,7 @@ class AIGameEnv(gym.Env):
         # Render the grid
         for j in range(topY, botY):
             for i in range(topX, botX):
-                cell = self.getGrid(i, j)
+                cell = self.grid.get(i, j)
                 if cell == None:
                     continue
                 r.push()

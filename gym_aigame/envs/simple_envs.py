@@ -25,37 +25,6 @@ register(
     reward_threshold=1000.0
 )
 
-class WallHoleEnv(AIGameEnv):
-    """
-    Environment with a hollowed wall, sparse reward
-    """
-
-    def __init__(self, size=8):
-        super(WallHoleEnv, self).__init__(gridSize=size, maxSteps=2 * size)
-
-    def _seed(self, seed=None):
-        super(WallHoleEnv, self)._seed(seed)
-
-        gridSz = self.gridSize
-
-        # Create a vertical splitting wall
-        splitIdx = self.np_random.randint(2, gridSz-3)
-        for i in range(0, gridSz):
-            self.setGrid(splitIdx, i, Wall())
-
-        # Place a hole in the wall
-        doorIdx = self.np_random.randint(1, gridSz-2)
-        self.setGrid(splitIdx, doorIdx, None)
-
-        # Store a copy of the grid so we can restore it on reset
-        self.seedGrid = deepcopy(self.grid)
-
-register(
-    id='AIGame-Wall-Hole-8x8-v0',
-    entry_point='gym_aigame.envs:WallHoleEnv',
-    reward_threshold=1000.0
-)
-
 class DoorKeyEnv(AIGameEnv):
     """
     Environment with a door and key, sparse reward
@@ -64,29 +33,28 @@ class DoorKeyEnv(AIGameEnv):
     def __init__(self, size=8):
         super(DoorKeyEnv, self).__init__(gridSize=size, maxSteps=4 * size)
 
-    def _seed(self, seed=None):
-        super(DoorKeyEnv, self)._seed(seed)
-
-        gridSz = self.gridSize
+    def _genGrid(self, width, height):
+        grid = super(DoorKeyEnv, self)._genGrid(width, height)
+        assert width == height
+        gridSz = width
 
         # Create a vertical splitting wall
         splitIdx = self.np_random.randint(2, gridSz-3)
         for i in range(0, gridSz):
-            self.setGrid(splitIdx, i, Wall())
+            grid.set(splitIdx, i, Wall())
 
         # Place a door in the wall
         doorIdx = self.np_random.randint(1, gridSz-2)
-        self.setGrid(splitIdx, doorIdx, Door('yellow'))
+        grid.set(splitIdx, doorIdx, Door('yellow'))
 
         # Place a key on the left side
         keyIdx = self.np_random.randint(1, gridSz-2)
-        self.setGrid(1, keyIdx, Key('yellow'))
+        grid.set(1, keyIdx, Key('yellow'))
 
-        # Store a copy of the grid so we can restore it on reset
-        self.seedGrid = deepcopy(self.grid)
+        return grid
 
 register(
     id='AIGame-Door-Key-8x8-v0',
-    entry_point='gym_aigame.envs:WallHoleEnv',
+    entry_point='gym_aigame.envs:DoorKeyEnv',
     reward_threshold=1000.0
 )
