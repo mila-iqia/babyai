@@ -231,19 +231,20 @@ class AIGameWindow(QMainWindow):
         pixmap = self.env.render()
         self.imgLabel.setPixmap(pixmap)
 
+        # FIXME
         # Display the agent's view
-        obsW = obs.shape[0]
-        obsH = obs.shape[1]
-        obsImg = QImage(obsW, obsH, QImage.Format_ARGB32_Premultiplied)
-        for y in range(0, obsH):
-            for x in range(0, obsW):
-                r = int(obs[y, x, 0])
-                g = int(obs[y, x, 1])
-                b = int(obs[y, x, 2])
-                # ARGB
-                pix = (255 << 24) + (r << 16) + (g << 8) + (b << 0)
-                obsImg.setPixel(x, y, pix)
-        self.obsImgLabel.setPixmap(QPixmap.fromImage(obsImg))
+        #obsW = obs.shape[0]
+        #obsH = obs.shape[1]
+        #obsImg = QImage(obsW, obsH, QImage.Format_ARGB32_Premultiplied)
+        #for y in range(0, obsH):
+        #    for x in range(0, obsW):
+        #        r = int(obs[y, x, 0])
+        #        g = int(obs[y, x, 1])
+        #        b = int(obs[y, x, 2])
+        #        # ARGB
+        #        pix = (255 << 24) + (r << 16) + (g << 8) + (b << 0)
+        #        obsImg.setPixel(x, y, pix)
+        #self.obsImgLabel.setPixmap(QPixmap.fromImage(obsImg))
 
         # Set the steps remaining display
         self.stepsLabel.setText(str(stepsRem))

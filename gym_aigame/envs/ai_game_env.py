@@ -232,13 +232,76 @@ class Grid:
         assert j >= 0 and j < self.height
         return self.grid[j * self.width + i]
 
-    def render(self, r):
-        pass
+    def render(self, r, tileSize):
+        """
+        Render this grid at a given scale
+        :param r: target renderer object
+        :param tileSize: tile size in pixels
+        """
+
+        assert r.width == self.width * tileSize
+        assert r.height == self.height * tileSize
+
+        # Total grid size at native scale
+        widthPx = self.width * CELL_PIXELS
+        heightPx = self.height * CELL_PIXELS
+
+        # Draw background (out-of-world) tiles the same colors as walls
+        # so the agent understands these areas are not reachable
+        c = COLORS['grey']
+        r.setLineColor(c[0], c[1], c[2])
+        r.setColor(c[0], c[1], c[2])
+        r.drawPolygon([
+            (0    , heightPx),
+            (widthPx, heightPx),
+            (widthPx,      0),
+            (0    ,      0)
+        ])
+
+        r.push()
+
+        # Internally, we draw at the "large" full-grid resolution, but we
+        # use the renderer to scale back to the desired size
+        r.scale(tileSize / CELL_PIXELS, tileSize / CELL_PIXELS)
+
+        # Draw the background of the in-world cells black
+        r.fillRect(
+            0,
+            0,
+            widthPx,
+            heightPx,
+            0, 0, 0
+        )
+
+        # Draw grid lines
+        r.setLineColor(100, 100, 100)
+        for rowIdx in range(0, self.height):
+            y = CELL_PIXELS * rowIdx
+            r.drawLine(0, y, widthPx, y)
+        for colIdx in range(0, self.width):
+            x = CELL_PIXELS * colIdx
+            r.drawLine(x, 0, x, heightPx)
+
+        # Render the grid
+        for j in range(0, self.height):
+            for i in range(0, self.width):
+                cell = self.get(i, j)
+                if cell == None:
+                    continue
+                r.push()
+                r.translate(i * CELL_PIXELS, j * CELL_PIXELS)
+                cell.render(r)
+                r.pop()
+
+        r.pop()
+
+
 
 
     # TODO: rotate, slice, render
 
     # TODO: encode, decode
+
 
 
 
@@ -458,97 +521,20 @@ class AIGameEnv(gym.Env):
 
         return obs, reward, done, {}
 
-    def renderTiles(self, r, tileSize, topX, topY, numX, numY):
-        """
-        Render a subset/window of tiles into a renderer object
-        :param r: target renderer object
-        :param topX: x-index of the top-left tile
-        :param topY: y-index of the top-left tile
-        """
 
-        # Total grid size
-        width = self.gridSize * CELL_PIXELS
-        height = self.gridSize * CELL_PIXELS
 
-        # Draw background (out-of-world) tiles the same colors as walls
-        # so the agent understands these areas are not reachable
-        c = COLORS['grey']
-        r.setLineColor(c[0], c[1], c[2])
-        r.setColor(c[0], c[1], c[2])
-        r.drawPolygon([
-            (0    , height),
-            (width, height),
-            (width,      0),
-            (0    ,      0)
-        ])
 
-        r.push()
 
-        # Internally, we draw at the "large" full-grid resolution, but we
-        # use the renderer to scale back to the desired size
-        r.scale(tileSize / CELL_PIXELS, tileSize / CELL_PIXELS)
-        r.translate(-topX * CELL_PIXELS, -topY * CELL_PIXELS)
 
-        # Draw the background of the in-world cells black
-        r.setColor(0, 0, 0)
-        gridPixels = self.gridSize * CELL_PIXELS
-        r.drawPolygon([
-            (0    , gridPixels),
-            (gridPixels, gridPixels),
-            (gridPixels,      0),
-            (0    ,      0)
-        ])
-
-        # Compute the coordinates of grid cells to be drawn
-        botX = min(topX + numX, self.gridSize)
-        botY = min(topY + numY, self.gridSize)
-        topX = max(topX, 0)
-        topY = max(topY, 0)
-
-        # Draw grid lines
-        r.setLineColor(100, 100, 100)
-        for rowIdx in range(topY, botY):
-            y = CELL_PIXELS * rowIdx
-            r.drawLine(topX * CELL_PIXELS, y, botX * CELL_PIXELS, y)
-        for colIdx in range(topX, botX):
-            x = CELL_PIXELS * colIdx
-            r.drawLine(x, topY * CELL_PIXELS, x, botY * CELL_PIXELS)
-
-        # Draw the agent if within the visible window of cells
-        if self.agentPos[0] >= topX and self.agentPos[0] < botX and \
-           self.agentPos[1] >= topY and self.agentPos[1] < botY:
-            r.push()
-            r.translate(
-                CELL_PIXELS * (self.agentPos[0] + 0.5),
-                CELL_PIXELS * (self.agentPos[1] + 0.5)
-            )
-            r.rotate(self.agentDir * 90)
-            r.setLineColor(255, 0, 0)
-            r.setColor(255, 0, 0)
-            r.drawPolygon([
-                (-12, 10),
-                ( 12,  0),
-                (-12, -10)
-            ])
-            r.pop()
-
-        # Render the grid
-        for j in range(topY, botY):
-            for i in range(topX, botX):
-                cell = self.grid.get(i, j)
-                if cell == None:
-                    continue
-                r.push()
-                r.translate(i * CELL_PIXELS, j * CELL_PIXELS)
-                cell.render(r)
-                r.pop()
-
-        r.pop()
 
     def renderAgent(self):
         """
         Render the agent's view (scaled down, partially observable)
         """
+
+        return None
+
+
 
         r = self.agentRender
 
@@ -585,6 +571,13 @@ class AIGameEnv(gym.Env):
 
         return r.getArray()
 
+
+
+
+
+
+
+
     def _render(self, mode='human', close=False):
         """
         Render the whole-grid human view
@@ -606,12 +599,23 @@ class AIGameEnv(gym.Env):
         self.gridRender.beginFrame()
 
         # Render the whole grid
-        self.renderTiles(
-            self.gridRender,
-            CELL_PIXELS,
-            0, 0,
-            self.gridSize, self.gridSize
+        self.grid.render(self.gridRender, CELL_PIXELS)
+
+        # Draw the agent
+        r.push()
+        r.translate(
+            CELL_PIXELS * (self.agentPos[0] + 0.5),
+            CELL_PIXELS * (self.agentPos[1] + 0.5)
         )
+        r.rotate(self.agentDir * 90)
+        r.setLineColor(255, 0, 0)
+        r.setColor(255, 0, 0)
+        r.drawPolygon([
+            (-12, 10),
+            ( 12,  0),
+            (-12, -10)
+        ])
+        r.pop()
 
         # Grey out what the agen't can't see
         topX, topY, botX, botY = self.getViewExts()
