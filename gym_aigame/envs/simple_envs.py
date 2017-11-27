@@ -48,13 +48,24 @@ class DoorKeyEnv(AIGameEnv):
         grid.set(splitIdx, doorIdx, Door('yellow'))
 
         # Place a key on the left side
-        keyIdx = self.np_random.randint(1, gridSz-2)
+        #keyIdx = self.np_random.randint(1 + gridSz // 2, gridSz-2)
+        keyIdx = gridSz-2
         grid.set(1, keyIdx, Key('yellow'))
 
         return grid
 
+class DoorKeyEnv16x16(DoorKeyEnv):
+    def __init__(self):
+        super(DoorKeyEnv16x16, self).__init__(size=16)
+
 register(
     id='AIGame-Door-Key-8x8-v0',
     entry_point='gym_aigame.envs:DoorKeyEnv',
+    reward_threshold=1000.0
+)
+
+register(
+    id='AIGame-Door-Key-16x16-v0',
+    entry_point='gym_aigame.envs:DoorKeyEnv16x16',
     reward_threshold=1000.0
 )

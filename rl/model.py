@@ -43,11 +43,12 @@ def printstat(self, input, output):
 class CNNPolicy(FFPolicy):
     def __init__(self, num_inputs, action_space, use_gru):
         super(CNNPolicy, self).__init__()
-        self.conv1 = nn.Conv2d(num_inputs, 32, 8, stride=4)
-        self.conv2 = nn.Conv2d(32, 64, 4, stride=2)
-        self.conv3 = nn.Conv2d(64, 32, 3, stride=1)
 
-        self.linear1 = nn.Linear(32 * 5 * 5, 512)
+        self.conv1 = nn.Conv2d(num_inputs, 32, 2, stride=1)
+        self.conv2 = nn.Conv2d(32, 32, 2, stride=1)
+        self.conv3 = nn.Conv2d(32, 32, 2, stride=1)
+
+        self.linear1 = nn.Linear(32 * 4 * 4, 512)
 
         if use_gru:
             self.gru = nn.GRUCell(512, 512)
@@ -103,7 +104,7 @@ class CNNPolicy(FFPolicy):
         x = self.conv3(x)
         x = F.relu(x)
 
-        x = x.view(-1, 32 * 5 * 5)
+        x = x.view(-1, 32 * 4 * 4)
 
         x = self.linear1(x)
         x = F.relu(x)
