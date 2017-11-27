@@ -225,14 +225,14 @@ class AIGameWindow(QMainWindow):
         self.missionBox.setPlainText(mission)
 
     def showEnv(self, obs):
-        stepsRem = self.env.getStepsRemaining()
+        stepsRem = AIGameEnv.getStepsRemaining(self.env)
 
         # Render and display the environment
         pixmap = self.env.render()
         self.imgLabel.setPixmap(pixmap)
 
         # Render and display the agent's view
-        obsPixmap = self.env.getObsRender(obs)
+        obsPixmap = AIGameEnv.getObsRender(self.env, obs)
         self.obsImgLabel.setPixmap(obsPixmap)
 
         # Set the steps remaining display

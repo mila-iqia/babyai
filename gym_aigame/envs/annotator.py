@@ -34,9 +34,6 @@ class Annotator(Wrapper):
             print('Saving annotations')
             pickle.dump(self.annotations, open("annotations.p", "wb"))
 
-    def getStepsRemaining(self):
-        return self.env.getStepsRemaining()
-
     def setReward(self, val):
         """Sets the reward for the last state and action taken"""
 
