@@ -69,3 +69,220 @@ register(
     entry_point='gym_aigame.envs:DoorKeyEnv16x16',
     reward_threshold=1000.0
 )
+
+class MultiRoomEnv(AIGameEnv):
+    """
+    Environment with multiple rooms (subgoals)
+    """
+
+    def __init__(self, numRooms):
+        assert numRooms > 0
+        self.numRooms = numRooms
+
+        super(MultiRoomEnv, self).__init__(gridSize=25, maxSteps=100)
+
+    def _genGrid(self, width, height):
+
+        roomList = []
+
+        # Recursively place the rooms
+        self._placeRoom(
+            self.numRooms,
+            roomList=roomList,
+            minSz=5,
+            maxSz=9,
+            entryDoorWall=2,
+            entryDoorPos=(0,2)
+        )
+
+        grid = Grid(width, height)
+
+
+
+
+        # TODO: randomize agent position
+
+
+
+        # Fill the grid with wall cells
+        wall = Wall()
+        #for j in range(0, height):
+        #    for i in range(0, width):
+        #        grid.set(i, j, wall)
+
+        print(roomList)
+
+        # For each room
+        for idx, room in enumerate(roomList):
+            topX, topY, sizeX, sizeY, entryDoorPos = room
+
+            for i in range(0, sizeX):
+            # Draw the top and bottom walls
+                grid.set(topX + i, topY, wall)
+                grid.set(topX + i, topY + sizeY - 1, wall)
+
+            # Draw the left and right walls
+            for j in range(0, sizeY):
+                grid.set(topX, topY + j, wall)
+                grid.set(topX + sizeX - 1, topY + j, wall)
+
+            # Extrude the room interior
+            #for j in range(0, sizeY - 2):
+            #    for i in range(0, sizeX - 2):
+            #        grid.set(topX + i + 1, topY + j + 1, None)
+
+            # TODO: avoid same color as previous
+
+            # If this isn't the first room, place the entry door
+            if idx > 0:
+                colorIdx = self.np_random.randint(0, len(IDX_TO_COLOR))
+                doorColor = IDX_TO_COLOR[colorIdx]
+                grid.set(*entryDoorPos, Door(doorColor, isOpen=True))
+
+        # Place the final goal
+        goalX = self.np_random.randint(topX + 1, topX + sizeX - 2)
+        goalY = self.np_random.randint(topY + 1, topY + sizeY - 2)
+        grid.set(goalX, goalY, Goal())
+
+        return grid
+
+    def _placeRoom(
+        self,
+        numLeft,
+        roomList,
+        minSz,
+        maxSz,
+        entryDoorWall,
+        entryDoorPos
+    ):
+        #print()
+        #print()
+
+        # Choose the room size randomly
+        sizeX = self.np_random.randint(minSz, maxSz)
+        sizeY = self.np_random.randint(minSz, maxSz)
+        #print('sizeX = %d, sizeY = %d' % (sizeX, sizeY))
+
+        # The first room will be at (0,0)
+        if len(roomList) == 0:
+            topX, topY = 0, 0
+        # Entry on the right
+        elif entryDoorWall == 0:
+            topX = entryDoorPos[0] - sizeX + 1
+            y = entryDoorPos[1]
+            topY = self.np_random.randint(y - sizeY + 2, y)
+        # Entry wall on the south
+        elif entryDoorWall == 1:
+            x = entryDoorPos[0]
+            topX = self.np_random.randint(x - sizeX + 2, x)
+            topY = entryDoorPos[1] - sizeY + 1
+        # Entry wall on the left
+        elif entryDoorWall == 2:
+            topX = entryDoorPos[0]
+            y = entryDoorPos[1]
+            topY = self.np_random.randint(y - sizeY + 2, y)
+        # Entry wall on the top
+        elif entryDoorWall == 3:
+            x = entryDoorPos[0]
+            topX = self.np_random.randint(x - sizeX + 2, x)
+            topY = entryDoorPos[1]
+        else:
+            assert False, entryDoorWall
+
+        #print('entryDoorWall=%d' % entryDoorWall)
+        #print('doorX=%s, doorY=%s' % entryDoorPos)
+        #print('topX = %d, topY = %d' % (topX, topY))
+
+        # If the room is out of the grid, can't place a room here
+        if topX < 0 or topY < 0:
+            return False
+        if topX + sizeX > self.gridSize or topY + sizeY >= self.gridSize:
+            return False
+
+        # If the room intersects with previous rooms, can't place it here
+        for room in roomList[:-1]:
+            x1, y1, sX, sY, _ = room
+
+            nonOverlap = \
+                topX + sizeX < x1 or \
+                x1 + sX <= topX or \
+                topY + sizeY < y1 or \
+                y1 + sY <= topY
+
+            print('x1=%d, y1=%d' % (x1, y1))
+
+            print('topX=%d, topY=%d' % (topX, topY))
+
+            print(y1 + sY)
+
+            if not nonOverlap:
+                print('overlap')
+                return False
+
+        # Add this room to the list
+        roomList.append((topX, topY, sizeX, sizeY, entryDoorPos))
+
+        if numLeft == 0:
+            return True
+
+        # Try placing the next room
+        for i in range(0, 8):
+
+            # Pick which wall to place the out door on
+            wallSet = set((0, 1, 2, 3))
+            wallSet.remove(entryDoorWall)
+            exitDoorWall = self.np_random.choice(tuple(wallSet))
+            nextEntryWall = (exitDoorWall + 2) % 4
+
+            # Pick the exit door position
+            # Exit on right wall
+            if exitDoorWall == 0:
+                exitDoorPos = (
+                    topX + sizeX - 1,
+                    topY + self.np_random.randint(1, sizeY - 1)
+                )
+            # Exit on south wall
+            elif exitDoorWall == 1:
+                exitDoorPos = (
+                    topX + self.np_random.randint(1, sizeX - 1),
+                    topY + sizeY - 1
+                )
+            # Exit on left wall
+            elif exitDoorWall == 2:
+                exitDoorPos = (
+                    topX,
+                    topY + self.np_random.randint(1, sizeY - 1)
+                )
+            # Exit on north wall
+            elif exitDoorWall == 3:
+                exitDoorPos = (
+                    topX + self.np_random.randint(1, sizeX - 1),
+                    topY
+                )
+            else:
+                assert False
+
+            # Recursively create the other rooms
+            success = self._placeRoom(
+                numLeft - 1,
+                roomList=roomList,
+                minSz=minSz,
+                maxSz=maxSz,
+                entryDoorWall=nextEntryWall,
+                entryDoorPos=exitDoorPos
+            )
+
+            if success:
+                break
+
+        return True
+
+class MultiRoomEnvN5(MultiRoomEnv):
+    def __init__(self):
+        super(MultiRoomEnvN5, self).__init__(numRooms=5)
+
+register(
+    id='AIGame-Multi-Room-N5-v0',
+    entry_point='gym_aigame.envs:MultiRoomEnvN5',
+    reward_threshold=1000.0
+)
