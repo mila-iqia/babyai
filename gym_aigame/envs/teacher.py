@@ -9,9 +9,6 @@ class Teacher(Wrapper):
     def _close(self):
         super(Teacher, self)._close()
 
-    def getStepsRemaining(self):
-        return self.env.getStepsRemaining()
-
     def _reset(self, **kwargs):
         """
         Called at the start of an episode

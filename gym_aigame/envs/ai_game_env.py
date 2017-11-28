@@ -691,28 +691,28 @@ class AIGameEnv(gym.Env):
             0,
             self.gridSize * CELL_PIXELS,
             topY * CELL_PIXELS,
-            50, 50, 50, 200
+            50, 50, 50, 175
         )
         r.fillRect(
             0,
             botY * CELL_PIXELS,
             self.gridSize * CELL_PIXELS,
             self.gridSize * CELL_PIXELS,
-            50, 50, 50, 200
+            50, 50, 50, 175
         )
         r.fillRect(
             0,
             topY * CELL_PIXELS,
             topX * CELL_PIXELS,
             (botY - topY) * CELL_PIXELS,
-            50, 50, 50, 200
+            50, 50, 50, 175
         )
         r.fillRect(
             botX * CELL_PIXELS,
             topY * CELL_PIXELS,
             self.gridSize * CELL_PIXELS,
             (botY - topY) * CELL_PIXELS,
-            50, 50, 50, 200
+            50, 50, 50, 175
         )
 
         r.endFrame()

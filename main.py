@@ -225,17 +225,18 @@ class AIGameWindow(QMainWindow):
         self.missionBox.setPlainText(mission)
 
     def showEnv(self, obs):
-        stepsRem = AIGameEnv.getStepsRemaining(self.env)
-
         # Render and display the environment
         pixmap = self.env.render()
         self.imgLabel.setPixmap(pixmap)
 
+        unwrapped = self.env.unwrapped
+
         # Render and display the agent's view
-        obsPixmap = AIGameEnv.getObsRender(self.env, obs)
+        obsPixmap = unwrapped.getObsRender(obs)
         self.obsImgLabel.setPixmap(obsPixmap)
 
         # Set the steps remaining display
+        stepsRem = unwrapped.getStepsRemaining()
         self.stepsLabel.setText(str(stepsRem))
 
     def stepEnv(self, action=None):
@@ -283,7 +284,6 @@ def main(argv):
 
     # Load the gym environment
     env = gym.make(options.env)
-    #env = Annotator(env, saveOnClose=True)
     #env = Teacher(env)
 
     # Create the application window
