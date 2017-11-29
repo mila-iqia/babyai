@@ -16,7 +16,10 @@ class Teacher(Wrapper):
 
         obs = self.env.reset(**kwargs)
 
-        return obs
+        return {
+            "image": obs,
+            "advice": "open the first door"
+        }
 
     def _step(self, action):
         """
@@ -25,12 +28,14 @@ class Teacher(Wrapper):
 
         obs, reward, done, info = self.env.step(action)
 
-        # TODO
         if self.env.agentPos[0] < 5:
-            info['advice'] = "go right"
+            advice = "go right"
+        else:
+            advice = "get to the goal!"
 
-
-
-
+        obs = {
+            "image": obs,
+            "advice": advice
+        }
 
         return obs, reward, done, info

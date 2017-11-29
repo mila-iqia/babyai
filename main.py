@@ -12,8 +12,8 @@ from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 
 import gym
-from gym_aigame.envs import AIGameEnv, Annotator, Teacher
-from model.training import State, selectAction
+from gym_aigame.envs import AIGameEnv, Teacher
+from model.training import selectAction
 
 class AIGameWindow(QMainWindow):
 
@@ -25,8 +25,7 @@ class AIGameWindow(QMainWindow):
         self.fpsLimit = 0
 
         self.env = env
-
-        self.state = None
+        self.lastObs = None
 
         self.resetEnv()
 
@@ -186,14 +185,12 @@ class AIGameWindow(QMainWindow):
 
     def missionEdit(self):
         text = self.missionBox.toPlainText()
-        print('new mission: ' + text)
-        self.state = State(self.state.image, text, self.state.advice)
+        #print('new mission: ' + text)
 
     def adviceEdit(self):
         text = self.adviceBox.toPlainText()
-        print('new advice: ' + text)
-        self.state = State(self.state.image, self.state.mission, text)
-        self.env.setAdvice(text)
+        #print('new advice: ' + text)
+        #self.env.setAdvice(text)
 
     def plusReward(self):
         print('+reward')
@@ -230,11 +227,11 @@ class AIGameWindow(QMainWindow):
     def resetEnv(self):
         obs = self.env.reset()
 
-        self.showEnv(obs)
-
         mission = "Get to the green goal square"
-        self.state = State(obs, mission, mission)
         self.missionBox.setPlainText(mission)
+
+        self.showEnv(obs)
+        self.lastObs = obs
 
     def reseedEnv(self):
         import random
@@ -243,36 +240,36 @@ class AIGameWindow(QMainWindow):
         self.resetEnv()
 
     def showEnv(self, obs):
+        unwrapped = self.env.unwrapped
+
         # Render and display the environment
         pixmap = self.env.render()
         self.imgLabel.setPixmap(pixmap)
 
-        unwrapped = self.env.unwrapped
-
         # Render and display the agent's view
-        obsPixmap = unwrapped.getObsRender(obs)
+        image = obs['image']
+        obsPixmap = unwrapped.getObsRender(image)
         self.obsImgLabel.setPixmap(obsPixmap)
 
         # Set the steps remaining display
         stepsRem = unwrapped.getStepsRemaining()
         self.stepsLabel.setText(str(stepsRem))
 
+        advice = obs['advice']
+        self.adviceBox.setPlainText(advice)
+
     def stepEnv(self, action=None):
         #print('stepEnv')
         #print('action=%s' % action)
 
-        prevState = self.state
-
         # If no manual action was specified by the user
         if action == None:
-            action = selectAction(self.state)
+            action = selectAction(self.lastObs)
 
         obs, reward, done, info = self.env.step(action)
-        #print(reward)
 
         self.showEnv(obs)
-
-        newState = State(obs, prevState.mission, "")
+        self.lastObs = obs
 
         if done:
             self.resetEnv()
@@ -307,7 +304,7 @@ def main(argv):
 
     # Load the gym environment
     env = gym.make(options.env)
-    #env = Teacher(env)
+    env = Teacher(env)
 
     # Create the application window
     app = QApplication(sys.argv)
