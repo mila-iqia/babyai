@@ -79,7 +79,7 @@ class MultiRoomEnv(AIGameEnv):
         assert numRooms > 0
         self.numRooms = numRooms
 
-        super(MultiRoomEnv, self).__init__(gridSize=25, maxSteps=100)
+        super(MultiRoomEnv, self).__init__(gridSize=25, maxSteps=numRooms * 20)
 
     def _genGrid(self, width, height):
 
@@ -291,12 +291,12 @@ class MultiRoomEnv(AIGameEnv):
 
         return True
 
-class MultiRoomEnvN5(MultiRoomEnv):
+class MultiRoomEnvN6(MultiRoomEnv):
     def __init__(self):
-        super(MultiRoomEnvN5, self).__init__(numRooms=5)
+        super(MultiRoomEnvN6, self).__init__(numRooms=6)
 
 register(
-    id='AIGame-Multi-Room-N5-v0',
-    entry_point='gym_aigame.envs:MultiRoomEnvN5',
+    id='AIGame-Multi-Room-N6-v0',
+    entry_point='gym_aigame.envs:MultiRoomEnvN6',
     reward_threshold=1000.0
 )

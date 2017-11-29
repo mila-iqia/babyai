@@ -89,16 +89,28 @@ class AIGameWindow(QMainWindow):
         self.stepsLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.stepsLabel.setAlignment(Qt.AlignCenter)
         self.stepsLabel.setMinimumSize(60, 10)
+        resetBtn = QPushButton("Reset")
+        resetBtn.clicked.connect(self.resetEnv)
+        seedBtn = QPushButton("Seed")
+        seedBtn.clicked.connect(self.reseedEnv)
         stepsBox = QHBoxLayout()
         stepsBox.addStretch(1)
         stepsBox.addWidget(QLabel("Steps remaining"))
         stepsBox.addWidget(self.stepsLabel)
+        stepsBox.addWidget(resetBtn)
+        stepsBox.addWidget(seedBtn)
         stepsBox.addStretch(1)
+
+        hline2 = QFrame()
+        hline2.setFrameShape(QFrame.HLine)
+        hline2.setFrameShadow(QFrame.Sunken)
 
         # Stack everything up in a vetical layout
         vbox = QVBoxLayout()
         vbox.addLayout(miniViewBox)
+        #vbox.addWidget(hline)
         vbox.addLayout(stepsBox)
+        vbox.addWidget(hline2)
         vbox.addWidget(QLabel("General mission"))
         vbox.addWidget(self.missionBox)
         vbox.addWidget(QLabel("Contextual advice"))
@@ -224,6 +236,12 @@ class AIGameWindow(QMainWindow):
         self.state = State(obs, mission, mission)
         self.missionBox.setPlainText(mission)
 
+    def reseedEnv(self):
+        import random
+        seed = random.randint(0, 0xFFFFFFFF)
+        self.env.seed(seed)
+        self.resetEnv()
+
     def showEnv(self, obs):
         # Render and display the environment
         pixmap = self.env.render()
@@ -278,8 +296,13 @@ class AIGameWindow(QMainWindow):
 def main(argv):
 
     parser = OptionParser()
-    parser.add_option("-e", "--env-name", dest="env",
-                      help="gym environment to load", default='AIGame-v0')
+    parser.add_option(
+        "-e",
+        "--env-name",
+        dest="env",
+        help="gym environment to load",
+        default='AIGame-Multi-Room-N6-v0'
+    )
     (options, args) = parser.parse_args()
 
     # Load the gym environment
