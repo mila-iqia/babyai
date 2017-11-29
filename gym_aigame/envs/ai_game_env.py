@@ -663,7 +663,7 @@ class AIGameEnv(gym.Env):
 
         grid = self.grid.slice(topX, topY, AGENT_VIEW_SIZE, AGENT_VIEW_SIZE)
 
-        for i in range(self.agentDir):
+        for i in range(self.agentDir + 1):
             grid = grid.rotateLeft()
 
         obs = grid.encode()
@@ -689,6 +689,23 @@ class AIGameEnv(gym.Env):
 
         # Render the whole grid
         grid.render(r, CELL_PIXELS // 2)
+
+        # Draw the agent
+        r.push()
+        r.scale(0.5, 0.5)
+        r.translate(
+            CELL_PIXELS * (0.5 + AGENT_VIEW_SIZE // 2),
+            CELL_PIXELS * (AGENT_VIEW_SIZE - 0.5)
+        )
+        r.rotate(3 * 90)
+        r.setLineColor(255, 0, 0)
+        r.setColor(255, 0, 0)
+        r.drawPolygon([
+            (-12, 10),
+            ( 12,  0),
+            (-12, -10)
+        ])
+        r.pop()
 
         r.endFrame()
 
@@ -733,35 +750,14 @@ class AIGameEnv(gym.Env):
         ])
         r.pop()
 
-        # Grey out what the agen't can't see
+        # Highlight what the agent can see
         topX, topY, botX, botY = self.getViewExts()
         r.fillRect(
-            0,
-            0,
-            self.gridSize * CELL_PIXELS,
-            topY * CELL_PIXELS,
-            50, 50, 50, 175
-        )
-        r.fillRect(
-            0,
-            botY * CELL_PIXELS,
-            self.gridSize * CELL_PIXELS,
-            self.gridSize * CELL_PIXELS,
-            50, 50, 50, 175
-        )
-        r.fillRect(
-            0,
-            topY * CELL_PIXELS,
             topX * CELL_PIXELS,
-            (botY - topY) * CELL_PIXELS,
-            50, 50, 50, 175
-        )
-        r.fillRect(
-            botX * CELL_PIXELS,
             topY * CELL_PIXELS,
-            self.gridSize * CELL_PIXELS,
-            (botY - topY) * CELL_PIXELS,
-            50, 50, 50, 175
+            AGENT_VIEW_SIZE * CELL_PIXELS,
+            AGENT_VIEW_SIZE * CELL_PIXELS,
+            200, 200, 200, 75
         )
 
         r.endFrame()

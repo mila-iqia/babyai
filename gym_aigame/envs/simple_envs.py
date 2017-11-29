@@ -89,14 +89,19 @@ class MultiRoomEnv(AIGameEnv):
 
             curRoomList = []
 
+            entryDoorPos = (
+                self.np_random.randint(0, width - 2),
+                self.np_random.randint(0, width - 2)
+            )
+
             # Recursively place the rooms
             self._placeRoom(
                 self.numRooms,
                 roomList=curRoomList,
                 minSz=4,
-                maxSz=9,
+                maxSz=10,
                 entryDoorWall=2,
-                entryDoorPos=(0,2)
+                entryDoorPos=entryDoorPos
             )
 
             #print(len(curRoomList))
@@ -107,18 +112,20 @@ class MultiRoomEnv(AIGameEnv):
             if len(roomList) == self.numRooms:
                 break
 
+        assert len(roomList) > 0
+
+        # Randomize the starting agent position
+        topX, topY, sizeX, sizeY, _ = roomList[0]
+        self.startPos = (
+            self.np_random.randint(topX + 1, topX + sizeX - 2),
+            self.np_random.randint(topY + 1, topY + sizeY - 2)
+        )
+
         # Create the grid
         grid = Grid(width, height)
-
-        # TODO: randomize the starting agent position
-
-        # Fill the grid with wall cells
         wall = Wall()
-        #for j in range(0, height):
-        #    for i in range(0, width):
-        #        grid.set(i, j, wall)
 
-        print(roomList)
+        #print(roomList)
 
         prevDoorColor = None
 
@@ -176,9 +183,9 @@ class MultiRoomEnv(AIGameEnv):
         sizeY = self.np_random.randint(minSz, maxSz)
         #print('sizeX = %d, sizeY = %d' % (sizeX, sizeY))
 
-        # The first room will be at (0,0)
+        # The first room will be at the door position
         if len(roomList) == 0:
-            topX, topY = 0, 0
+            topX, topY = entryDoorPos
         # Entry on the right
         elif entryDoorWall == 0:
             topX = entryDoorPos[0] - sizeX + 1
