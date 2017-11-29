@@ -85,24 +85,32 @@ class MultiRoomEnv(AIGameEnv):
 
         roomList = []
 
-        # Recursively place the rooms
-        self._placeRoom(
-            self.numRooms,
-            roomList=roomList,
-            minSz=5,
-            maxSz=9,
-            entryDoorWall=2,
-            entryDoorPos=(0,2)
-        )
+        for i in range(0, 5):
 
+            curRoomList = []
+
+            # Recursively place the rooms
+            self._placeRoom(
+                self.numRooms,
+                roomList=curRoomList,
+                minSz=4,
+                maxSz=9,
+                entryDoorWall=2,
+                entryDoorPos=(0,2)
+            )
+
+            #print(len(curRoomList))
+
+            if len(curRoomList) > len(roomList):
+                roomList = curRoomList
+
+            if len(roomList) == self.numRooms:
+                break
+
+        # Create the grid
         grid = Grid(width, height)
 
-
-
-
-        # TODO: randomize agent position
-
-
+        # TODO: randomize the starting agent position
 
         # Fill the grid with wall cells
         wall = Wall()
@@ -111,6 +119,8 @@ class MultiRoomEnv(AIGameEnv):
         #        grid.set(i, j, wall)
 
         print(roomList)
+
+        prevDoorColor = None
 
         # For each room
         for idx, room in enumerate(roomList):
@@ -131,13 +141,16 @@ class MultiRoomEnv(AIGameEnv):
             #    for i in range(0, sizeX - 2):
             #        grid.set(topX + i + 1, topY + j + 1, None)
 
-            # TODO: avoid same color as previous
-
             # If this isn't the first room, place the entry door
             if idx > 0:
-                colorIdx = self.np_random.randint(0, len(IDX_TO_COLOR))
-                doorColor = IDX_TO_COLOR[colorIdx]
-                grid.set(*entryDoorPos, Door(doorColor, isOpen=True))
+                # Pick a door color different from the previous one
+                doorColors = set( COLORS.keys() )
+                if prevDoorColor:
+                    doorColors.remove(prevDoorColor)
+                doorColor = self.np_random.choice(tuple(doorColors))
+
+                grid.set(*entryDoorPos, Door(doorColor))
+                prevDoorColor = doorColor
 
         # Place the final goal
         goalX = self.np_random.randint(topX + 1, topX + sizeX - 2)
@@ -222,7 +235,8 @@ class MultiRoomEnv(AIGameEnv):
         # Add this room to the list
         roomList.append((topX, topY, sizeX, sizeY, entryDoorPos))
 
-        if numLeft == 0:
+        # If this was the last room, stop
+        if numLeft == 1:
             return True
 
         # Try placing the next room

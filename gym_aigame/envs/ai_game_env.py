@@ -37,12 +37,13 @@ IDX_TO_COLOR = dict(zip(COLOR_TO_IDX.values(), COLOR_TO_IDX.keys()))
 
 # Map of object type to integers
 OBJECT_TO_IDX = {
-    'empty' : 0,
-    'wall'  : 1,
-    'door'  : 2,
-    'ball'  : 3,
-    'key'   : 4,
-    'goal'  : 5
+    'empty'         : 0,
+    'wall'          : 1,
+    'door'          : 2,
+    'locked_door'   : 3,
+    'ball'          : 4,
+    'key'           : 5,
+    'goal'          : 6
 }
 
 IDX_TO_OBJECT = dict(zip(OBJECT_TO_IDX.values(), OBJECT_TO_IDX.keys()))
@@ -141,6 +142,52 @@ class Door(WorldObj):
             (2          ,           2)
         ])
         r.drawCircle(CELL_PIXELS * 0.75, CELL_PIXELS * 0.5, 2)
+
+    def toggle(self, env):
+        self.isOpen = True
+        return True
+
+    def canOverlap(self):
+        """The agent can only walk over this cell when the door is open"""
+        return self.isOpen
+
+class LockedDoor(WorldObj):
+    def __init__(self, color, isOpen=False):
+        super(LockedDoor, self).__init__('locked_door', color)
+        self.isOpen = isOpen
+
+    def render(self, r):
+        c = COLORS[self.color]
+        r.setLineColor(c[0], c[1], c[2])
+        r.setColor(0, 0, 0)
+
+        if self.isOpen:
+            r.drawPolygon([
+                (CELL_PIXELS-2, CELL_PIXELS),
+                (CELL_PIXELS  , CELL_PIXELS),
+                (CELL_PIXELS  ,           0),
+                (CELL_PIXELS-2,           0)
+            ])
+            return
+
+        r.drawPolygon([
+            (0          , CELL_PIXELS),
+            (CELL_PIXELS, CELL_PIXELS),
+            (CELL_PIXELS,           0),
+            (0          ,           0)
+        ])
+        r.drawPolygon([
+            (2          , CELL_PIXELS-2),
+            (CELL_PIXELS-2, CELL_PIXELS-2),
+            (CELL_PIXELS-2,           2),
+            (2          ,           2)
+        ])
+        r.drawLine(
+            CELL_PIXELS * 0.75,
+            CELL_PIXELS * 0.45,
+            CELL_PIXELS * 0.75,
+            CELL_PIXELS * 0.60
+        )
 
     def toggle(self, env):
         # If the player has the right key to open the door
@@ -350,7 +397,7 @@ class Grid:
                 array[i, j, 0] = OBJECT_TO_IDX[v.type]
                 array[i, j, 1] = COLOR_TO_IDX[v.color]
 
-                if v.type == 'door' and v.isOpen:
+                if hasattr(v, 'isOpen') and v.isOpen:
                     array[i, j, 2] = 1
 
         return array
@@ -388,6 +435,8 @@ class Grid:
                     v = Key(color)
                 elif objType == 'door':
                     v = Door(color, isOpen)
+                elif objType == 'locked_door':
+                    v = LockedDoor(color, isOpen)
                 elif objType == 'goal':
                     v = Goal()
                 else:
