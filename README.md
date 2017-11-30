@@ -31,10 +31,10 @@ To run the interactive UI application:
 ./main.py
 ```
 
-Offline training code implementing PPO can be run with:
+Basic offline training code implementing PPO can be run with:
 
 ```
-python3 rl/main.py --env-name AI-Game-v0 --no-vis --num-processes 32 --algo ppo
+python3 basicrl/main.py --env-name AI-Game-v0 --no-vis --num-processes 32 --algo ppo
 ```
 
 ## About this Project
@@ -87,6 +87,8 @@ gestures in combination with language may be key.
 [FiLM: Visual Reasoning with a General Conditioning Layer](https://sites.google.com/view/deep-rl-bootcamp/lectures)
 
 ### Reinforcement Learning
+
+[Reinforcement Learning with Unsupervised Auxiliary Tasks](https://arxiv.org/abs/1611.05397)
 
 [Surprise-Based Intrinsic Motivation for Deep Reinforcement Learning](https://arxiv.org/abs/1703.01732)
 

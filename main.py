@@ -188,9 +188,10 @@ class AIGameWindow(QMainWindow):
         #print('new mission: ' + text)
 
     def adviceEdit(self):
+        # The agent will get this advice as an observation
+        # before performing the next action
         text = self.adviceBox.toPlainText()
-        #print('new advice: ' + text)
-        #self.env.setAdvice(text)
+        self.lastObs['advice'] = text
 
     def plusReward(self):
         print('+reward')
@@ -230,8 +231,8 @@ class AIGameWindow(QMainWindow):
         mission = "Get to the green goal square"
         self.missionBox.setPlainText(mission)
 
-        self.showEnv(obs)
         self.lastObs = obs
+        self.showEnv(obs)
 
     def reseedEnv(self):
         import random
