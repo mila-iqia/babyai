@@ -101,8 +101,7 @@ class MultiRoomEnv(AIGameEnv):
 
         roomList = []
 
-        for i in range(0, 5):
-
+        while len(roomList) < self.numRooms:
             curRoomList = []
 
             entryDoorPos = (
@@ -122,9 +121,6 @@ class MultiRoomEnv(AIGameEnv):
 
             if len(curRoomList) > len(roomList):
                 roomList = curRoomList
-
-            if len(roomList) == self.numRooms:
-                break
 
         # Store the list of rooms in this environment
         assert len(roomList) > 0
