@@ -75,15 +75,12 @@ class Room:
         top,
         size,
         entryDoorPos,
-        exitDoorPos,
-        entryDoor,
-        exitDoor
+        exitDoorPos
     ):
         self.top = top
         self.size = size
         self.entryDoorPos = entryDoorPos
         self.exitDoorPos = exitDoorPos
-        self.exitDoor = exitDoor
 
 class MultiRoomEnv(AIGameEnv):
     """
@@ -150,8 +147,8 @@ class MultiRoomEnv(AIGameEnv):
             topX, topY = room.top
             sizeX, sizeY = room.size
 
-            for i in range(0, sizeX):
             # Draw the top and bottom walls
+            for i in range(0, sizeX):
                 grid.set(topX + i, topY, wall)
                 grid.set(topX + i, topY + sizeY - 1, wall)
 
@@ -168,13 +165,12 @@ class MultiRoomEnv(AIGameEnv):
                     doorColors.remove(prevDoorColor)
                 doorColor = self.np_random.choice(tuple(doorColors))
 
-                room.entryDoor = Door(doorColor)
-                grid.set(*room.entryDoorPos, room.entryDoor)
+                entryDoor = Door(doorColor)
+                grid.set(*room.entryDoorPos, entryDoor)
                 prevDoorColor = doorColor
 
                 prevRoom = roomList[idx-1]
-                prevRoom.exitDoorPos = room.entryDoorPos
-                prevRoom.exitDoor = room.entryDoor
+                prevRoom.exitDoorPos = entryDoorPos
 
         # Place the final goal
         goalX = self.np_random.randint(topX + 1, topX + sizeX - 2)
@@ -223,10 +219,6 @@ class MultiRoomEnv(AIGameEnv):
         else:
             assert False, entryDoorWall
 
-        #print('entryDoorWall=%d' % entryDoorWall)
-        #print('doorX=%s, doorY=%s' % entryDoorPos)
-        #print('topX = %d, topY = %d' % (topX, topY))
-
         # If the room is out of the grid, can't place a room here
         if topX < 0 or topY < 0:
             return False
@@ -249,8 +241,6 @@ class MultiRoomEnv(AIGameEnv):
             (topX, topY),
             (sizeX, sizeY),
             entryDoorPos,
-            None,
-            None,
             None
         ))
 
