@@ -173,7 +173,7 @@ class MultiRoomEnv(AIGameEnv):
                 prevDoorColor = doorColor
 
                 prevRoom = roomList[idx-1]
-                prevRoom.exitDoorPos = entryDoorPos
+                prevRoom.exitDoorPos = room.entryDoorPos
                 prevRoom.exitDoor = room.entryDoor
 
         # Place the final goal
