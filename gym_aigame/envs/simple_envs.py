@@ -130,13 +130,14 @@ class MultiRoomEnv(AIGameEnv):
         assert len(roomList) > 0
         self.rooms = roomList
 
-        # Randomize the starting agent position
+        # Randomize the starting agent position and direction
         topX, topY = roomList[0].top
         sizeX, sizeY = roomList[0].size
         self.startPos = (
             self.np_random.randint(topX + 1, topX + sizeX - 2),
             self.np_random.randint(topY + 1, topY + sizeY - 2)
         )
+        self.startDir = self.np_random.randint(0, 4)
 
         # Create the grid
         grid = Grid(width, height)

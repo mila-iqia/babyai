@@ -486,6 +486,7 @@ class AIGameEnv(gym.Env):
         self.gridSize = gridSize
         self.maxSteps = maxSteps
         self.startPos = (1, 1)
+        self.startDir = 0
 
         # Initialize the state
         self.seed()
@@ -513,13 +514,11 @@ class AIGameEnv(gym.Env):
         return grid
 
     def _reset(self):
-        # Place the agent in the starting position
+        # Place the agent in the starting position and direction
         self.agentPos = self.startPos
+        self.agentDir = self.startDir
 
-        # Agent direction, initially pointing right (+x axis)
-        self.agentDir = 0
-
-        # Item picked up, being carried
+        # Item picked up, being carried, initially nothing
         self.carrying = None
 
         # Step count since episode start
