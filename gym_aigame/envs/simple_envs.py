@@ -70,6 +70,21 @@ register(
     reward_threshold=1000.0
 )
 
+class Room:
+    def __init__(self,
+        top,
+        size,
+        entryDoorPos,
+        exitDoorPos,
+        entryDoor,
+        exitDoor
+    ):
+        self.top = top
+        self.size = size
+        self.entryDoorPos = entryDoorPos
+        self.exitDoorPos = exitDoorPos
+        self.exitDoor = exitDoor
+
 class MultiRoomEnv(AIGameEnv):
     """
     Environment with multiple rooms (subgoals)
@@ -78,6 +93,7 @@ class MultiRoomEnv(AIGameEnv):
     def __init__(self, numRooms):
         assert numRooms > 0
         self.numRooms = numRooms
+        self.rooms = []
 
         super(MultiRoomEnv, self).__init__(gridSize=25, maxSteps=numRooms * 20)
 
@@ -104,18 +120,19 @@ class MultiRoomEnv(AIGameEnv):
                 entryDoorPos=entryDoorPos
             )
 
-            #print(len(curRoomList))
-
             if len(curRoomList) > len(roomList):
                 roomList = curRoomList
 
             if len(roomList) == self.numRooms:
                 break
 
+        # Store the list of rooms in this environment
         assert len(roomList) > 0
+        self.rooms = roomList
 
         # Randomize the starting agent position
-        topX, topY, sizeX, sizeY, _ = roomList[0]
+        topX, topY = roomList[0].top
+        sizeX, sizeY = roomList[0].size
         self.startPos = (
             self.np_random.randint(topX + 1, topX + sizeX - 2),
             self.np_random.randint(topY + 1, topY + sizeY - 2)
@@ -125,13 +142,13 @@ class MultiRoomEnv(AIGameEnv):
         grid = Grid(width, height)
         wall = Wall()
 
-        #print(roomList)
-
         prevDoorColor = None
 
         # For each room
         for idx, room in enumerate(roomList):
-            topX, topY, sizeX, sizeY, entryDoorPos = room
+
+            topX, topY = room.top
+            sizeX, sizeY = room.size
 
             for i in range(0, sizeX):
             # Draw the top and bottom walls
@@ -143,11 +160,6 @@ class MultiRoomEnv(AIGameEnv):
                 grid.set(topX, topY + j, wall)
                 grid.set(topX + sizeX - 1, topY + j, wall)
 
-            # Extrude the room interior
-            #for j in range(0, sizeY - 2):
-            #    for i in range(0, sizeX - 2):
-            #        grid.set(topX + i + 1, topY + j + 1, None)
-
             # If this isn't the first room, place the entry door
             if idx > 0:
                 # Pick a door color different from the previous one
@@ -156,8 +168,13 @@ class MultiRoomEnv(AIGameEnv):
                     doorColors.remove(prevDoorColor)
                 doorColor = self.np_random.choice(tuple(doorColors))
 
-                grid.set(*entryDoorPos, Door(doorColor))
+                room.entryDoor = Door(doorColor)
+                grid.set(*room.entryDoorPos, room.entryDoor)
                 prevDoorColor = doorColor
+
+                prevRoom = roomList[idx-1]
+                prevRoom.exitDoorPos = entryDoorPos
+                prevRoom.exitDoor = room.entryDoor
 
         # Place the final goal
         goalX = self.np_random.randint(topX + 1, topX + sizeX - 2)
@@ -175,9 +192,6 @@ class MultiRoomEnv(AIGameEnv):
         entryDoorWall,
         entryDoorPos
     ):
-        #print()
-        #print()
-
         # Choose the room size randomly
         sizeX = self.np_random.randint(minSz, maxSz)
         sizeY = self.np_random.randint(minSz, maxSz)
@@ -221,26 +235,24 @@ class MultiRoomEnv(AIGameEnv):
 
         # If the room intersects with previous rooms, can't place it here
         for room in roomList[:-1]:
-            x1, y1, sX, sY, _ = room
-
             nonOverlap = \
-                topX + sizeX < x1 or \
-                x1 + sX <= topX or \
-                topY + sizeY < y1 or \
-                y1 + sY <= topY
-
-            print('x1=%d, y1=%d' % (x1, y1))
-
-            print('topX=%d, topY=%d' % (topX, topY))
-
-            print(y1 + sY)
+                topX + sizeX < room.top[0] or \
+                room.top[0] + room.size[0] <= topX or \
+                topY + sizeY < room.top[1] or \
+                room.top[1] + room.size[1] <= topY
 
             if not nonOverlap:
-                print('overlap')
                 return False
 
         # Add this room to the list
-        roomList.append((topX, topY, sizeX, sizeY, entryDoorPos))
+        roomList.append(Room(
+            (topX, topY),
+            (sizeX, sizeY),
+            entryDoorPos,
+            None,
+            None,
+            None
+        ))
 
         # If this was the last room, stop
         if numLeft == 1:
