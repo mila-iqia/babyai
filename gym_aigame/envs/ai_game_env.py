@@ -144,8 +144,10 @@ class Door(WorldObj):
         r.drawCircle(CELL_PIXELS * 0.75, CELL_PIXELS * 0.5, 2)
 
     def toggle(self, env):
-        self.isOpen = True
-        return True
+        if not self.isOpen:
+            self.isOpen = True
+            return True
+        return False
 
     def canOverlap(self):
         """The agent can only walk over this cell when the door is open"""
