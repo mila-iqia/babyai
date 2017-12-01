@@ -454,7 +454,7 @@ class AIGameEnv(gym.Env):
     """
 
     metadata = {
-        'render.modes': ['human', 'rgb_array'],
+        'render.modes': ['human', 'rgb_array', 'pixmap'],
         'video.frames_per_second' : 10
     }
 
@@ -673,7 +673,7 @@ class AIGameEnv(gym.Env):
 
     def getObsRender(self, obs):
         """
-        Render an observation
+        Render an agent observation for visualization
         """
 
         if self.obsRender == None:
@@ -718,8 +718,8 @@ class AIGameEnv(gym.Env):
         """
 
         if close:
-            #if self.gridRender:
-            #    self.gridRender.close()
+            if self.gridRender:
+                self.gridRender.close()
             return
 
         if self.gridRender is None:
@@ -765,5 +765,7 @@ class AIGameEnv(gym.Env):
 
         if mode == 'rgb_array':
             return r.getArray()
+        elif mode == 'pixmap':
+            return r.getPixmap()
 
-        return r.getPixmap()
+        return r

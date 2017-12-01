@@ -4,13 +4,18 @@ from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor, QPolygon
 from PyQt5.QtCore import QPoint, QSize, QRect
 
 class Renderer:
-
     def __init__(self, width, height):
         self.width = width
         self.height = height
 
         self.img = QImage(width, height, QImage.Format_RGB888)
         self.painter = QPainter()
+
+    def close(self):
+        """
+        Deallocate resources used
+        """
+        pass
 
     def beginFrame(self):
         self.painter.begin(self.img)

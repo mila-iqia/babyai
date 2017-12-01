@@ -244,7 +244,7 @@ class AIGameWindow(QMainWindow):
         unwrapped = self.env.unwrapped
 
         # Render and display the environment
-        pixmap = self.env.render()
+        pixmap = self.env.render(mode='pixmap')
         self.imgLabel.setPixmap(pixmap)
 
         # Render and display the agent's view
