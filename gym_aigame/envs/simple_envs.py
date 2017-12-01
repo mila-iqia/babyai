@@ -87,21 +87,34 @@ class MultiRoomEnv(AIGameEnv):
     Environment with multiple rooms (subgoals)
     """
 
-    def __init__(self, numRooms, maxRoomSize=10):
-        assert numRooms > 0
+    def __init__(self,
+        minNumRooms,
+        maxNumRooms,
+        maxRoomSize=10
+    ):
+        assert minNumRooms > 0
+        assert maxNumRooms >= minNumRooms
         assert maxRoomSize >= 4
 
-        self.numRooms = numRooms
+        self.minNumRooms = minNumRooms
+        self.maxNumRooms = maxNumRooms
         self.maxRoomSize = maxRoomSize
+
         self.rooms = []
 
-        super(MultiRoomEnv, self).__init__(gridSize=25, maxSteps=numRooms * 20)
+        super(MultiRoomEnv, self).__init__(
+            gridSize=25,
+            maxSteps=self.maxNumRooms * 20
+        )
 
     def _genGrid(self, width, height):
 
         roomList = []
 
-        while len(roomList) < self.numRooms:
+        # Choose a random number of rooms to generate
+        numRooms = self.np_random.randint(self.minNumRooms, self.maxNumRooms+1)
+
+        while len(roomList) < numRooms:
             curRoomList = []
 
             entryDoorPos = (
@@ -111,7 +124,7 @@ class MultiRoomEnv(AIGameEnv):
 
             # Recursively place the rooms
             self._placeRoom(
-                self.numRooms,
+                numRooms,
                 roomList=curRoomList,
                 minSz=4,
                 maxSz=self.maxRoomSize,
@@ -306,7 +319,10 @@ class MultiRoomEnv(AIGameEnv):
 
 class MultiRoomEnvN6(MultiRoomEnv):
     def __init__(self):
-        super(MultiRoomEnvN6, self).__init__(numRooms=6)
+        super(MultiRoomEnvN6, self).__init__(
+            minNumRooms=6,
+            maxNumRooms=6
+        )
 
 register(
     id='AIGame-Multi-Room-N6-v0',
