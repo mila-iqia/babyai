@@ -2,14 +2,53 @@ import numpy as np
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor, QPolygon
 from PyQt5.QtCore import QPoint, QSize, QRect
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
+from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QLabel, QFrame
+
+class Window(QMainWindow):
+    """
+    Simple application window to render the environment into
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        #self.resize(512, 512)
+        self.setWindowTitle('Baby AI Game')
+
+        self.imgLabel = QLabel()
+        self.imgLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+
+        # Arrange widgets horizontally
+        hbox = QHBoxLayout()
+        hbox.addStretch(1)
+        hbox.addWidget(self.imgLabel)
+        hbox.addStretch(1)
+
+        # Create a main widget for the window
+        mainWidget = QWidget(self)
+        self.setCentralWidget(mainWidget)
+        mainWidget.setLayout(hbox)
+
+        # Show the application window
+        self.show()
+        self.setFocus()
+
+    def setPixmap(self, pixmap):
+        self.imgLabel.setPixmap(pixmap)
 
 class Renderer:
-    def __init__(self, width, height):
+    def __init__(self, width, height, ownWindow=False):
         self.width = width
         self.height = height
 
         self.img = QImage(width, height, QImage.Format_RGB888)
         self.painter = QPainter()
+
+        self.window = None
+        if ownWindow:
+            self.app = QApplication([])
+            self.window = Window()
 
     def close(self):
         """
@@ -28,6 +67,10 @@ class Renderer:
     def endFrame(self):
         self.painter.end()
 
+        if self.window:
+            self.window.setPixmap(self.getPixmap())
+            self.app.processEvents()
+
     def getPixmap(self):
         return QPixmap.fromImage(self.img)
 
@@ -40,18 +83,6 @@ class Renderer:
         width = self.width
         height = self.height
         shape = (width, height, 3)
-
-        # Copy the pixel data to a numpy array
-        #output = np.ndarray(shape=shape, dtype='uint8')
-        #for y in range(0, height):
-        #    for x in range(0, width):
-        #        pix = self.img.pixel(x, y)
-        #        r = (pix >> 16) & 0xFF
-        #        g = (pix >>  8) & 0xFF
-        #        b = (pix >>  0) & 0xFF
-        #        output[x, y, 0] = r
-        #        output[x, y, 1] = g
-        #        output[x, y, 2] = b
 
         numBytes = self.width * self.height * 3
         buf = self.img.bits().asstring(numBytes)

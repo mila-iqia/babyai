@@ -725,7 +725,8 @@ class AIGameEnv(gym.Env):
         if self.gridRender is None:
             self.gridRender = Renderer(
                 self.gridSize * CELL_PIXELS,
-                self.gridSize * CELL_PIXELS
+                self.gridSize * CELL_PIXELS,
+                True if mode == 'human' else False
             )
 
         r = self.gridRender
