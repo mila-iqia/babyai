@@ -34,6 +34,11 @@ class Window(QMainWindow):
         self.show()
         self.setFocus()
 
+        self.closed = False
+
+    def closeEvent(self, event):
+        self.closed = True
+
     def setPixmap(self, pixmap):
         self.imgLabel.setPixmap(pixmap)
 
@@ -68,8 +73,11 @@ class Renderer:
         self.painter.end()
 
         if self.window:
-            self.window.setPixmap(self.getPixmap())
-            self.app.processEvents()
+            if self.window.closed:
+                self.window = None
+            else:
+                self.window.setPixmap(self.getPixmap())
+                self.app.processEvents()
 
     def getPixmap(self):
         return QPixmap.fromImage(self.img)
