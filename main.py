@@ -184,8 +184,9 @@ class AIGameWindow(QMainWindow):
         QMainWindow.mousePressEvent(self, event)
 
     def missionEdit(self):
+        # The agent will get the mission as an observation
+        # before performing the next action
         text = self.missionBox.toPlainText()
-        #print('new mission: ' + text)
 
     def adviceEdit(self):
         # The agent will get this advice as an observation
@@ -252,7 +253,7 @@ class AIGameWindow(QMainWindow):
         obsPixmap = unwrapped.getObsRender(image)
         self.obsImgLabel.setPixmap(obsPixmap)
 
-        # Set the steps remaining display
+        # Set the steps remaining displayadvice
         stepsRem = unwrapped.getStepsRemaining()
         self.stepsLabel.setText(str(stepsRem))
 
@@ -262,6 +263,12 @@ class AIGameWindow(QMainWindow):
     def stepEnv(self, action=None):
         #print('stepEnv')
         #print('action=%s' % action)
+
+        # If the environment doesn't supply a mission, get the
+        # mission from the input text box
+        if not hasattr(self.lastObs, 'mission'):
+            text = self.missionBox.toPlainText()
+            self.lastObs['mission'] = text
 
         # If no manual action was specified by the user
         if action == None:

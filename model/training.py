@@ -12,9 +12,11 @@ def selectAction(obs):
     print('selectAction: implement me!')
 
     image = obs['image']
+    mission = obs['mission']
     advice = obs['advice']
 
     print('image: %s' % str(image.shape))
+    print('mission: %s' % mission)
     print('advice: %s' % advice)
 
     import random
