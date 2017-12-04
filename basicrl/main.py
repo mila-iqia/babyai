@@ -2,10 +2,10 @@ import copy
 import glob
 import os
 import time
+import operator
+from functools import reduce
 
 import gym
-import gym_aigame
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -24,6 +24,16 @@ from storage import RolloutStorage
 from visualize import visdom_plot
 
 args = get_args()
+
+try:
+    import gym_aigame
+except:
+    pass
+
+try:
+    import gym_duckietown
+except:
+    pass
 
 assert args.algo in ['a2c', 'ppo', 'acktr']
 if args.recurrent_policy:
@@ -70,12 +80,14 @@ def main():
     obs_shape = envs.observation_space.shape
     obs_shape = (obs_shape[0] * args.num_stack, *obs_shape[1:])
 
-    if len(envs.observation_space.shape) == 3:
+    obs_numel = reduce(operator.mul, obs_shape, 1)
+
+    if len(obs_shape) == 3 and obs_numel > 1024:
         actor_critic = CNNPolicy(obs_shape[0], envs.action_space, args.recurrent_policy)
     else:
         assert not args.recurrent_policy, \
             "Recurrent policy is not implemented for the MLP controller"
-        actor_critic = MLPPolicy(obs_shape[0], envs.action_space)
+        actor_critic = MLPPolicy(obs_numel, envs.action_space)
 
     if envs.action_space.__class__.__name__ == "Discrete":
         action_shape = 1
@@ -239,6 +251,10 @@ def main():
             save_model = actor_critic
             if args.cuda:
                 save_model = copy.deepcopy(actor_critic).cpu()
+
+            save_model = [save_model,
+                            hasattr(envs, 'ob_rms') and envs.ob_rms or None]
+
             torch.save(save_model, os.path.join(save_path, args.env_name + ".pt"))
 
         if j % args.log_interval == 0:

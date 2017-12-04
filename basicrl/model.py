@@ -1,9 +1,10 @@
+import operator
+from functools import reduce
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from distributions import Categorical, DiagGaussian
 from utils import orthogonal
-
 
 def weights_init(m):
     classname = m.__class__.__name__
@@ -32,28 +33,17 @@ class FFPolicy(nn.Module):
         return value, action_log_probs, dist_entropy, states
 
 
-def printstat(self, input, output):
-    # input is a tuple of packed inputs
-    # output is a Variable. output.data is the Tensor we are interested
-    print('Inside ' + self.__class__.__name__ + ' forward')
-    print('')
-    print('input: mean {}, std {}'.format(input[0].data.mean(), input[0].data.std()))
-    print('output: mean {}, std {}'.format(output[0].data.mean(), output[0].data.std()))
-
 class CNNPolicy(FFPolicy):
     def __init__(self, num_inputs, action_space, use_gru):
         super(CNNPolicy, self).__init__()
+        self.conv1 = nn.Conv2d(num_inputs, 32, 8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, 4, stride=2)
+        self.conv3 = nn.Conv2d(64, 32, 3, stride=1)
 
-        self.conv1 = nn.Conv2d(num_inputs, 32, 2, stride=1)
-        self.conv2 = nn.Conv2d(32, 32, 2, stride=1)
-        self.conv3 = nn.Conv2d(32, 32, 2, stride=1)
-
-        self.linear1 = nn.Linear(32 * 4 * 4, 512)
+        self.linear1 = nn.Linear(32 * 7 * 7, 512)
 
         if use_gru:
             self.gru = nn.GRUCell(512, 512)
-
-        #self.lstm.register_forward_hook(printstat)
 
         self.critic_linear = nn.Linear(512, 1)
 
@@ -104,8 +94,7 @@ class CNNPolicy(FFPolicy):
         x = self.conv3(x)
         x = F.relu(x)
 
-        x = x.view(-1, 32 * 4 * 4)
-
+        x = x.view(-1, 32 * 7 * 7)
         x = self.linear1(x)
         x = F.relu(x)
 
@@ -176,6 +165,9 @@ class MLPPolicy(FFPolicy):
             self.dist.fc_mean.weight.data.mul_(0.01)
 
     def forward(self, inputs, states, masks):
+        batch_numel = reduce(operator.mul, inputs.size()[1:], 1)
+        inputs = inputs.view(-1, batch_numel)
+
         x = self.v_fc1(inputs)
         x = F.tanh(x)
 
