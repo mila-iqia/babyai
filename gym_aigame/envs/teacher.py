@@ -16,10 +16,12 @@ class Teacher(Wrapper):
 
         obs = self.env.reset(**kwargs)
 
-        return {
-            "image": obs,
-            "advice": "open the first door"
-        }
+        if not isinstance(obs, dict):
+            obs = { "image": obs, 'mission':'' }
+
+        obs["advice"] = "open the first door"
+
+        return obs
 
     def _step(self, action):
         """
@@ -33,9 +35,9 @@ class Teacher(Wrapper):
         else:
             advice = "get to the goal!"
 
-        obs = {
-            "image": obs,
-            "advice": advice
-        }
+        if not isinstance(obs, dict):
+            obs = { "image": obs, 'mission': '' }
+
+        obs["advice"] = advice
 
         return obs, reward, done, info

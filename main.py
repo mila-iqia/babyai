@@ -165,10 +165,10 @@ class AIGameWindow(QMainWindow):
         elif e.key() == Qt.Key_Space:
             self.stepEnv(AIGameEnv.ACTION_TOGGLE)
 
-        elif e.key() == Qt.Key_PageUp:
-            self.plusReward()
-        elif e.key() == Qt.Key_PageDown:
-            self.minusReward()
+        #elif e.key() == Qt.Key_PageUp:
+        #    self.plusReward()
+        #elif e.key() == Qt.Key_PageDown:
+        #    self.minusReward()
 
     def mousePressEvent(self, event):
         """
@@ -229,10 +229,19 @@ class AIGameWindow(QMainWindow):
     def resetEnv(self):
         obs = self.env.reset()
 
-        mission = "Get to the green goal square"
+        if not isinstance(obs, dict):
+            obs = { 'image': obs, 'advice': '', 'mission': '' }
+
+        # If no mission is specified
+        if obs['mission']:
+            mission = obs['mission']
+        else:
+            mission = "Get to the green goal square"
+
         self.missionBox.setPlainText(mission)
 
         self.lastObs = obs
+
         self.showEnv(obs)
 
     def reseedEnv(self):
@@ -276,6 +285,9 @@ class AIGameWindow(QMainWindow):
 
         obs, reward, done, info = self.env.step(action)
 
+        if not isinstance(obs, dict):
+            obs = { 'image': obs, 'advice': '', 'mission': '' }
+
         self.showEnv(obs)
         self.lastObs = obs
 
@@ -296,7 +308,6 @@ class AIGameWindow(QMainWindow):
                 time.sleep(0.1)
 
             self.stepEnv()
-
 
 def main(argv):
 
@@ -320,7 +331,6 @@ def main(argv):
 
     # Run the application
     sys.exit(app.exec_())
-
 
 if __name__ == '__main__':
     main(sys.argv)
