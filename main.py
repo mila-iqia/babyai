@@ -323,7 +323,7 @@ def main(argv):
 
     # Load the gym environment
     env = gym.make(options.env)
-    env = Teacher(env)
+    #env = Teacher(env)
 
     # Create the application window
     app = QApplication(sys.argv)
