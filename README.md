@@ -31,10 +31,18 @@ To run the interactive UI application:
 ./main.py
 ```
 
-Basic offline training code implementing PPO can be run with:
+The environment being run can be selected with the `--env-name` option, eg:
 
 ```
-python3 basicrl/main.py --env-name AI-Game-v0 --no-vis --num-processes 32 --algo ppo
+./main.py --env-name AIGame-Fetch-8x8-v0
+```
+
+To see available environments and their implementation, look at [simple_envs.py](gym_aigame/envs/simple_envs.py).
+
+Basic offline training code implementing ACKTR can be run with:
+
+```
+python3 basicrl/main.py --env-name AIGame-Empty-8x8-v0 --no-vis --num-processes 32 --algo acktr
 ```
 
 ## About this Project
