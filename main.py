@@ -172,15 +172,16 @@ class AIGameWindow(QMainWindow):
 
     def mousePressEvent(self, event):
         """
-        Clear the focus of the text boxes if somewhere
+        Clear the focus of the text boxes and buttons if somewhere
         else on the window is clicked
         """
 
+        # Get the object currently in focus
         focused = QApplication.focusWidget()
-        if focused == self.missionBox:
-            self.missionBox.clearFocus()
-        if focused == self.adviceBox:
-            self.adviceBox.clearFocus()
+
+        if isinstance(focused, (QPushButton, QTextEdit)):
+            focused.clearFocus()
+
         QMainWindow.mousePressEvent(self, event)
 
     def missionEdit(self):
