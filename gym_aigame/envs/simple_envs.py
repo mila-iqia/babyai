@@ -39,16 +39,16 @@ class DoorKeyEnv(AIGameEnv):
         gridSz = width
 
         # Create a vertical splitting wall
-        splitIdx = self.np_random.randint(2, gridSz-3)
+        splitIdx = self._randInt(2, gridSz-3)
         for i in range(0, gridSz):
             grid.set(splitIdx, i, Wall())
 
         # Place a door in the wall
-        doorIdx = self.np_random.randint(1, gridSz-2)
+        doorIdx = self._randInt(1, gridSz-2)
         grid.set(splitIdx, doorIdx, Door('yellow'))
 
         # Place a key on the left side
-        #keyIdx = self.np_random.randint(1 + gridSz // 2, gridSz-2)
+        #keyIdx = self._randInt(1 + gridSz // 2, gridSz-2)
         keyIdx = gridSz-2
         grid.set(1, keyIdx, Key('yellow'))
 
@@ -112,14 +112,14 @@ class MultiRoomEnv(AIGameEnv):
         roomList = []
 
         # Choose a random number of rooms to generate
-        numRooms = self.np_random.randint(self.minNumRooms, self.maxNumRooms+1)
+        numRooms = self._randInt(self.minNumRooms, self.maxNumRooms+1)
 
         while len(roomList) < numRooms:
             curRoomList = []
 
             entryDoorPos = (
-                self.np_random.randint(0, width - 2),
-                self.np_random.randint(0, width - 2)
+                self._randInt(0, width - 2),
+                self._randInt(0, width - 2)
             )
 
             # Recursively place the rooms
@@ -143,10 +143,10 @@ class MultiRoomEnv(AIGameEnv):
         topX, topY = roomList[0].top
         sizeX, sizeY = roomList[0].size
         self.startPos = (
-            self.np_random.randint(topX + 1, topX + sizeX - 2),
-            self.np_random.randint(topY + 1, topY + sizeY - 2)
+            self._randInt(topX + 1, topX + sizeX - 2),
+            self._randInt(topY + 1, topY + sizeY - 2)
         )
-        self.startDir = self.np_random.randint(0, 4)
+        self.startDir = self._randInt(0, 4)
 
         # Create the grid
         grid = Grid(width, height)
@@ -173,10 +173,10 @@ class MultiRoomEnv(AIGameEnv):
             # If this isn't the first room, place the entry door
             if idx > 0:
                 # Pick a door color different from the previous one
-                doorColors = set( COLORS.keys() )
+                doorColors = set(COLORS.keys())
                 if prevDoorColor:
                     doorColors.remove(prevDoorColor)
-                doorColor = self.np_random.choice(tuple(doorColors))
+                doorColor = self._randElem(doorColors)
 
                 entryDoor = Door(doorColor)
                 grid.set(*room.entryDoorPos, entryDoor)
@@ -187,8 +187,8 @@ class MultiRoomEnv(AIGameEnv):
 
         # Place the final goal
         while True:
-            goalX = self.np_random.randint(topX + 1, topX + sizeX - 1)
-            goalY = self.np_random.randint(topY + 1, topY + sizeY - 1)
+            goalX = self._randInt(topX + 1, topX + sizeX - 1)
+            goalY = self._randInt(topY + 1, topY + sizeY - 1)
 
             # Make sure the goal doesn't overlap with the agent
             if (goalX, goalY) != self.startPos:
@@ -207,8 +207,8 @@ class MultiRoomEnv(AIGameEnv):
         entryDoorPos
     ):
         # Choose the room size randomly
-        sizeX = self.np_random.randint(minSz, maxSz+1)
-        sizeY = self.np_random.randint(minSz, maxSz+1)
+        sizeX = self._randInt(minSz, maxSz+1)
+        sizeY = self._randInt(minSz, maxSz+1)
 
         # The first room will be at the door position
         if len(roomList) == 0:
@@ -217,21 +217,21 @@ class MultiRoomEnv(AIGameEnv):
         elif entryDoorWall == 0:
             topX = entryDoorPos[0] - sizeX + 1
             y = entryDoorPos[1]
-            topY = self.np_random.randint(y - sizeY + 2, y)
+            topY = self._randInt(y - sizeY + 2, y)
         # Entry wall on the south
         elif entryDoorWall == 1:
             x = entryDoorPos[0]
-            topX = self.np_random.randint(x - sizeX + 2, x)
+            topX = self._randInt(x - sizeX + 2, x)
             topY = entryDoorPos[1] - sizeY + 1
         # Entry wall on the left
         elif entryDoorWall == 2:
             topX = entryDoorPos[0]
             y = entryDoorPos[1]
-            topY = self.np_random.randint(y - sizeY + 2, y)
+            topY = self._randInt(y - sizeY + 2, y)
         # Entry wall on the top
         elif entryDoorWall == 3:
             x = entryDoorPos[0]
-            topX = self.np_random.randint(x - sizeX + 2, x)
+            topX = self._randInt(x - sizeX + 2, x)
             topY = entryDoorPos[1]
         else:
             assert False, entryDoorWall
@@ -271,7 +271,7 @@ class MultiRoomEnv(AIGameEnv):
             # Pick which wall to place the out door on
             wallSet = set((0, 1, 2, 3))
             wallSet.remove(entryDoorWall)
-            exitDoorWall = self.np_random.choice(tuple(wallSet))
+            exitDoorWall = self._randElem(wallSet)
             nextEntryWall = (exitDoorWall + 2) % 4
 
             # Pick the exit door position
@@ -279,24 +279,24 @@ class MultiRoomEnv(AIGameEnv):
             if exitDoorWall == 0:
                 exitDoorPos = (
                     topX + sizeX - 1,
-                    topY + self.np_random.randint(1, sizeY - 1)
+                    topY + self._randInt(1, sizeY - 1)
                 )
             # Exit on south wall
             elif exitDoorWall == 1:
                 exitDoorPos = (
-                    topX + self.np_random.randint(1, sizeX - 1),
+                    topX + self._randInt(1, sizeX - 1),
                     topY + sizeY - 1
                 )
             # Exit on left wall
             elif exitDoorWall == 2:
                 exitDoorPos = (
                     topX,
-                    topY + self.np_random.randint(1, sizeY - 1)
+                    topY + self._randInt(1, sizeY - 1)
                 )
             # Exit on north wall
             elif exitDoorWall == 3:
                 exitDoorPos = (
-                    topX + self.np_random.randint(1, sizeX - 1),
+                    topX + self._randInt(1, sizeX - 1),
                     topY
                 )
             else:
@@ -363,8 +363,8 @@ class FetchEnv(AIGameEnv):
 
         # For each object to be generated
         for i in range(0, self.numObjs):
-            objType = types[self.np_random.randint(0, len(types))]
-            objColor = colors[self.np_random.randint(0, len(colors))]
+            objType = self._randElem(types)
+            objColor = self._randElem(colors)
 
             if objType == 'key':
                 obj = Key(objColor)
@@ -373,8 +373,8 @@ class FetchEnv(AIGameEnv):
 
             while True:
                 pos = (
-                    self.np_random.randint(1, gridSz - 1),
-                    self.np_random.randint(1, gridSz - 1)
+                    self._randInt(1, gridSz - 1),
+                    self._randInt(1, gridSz - 1)
                 )
 
                 if pos != self.startPos:
@@ -384,15 +384,14 @@ class FetchEnv(AIGameEnv):
             objs.append(obj)
 
         # Choose a random object to be picked up
-        target = objs[self.np_random.randint(0, len(objs))]
+        target = objs[self._randInt(0, len(objs))]
         self.targetType = target.type
         self.targetColor = target.color
 
         descStr = '%s %s' % (self.targetColor, self.targetType)
-        #print(descStr)
 
         # Generate the mission string
-        idx = self.np_random.randint(0, 5)
+        idx = self._randInt(0, 5)
         if idx == 0:
             self.mission = 'get a %s' % descStr
         elif idx == 1:
@@ -437,10 +436,6 @@ class FetchEnv(AIGameEnv):
         }
 
         return obs, reward, done, info
-
-#class DoorKeyEnv16x16(DoorKeyEnv):
-#    def __init__(self):
-#        super(DoorKeyEnv16x16, self).__init__(size=16)
 
 register(
     id='AIGame-Fetch-8x8-v0',
