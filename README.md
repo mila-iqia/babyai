@@ -55,10 +55,6 @@ To run the interactive UI application:
 ./main.py
 ```
 
-To see the available environments and their implementation, please have a look at
-the [gym_minigrid](https://github.com/maximecb/gym-minigrid) repository, and
-in particular, the [simple_envs.py](https://github.com/maximecb/gym-minigrid/blob/master/gym_minigrid/envs/simple_envs.py) source file.
-
 The environment being run can be selected with the `--env-name` option, eg:
 
 ```
@@ -70,6 +66,10 @@ Basic offline training code implementing ACKTR can be run with:
 ```
 python3 basicrl/main.py --env-name MiniGrid-Empty-6x6-v0 --no-vis --num-processes 32 --algo acktr
 ```
+
+To see the available environments and their implementation, please have a look at
+the [gym_minigrid](https://github.com/maximecb/gym-minigrid) repository, and
+in particular, the [simple_envs.py](https://github.com/maximecb/gym-minigrid/blob/master/gym_minigrid/envs/simple_envs.py) source file.
 
 ## About this Project
 
