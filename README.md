@@ -48,6 +48,27 @@ cd baby-ai-game
 pip3 install -e .
 ```
 
+Optionally, if you wish use the reinforcement learning code included
+under [/basicrl](/basicrl), you can install its dependencies as follows:
+
+```
+cd basicrl
+
+# PyTorch
+conda install pytorch torchvision -c soumith
+
+# OpenAI baselines
+git clone https://github.com/openai/baselines.git
+cd baselines
+pip install -e .
+
+# Other requirements
+pip install -r requirements.txt
+```
+
+Note: the basicrl code is a custom fork of [this repository](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr),
+which was modified to work with this environment.
+
 ## Usage
 
 To run the interactive UI application:
