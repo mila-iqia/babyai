@@ -4,16 +4,18 @@ Prototype of a game where a reinforcement learning agent is trained through natu
 
 ## Instructions for Committers
 
-If you have been given access to this repository, please avoid pushing
+If you have been given write access to this repository, please avoid pushing
 commits to the `master` branch directly, and instead create your own branch
 using the `git checkout -b <branch_name>` command. This will allow everyone to
 run their own experiments and structure their code as they see fit, without
 interfering with the work of others.
 
 If you have found a bug, or would like to request a change or improvement
-to the grid world environment or user interface, please open and issue
-on this repository. Changes to the master branch should be made by creating
-a pull request, please avoid directly pushing commits to it.
+to the grid world environment or user interface, please
+[open an issue](https://github.com/maximecb/baby-ai-game/issues)
+on this repository. The master branch is meant to serve as a blank template
+to get people started with their research. Changes to the master branch should
+be made by creating a pull request, please avoid directly pushing commits to it.
 
 ## Installation
 
