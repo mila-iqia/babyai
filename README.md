@@ -25,6 +25,7 @@ Requirements:
 - numpy
 - PyQT5
 - PyTorch
+- OpenAI baselines
 - matplotlib
 
 Start by manually installing PyTorch. See the [PyTorch website](http://pytorch.org/)

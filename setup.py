@@ -8,6 +8,7 @@ setup(
         'gym>=0.9.0',
         'numpy>=1.10.0',
         'pyqt5',
-        'matplotlib'
+        'matplotlib',
+        'baselines>=0.1.4'
     ]
 )
