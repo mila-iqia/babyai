@@ -2,6 +2,19 @@
 
 Prototype of a game where a reinforcement learning agent is trained through natural language instructions.
 
+## Instructions for Committers
+
+If you have been given access to this repository, please avoid pushing
+commits to the `master` branch directly, and instead create your own branch
+using the `git checkout -b <branch_name>` command. This will allow everyone to
+run their own experiments and structure their code as they see fit, without
+interfering with the work of others.
+
+If you have found a bug, or would like to request a change or improvement
+to the grid world environment or user interface, please open and issue
+on this repository. Changes to the master branch should be made by creating
+a pull request, please avoid directly pushing commits to it.
+
 ## Installation
 
 Requirements:
@@ -11,11 +24,20 @@ Requirements:
 - PyQT5
 - PyTorch
 - matplotlib
-- nltk
 
-Start by manually installing [PyTorch](http://pytorch.org/).
+Start by manually installing PyTorch. See the [PyTorch website](http://pytorch.org/)
+for installation instructions specific to your platform.
 
-Then, clone the repository and install the other dependencies with `pip3`:
+Then, install the minigrid Gym environment:
+
+```
+git clone https://github.com/maximecb/gym_minigrid.git
+cd gym_minigrid
+pip3 install -e .
+cd ..
+```
+
+Then, clone this repository and install the other dependencies with `pip3`:
 
 ```
 git clone https://github.com/maximecb/baby-ai-game.git
@@ -31,18 +53,20 @@ To run the interactive UI application:
 ./main.py
 ```
 
+To see the available environments and their implementation, please have a look at
+the [gym_minigrid](https://github.com/maximecb/gym-minigrid) repository, and
+in particular, the [simple_envs.py](https://github.com/maximecb/gym-minigrid/blob/master/gym_minigrid/envs/simple_envs.py) source file.
+
 The environment being run can be selected with the `--env-name` option, eg:
 
 ```
-./main.py --env-name AIGame-Fetch-8x8-v0
+./main.py --env-name MiniGrid-Fetch-8x8-v0
 ```
-
-To see available environments and their implementation, look at [simple_envs.py](gym_aigame/envs/simple_envs.py).
 
 Basic offline training code implementing ACKTR can be run with:
 
 ```
-python3 basicrl/main.py --env-name AIGame-Empty-8x8-v0 --no-vis --num-processes 32 --algo acktr
+python3 basicrl/main.py --env-name MiniGrid-Empty-6x6-v0 --no-vis --num-processes 32 --algo acktr
 ```
 
 ## About this Project

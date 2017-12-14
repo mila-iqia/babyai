@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 
 import gym
-from gym_aigame.envs import AIGameEnv, Teacher
+from gym_minigrid.envs import MiniGridEnv
 from model.training import selectAction
 
 class AIGameWindow(QMainWindow):
@@ -157,13 +157,13 @@ class AIGameWindow(QMainWindow):
 
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Left:
-            self.stepEnv(AIGameEnv.ACTION_LEFT)
+            self.stepEnv(MiniGridEnv.ACTION_LEFT)
         elif e.key() == Qt.Key_Right:
-            self.stepEnv(AIGameEnv.ACTION_RIGHT)
+            self.stepEnv(MiniGridEnv.ACTION_RIGHT)
         elif e.key() == Qt.Key_Up:
-            self.stepEnv(AIGameEnv.ACTION_FORWARD)
+            self.stepEnv(MiniGridEnv.ACTION_FORWARD)
         elif e.key() == Qt.Key_Space:
-            self.stepEnv(AIGameEnv.ACTION_TOGGLE)
+            self.stepEnv(MiniGridEnv.ACTION_TOGGLE)
 
         #elif e.key() == Qt.Key_PageUp:
         #    self.plusReward()
@@ -271,9 +271,6 @@ class AIGameWindow(QMainWindow):
         self.adviceBox.setPlainText(advice)
 
     def stepEnv(self, action=None):
-        #print('stepEnv')
-        #print('action=%s' % action)
-
         # If the environment doesn't supply a mission, get the
         # mission from the input text box
         if not hasattr(self.lastObs, 'mission'):
@@ -318,13 +315,12 @@ def main(argv):
         "--env-name",
         dest="env",
         help="gym environment to load",
-        default='AIGame-Multi-Room-N6-v0'
+        default='MiniGrid-Multi-Room-N6-v0'
     )
     (options, args) = parser.parse_args()
 
     # Load the gym environment
     env = gym.make(options.env)
-    #env = Teacher(env)
 
     # Create the application window
     app = QApplication(sys.argv)
