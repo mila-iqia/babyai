@@ -119,7 +119,7 @@ class MultiRoomEnv(AIGameEnv):
 
             entryDoorPos = (
                 self._randInt(0, width - 2),
-                self._randInt(0, width - 2)
+                self._randInt(0, height - 2)
             )
 
             # Recursively place the rooms
@@ -183,7 +183,7 @@ class MultiRoomEnv(AIGameEnv):
                 prevDoorColor = doorColor
 
                 prevRoom = roomList[idx-1]
-                prevRoom.exitDoorPos = entryDoorPos
+                prevRoom.exitDoorPos = room.entryDoorPos
 
         # Place the final goal
         while True:
