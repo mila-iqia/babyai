@@ -90,8 +90,7 @@ python3 basicrl/main.py --env-name MiniGrid-Empty-6x6-v0 --no-vis --num-processe
 ```
 
 To see the available environments and their implementation, please have a look at
-the [gym_minigrid](https://github.com/maximecb/gym-minigrid) repository, and
-in particular, the [simple_envs.py](https://github.com/maximecb/gym-minigrid/blob/master/gym_minigrid/envs/simple_envs.py) source file.
+the [gym_minigrid](https://github.com/maximecb/gym-minigrid) repository.
 
 ## About this Project
 
