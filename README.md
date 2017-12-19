@@ -142,6 +142,8 @@ gestures in combination with language may be key.
 
 [FiLM: Visual Reasoning with a General Conditioning Layer](https://sites.google.com/view/deep-rl-bootcamp/lectures)
 
+[Embodied Question Answering](https://arxiv.org/abs/1711.11543)
+
 ### Reinforcement Learning
 
 [Reinforcement Learning with Unsupervised Auxiliary Tasks](https://arxiv.org/abs/1611.05397)

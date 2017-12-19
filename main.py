@@ -12,10 +12,12 @@ from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 
 import gym
-from gym_minigrid.envs import MiniGridEnv
+import gym_minigrid
+
 from model.training import selectAction
 
 class AIGameWindow(QMainWindow):
+    """Application window for the baby AI game"""
 
     def __init__(self, env):
         super().__init__()
@@ -157,18 +159,13 @@ class AIGameWindow(QMainWindow):
 
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Left:
-            self.stepEnv(MiniGridEnv.ACTION_LEFT)
+            self.stepEnv(self.env.actions.left)
         elif e.key() == Qt.Key_Right:
-            self.stepEnv(MiniGridEnv.ACTION_RIGHT)
+            self.stepEnv(self.env.actions.right)
         elif e.key() == Qt.Key_Up:
-            self.stepEnv(MiniGridEnv.ACTION_FORWARD)
+            self.stepEnv(self.env.actions.forward)
         elif e.key() == Qt.Key_Space:
-            self.stepEnv(MiniGridEnv.ACTION_TOGGLE)
-
-        #elif e.key() == Qt.Key_PageUp:
-        #    self.plusReward()
-        #elif e.key() == Qt.Key_PageDown:
-        #    self.minusReward()
+            self.stepEnv(self.env.actions.toggle)
 
     def mousePressEvent(self, event):
         """
@@ -308,14 +305,13 @@ class AIGameWindow(QMainWindow):
             self.stepEnv()
 
 def main(argv):
-
     parser = OptionParser()
     parser.add_option(
         "-e",
         "--env-name",
         dest="env",
         help="gym environment to load",
-        default='MiniGrid-Multi-Room-N6-v0'
+        default='MiniGrid-MultiRoom-N6-v0'
     )
     (options, args) = parser.parse_args()
 
