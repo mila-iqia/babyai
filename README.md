@@ -1,6 +1,6 @@
 # Baby AI Game
 
-Prototype of a game where a reinforcement learning agent is trained through natural language instructions.
+Prototype of a game where a reinforcement learning agent is trained through natural language instructions. This is a research project based at the [Montreal Institute for Learning Algorithms (MILA)](https://mila.quebec/en/).
 
 ## Instructions for Committers
 
@@ -57,13 +57,17 @@ cd basicrl
 # PyTorch
 conda install pytorch torchvision -c soumith
 
+# Dependencies needed by OpenAI baselines
+sudo apt install libopenmpi-dev zlib1g-dev cmake
+
 # OpenAI baselines
 git clone https://github.com/openai/baselines.git
 cd baselines
-pip install -e .
+pip3 install -e .
+cd ..
 
 # Other requirements
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 Note: the basicrl code is a custom fork of [this repository](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr),
