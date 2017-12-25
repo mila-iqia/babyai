@@ -25,7 +25,18 @@ from visualize import visdom_plot
 
 args = get_args()
 
+try:
+    import gym_aigame
+except:
+    pass
+
+try:
+    import gym_duckietown
+except:
+    pass
+
 assert args.algo in ['a2c', 'ppo', 'acktr']
+
 if args.recurrent_policy:
     assert args.algo in ['a2c', 'ppo'], \
         'Recurrent policy is not implemented for ACKTR'

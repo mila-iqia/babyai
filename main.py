@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 
+import sys
+import os
+directory=os.getcwd()
+directory=directory+'/model'
+if not directory in sys.path:
+    sys.path.insert(0,directory)
+print("adding directory path")
+
+
 import time
 import sys
 import threading
@@ -11,13 +20,12 @@ from PyQt5.QtWidgets import QLabel, QTextEdit, QFrame
 from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 
-import gym
-import gym_minigrid
 
+import gym
+from gym_aigame.envs import AIGameEnv, Teacher
 from model.training import selectAction
 
 class AIGameWindow(QMainWindow):
-    """Application window for the baby AI game"""
 
     def __init__(self, env):
         super().__init__()
@@ -35,6 +43,7 @@ class AIGameWindow(QMainWindow):
         self.stepTimer.setInterval(0)
         self.stepTimer.setSingleShot(False)
         self.stepTimer.timeout.connect(self.stepClicked)
+        self.stepIdx=1
 
     def initUI(self):
         """Create and connect the UI elements"""
@@ -159,13 +168,18 @@ class AIGameWindow(QMainWindow):
 
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Left:
-            self.stepEnv(self.env.actions.left)
+            self.stepEnv(AIGameEnv.ACTION_LEFT)
         elif e.key() == Qt.Key_Right:
-            self.stepEnv(self.env.actions.right)
+            self.stepEnv(AIGameEnv.ACTION_RIGHT)
         elif e.key() == Qt.Key_Up:
-            self.stepEnv(self.env.actions.forward)
+            self.stepEnv(AIGameEnv.ACTION_FORWARD)
         elif e.key() == Qt.Key_Space:
-            self.stepEnv(self.env.actions.toggle)
+            self.stepEnv(AIGameEnv.ACTION_TOGGLE)
+
+        #elif e.key() == Qt.Key_PageUp:
+        #    self.plusReward()
+        #elif e.key() == Qt.Key_PageDown:
+        #    self.minusReward()
 
     def mousePressEvent(self, event):
         """
@@ -268,6 +282,9 @@ class AIGameWindow(QMainWindow):
         self.adviceBox.setPlainText(advice)
 
     def stepEnv(self, action=None):
+        #print('stepEnv : ',self.stepIdx)
+        #print('action=%s' % action)
+
         # If the environment doesn't supply a mission, get the
         # mission from the input text box
         if not hasattr(self.lastObs, 'mission'):
@@ -285,7 +302,7 @@ class AIGameWindow(QMainWindow):
 
         self.showEnv(obs)
         self.lastObs = obs
-
+        self.stepIdx+=1
         if done:
             self.resetEnv()
 
@@ -305,18 +322,20 @@ class AIGameWindow(QMainWindow):
             self.stepEnv()
 
 def main(argv):
+
     parser = OptionParser()
     parser.add_option(
         "-e",
         "--env-name",
         dest="env",
         help="gym environment to load",
-        default='MiniGrid-MultiRoom-N6-v0'
+        default='AIGame-Multi-Room-N6-v0'
     )
     (options, args) = parser.parse_args()
 
     # Load the gym environment
     env = gym.make(options.env)
+    env = Teacher(env)
 
     # Create the application window
     app = QApplication(sys.argv)

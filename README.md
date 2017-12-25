@@ -1,21 +1,6 @@
 # Baby AI Game
 
-Prototype of a game where a reinforcement learning agent is trained through natural language instructions. This is a research project based at the [Montreal Institute for Learning Algorithms (MILA)](https://mila.quebec/en/).
-
-## Instructions for Committers
-
-If you have been given write access to this repository, please avoid pushing
-commits to the `master` branch directly, and instead create your own branch
-using the `git checkout -b <branch_name>` command. This will allow everyone to
-run their own experiments and structure their code as they see fit, without
-interfering with the work of others.
-
-If you have found a bug, or would like to request a change or improvement
-to the grid world environment or user interface, please
-[open an issue](https://github.com/maximecb/baby-ai-game/issues)
-on this repository. The master branch is meant to serve as a blank template
-to get people started with their research. Changes to the master branch should
-be made by creating a pull request, please avoid directly pushing commits to it.
+Prototype of a game where a reinforcement learning agent is trained through natural language instructions.
 
 ## Installation
 
@@ -25,53 +10,18 @@ Requirements:
 - numpy
 - PyQT5
 - PyTorch
-- OpenAI baselines
 - matplotlib
+- nltk
 
-Start by manually installing PyTorch. See the [PyTorch website](http://pytorch.org/)
-for installation instructions specific to your platform.
+Start by manually installing [PyTorch](http://pytorch.org/).
 
-Then, install the [minigrid Gym environment](https://github.com/maximecb/gym-minigrid):
-
-```
-git clone https://github.com/maximecb/gym-minigrid.git
-cd gym-minigrid
-pip3 install -e .
-cd ..
-```
-
-Then, clone this repository and install the other dependencies with `pip3`:
+Then, clone the repository and install the other dependencies with `pip3`:
 
 ```
 git clone https://github.com/maximecb/baby-ai-game.git
 cd baby-ai-game
 pip3 install -e .
 ```
-
-Optionally, if you wish use the reinforcement learning code included
-under [/basicrl](/basicrl), you can install its dependencies as follows:
-
-```
-cd basicrl
-
-# PyTorch
-conda install pytorch torchvision -c soumith
-
-# Dependencies needed by OpenAI baselines
-sudo apt install libopenmpi-dev zlib1g-dev cmake
-
-# OpenAI baselines
-git clone https://github.com/openai/baselines.git
-cd baselines
-pip3 install -e .
-cd ..
-
-# Other requirements
-pip3 install -r requirements.txt
-```
-
-Note: the basicrl code is a custom fork of [this repository](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr),
-which was modified to work with this environment.
 
 ## Usage
 
@@ -84,17 +34,16 @@ To run the interactive UI application:
 The environment being run can be selected with the `--env-name` option, eg:
 
 ```
-./main.py --env-name MiniGrid-Fetch-8x8-v0
+./main.py --env-name AIGame-Fetch-8x8-v0
 ```
+
+To see available environments and their implementation, look at [simple_envs.py](gym_aigame/envs/simple_envs.py).
 
 Basic offline training code implementing ACKTR can be run with:
 
 ```
-python3 basicrl/main.py --env-name MiniGrid-Empty-6x6-v0 --no-vis --num-processes 32 --algo acktr
+python3 basicrl/main.py --env-name AIGame-Empty-8x8-v0 --no-vis --num-processes 32 --algo acktr
 ```
-
-To see the available environments and their implementation, please have a look at
-the [gym_minigrid](https://github.com/maximecb/gym-minigrid) repository.
 
 ## About this Project
 
@@ -144,8 +93,6 @@ gestures in combination with language may be key.
 [Programmable Agents](https://arxiv.org/abs/1706.06383) and associated [RLSS 2017 talk by Nando de Freitas](http://videolectures.net/deeplearning2017_de_freitas_deep_control/)
 
 [FiLM: Visual Reasoning with a General Conditioning Layer](https://sites.google.com/view/deep-rl-bootcamp/lectures)
-
-[Embodied Question Answering](https://arxiv.org/abs/1711.11543)
 
 ### Reinforcement Learning
 
