@@ -7,9 +7,8 @@ setup(
     install_requires=[
         'gym>=0.9.0',
         'numpy>=1.10.0',
-        'pandas>=0.19.0',
         'pyqt5',
         'matplotlib',
-        'nltk'
+        'baselines>=0.1.4'
     ]
 )

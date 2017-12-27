@@ -12,13 +12,10 @@ try:
 except ImportError:
     pass
 
-class ScaleActions(gym.ActionWrapper):
-    def __init__(self, env=None):
-        super(ScaleActions, self).__init__(env)
-
-    def _step(self, action):
-        action = (numpy.tanh(action) + 1) / 2 * (self.action_space.high - self.action_space.low) + self.action_space.low
-        return self.env.step(action)
+try:
+    import gym_minigrid
+except:
+    pass
 
 def make_env(env_id, seed, rank, log_dir):
     def _thunk():
@@ -35,8 +32,6 @@ def make_env(env_id, seed, rank, log_dir):
         obs_shape = env.observation_space.shape
         if len(obs_shape) == 3 and obs_shape[2] == 3:
             env = WrapPyTorch(env)
-
-        #env = ScaleActions(env)
 
         return env
 
