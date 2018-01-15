@@ -14,8 +14,10 @@ except ImportError:
 
 try:
     import gym_minigrid
+    from gym_minigrid.wrappers import *
 except:
     pass
+
 
 def make_env(env_id, seed, rank, log_dir):
     def _thunk():
@@ -32,6 +34,8 @@ def make_env(env_id, seed, rank, log_dir):
         obs_shape = env.observation_space.shape
         if len(obs_shape) == 3 and obs_shape[2] == 3:
             env = WrapPyTorch(env)
+
+        #env = StateBonus(env)
 
         return env
 

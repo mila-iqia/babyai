@@ -1,6 +1,8 @@
 import argparse
 import os
+import sys
 import types
+import time
 
 import numpy as np
 import torch
@@ -85,6 +87,8 @@ while True:
     # Obser reward and next obs
     obs, reward, done, _ = env.step(cpu_actions)
 
+    time.sleep(0.05)
+
     masks.fill_(0.0 if done else 1.0)
 
     if current_obs.dim() == 4:
@@ -100,4 +104,7 @@ while True:
             humanPos, humanOrn = p.getBasePositionAndOrientation(torsoId)
             p.resetDebugVisualizerCamera(distance, yaw, -20, humanPos)
 
-    render_func('human')
+    renderer = render_func('human')
+
+    if not renderer.window:
+        sys.exit(0)
