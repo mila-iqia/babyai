@@ -98,7 +98,7 @@ the [gym_minigrid](https://github.com/maximecb/gym-minigrid) repository.
 
 ## About this Project
 
-You can find here a presentation of the project : [Baby AI Summary](https://docs.google.com/document/d/1WXY0HLHizxuZl0GMGY0j3FEqLaK1oX-66v-4PyZIvdU)
+You can find here a presentation of the project: [Baby AI Summary](https://docs.google.com/document/d/1WXY0HLHizxuZl0GMGY0j3FEqLaK1oX-66v-4PyZIvdU)
 
 The Baby AI Game is a game in which an agent existing in a simulated world
 will be trained to complete task through reinforcement learning as well
@@ -126,6 +126,8 @@ gestures in combination with language may be key.
 ## Relevant Materials
 
 ### Agents and Language
+
+[A Deep Compositional Framework for Human-like Language Acquisition in Virtual Environment](https://arxiv.org/abs/1703.09831)
 
 [Zero-Shot Task Generalization with Multi-Task Deep Reinforcement Learning](https://arxiv.org/abs/1706.05064)
 
@@ -157,6 +159,8 @@ gestures in combination with language may be key.
 
 [Deep RL Bootcamp lecture on Policy Gradients](https://www.youtube.com/watch?v=S_gwYj1Q-44)
 
+[Scalable trust-region method for deep reinforcement learning using Kronecker-factored approximation (ACKTR)](https://arxiv.org/abs/1708.05144)
+
 [Proximal Policy Optimization (PPO) Algorithms](https://arxiv.org/abs/1707.06347) and [blog post by OpenAI](https://blog.openai.com/openai-baselines-ppo/)
 
 [Asynchronous Methods for Deep Reinforcement Learning (A3C)](https://arxiv.org/abs/1602.01783)
@@ -174,7 +178,6 @@ gestures in combination with language may be key.
 [Learning Language Games through Interaction](https://arxiv.org/abs/1606.02447)
 
 [Nintendogs](https://www.youtube.com/watch?v=aXJ-wRTfKHA&feature=youtu.be&t=1m7s) (Nintendo DS game)
-
 
 ### Cognition, Infant Learning
 
