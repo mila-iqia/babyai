@@ -49,10 +49,10 @@ pip3 install -e .
 ```
 
 Optionally, if you wish use the reinforcement learning code included
-under [/pytorch-rl](/pytorch-rl), you can install its dependencies as follows:
+under [/pytorch_rl](/pytorch_rl), you can install its dependencies as follows:
 
 ```
-cd pytorch-rl
+cd pytorch_rl
 
 # PyTorch
 conda install pytorch torchvision -c soumith
@@ -70,7 +70,7 @@ cd ..
 pip3 install -r requirements.txt
 ```
 
-Note: the pytorch-rl code is a custom fork of [this repository](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr),
+Note: the pytorch_rl code is a custom fork of [this repository](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr),
 which was modified to work with this environment.
 
 ## Usage
@@ -90,7 +90,7 @@ The environment being run can be selected with the `--env-name` option, eg:
 Basic offline training code implementing ACKTR can be run with:
 
 ```
-python3 pytorch-rl/main.py --env-name MiniGrid-Empty-6x6-v0 --no-vis --num-processes 32 --algo acktr
+python3 pytorch_rl/main.py --env-name MiniGrid-Empty-6x6-v0 --no-vis --num-processes 32 --algo acktr
 ```
 
 To see the available environments and their implementation, please have a look at
