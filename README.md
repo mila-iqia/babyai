@@ -127,7 +127,13 @@ gestures in combination with language may be key.
 
 ### Agents and Language
 
+[Interactive Grounded Language Acquisition and Generalization in a 2D World](https://openreview.net/forum?id=H1UOm4gA-)
+
+[Representation Learning for Grounded Spatial Reasoning](https://arxiv.org/pdf/1707.03938.pdf)
+
 [A Deep Compositional Framework for Human-like Language Acquisition in Virtual Environment](https://arxiv.org/abs/1703.09831)
+
+[dBaby: Grounded Language Teaching through Games and Efficient Reinforcement Learning](https://nips2017vigil.github.io/papers/2017/dBaby.pdf)
 
 [Zero-Shot Task Generalization with Multi-Task Deep Reinforcement Learning](https://arxiv.org/abs/1706.05064)
 
