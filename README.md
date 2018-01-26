@@ -129,6 +129,8 @@ gestures in combination with language may be key.
 
 [A Deep Compositional Framework for Human-like Language Acquisition in Virtual Environment](https://arxiv.org/abs/1703.09831)
 
+[dBaby: Grounded Language Teaching through Games and Efficient Reinforcement Learning](https://nips2017vigil.github.io/papers/2017/dBaby.pdf)
+
 [Zero-Shot Task Generalization with Multi-Task Deep Reinforcement Learning](https://arxiv.org/abs/1706.05064)
 
 [Beating Atari with Natural Language Guided Reinforcement Learning](https://web.stanford.edu/class/cs224n/reports/2762090.pdf)
