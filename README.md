@@ -25,7 +25,6 @@ Requirements:
 - numpy
 - PyQT5
 - PyTorch
-- OpenAI baselines
 - matplotlib
 
 Start by manually installing PyTorch. See the [PyTorch website](http://pytorch.org/)
@@ -57,15 +56,6 @@ cd pytorch_rl
 # PyTorch
 conda install pytorch torchvision -c soumith
 
-# Dependencies needed by OpenAI baselines
-sudo apt install libopenmpi-dev zlib1g-dev cmake
-
-# OpenAI baselines
-git clone https://github.com/openai/baselines.git
-cd baselines
-pip3 install -e .
-cd ..
-
 # Other requirements
 pip3 install -r requirements.txt
 ```
@@ -84,7 +74,7 @@ To run the interactive UI application:
 The environment being run can be selected with the `--env-name` option, eg:
 
 ```
-./main.py --env-name MiniGrid-Fetch-8x8-v0
+./main.py --env-name MiniGrid-Fetch-8x8-N3-v0
 ```
 
 Basic reinforcement learning code is provided in the `pytorch_rl` subdirectory.
