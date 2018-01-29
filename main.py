@@ -80,10 +80,6 @@ class AIGameWindow(QMainWindow):
         self.missionBox.setMinimumSize(500, 100)
         self.missionBox.textChanged.connect(self.missionEdit)
 
-        #self.adviceBox = QTextEdit()
-        #self.adviceBox.setMinimumSize(500, 100)
-        #self.adviceBox.textChanged.connect(self.adviceEdit)
-
         buttonBox = self.createButtons()
 
         self.stepsLabel = QLabel()
@@ -113,8 +109,6 @@ class AIGameWindow(QMainWindow):
         vbox.addWidget(hline2)
         vbox.addWidget(QLabel("General mission"))
         vbox.addWidget(self.missionBox)
-        #vbox.addWidget(QLabel("Contextual advice"))
-        #vbox.addWidget(self.adviceBox)
         vbox.addLayout(buttonBox)
 
         return vbox
@@ -185,12 +179,7 @@ class AIGameWindow(QMainWindow):
         # The agent will get the mission as an observation
         # before performing the next action
         text = self.missionBox.toPlainText()
-
-    #def adviceEdit(self):
-    #    # The agent will get this advice as an observation
-    #    # before performing the next action
-    #    text = self.adviceBox.toPlainText()
-    #    self.lastObs['advice'] = text
+        self.lastObs['mission'] = text
 
     def plusReward(self):
         print('+reward')
@@ -236,9 +225,9 @@ class AIGameWindow(QMainWindow):
         else:
             mission = "Get to the green goal square"
 
-        self.missionBox.setPlainText(mission)
-
         self.lastObs = obs
+
+        self.missionBox.setPlainText(mission)
 
         self.showEnv(obs)
 
@@ -259,6 +248,10 @@ class AIGameWindow(QMainWindow):
         image = obs['image']
         obsPixmap = unwrapped.getObsRender(image)
         self.obsImgLabel.setPixmap(obsPixmap)
+
+        # Update the mission text
+        mission = obs['mission']
+        self.missionBox.setPlainText(mission)
 
         # Set the steps remaining
         stepsRem = unwrapped.getStepsRemaining()
