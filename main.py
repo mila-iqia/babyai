@@ -80,9 +80,9 @@ class AIGameWindow(QMainWindow):
         self.missionBox.setMinimumSize(500, 100)
         self.missionBox.textChanged.connect(self.missionEdit)
 
-        self.adviceBox = QTextEdit()
-        self.adviceBox.setMinimumSize(500, 100)
-        self.adviceBox.textChanged.connect(self.adviceEdit)
+        #self.adviceBox = QTextEdit()
+        #self.adviceBox.setMinimumSize(500, 100)
+        #self.adviceBox.textChanged.connect(self.adviceEdit)
 
         buttonBox = self.createButtons()
 
@@ -109,13 +109,12 @@ class AIGameWindow(QMainWindow):
         # Stack everything up in a vetical layout
         vbox = QVBoxLayout()
         vbox.addLayout(miniViewBox)
-        #vbox.addWidget(hline)
         vbox.addLayout(stepsBox)
         vbox.addWidget(hline2)
         vbox.addWidget(QLabel("General mission"))
         vbox.addWidget(self.missionBox)
-        vbox.addWidget(QLabel("Contextual advice"))
-        vbox.addWidget(self.adviceBox)
+        #vbox.addWidget(QLabel("Contextual advice"))
+        #vbox.addWidget(self.adviceBox)
         vbox.addLayout(buttonBox)
 
         return vbox
@@ -186,11 +185,11 @@ class AIGameWindow(QMainWindow):
         # before performing the next action
         text = self.missionBox.toPlainText()
 
-    def adviceEdit(self):
-        # The agent will get this advice as an observation
-        # before performing the next action
-        text = self.adviceBox.toPlainText()
-        self.lastObs['advice'] = text
+    #def adviceEdit(self):
+    #    # The agent will get this advice as an observation
+    #    # before performing the next action
+    #    text = self.adviceBox.toPlainText()
+    #    self.lastObs['advice'] = text
 
     def plusReward(self):
         print('+reward')
@@ -228,7 +227,7 @@ class AIGameWindow(QMainWindow):
         obs = self.env.reset()
 
         if not isinstance(obs, dict):
-            obs = { 'image': obs, 'advice': '', 'mission': '' }
+            obs = { 'image': obs, 'mission': '' }
 
         # If no mission is specified
         if obs['mission']:
@@ -260,12 +259,9 @@ class AIGameWindow(QMainWindow):
         obsPixmap = unwrapped.getObsRender(image)
         self.obsImgLabel.setPixmap(obsPixmap)
 
-        # Set the steps remaining displayadvice
+        # Set the steps remaining
         stepsRem = unwrapped.getStepsRemaining()
         self.stepsLabel.setText(str(stepsRem))
-
-        advice = obs['advice']
-        self.adviceBox.setPlainText(advice)
 
     def stepEnv(self, action=None):
         # If the environment doesn't supply a mission, get the
@@ -281,7 +277,7 @@ class AIGameWindow(QMainWindow):
         obs, reward, done, info = self.env.step(action)
 
         if not isinstance(obs, dict):
-            obs = { 'image': obs, 'advice': '', 'mission': '' }
+            obs = { 'image': obs, 'mission': '' }
 
         self.showEnv(obs)
         self.lastObs = obs
@@ -307,16 +303,14 @@ class AIGameWindow(QMainWindow):
 def main(argv):
     parser = OptionParser()
     parser.add_option(
-        "-e",
         "--env-name",
-        dest="env",
         help="gym environment to load",
         default='MiniGrid-MultiRoom-N6-v0'
     )
     (options, args) = parser.parse_args()
 
     # Load the gym environment
-    env = gym.make(options.env)
+    env = gym.make(options.env_name)
 
     # Create the application window
     app = QApplication(sys.argv)
