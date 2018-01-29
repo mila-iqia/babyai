@@ -87,10 +87,11 @@ The environment being run can be selected with the `--env-name` option, eg:
 ./main.py --env-name MiniGrid-Fetch-8x8-v0
 ```
 
-Basic offline training code implementing ACKTR can be run with:
+Basic reinforcement learning code is provided in the `pytorch_rl` subdirectory.
+You can perform training using the A2C algorithm with:
 
 ```
-python3 pytorch_rl/main.py --env-name MiniGrid-Empty-6x6-v0 --no-vis --num-processes 32 --algo acktr
+python3 pytorch_rl/main.py --env-name MiniGrid-Empty-6x6-v0 --no-vis --num-processes 48 --algo a2c
 ```
 
 To see the available environments and their implementation, please have a look at
