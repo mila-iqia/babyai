@@ -157,14 +157,15 @@ class AIGameWindow(QMainWindow):
         return hbox
 
     def keyPressEvent(self, e):
+        actions = self.env.unwrapped.actions
         if e.key() == Qt.Key_Left:
-            self.stepEnv(self.env.actions.left)
+            self.stepEnv(actions.left)
         elif e.key() == Qt.Key_Right:
-            self.stepEnv(self.env.actions.right)
+            self.stepEnv(actions.right)
         elif e.key() == Qt.Key_Up:
-            self.stepEnv(self.env.actions.forward)
+            self.stepEnv(actions.forward)
         elif e.key() == Qt.Key_Space:
-            self.stepEnv(self.env.actions.toggle)
+            self.stepEnv(actions.toggle)
 
     def mousePressEvent(self, event):
         """
