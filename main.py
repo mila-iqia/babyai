@@ -16,6 +16,17 @@ import gym_minigrid
 
 from model.training import selectAction
 
+class ImgWidget(QLabel):
+    """
+    Widget to intercept clicks on the full image view
+    """
+    def __init__(self, window):
+        super().__init__()
+        self.window = window
+
+    def mousePressEvent(self, event):
+        self.window.imageClick(event.x(), event.y())
+
 class AIGameWindow(QMainWindow):
     """Application window for the baby AI game"""
 
@@ -43,7 +54,7 @@ class AIGameWindow(QMainWindow):
         self.setWindowTitle('Baby AI Game')
 
         # Full render view (large view)
-        self.imgLabel = QLabel()
+        self.imgLabel = ImgWidget(self)
         self.imgLabel.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         leftBox = QVBoxLayout()
         leftBox.addStretch(1)
@@ -107,7 +118,7 @@ class AIGameWindow(QMainWindow):
         vbox.addLayout(miniViewBox)
         vbox.addLayout(stepsBox)
         vbox.addWidget(hline2)
-        vbox.addWidget(QLabel("General mission"))
+        vbox.addWidget(QLabel("Mission"))
         vbox.addWidget(self.missionBox)
         vbox.addLayout(buttonBox)
 
@@ -151,6 +162,7 @@ class AIGameWindow(QMainWindow):
         return hbox
 
     def keyPressEvent(self, e):
+        # Manual agent control
         actions = self.env.unwrapped.actions
         if e.key() == Qt.Key_Left:
             self.stepEnv(actions.left)
@@ -160,6 +172,9 @@ class AIGameWindow(QMainWindow):
             self.stepEnv(actions.forward)
         elif e.key() == Qt.Key_Space:
             self.stepEnv(actions.toggle)
+
+        elif e.key() == Qt.Key_Escape:
+            self.close()
 
     def mousePressEvent(self, event):
         """
@@ -174,6 +189,20 @@ class AIGameWindow(QMainWindow):
             focused.clearFocus()
 
         QMainWindow.mousePressEvent(self, event)
+
+    def imageClick(self, x, y):
+        grid = self.env.unwrapped.grid
+        imgW = self.imgLabel.size().width()
+        imgH = self.imgLabel.size().height()
+
+        i = (grid.width * x) // imgW
+        j = (grid.height * y) // imgH
+        assert i < grid.width
+        assert j < grid.height
+
+        print('grid clicked: i=%d, j=%d' % (i, j))
+
+        # TODO
 
     def missionEdit(self):
         # The agent will get the mission as an observation
@@ -278,21 +307,6 @@ class AIGameWindow(QMainWindow):
 
         if done:
             self.resetEnv()
-
-    def stepLoop(self):
-        """Auto stepping loop, runs in its own thread"""
-
-        print('stepLoop')
-
-        while True:
-            if self.fpsLimit == 0:
-                time.sleep(0.1)
-                continue
-
-            if self.fpsLimit < 100:
-                time.sleep(0.1)
-
-            self.stepEnv()
 
 def main(argv):
     parser = OptionParser()
