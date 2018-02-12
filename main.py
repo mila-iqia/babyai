@@ -6,7 +6,7 @@ import threading
 from optparse import OptionParser
 
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QInputDialog
 from PyQt5.QtWidgets import QLabel, QTextEdit, QFrame
 from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
@@ -46,6 +46,9 @@ class AIGameWindow(QMainWindow):
         self.stepTimer.setInterval(0)
         self.stepTimer.setSingleShot(False)
         self.stepTimer.timeout.connect(self.stepClicked)
+
+        # Pointing and naming data
+        self.pointingData = []
 
     def initUI(self):
         """Create and connect the UI elements"""
@@ -202,7 +205,20 @@ class AIGameWindow(QMainWindow):
 
         print('grid clicked: i=%d, j=%d' % (i, j))
 
-        # TODO
+        desc, ok = QInputDialog.getText(self, 'Pointing & Naming', 'Enter Description:')
+        desc = str(desc)
+
+        if not ok or len(desc) == 0:
+            return
+
+        self.pointingData.append({
+            'desc': desc,
+            'grid': grid.copy(),
+            'pos': (i, j)
+        })
+
+        print('description: "%s"' % desc)
+        print('num items: %d' % len(self.pointingData))
 
     def missionEdit(self):
         # The agent will get the mission as an observation
