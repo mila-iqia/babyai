@@ -179,6 +179,8 @@ class AIGameWindow(QMainWindow):
         elif e.key() == Qt.Key_Space:
             self.stepEnv(actions.toggle)
 
+        elif e.key() == Qt.Key_Backspace:
+            self.resetEnv()
         elif e.key() == Qt.Key_Escape:
             self.close()
 
@@ -244,8 +246,9 @@ class AIGameWindow(QMainWindow):
 
             sees = env2.agentSees(i, j)
 
-            obs = env2.step(env2.actions.wait)
-            #obsGrid = minigrid.Grid.decode(obs)
+            obs, _, _, _ = env2.step(env2.actions.wait)
+            img = obs['image'] if isinstance(obs, dict) else obs
+            obsGrid = minigrid.Grid.decode(img)
 
 
 
@@ -256,7 +259,7 @@ class AIGameWindow(QMainWindow):
             # TODO: when we generate a mismatch, we don't
             # want that object in view
 
-
+            # TODO: use overloaded "in" operator on grid
 
 
 
