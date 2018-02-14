@@ -96,9 +96,6 @@ the [gym_minigrid](https://github.com/maximecb/gym-minigrid) repository.
 
 You can find here a presentation of the project: [Baby AI Summary](https://docs.google.com/document/d/1WXY0HLHizxuZl0GMGY0j3FEqLaK1oX-66v-4PyZIvdU)
 
-A work-in-progress review of related work can be found [here]
-(https://www.overleaf.com/13480997qqsxybgstxhg#/52042269/)
-
 The Baby AI Game is a game in which an agent existing in a simulated world
 will be trained to complete task through reinforcement learning as well
 as interactions from one or more human teachers. These interactions will take
@@ -123,6 +120,8 @@ gestures in combination with language may be key.
 *TODO: find child development articles about pointing and naming if possible. If anyone can find this, please submit a PR.*
 
 ## Relevant Materials
+
+A work-in-progress review of related work can be found [here](https://www.overleaf.com/13480997qqsxybgstxhg#/52042269/)
 
 ### Agents and Language
 
