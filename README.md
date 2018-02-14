@@ -121,6 +121,8 @@ gestures in combination with language may be key.
 
 ## Relevant Materials
 
+A work-in-progress review of related work can be found [here](https://www.overleaf.com/13480997qqsxybgstxhg#/52042269/)
+
 ### Agents and Language
 
 [Interactive Grounded Language Acquisition and Generalization in a 2D World](https://openreview.net/forum?id=H1UOm4gA-)
