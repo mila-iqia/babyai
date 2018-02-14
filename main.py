@@ -226,14 +226,20 @@ class AIGameWindow(QMainWindow):
             return
 
         print('description: "%s"' % desc)
-        print('%s %s' % (pointObj.color, pointObj.type))
+        print('object: %s %s' % (pointObj.color, pointObj.type))
 
         viewSz = minigrid.AGENT_VIEW_SIZE
 
-        for k in range(0, 50):
+        NUM_TARGET = 50
+        numItrs = 0
+        numPos = 0
+        numNeg = 0
+
+        while (numPos < NUM_TARGET or numNeg < NUM_TARGET) and numItrs < 300:
             env2 = copy.deepcopy(env)
 
-            x, y = env.agentPos
+            # Randomly place the agent around the selected point
+            x, y = i, j
             x += random.randint(-viewSz, viewSz)
             y += random.randint(-viewSz, viewSz)
             x = max(0, min(x, env2.grid.width - 1))
@@ -241,39 +247,38 @@ class AIGameWindow(QMainWindow):
             env2.agentPos = (x, y)
             env2.agentDir = random.randint(0, 3)
 
+            # Don't want to place the agent on top of something
             if env2.grid.get(*env2.agentPos) != None:
                 continue
 
-            sees = env2.agentSees(i, j)
+            agentSees = env2.agentSees(i, j)
 
             obs, _, _, _ = env2.step(env2.actions.wait)
             img = obs['image'] if isinstance(obs, dict) else obs
             obsGrid = minigrid.Grid.decode(img)
 
+            datum = {
+                'desc': desc,
+                'img': img,
+                'pos': (i, j),
+                'present': agentSees
+            }
 
+            if agentSees and numPos < NUM_TARGET:
+                self.pointingData.append(datum)
+                numPos += 1
 
-            if sees:
-                print('got match')
+            if not agentSees and numNeg < NUM_TARGET:
+                # Don't want identical object in mismatch examples
+                if (pointObj.color, pointObj.type) not in obsGrid:
+                    self.pointingData.append(datum)
+                    numNeg += 1
 
+            numItrs += 1
 
-            # TODO: when we generate a mismatch, we don't
-            # want that object in view
-
-            # TODO: use overloaded "in" operator on grid
-
-
-
-
-
-        """
-        self.pointingData.append({
-            'desc': desc,
-            'grid': grid.copy(),
-            'pos': (i, j)
-        })
-        """
-
-        #print('num items: %d' % len(self.pointingData))
+        print('positive examples: %d' % numPos)
+        print('negative examples: %d' % numNeg)
+        print('total examples: %d' % len(self.pointingData))
 
     def missionEdit(self):
         # The agent will get the mission as an observation
