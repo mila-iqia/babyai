@@ -84,6 +84,11 @@ You can perform training using the A2C algorithm with:
 python3 pytorch_rl/main.py --env-name MiniGrid-Empty-6x6-v0 --no-vis --num-processes 48 --algo a2c
 ```
 
+In order to Use the teacher environment with pytorch_rl, use the following command : 
+```
+python3 pytorch_rl/main.py --env-name MultiRoom-Teacher --no-vis --num-processes 48 --algo a2c
+```
+
 To see the available environments and their implementation, please have a look at
 the [gym_minigrid](https://github.com/maximecb/gym-minigrid) repository.
 
@@ -115,6 +120,8 @@ gestures in combination with language may be key.
 *TODO: find child development articles about pointing and naming if possible. If anyone can find this, please submit a PR.*
 
 ## Relevant Materials
+
+A work-in-progress review of related work can be found [here](https://www.overleaf.com/13480997qqsxybgstxhg#/52042269/)
 
 ### Agents and Language
 
