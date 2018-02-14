@@ -92,6 +92,12 @@ python3 pytorch_rl/main.py --env-name MultiRoom-Teacher --no-vis --num-processes
 To see the available environments and their implementation, please have a look at
 the [gym_minigrid](https://github.com/maximecb/gym-minigrid) repository.
 
+### Usage at MILA
+
+If you connect to the lab machines by ssh-ing, make sure to use `ssh -X` in order to see the game window. This will work even for a chain of ssh connections, as long as you use `ssh -X` at all intermediate steps. If you use screen, set `$DISPLAY` variable manually inside each of your screen terminals. You can find the right value for `$DISPLAY` by detaching from you screen first (`Ctrl+A+D`) and then running `echo $DISPLAY`. 
+
+The code does not work in conda, install everything with `pip install --user`. 
+
 ## About this Project
 
 You can find here a presentation of the project: [Baby AI Summary](https://docs.google.com/document/d/1WXY0HLHizxuZl0GMGY0j3FEqLaK1oX-66v-4PyZIvdU)
