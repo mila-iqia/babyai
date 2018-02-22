@@ -320,20 +320,7 @@ class AIGameWindow(QMainWindow):
 
     def resetEnv(self):
         obs = self.env.reset()
-
-        if not isinstance(obs, dict):
-            obs = { 'image': obs, 'mission': '' }
-
-        # If no mission is specified
-        if obs['mission']:
-            mission = obs['mission']
-        else:
-            mission = "Get to the green goal square"
-
         self.lastObs = obs
-
-        self.missionBox.setPlainText(mission)
-
         self.showEnv(obs)
 
     def reseedEnv(self):
@@ -363,20 +350,11 @@ class AIGameWindow(QMainWindow):
         self.stepsLabel.setText(str(stepsRem))
 
     def stepEnv(self, action=None):
-        # If the environment doesn't supply a mission, get the
-        # mission from the input text box
-        if not hasattr(self.lastObs, 'mission'):
-            text = self.missionBox.toPlainText()
-            self.lastObs['mission'] = text
-
         # If no manual action was specified by the user
         if action == None:
             action = selectAction(self.lastObs)
 
         obs, reward, done, info = self.env.step(action)
-
-        if not isinstance(obs, dict):
-            obs = { 'image': obs, 'mission': '' }
 
         self.showEnv(obs)
         self.lastObs = obs
