@@ -105,14 +105,11 @@ class AIGameWindow(QMainWindow):
         self.stepsLabel.setMinimumSize(60, 10)
         resetBtn = QPushButton("Reset")
         resetBtn.clicked.connect(self.resetEnv)
-        seedBtn = QPushButton("Seed")
-        seedBtn.clicked.connect(self.reseedEnv)
         stepsBox = QHBoxLayout()
         stepsBox.addStretch(1)
         stepsBox.addWidget(QLabel("Steps remaining"))
         stepsBox.addWidget(self.stepsLabel)
         stepsBox.addWidget(resetBtn)
-        stepsBox.addWidget(seedBtn)
         stepsBox.addStretch(1)
 
         hline2 = QFrame()
@@ -322,12 +319,6 @@ class AIGameWindow(QMainWindow):
         obs = self.env.reset()
         self.lastObs = obs
         self.showEnv(obs)
-
-    def reseedEnv(self):
-        import random
-        seed = random.randint(0, 0xFFFFFFFF)
-        self.env.seed(seed)
-        self.resetEnv()
 
     def showEnv(self, obs):
         unwrapped = self.env.unwrapped
