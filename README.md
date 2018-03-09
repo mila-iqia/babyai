@@ -54,7 +54,7 @@ under [/pytorch_rl](/pytorch_rl), you can install its dependencies as follows:
 cd pytorch_rl
 
 # PyTorch
-conda install pytorch torchvision -c soumith
+conda install pytorch torchvision -c pytorch
 
 # Other requirements
 pip3 install -r requirements.txt
