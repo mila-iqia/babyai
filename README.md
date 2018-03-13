@@ -46,17 +46,6 @@ cd baby-ai-game
 pip3 install -e .
 ```
 
-Optionally, if you wish use the reinforcement learning code included
-under [/pytorch_rl](/pytorch_rl), you should install PyTorch as follows:
-
-```
-# PyTorch
-conda install pytorch torchvision -c pytorch
-```
-
-Note: the pytorch_rl code is a custom fork of [this repository](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr),
-which was modified to work with this environment.
-
 ## Usage
 
 To run the interactive UI application:
@@ -82,6 +71,9 @@ In order to Use the teacher environment with pytorch_rl, use the following comma
 ```
 python3 pytorch_rl/main.py --env-name MultiRoom-Teacher --no-vis --num-processes 48 --algo a2c
 ```
+
+Note: the pytorch_rl code is a custom fork of [this repository](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr),
+which was modified to work with this environment.
 
 To see the available environments and their implementation, please have a look at
 the [gym_minigrid](https://github.com/maximecb/gym-minigrid) repository.
