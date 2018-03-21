@@ -13,11 +13,13 @@ from PyQt5.QtWidgets import QLabel, QTextEdit, QFrame
 from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 
+# Gym environment used by the Baby AI Game
 import gym
 import gym_minigrid
 from gym_minigrid import minigrid
 
-from model.training import selectAction
+import levels
+import agents
 
 class ImgWidget(QLabel):
     """
@@ -343,7 +345,7 @@ class AIGameWindow(QMainWindow):
     def stepEnv(self, action=None):
         # If no manual action was specified by the user
         if action == None:
-            action = selectAction(self.lastObs)
+            action = random.randint(0, self.env.action_space.n - 1)
 
         obs, reward, done, info = self.env.step(action)
 
