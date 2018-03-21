@@ -2,21 +2,6 @@
 
 Prototype of a game where a reinforcement learning agent is trained through natural language instructions. This is a research project based at the [Montreal Institute for Learning Algorithms (MILA)](https://mila.quebec/en/).
 
-## Instructions for Committers
-
-If you have been given write access to this repository, please avoid pushing
-commits to the `master` branch directly, and instead create your own branch
-using the `git checkout -b <branch_name>` command. This will allow everyone to
-run their own experiments and structure their code as they see fit, without
-interfering with the work of others.
-
-If you have found a bug, or would like to request a change or improvement
-to the grid world environment or user interface, please
-[open an issue](https://github.com/maximecb/baby-ai-game/issues)
-on this repository. The master branch is meant to serve as a blank template
-to get people started with their research. Changes to the master branch should
-be made by creating a pull request, please avoid directly pushing commits to it.
-
 ## Installation
 
 Requirements:
@@ -45,6 +30,31 @@ git clone https://github.com/maximecb/baby-ai-game.git
 cd baby-ai-game
 pip3 install -e .
 ```
+
+## Structure of the Codebase
+
+The `levels` directory will contain all the code relevant to the generation of levels and missions. Essentially, this implements the test task for the Baby AI Game. This is an importable module which people can use on its own to perform experiments.
+
+The `agents` directory will contain a default implementation of one or more agents to be evaluated on the baby AI game. This should also be importable as an independent module. Each agent will need to support methods to be provided teaching inputs using pointing and naming, as well as demonstrations.
+
+In `pytorch_rl`, there is an implementation of the A2C, PPO and ACKTR reinforcement learning algorithms. This is a custom fork of [this repository](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr) which has been adapted to work with the `gym-minigrid` environment. This RL implementation has issues and will hopefully be replaced by a better one soon. One important problem, for instance, is that it is not importable as a module.
+
+The `main.py` script implements a template of a user interface for interactive human teaching. The version found in the master branch allows you to control the agent manually with the arrow keys, but it is not currently connected to any model or teaching code. Currently, most experiments are done offline, without a user interface.
+
+## Instructions for Committers
+
+If you have been given write access to this repository, please avoid pushing
+commits to the `master` branch directly, and instead create your own branch
+using the `git checkout -b <branch_name>` command. This will allow everyone to
+run their own experiments and structure their code as they see fit, without
+interfering with the work of others.
+
+If you have found a bug, or would like to request a change or improvement
+to the grid world environment or user interface, please
+[open an issue](https://github.com/maximecb/baby-ai-game/issues)
+on this repository. The master branch is meant to serve as a blank template
+to get people started with their research. Changes to the master branch should
+be made by creating a pull request, please avoid directly pushing commits to it.
 
 ## Usage
 
@@ -84,6 +94,10 @@ If you connect to the lab machines by ssh-ing, make sure to use `ssh -X` in orde
 
 The code does not work in conda, install everything with `pip install --user`.
 
+### Troubleshooting
+
+If you run into error messages relating to OpenAI gym or PyQT, it may be that the version of those libraries that you have installed is incompatible. You can try upgrading specific libraries with pip3, eg: `pip3 install --upgrade gym`. If the problem persists, please [open an issue](https://github.com/maximecb/baby-ai-game/issues) on this repository and paste a *complete* error message, along with some information about your platform (are you running Windows, Mac, Linux? Are you running this on a MILA machine?).
+
 ## About this Project
 
 You can find here a presentation of the project: [Baby AI Summary](https://docs.google.com/document/d/1WXY0HLHizxuZl0GMGY0j3FEqLaK1oX-66v-4PyZIvdU)
@@ -108,8 +122,6 @@ the use of pretraining to give agents a small core of built-in knowledge to
 allow them to learn from human agents. With respect to build-in knowledge,
 Yoshua Bengio believes that the ability for agents to understand pointing
 gestures in combination with language may be key.
-
-*TODO: find child development articles about pointing and naming if possible. If anyone can find this, please submit a PR.*
 
 ## Relevant Materials
 
