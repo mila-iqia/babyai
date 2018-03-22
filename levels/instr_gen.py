@@ -1,0 +1,187 @@
+__author__ = "Saizheng Zhang"
+__credits__ = "Saizheng Zhang, Lucas Willems, Thien Huu Nguyen"
+from collections import namedtuple, defaultdict
+from copy import deepcopy
+import itertools
+import pdb
+import random
+random.seed(901221)
+
+CONCEPTS = {
+    'action': {'pick', 'goto', 'drop', 'open'},
+    'object': {'door', 'wall', 'ball', 'key', 'box'},
+    'attr': {'color', 'loc', 'state'},
+    'loc': {'loc_abs', 'loc_rel'},
+    'color': {'red', 'blue', 'green'},
+    'loc_abs': {'east', 'west', 'north', 'south'},
+    'loc_rel': {'left', 'right'},
+    'state': {'locked'}}
+
+def check_valid_concept(name):
+    if name in CONCEPTS:
+        return True
+    for c in CONCEPTS:
+        if name in CONCEPTS[c]:
+            return True
+    raise ValueError("Incorrect concept name: {}".format(name)) 
+
+def parent_concepts(name):
+    check_valid_concept(name)
+    parents = set()
+    for k in CONCEPTS:
+        if name in CONCEPTS[k]:
+            parents = parents|{k}
+    return parents
+
+def ancestor_concepts(name):
+    parent_c = parent_concepts(name) 
+    if parent_c == set():
+        return set()
+    else:
+        ancestor_c = set()
+        for pa in parent_c:
+            ancestor_c |= ancestor_concepts(pa)
+        return parent_concepts(name)| ancestor_c
+
+def is_ancestor(x, y):
+    return True if x in ancestor_concepts(y) else False
+
+def child_concepts(name):
+    check_valid_concept(name)
+    return CONCEPTS[name]
+
+def root_concepts(name):
+    check_valid_concept(name)
+    if parent_concepts(name) == set():
+        return {name}
+    else:
+        roots = set()
+        for pa in parent_concepts(name):
+            roots |= root_concepts(pa)
+        return roots
+
+# constraints (a, b) means that a and b can appear at the same time.
+CONSTRAINTS = \
+    {('key', v) for v in {'goto', 'pick', 'drop'}} | \
+    {('wall', 'goto')} | \
+    {('door', v) for v in {'goto', 'open', 'locked'}} | \
+    {('ball', v) for v in {'goto', 'pick', 'drop'}} | \
+    {('box', v) for v in  {'goto', 'pick', 'drop', 'open'}} | \
+    {('object', 'color'), ('object', 'loc')}
+
+def is_consistent(m, n):
+    check_valid_concept(m)
+    check_valid_concept(n)
+
+    # ancestor reduction rule
+    def rule_anc_reduct(x, y):
+        prod_xy = itertools.product(ancestor_concepts(x)|{x}, ancestor_concepts(y)|{y})
+        if any([(p_xy in CONSTRAINTS) or ((p_xy[1], p_xy[0]) in CONSTRAINTS) for p_xy in prod_xy]):
+            return True
+        else:
+            return False
+
+    if rule_anc_reduct(m, n):
+        return True 
+
+    # action-object-attribute rule
+    def rule_act_obj_attr(x, y):
+        for o in CONCEPTS['object']:
+            if rule_anc_reduct(x, o) and rule_anc_reduct(y, o) and \
+                root_concepts(x) in [{'action'}, {'attr'}] and \
+                root_concepts(y) in [{'action'}, {'attr'}] and \
+                root_concepts(x) != root_concepts(y):
+                return True
+        return False
+
+    if rule_act_obj_attr(m, n):
+        return True 
+
+    # exclusive rule
+    def rule_exclusive(x, y):
+        if x == y:
+            return True
+        if is_ancestor(x, y) or is_ancestor(y, x):
+            return True
+
+        exclusive_list = {'action', 'color', 'loc'}
+        if ancestor_concepts(x) & ancestor_concepts(y) & exclusive_list:
+            return False
+        if 'attr' in ancestor_concepts(x) and 'attr' in ancestor_concepts(y):
+            return True
+        return False
+
+    if rule_exclusive(m, n):
+        return True
+
+    return False
+
+
+Instr = namedtuple("Instr", ["action", "object"])
+Action = namedtuple("Action", [])
+Object = namedtuple("Object", ["type", "color", "loc", "state"])
+
+def extract_cands_in_generate(type, constraints=set()):
+    cands = []
+    for t in CONCEPTS[type]:
+        if all([is_consistent(t, c) for c in constraints]) or not constraints:
+            cands.append(t)
+    return cands
+
+def generate_instr(constraints=set()):
+    act = generate_action(constraints)
+    obj = generate_object(act, constraints) 
+    return Instr(action=act, object=obj)
+
+def generate_action(constraints=set()):
+    action_cands = extract_cands_in_generate('action', constraints) 
+    action = random.choice(action_cands)
+    return action 
+
+def generate_object(act=None, constraints=set()):
+    o_cands = extract_cands_in_generate('object', constraints|(set() if not act else {act}))
+    o = random.choice(o_cands)
+
+    o_color = generate_color(constraints=constraints)
+    o_loc = generate_loc(constraints=constraints)
+    o_state = generate_state(obj=o, constraints=constraints)
+
+    return Object(type=o, color=o_color, loc=o_loc, state=o_state)
+
+def generate_subattr(type, constraints=set()):
+    cands = extract_cands_in_generate(type, constraints) 
+    if not cands:
+        return None
+
+    if any([is_ancestor(type, c) or type == c for c in constraints]):
+        return random.choice(cands)
+    else:
+        if random.choice([True, False]):
+            return random.choice(cands)
+        else:
+            return None
+
+def generate_color(obj=None, constraints=set()):
+    return generate_subattr('color', constraints)
+
+def generate_loc(obj=None, act=None, constraints=set()):
+    subloc = generate_subattr('loc', constraints)
+    if not subloc:
+        return None
+    if subloc == 'loc_abs':
+        return generate_locabs(obj=obj, act=act, constraints=constraints|{'loc_abs'})
+    if subloc == 'loc_rel':
+        return generate_locrel(obj=obj, act=act, constraints=constraints|{'loc_rel'})
+
+def generate_locabs(obj=None, act=None, constraints=set()):
+    return generate_subattr('loc_abs', constraints)
+
+def generate_locrel(obj=None, act=None, constraints=set()):
+    return generate_subattr('loc_rel', constraints)
+
+def generate_state(obj=None, act=None, constraints=set()):
+    return generate_subattr('state', constraints|(set() if not obj else {obj}))
+
+if __name__ == "__main__":
+    generate_instr({'locked'})
+
