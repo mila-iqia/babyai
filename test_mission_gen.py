@@ -24,7 +24,10 @@ def test():
     ]
     """
 
-    instr = gen_instr()
+    while True:
+        instr = gen_instr()
+        if instr.object.type == 'door':
+            break
 
     print(instr)
     print(surface(instr))
