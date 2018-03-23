@@ -1,9 +1,11 @@
 __author__ = "Saizheng Zhang"
 __credits__ = "Saizheng Zhang, Lucas Willems, Thien Huu Nguyen"
+
 from collections import namedtuple, defaultdict
 from copy import deepcopy
 import itertools
 import random
+from .instrs import *
 
 CONCEPTS = {
     'action': {'pick', 'goto', 'drop', 'open'},
@@ -24,18 +26,13 @@ CONSTRAINTS = \
     {('box', v) for v in  {'goto', 'pick', 'drop', 'open', 'locked'}} | \
     {('object', 'color'), ('object', 'loc')}
 
-Instr = namedtuple("Instr", ["action", "object"])
-Action = namedtuple("Action", [])
-Object = namedtuple("Object", ["type", "color", "loc", "state"])
-
-
 def check_valid_concept(name):
     if name in CONCEPTS:
         return True
     for c in CONCEPTS:
         if name in CONCEPTS[c]:
             return True
-    raise ValueError("Incorrect concept name: {}".format(name)) 
+    raise ValueError("Incorrect concept name: {}".format(name))
 
 def parent_concepts(name):
     check_valid_concept(name)
@@ -46,7 +43,7 @@ def parent_concepts(name):
     return parents
 
 def ancestor_concepts(name):
-    parent_c = parent_concepts(name) 
+    parent_c = parent_concepts(name)
     if parent_c == set():
         return set()
     else:
@@ -85,7 +82,7 @@ def is_consistent(m, n):
             return False
 
     if rule_anc_reduct(m, n):
-        return True 
+        return True
 
     # action-object-attribute rule
     def rule_act_obj_attr(x, y):
@@ -98,7 +95,7 @@ def is_consistent(m, n):
         return False
 
     if rule_act_obj_attr(m, n):
-        return True 
+        return True
 
     # exclusive rule
     def rule_exclusive(x, y):
@@ -126,28 +123,28 @@ def extract_cands_in_generate(type, constraints=set()):
             cands.append(t)
     return cands
 
-def generate_instr(constraints=set()):
-    act = generate_action(constraints)
-    obj = generate_object(act, constraints) 
+def gen_instr(constraints=set()):
+    act = gen_action(constraints)
+    obj = gen_object(act, constraints)
     return Instr(action=act, object=obj)
 
-def generate_action(constraints=set()):
-    action_cands = extract_cands_in_generate('action', constraints) 
+def gen_action(constraints=set()):
+    action_cands = extract_cands_in_generate('action', constraints)
     action = random.choice(action_cands)
-    return action 
+    return action
 
-def generate_object(act=None, constraints=set()):
+def gen_object(act=None, constraints=set()):
     o_cands = extract_cands_in_generate('object', constraints|(set() if not act else {act}))
     o = random.choice(o_cands)
 
-    o_color = generate_color(constraints=constraints)
-    o_loc = generate_loc(constraints=constraints)
-    o_state = generate_state(obj=o, constraints=constraints)
+    o_color = gen_color(constraints=constraints)
+    o_loc = gen_loc(constraints=constraints)
+    o_state = gen_state(obj=o, constraints=constraints)
 
     return Object(type=o, color=o_color, loc=o_loc, state=o_state)
 
-def generate_subattr(type, constraints=set()):
-    cands = extract_cands_in_generate(type, constraints) 
+def gen_subattr(type, constraints=set()):
+    cands = extract_cands_in_generate(type, constraints)
     if not cands:
         return None
 
@@ -159,33 +156,33 @@ def generate_subattr(type, constraints=set()):
         else:
             return None
 
-def generate_color(obj=None, constraints=set()):
-    return generate_subattr('color', constraints)
+def gen_color(obj=None, constraints=set()):
+    return gen_subattr('color', constraints)
 
-def generate_loc(obj=None, act=None, constraints=set()):
-    subloc = generate_subattr('loc', constraints)
+def gen_loc(obj=None, act=None, constraints=set()):
+    subloc = gen_subattr('loc', constraints)
     if not subloc:
         return None
     if subloc == 'loc_abs':
-        return generate_locabs(obj=obj, act=act, constraints=constraints|{'loc_abs'})
+        return gen_locabs(obj=obj, act=act, constraints=constraints|{'loc_abs'})
     if subloc == 'loc_rel':
-        return generate_locrel(obj=obj, act=act, constraints=constraints|{'loc_rel'})
+        return gen_locrel(obj=obj, act=act, constraints=constraints|{'loc_rel'})
 
-def generate_locabs(obj=None, act=None, constraints=set()):
-    return generate_subattr('loc_abs', constraints)
+def gen_locabs(obj=None, act=None, constraints=set()):
+    return gen_subattr('loc_abs', constraints)
 
-def generate_locrel(obj=None, act=None, constraints=set()):
-    return generate_subattr('loc_rel', constraints)
+def gen_locrel(obj=None, act=None, constraints=set()):
+    return gen_subattr('loc_rel', constraints)
 
-def generate_state(obj=None, act=None, constraints=set()):
-    return generate_subattr('state', constraints|(set() if not obj else {obj}))
+def gen_state(obj=None, act=None, constraints=set()):
+    return gen_subattr('state', constraints|(set() if not obj else {obj}))
 
 def surface(ntup, conditions={}):
     if ntup == None:
         return ''
 
     if isinstance(ntup, Instr):
-        return surface(ntup.action) + ' ' + surface(ntup.object) 
+        return surface(ntup.action) + ' ' + surface(ntup.object)
 
     if isinstance(ntup, Object):
         s_obj = ntup.type
@@ -199,12 +196,12 @@ def surface(ntup, conditions={}):
                 s_obj = surface(f, conditions={cond}) + ' ' + s_obj
             if cond == 'after':
                 if 'which is' in s_obj or 'that is' in s_obj:
-                    s_obj = s_obj + ' and is ' + surface(f, conditions={cond}) 
+                    s_obj = s_obj + ' and is ' + surface(f, conditions={cond})
                 else:
                     s_obj = s_obj + ' ' + (('which is ' + surface(f, conditions={cond})) if f in CONCEPTS['state'] else surface(f, conditions={cond}))
             if cond in ['which is', 'that is']:
                 if 'which is' in s_obj or 'that is' in s_obj:
-                    s_obj = s_obj + ' and is ' + surface(f, conditions={cond}) 
+                    s_obj = s_obj + ' and is ' + surface(f, conditions={cond})
                 else:
                     s_obj = s_obj + ' {} '.format(cond) + surface(f, conditions={cond})
         return 'the '+ s_obj
@@ -220,7 +217,7 @@ def surface(ntup, conditions={}):
 
     if ntup == 'open':
         return random.choice(['open'])
-    
+
     if ntup in CONCEPTS['color']:
         if {'pre'} & conditions:
             return ntup
@@ -242,11 +239,10 @@ def surface(ntup, conditions={}):
             return random.choice(['on the {}'.format(ntup), 'on your {}'.format(ntup)])
 
     if ntup in CONCEPTS['state']:
-        return random.choice([ntup]) 
+        return random.choice([ntup])
 
 if __name__ == "__main__":
     for i in range(10):
-        instr = generate_instr()
+        instr = gen_instr()
         print(instr)
         print(surface(instr))
-

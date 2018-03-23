@@ -7,7 +7,7 @@ from collections import namedtuple
 # Actions: goto, open, pick, drop
 Instr = namedtuple('Instr', ['action', 'object'])
 
-Object = namedtuple('Object', ['kind', 'color', 'loc'])
+Object = namedtuple('Object', ['type', 'color', 'loc', 'state'])
 
 # Relative locations: left, right, front, behind
 RelLoc = namedtuple('RelLoc', ['loc'])
