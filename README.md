@@ -31,6 +31,16 @@ cd baby-ai-game
 pip3 install -e .
 ```
 
+### For conda users
+
+If you are using conda, you can create a `babyai` environment with all the dependencies by running:
+
+```
+conda create -f environment.yaml
+```
+
+Having done that, you can either add `baby-ai-game` and `gym-minigrid` in your `$PYTHONPATH` or install them in the development mode as suggested above.
+
 ## Structure of the Codebase
 
 The `levels` directory will contain all the code relevant to the generation of levels and missions. Essentially, this implements the test task for the Baby AI Game. This is an importable module which people can use on its own to perform experiments.
