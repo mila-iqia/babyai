@@ -5,7 +5,6 @@ from copy import deepcopy
 import itertools
 import pdb
 import random
-random.seed(901221)
 
 CONCEPTS = {
     'action': {'pick', 'goto', 'drop', 'open'},
@@ -66,7 +65,7 @@ CONSTRAINTS = \
     {('wall', 'goto')} | \
     {('door', v) for v in {'goto', 'open', 'locked'}} | \
     {('ball', v) for v in {'goto', 'pick', 'drop'}} | \
-    {('box', v) for v in  {'goto', 'pick', 'drop', 'open'}} | \
+    {('box', v) for v in  {'goto', 'pick', 'drop', 'open', 'locked'}} | \
     {('object', 'color'), ('object', 'loc')}
 
 def is_consistent(m, n):
@@ -182,6 +181,68 @@ def generate_locrel(obj=None, act=None, constraints=set()):
 def generate_state(obj=None, act=None, constraints=set()):
     return generate_subattr('state', constraints|(set() if not obj else {obj}))
 
+def surface(ntup, conditions={}):
+    if ntup == None:
+        return ''
+
+    if isinstance(ntup, Instr):
+        return surface(ntup.action) + ' ' + surface(ntup.object) 
+
+    if isinstance(ntup, Object):
+        s_obj = ntup.type
+        s_attrs = list([ntup.color, ntup.loc, ntup.state])
+        random.shuffle(s_attrs)
+        for f in s_attrs:
+            if not f:
+                continue
+            cond = random.choice(['pre', 'after', 'which is', 'that is'])
+            if cond == 'pre':
+                s_obj = surface(f, conditions={cond}) + ' ' + s_obj
+            if cond == 'after':
+                if 'which is' in s_obj or 'that is' in s_obj:
+                    s_obj = s_obj + ' and is ' + surface(f, conditions={cond}) 
+                else:
+                    s_obj = s_obj + ' ' + (('which is ' + surface(f, conditions={cond})) if f in CONCEPTS['state'] else surface(f, conditions={cond}))
+            if cond in ['which is', 'that is']:
+                if 'which is' in s_obj or 'that is' in s_obj:
+                    s_obj = s_obj + ' and is ' + surface(f, conditions={cond}) 
+                else:
+                    s_obj = s_obj + ' {} '.format(cond) + surface(f, conditions={cond})
+
+        return 'the '+ s_obj
+
+    if ntup == 'goto':
+        return random.choice(['go to', 'reach', 'find', 'walk to'])
+    if ntup == 'pick':
+        return random.choice(['pick', 'pick up', 'grasp', 'go pick', 'go grasp', 'go get', 'get', 'go fetch', 'fetch'])
+    if ntup == 'drop':
+        return random.choice(['drop', 'drop down', 'put down'])
+    if ntup == 'open':
+        return random.choice(['open'])
+    
+    if ntup in CONCEPTS['color']:
+        if {'pre'} & conditions:
+            return ntup
+        if {'after'} & conditions:
+            return random.choice(['with the color of {}'.format(ntup), 'in {}'.format(ntup)])
+        if {'which is', 'that is'} & conditions:
+            return 'in {}'.format(ntup)
+    if ntup in CONCEPTS['loc_abs']:
+        if {'pre'} & conditions:
+            return ntup
+        if {'after', 'which is', 'that is'} & conditions:
+            return random.choice(['on the {}'.format(ntup), 'on the {} direction'.format(ntup)])
+    if ntup in CONCEPTS['loc_rel']:
+        if {'pre'} & conditions:
+            return ntup
+        if {'which is', 'that is', 'after'} & conditions:
+            return random.choice(['on the {}'.format(ntup), 'on your {}'.format(ntup)])
+    if ntup in CONCEPTS['state']:
+        return random.choice([ntup]) 
+
 if __name__ == "__main__":
-    generate_instr({'locked'})
+    for i in range(10):
+        instr = generate_instr({'pick', 'loc', 'red'})
+        print(instr)
+        print(surface(instr))
 
