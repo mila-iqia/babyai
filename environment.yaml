@@ -6,8 +6,7 @@ dependencies:
     - python=3.6
     - pytorch=0.3
     - torchvision
-    - h5py
-    - scipy
     - pyqt
+    - numpy
     - pip:
         - gym
