@@ -3,7 +3,6 @@ __credits__ = "Saizheng Zhang, Lucas Willems, Thien Huu Nguyen"
 from collections import namedtuple, defaultdict
 from copy import deepcopy
 import itertools
-import pdb
 import random
 
 CONCEPTS = {
@@ -208,15 +207,17 @@ def surface(ntup, conditions={}):
                     s_obj = s_obj + ' and is ' + surface(f, conditions={cond}) 
                 else:
                     s_obj = s_obj + ' {} '.format(cond) + surface(f, conditions={cond})
-
         return 'the '+ s_obj
 
     if ntup == 'goto':
         return random.choice(['go to', 'reach', 'find', 'walk to'])
+
     if ntup == 'pick':
         return random.choice(['pick', 'pick up', 'grasp', 'go pick', 'go grasp', 'go get', 'get', 'go fetch', 'fetch'])
+
     if ntup == 'drop':
         return random.choice(['drop', 'drop down', 'put down'])
+
     if ntup == 'open':
         return random.choice(['open'])
     
@@ -227,22 +228,25 @@ def surface(ntup, conditions={}):
             return random.choice(['with the color of {}'.format(ntup), 'in {}'.format(ntup)])
         if {'which is', 'that is'} & conditions:
             return 'in {}'.format(ntup)
+
     if ntup in CONCEPTS['loc_abs']:
         if {'pre'} & conditions:
             return ntup
         if {'after', 'which is', 'that is'} & conditions:
             return random.choice(['on the {}'.format(ntup), 'on the {} direction'.format(ntup)])
+
     if ntup in CONCEPTS['loc_rel']:
         if {'pre'} & conditions:
             return ntup
         if {'which is', 'that is', 'after'} & conditions:
             return random.choice(['on the {}'.format(ntup), 'on your {}'.format(ntup)])
+
     if ntup in CONCEPTS['state']:
         return random.choice([ntup]) 
 
 if __name__ == "__main__":
     for i in range(10):
-        instr = generate_instr({'pick', 'loc', 'red'})
+        instr = generate_instr()
         print(instr)
         print(surface(instr))
 
