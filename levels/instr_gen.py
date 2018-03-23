@@ -16,6 +16,20 @@ CONCEPTS = {
     'loc_rel': {'left', 'right'},
     'state': {'locked'}}
 
+# constraints (a, b) means that a and b can appear at the same time.
+CONSTRAINTS = \
+    {('key', v) for v in {'goto', 'pick', 'drop'}} | \
+    {('wall', 'goto')} | \
+    {('door', v) for v in {'goto', 'open', 'locked'}} | \
+    {('ball', v) for v in {'goto', 'pick', 'drop'}} | \
+    {('box', v) for v in  {'goto', 'pick', 'drop', 'open', 'locked'}} | \
+    {('object', 'color'), ('object', 'loc')}
+
+Instr = namedtuple("Instr", ["action", "object"])
+Action = namedtuple("Action", [])
+Object = namedtuple("Object", ["type", "color", "loc", "state"])
+
+
 def check_valid_concept(name):
     if name in CONCEPTS:
         return True
@@ -58,15 +72,6 @@ def root_concepts(name):
         for pa in parent_concepts(name):
             roots |= root_concepts(pa)
         return roots
-
-# constraints (a, b) means that a and b can appear at the same time.
-CONSTRAINTS = \
-    {('key', v) for v in {'goto', 'pick', 'drop'}} | \
-    {('wall', 'goto')} | \
-    {('door', v) for v in {'goto', 'open', 'locked'}} | \
-    {('ball', v) for v in {'goto', 'pick', 'drop'}} | \
-    {('box', v) for v in  {'goto', 'pick', 'drop', 'open', 'locked'}} | \
-    {('object', 'color'), ('object', 'loc')}
 
 def is_consistent(m, n):
     check_valid_concept(m)
@@ -114,11 +119,6 @@ def is_consistent(m, n):
         return True
 
     return False
-
-
-Instr = namedtuple("Instr", ["action", "object"])
-Action = namedtuple("Action", [])
-Object = namedtuple("Object", ["type", "color", "loc", "state"])
 
 def extract_cands_in_generate(type, constraints=set()):
     cands = []
