@@ -33,14 +33,13 @@ pip3 install -e .
 
 ### For conda users
 
-If you are using conda, you can create a `babyai` environment with all the dependencies by running
+If you are using conda, you can create a `babyai` environment with all the dependencies by running:
 
 ```
 conda create -f environment.yaml
 ```
 
 Having done that, you can either add `baby-ai-game` and `gym-minigrid` in your `$PYTHONPATH` or install them in the development mode as suggested above.
-
 
 ## Structure of the Codebase
 
