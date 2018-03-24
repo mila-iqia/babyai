@@ -111,7 +111,7 @@ class Verifier(ABC):
         self.actions = self.env.unwrapped.actions
     
     @abstractmethod
-    def isSucceedAction(self, action):
+    def is_succeed_action(self, action):
         """
         Check if the agent will solve the mission with this action.
         """
@@ -122,9 +122,9 @@ class InstrVerifier(Verifier):
         super().__init__(env)
         self.instr = instr
         self.ainstrIndex = 0
-        self._loadNextVerifier()
+        self._load_next_verifier()
     
-    def _loadNextVerifier(self):
+    def _load_next_verifier(self):
         if self.ainstrIndex >= len(self.instr):
             self.verifier = None
             return
@@ -141,9 +141,9 @@ class InstrVerifier(Verifier):
         else:
             self.verifier = DropVerifier(self.env)
 
-    def isSucceedAction(self, action):
-        if self.verifier != None and self.verifier.isSucceedAction(action):
-            self._loadNextVerifier()
+    def is_succeed_action(self, action):
+        if self.verifier != None and self.verifier.is_succeed_action(action):
+            self._load_next_verifier()
         return self.verifier == None
 
 class AOVerifier(Verifier, ABC):
@@ -156,17 +156,17 @@ class AOVerifier(Verifier, ABC):
         self.obj_poss = obj_desc_to_poss(env, obj)
     
     @abstractmethod
-    def isSucceedActionObject(self, action, obj_pos):
+    def is_succeed_action_object(self, action, obj_pos):
         return
     
-    def isSucceedAction(self, action):
+    def is_succeed_action(self, action):
         for obj_pos in self.obj_poss:
-            if self.isSucceedActionObject(action, obj_pos):
+            if self.is_succeed_action_object(action, obj_pos):
                 return True
         return False
 
 class GotoVerifier(AOVerifier):
-    def isSucceedActionObject(self, action, obj_pos):
+    def is_succeed_action_object(self, action, obj_pos):
         next_state = get_next_state(self.env, action)
         obj_cell = self.env.grid.get(*obj_pos)
 
@@ -178,7 +178,7 @@ class GotoVerifier(AOVerifier):
         return check_position
 
 class PickVerifier(AOVerifier):
-    def isSucceedActionObject(self, action, obj_pos):
+    def is_succeed_action_object(self, action, obj_pos):
         check_action = action == self.actions.toggle
         check_position = is_in_front_of(self.env, obj_pos)
         check_not_carrying = self.env.carrying == None
@@ -186,7 +186,7 @@ class PickVerifier(AOVerifier):
         return check_action and check_position and check_not_carrying
 
 class OpenVerifier(AOVerifier):
-    def isSucceedActionObject(self, action, obj_pos):
+    def is_succeed_action_object(self, action, obj_pos):
         obj_cell = self.env.grid.get(*obj_pos)
 
         check_action = action == self.actions.toggle
@@ -201,7 +201,7 @@ class DropVerifier(Verifier):
     def __init__(self, env):
         super().__init__(env)
 
-    def isSucceedAction(self, action):
+    def is_succeed_action(self, action):
         check_action = action == self.actions.toggle
         check_empty_front = is_empty_in_front_of(self.env)
         check_carrying = self.env.carrying != None
