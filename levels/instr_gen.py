@@ -125,7 +125,7 @@ def extract_cands_in_generate(type, constraints=set()):
 
 def gen_instr(seed, constraintss=[set()]):
     random.seed(seed)
-    return Instr([gen_ainstr(constraints) for constraints in constraintss])
+    return [gen_ainstr(constraints) for constraints in constraintss]
 
 def gen_ainstr(constraints=set()):
     act = gen_action(constraints)
