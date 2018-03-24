@@ -47,7 +47,7 @@ def door_from_loc(env, loc):
 
     return door_from_loc(env, env._randElem(['east', 'west', 'south', 'north']))
 
-def gen_env(instrs, seed):
+def gen_env(instr, seed):
     """
     Generate an environment from a list of instructions (structured instruction).
 
@@ -58,10 +58,10 @@ def gen_env(instrs, seed):
     objs = set()
 
     # For each instruction
-    for instr in instrs:
+    for ainstr in instr.ainstrs:
         # The pick, goto and open actions mean the referenced objects must exist
-        if instr.action == 'pick' or instr.action == 'goto' or instr.action == 'open':
-            obj = instr.object
+        if ainstr.action == 'pick' or ainstr.action == 'goto' or ainstr.action == 'open':
+            obj = ainstr.object
             objs.add(obj)
 
     # Create the environment

@@ -123,10 +123,14 @@ def extract_cands_in_generate(type, constraints=set()):
             cands.append(t)
     return cands
 
-def gen_instr(constraints=set()):
+def gen_instr(seed, constraintss=[set()]):
+    random.seed(seed)
+    return Instr([gen_ainstr(constraints) for constraints in constraintss])
+
+def gen_ainstr(constraints=set()):
     act = gen_action(constraints)
     obj = gen_object(act, constraints)
-    return Instr(action=act, object=obj)
+    return AInstr(action=act, object=obj)
 
 def gen_action(constraints=set()):
     action_cands = extract_cands_in_generate('action', constraints)
@@ -177,12 +181,27 @@ def gen_locrel(obj=None, act=None, constraints=set()):
 def gen_state(obj=None, act=None, constraints=set()):
     return gen_subattr('state', constraints|(set() if not obj else {obj}))
 
-def surface(ntup, conditions={}):
+def gen_instr_surface(instr, seed):
+    random.seed(seed)
+    s_instr = ''
+    for i, ainstr in enumerate(instr.ainstrs):
+        if i > 0:
+            s_instr += random.choice([' and then', ', then']) + ' '
+        s_instr += gen_surface(ainstr)
+    return s_instr
+
+def gen_surface(ntup, conditions={}):
     if ntup == None:
         return ''
-
+    
     if isinstance(ntup, Instr):
-        return surface(ntup.action) + ' ' + surface(ntup.object)
+        raise NotImplementedError
+
+    if isinstance(ntup, AInstr):
+        s_ainstr = gen_surface(ntup.action)
+        if ntup.action != 'drop':
+            s_ainstr += ' ' + gen_surface(ntup.object)
+        return s_ainstr
 
     if isinstance(ntup, Object):
         s_obj = ntup.type
@@ -193,17 +212,17 @@ def surface(ntup, conditions={}):
                 continue
             cond = random.choice(['pre', 'after', 'which is', 'that is'])
             if cond == 'pre':
-                s_obj = surface(f, conditions={cond}) + ' ' + s_obj
+                s_obj = gen_surface(f, conditions={cond}) + ' ' + s_obj
             if cond == 'after':
                 if 'which is' in s_obj or 'that is' in s_obj:
-                    s_obj = s_obj + ' and is ' + surface(f, conditions={cond})
+                    s_obj = s_obj + ' and is ' + gen_surface(f, conditions={cond})
                 else:
-                    s_obj = s_obj + ' ' + (('which is ' + surface(f, conditions={cond})) if f in CONCEPTS['state'] else surface(f, conditions={cond}))
+                    s_obj = s_obj + ' ' + (('which is ' + gen_surface(f, conditions={cond})) if f in CONCEPTS['state'] else gen_surface(f, conditions={cond}))
             if cond in ['which is', 'that is']:
                 if 'which is' in s_obj or 'that is' in s_obj:
-                    s_obj = s_obj + ' and is ' + surface(f, conditions={cond})
+                    s_obj = s_obj + ' and is ' + gen_surface(f, conditions={cond})
                 else:
-                    s_obj = s_obj + ' {} '.format(cond) + surface(f, conditions={cond})
+                    s_obj = s_obj + ' {} '.format(cond) + gen_surface(f, conditions={cond})
         return 'the '+ s_obj
 
     if ntup == 'goto':
@@ -242,7 +261,16 @@ def surface(ntup, conditions={}):
         return random.choice([ntup])
 
 if __name__ == "__main__":
+    print("> Unconstrainted instrs")
     for i in range(10):
-        instr = gen_instr()
+        seed = i
+        instr = gen_instr(seed)
         print(instr)
-        print(surface(instr))
+        print(gen_instr_surface(instr, seed))
+
+    print()
+    print("> Constrained instrs")
+    for i in range(10):
+        instr = gen_instr(i, constraintss=[{"pick", "key"}, {"drop"}])
+        print(instr)
+        print(gen_instr_surface(instr, seed))
