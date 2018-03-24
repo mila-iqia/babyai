@@ -61,7 +61,7 @@ def test():
         else:
             return
 
-        done = verifier.isTerminalAction(action)
+        done = verifier.isSucceedAction(action)
         print(done)
         _, _, _, _ = env.step(action)
 
