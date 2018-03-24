@@ -184,7 +184,7 @@ def gen_state(obj=None, act=None, constraints=set()):
 def gen_instr_surface(instr, seed):
     random.seed(seed)
     s_instr = ''
-    for i, ainstr in enumerate(instr.ainstrs):
+    for i, ainstr in enumerate(instr):
         if i > 0:
             s_instr += random.choice([' and then', ', then']) + ' '
         s_instr += gen_surface(ainstr)
@@ -193,9 +193,6 @@ def gen_instr_surface(instr, seed):
 def gen_surface(ntup, conditions={}):
     if ntup == None:
         return ''
-    
-    if isinstance(ntup, Instr):
-        raise NotImplementedError
 
     if isinstance(ntup, AInstr):
         s_ainstr = gen_surface(ntup.action)

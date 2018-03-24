@@ -13,29 +13,29 @@ def test():
 
     """
     instrs = [
-        Instr([AInstr(action="pick", object=Object(color="red", loc=RelLoc('front'), type="key"))]),
-        #Instr([AInstr(action="pick", object=Object(color="blue", loc=RelLoc('front'), type="key"))]),
+        [AInstr(action="pick", object=Object(color="red", loc=RelLoc('front'), type="key"))],
+        #[AInstr(action="pick", object=Object(color="blue", loc=RelLoc('front'), type="key"))],
 
-        Instr([AInstr(action="pick", object=Object(color=None, loc=RelLoc('left'), type="ball"))]),
+        [AInstr(action="pick", object=Object(color=None, loc=RelLoc('left'), type="ball"))],
 
-        #Instr([AInstr(action="drop", object=Object(color="red", loc=None, type="key"))]),
-        #Instr([AInstr(action="goto", object=Object(color="blue", loc=AbsLoc('north'), type="ball"))]),
-        #Instr([AInstr(action="goto", object=Object(color="green", loc=AbsLoc('east'), type="box"))]),
-        #Instr([AInstr(action="open", object=Object(color="yellow", loc=AbsLoc('north'), type="door"))]),
+        #[AInstr(action="drop", object=Object(color="red", loc=None, type="key"))],
+        #[AInstr(action="goto", object=Object(color="blue", loc=AbsLoc('north'), type="ball"))],
+        #[AInstr(action="goto", object=Object(color="green", loc=AbsLoc('east'), type="box"))],
+        #[AInstr(action="open", object=Object(color="yellow", loc=AbsLoc('north'), type="door"))],
     ]
     """
 
     # while True:
     #     instr = gen_instr()
-    #     if instr.ainstrs[0].object.type == 'door':
+    #     if instr[0].object.type == 'door':
     #         break
-    # instr = Instr([
+    # instr = [
     #     AInstr(action='open', object=Object(type='door', color="red", loc=None, state=None)),
     #     AInstr(action='open', object=Object(type='door', color="blue", loc=None, state=None)),
-    # ])
-    instr = Instr([
+    # ]
+    instr = [
         AInstr(action='open', object=Object(type='door', color=None, loc=None, state=None)),
-    ])
+    ]
 
     print(instr)
     print(gen_instr_surface(instr, seed))

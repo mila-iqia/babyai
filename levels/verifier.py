@@ -125,11 +125,11 @@ class InstrVerifier(Verifier):
         self._loadNextVerifier()
     
     def _loadNextVerifier(self):
-        if self.ainstrIndex >= len(self.instr.ainstrs):
+        if self.ainstrIndex >= len(self.instr):
             self.verifier = None
             return
         
-        ainstr = self.instr.ainstrs[self.ainstrIndex]
+        ainstr = self.instr[self.ainstrIndex]
         self.ainstrIndex += 1
 
         if ainstr.action == "open":

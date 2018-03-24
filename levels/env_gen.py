@@ -58,7 +58,7 @@ def gen_env(instr, seed):
     objs = set()
 
     # For each instruction
-    for ainstr in instr.ainstrs:
+    for ainstr in instr:
         # The pick, goto and open actions mean the referenced objects must exist
         if ainstr.action == 'pick' or ainstr.action == 'goto' or ainstr.action == 'open':
             obj = ainstr.object
