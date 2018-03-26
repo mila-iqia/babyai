@@ -96,4 +96,52 @@ def gen_env(instrs, seed):
     # Make sure that all rooms are reachable by the agent
     env.connect_all()
 
+    # Remove attributes from objects
+    objs = set(map(lambda o: (o.type, o.color), objs))
+
+    # Generate random distractor objects with unique properties
+    while len(objs) < env.num_rows * env.num_cols:
+        color = env._randElem(COLOR_NAMES)
+        type = env._randElem(['key', 'ball', 'box'])
+        obj = (type, color)
+
+        if obj in objs:
+            continue
+
+        objs.add(obj)
+        i = env._randInt(0, env.num_rows)
+        j = env._randInt(0, env.num_cols)
+        env.add_object(i, j, *obj)
+
     return env
+
+def test():
+    import numpy as np
+
+    seed = 0
+
+    env = gen_env(
+        [
+            Instr(action="pick", object=Object(color="red", loc=RelLoc('front'), type="key", state=None)),
+            Instr(action="drop", object=Object(color=None, loc=None, type="key", state=None)),
+        ],
+        seed
+    )
+
+    # No location specified
+    env = gen_env(
+        [Instr(action="pick", object=Object(color="red", loc=None, type="ball", state=None))],
+        seed
+    )
+
+    # No color specified
+    env = gen_env(
+        [Instr(action="goto", object=Object(color=None, loc=None, type="key", state=None))],
+        seed
+    )
+
+    # The same seed should always yield the same environment
+    instrs = [Instr(action="pick", object=Object(color=None, loc=None, type="key", state=None))]
+    grid1 = gen_env(instrs, seed).grid.encode()
+    grid2 = gen_env(instrs, seed).grid.encode()
+    assert np.array_equal(grid2, grid1)
