@@ -7,7 +7,7 @@ Prototype of a game where a reinforcement learning agent is trained through natu
 ## Installation
 
 Requirements:
-- Python 3
+- Python 3.5+
 - OpenAI gym
 - NumPy
 - PyQT5
