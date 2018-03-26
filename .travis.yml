@@ -7,4 +7,4 @@ install:
   - pip3 install -e .
 
 # command to run tests
-script: run_tests.py
+script: ./run_tests.py
