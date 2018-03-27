@@ -1,11 +1,13 @@
 # Baby AI Game
 
+[![Build Status](https://travis-ci.org/maximecb/baby-ai-game.svg?branch=master)](https://travis-ci.org/maximecb/baby-ai-game)
+
 Prototype of a game where a reinforcement learning agent is trained through natural language instructions. This is a research project based at the [Montreal Institute for Learning Algorithms (MILA)](https://mila.quebec/en/).
 
 ## Installation
 
 Requirements:
-- Python 3
+- Python 3.5+
 - OpenAI gym
 - NumPy
 - PyQT5
