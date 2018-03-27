@@ -29,12 +29,11 @@ def test():
     #     instr = gen_instr()
     #     if instr[0].object.type == 'door':
     #         break
-    # instr = [
-    #     AInstr(action='open', object=Object(type='door', color="red", loc=None, state=None)),
-    #     AInstr(action='open', object=Object(type='door', color="blue", loc=None, state=None)),
-    # ]
     instr = [
-        AInstr(action='open', object=Object(type='door', color=None, loc=None, state=None)),
+        AInstr(action="open", object=Object(type="door", color="red", loc=None, state="locked")),
+        AInstr(action="pick", object=Object(type="key", color="green", loc=None, state=None)),
+        AInstr(action="open", object=Object(type="door", color="blue", loc=None, state=None)),
+        AInstr(action="drop", object=None)
     ]
 
     print(instr)
@@ -61,9 +60,9 @@ def test():
         else:
             return
 
-        done = verifier.isSucceedAction(action)
-        print(done)
         _, _, _, _ = env.step(action)
+        done = verifier.step()
+        print(done)
 
     renderer = env.render('human')
     renderer.window.setKeyDownCb(keyDownCb)
