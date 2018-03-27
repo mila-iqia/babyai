@@ -61,7 +61,7 @@ class Verifier(ABC):
 
         return
 
-class InstrVerifier(Verifier):
+class InstrSeqVerifier(Verifier):
     def __init__(self, env, instr):
         super().__init__(env)
         self.instr = instr
@@ -104,7 +104,7 @@ class InstrVerifier(Verifier):
 
         self.verifier = None
 
-class AInstrVerifier(Verifier):
+class InstrVerifier(Verifier):
     def __init__(self, env):
         super().__init__(env)
         self.previous_state = None
@@ -132,7 +132,7 @@ class AInstrVerifier(Verifier):
 
         return
 
-class GotoVerifier(AInstrVerifier):
+class GotoVerifier(InstrVerifier):
     def __init__(self, env, obj):
         super().__init__(env)
         self.obj_poss = obj_desc_to_poss(env, obj)
@@ -151,7 +151,7 @@ class GotoVerifier(AInstrVerifier):
 
         return check_goto_goal or check_goto_not_goal
 
-class PickVerifier(AInstrVerifier):
+class PickVerifier(InstrVerifier):
     def __init__(self, env, obj):
         super().__init__(env)
         self.obj_poss = obj_desc_to_poss(env, obj)
@@ -163,7 +163,7 @@ class PickVerifier(AInstrVerifier):
 
         return check_wasnt_carrying and check_carrying
 
-class OpenVerifier(AInstrVerifier):
+class OpenVerifier(InstrVerifier):
     def __init__(self, env, obj):
         super().__init__(env)
         if obj.state == None:
@@ -179,7 +179,7 @@ class OpenVerifier(AInstrVerifier):
 
         return check_opened
 
-class DropVerifier(AInstrVerifier):
+class DropVerifier(InstrVerifier):
     def __init__(self, env, obj_to_drop):
         super().__init__(env)
         self.obj_to_drop = obj_to_drop

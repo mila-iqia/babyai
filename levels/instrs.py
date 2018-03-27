@@ -4,10 +4,8 @@ from collections import namedtuple
 # locations that are near or far. This way, the difficulty level would be
 # implicitly represented in instructions.
 
-# A `instr` is a list of `AInstr`.
-
 # action: goto, open, pick, drop
-AInstr = namedtuple('AInstr', ['action', 'object'])
+Instr = namedtuple('Instr', ['action', 'object'])
 
 # loc: RelLoc, AbsLoc
 # state: locked

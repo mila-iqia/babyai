@@ -123,14 +123,14 @@ def extract_cands_in_generate(type, constraints=set()):
             cands.append(t)
     return cands
 
-def gen_instr(seed, constraintss=[set()]):
+def gen_instr_seq(seed, constraintss=[set()]):
     random.seed(seed)
     return [gen_ainstr(constraints) for constraints in constraintss]
 
 def gen_ainstr(constraints=set()):
     act = gen_action(constraints)
     obj = gen_object(act, constraints)
-    return AInstr(action=act, object=obj)
+    return Instr(action=act, object=obj)
 
 def gen_action(constraints=set()):
     action_cands = extract_cands_in_generate('action', constraints)
@@ -181,7 +181,7 @@ def gen_locrel(obj=None, act=None, constraints=set()):
 def gen_state(obj=None, act=None, constraints=set()):
     return gen_subattr('state', constraints|(set() if not obj else {obj}))
 
-def gen_instr_surface(instr, seed):
+def gen_instr_seq_surface(instr, seed):
     random.seed(seed)
     s_instr = ''
     for i, ainstr in enumerate(instr):
@@ -194,7 +194,7 @@ def gen_surface(ntup, conditions={}):
     if ntup == None:
         return ''
 
-    if isinstance(ntup, AInstr):
+    if isinstance(ntup, Instr):
         s_ainstr = gen_surface(ntup.action)
         if ntup.action != 'drop':
             s_ainstr += ' ' + gen_surface(ntup.object)
@@ -261,13 +261,13 @@ if __name__ == "__main__":
     print("> Unconstrainted instrs")
     for i in range(10):
         seed = i
-        instr = gen_instr(seed)
+        instr = gen_instr_seq(seed)
         print(instr)
-        print(gen_instr_surface(instr, seed))
+        print(gen_instr_seq_surface(instr, seed))
 
     print()
     print("> Constrained instrs")
     for i in range(10):
-        instr = gen_instr(i, constraintss=[{"pick", "key"}, {"drop"}])
+        instr = gen_instr_seq(i, constraintss=[{"pick", "key"}, {"drop"}])
         print(instr)
-        print(gen_instr_surface(instr, seed))
+        print(gen_instr_seq_surface(instr, seed))
