@@ -1,79 +1,19 @@
 from abc import ABC, abstractmethod
+from collections import namedtuple
 
-def get_dir_vec(dir):
-    """
-    Get the direction vector for the agent, pointing in the direction
-    of forward movement.
-    """
+State = namedtuple("State", ["dir", "pos", "carry"])
 
-    # Pointing right
-    if dir == 0:
-        return (1, 0)
-    # Down (positive Y)
-    elif dir == 1:
-        return (0, 1)
-    # Pointing left
-    elif dir == 2:
-        return (-1, 0)
-    # Up (negative Y)
-    elif dir == 3:
-        return (0, -1)
-    else:
-        assert False
-
-def get_next_state(env, action, state=None):
-    """
-    Get agent's state (i.e. direction and position) after `action`.
-    The agent's state is the 2-tuple (agentDir, agentPos).
-    """
-
-    if state == None:
-        state = env.agentDir, env.agentPos
-    dir, pos = state
-
-    if action == env.actions.left:
-        dir = (dir - 1) % 4
-    elif action == env.actions.right:
-        dir = (dir + 1) % 4
-    elif action == env.actions.forward:
-        u, v = get_dir_vec(dir)
-        newPos = (pos[0] + u, pos[1] + v)
-        targetCell = env.grid.get(newPos[0], newPos[1])
-        if targetCell == None or targetCell.canOverlap():
-            pos = newPos
-
-    return dir, pos
-
-def get_front_pos(env, state=None):
+def get_in_front_of_pos(env):
     """
     Get the position in front of the agent.
     The agent's state is the 2-tuple (agentDir, agentPos).
     """
 
-    if state == None:
-        state = env.agentDir, env.agentPos
-    dir, pos = state
-
-    u, v = get_dir_vec(dir)
+    pos = env.agentPos
+    u, v = env.getDirVec()
     pos = (pos[0] + u, pos[1] + v)
 
     return pos
-
-def is_in_front_of(env, pos, state=None):
-    """
-    Check if the position in front of the agent is `pos`.
-    The agent's state is the 2-tuple (agentDir, agentPos).
-    """
-
-    return get_front_pos(env, state) == pos
-
-def is_empty_in_front_of(env, state=None):
-    """
-    Check if agent is in front of an empty cell.
-    The agent's state is the 2-tuple (agentDir, agentPos).
-    """
-
-    return env.grid.get(*get_front_pos(env, state)) == None
 
 def obj_desc_to_poss(env, obj_desc):
     """
@@ -96,6 +36,9 @@ def obj_desc_to_poss(env, obj_desc):
             if cell.type != type:
                 continue
             
+            if obj_desc.state in ["closed", "locked"] and cell.isOpen:
+                continue
+            
             if obj_desc.color != None and cell.color != obj_desc.color:
                 continue
 
@@ -108,13 +51,14 @@ def obj_desc_to_poss(env, obj_desc):
 class Verifier(ABC):
     def __init__(self, env):
         self.env = env
-        self.actions = self.env.unwrapped.actions
-    
+
     @abstractmethod
-    def is_succeed_action(self, action):
+    def step(self):
         """
-        Check if the agent will solve the mission with this action.
+        Update verifier's internal state and returns true
+        iff the agent did what he was expected to.
         """
+
         return
 
 class InstrVerifier(Verifier):
@@ -122,11 +66,20 @@ class InstrVerifier(Verifier):
         super().__init__(env)
         self.instr = instr
         self.ainstrIndex = 0
-        self._load_next_verifier()
+
+        self.obj_to_drop = None
+        self.intermediary_state = None
     
+        self._load_next_verifier()
+
+    def step(self):
+        if self.verifier != None and self.verifier.step():
+            self._close_verifier()
+            self._load_next_verifier()
+        return self.verifier == None
+
     def _load_next_verifier(self):
         if self.ainstrIndex >= len(self.instr):
-            self.verifier = None
             return
         
         ainstr = self.instr[self.ainstrIndex]
@@ -139,71 +92,100 @@ class InstrVerifier(Verifier):
         elif ainstr.action == "pick":
             self.verifier = PickVerifier(self.env, ainstr.object)
         else:
-            self.verifier = DropVerifier(self.env)
+            self.verifier = DropVerifier(self.env, self.obj_to_drop)
+        
+        self.verifier.state = self.intermediary_state
+    
+    def _close_verifier(self):
+        if isinstance(self.verifier, PickVerifier):
+            self.obj_to_drop = self.verifier.state.carry
+        
+        self.intermediary_state = self.verifier.state
 
-    def is_succeed_action(self, action):
-        if self.verifier != None and self.verifier.is_succeed_action(action):
-            self._load_next_verifier()
-        return self.verifier == None
+        self.verifier = None
 
-class AOVerifier(Verifier, ABC):
-    """
-    Verifier for action-object atomic instructions.
-    """
+class AInstrVerifier(Verifier):
+    def __init__(self, env):
+        super().__init__(env)
+        self.previous_state = None
+        self.state = None
+    
+    def step(self):
+        """
+        Update verifier's internal state and returns true
+        iff the agent did what he was expected to.
+        """
 
+        self.previous_state = self.state
+        self.state = State(
+            dir=self.env.agentDir,
+            pos=self.env.agentPos,
+            carry=self.env.carrying)
+        
+        return self._done()
+    
+    @abstractmethod
+    def _done(self):
+        """
+        Check if the agent did what he was expected to.
+        """
+
+        return
+
+class GotoVerifier(AInstrVerifier):
     def __init__(self, env, obj):
         super().__init__(env)
         self.obj_poss = obj_desc_to_poss(env, obj)
+        self.obj_cells = [self.env.grid.get(*pos) for pos in self.obj_poss]
     
-    @abstractmethod
-    def is_succeed_action_object(self, action, obj_pos):
-        return
-    
-    def is_succeed_action(self, action):
-        for obj_pos in self.obj_poss:
-            if self.is_succeed_action_object(action, obj_pos):
-                return True
-        return False
+    def _done(self):
+        on_cell = self.env.grid.get(*self.state.pos)
+        ifo_pos = get_in_front_of_pos(self.env)
+        ifo_cell = self.env.grid.get(*ifo_pos)
 
-class GotoVerifier(AOVerifier):
-    def is_succeed_action_object(self, action, obj_pos):
-        next_state = get_next_state(self.env, action)
-        obj_cell = self.env.grid.get(*obj_pos)
+        check_on_goal = on_cell != None and on_cell.type == "goal"
+        check_goto_goal = check_on_goal and on_cell in self.obj_cells
 
-        check_goal = obj_cell.type == "goal"
-        check_will_in = next_state[1] == obj_pos
-        check_will_be_front = is_in_front_of(self.env, obj_pos, state=next_state)
-        check_position = check_goal and check_will_in or not(check_goal) and check_will_be_front
+        check_not_ifo_goal = ifo_cell == None or ifo_cell.type != "goal"
+        check_goto_not_goal = check_not_ifo_goal and ifo_cell in self.obj_cells
 
-        return check_position
+        return check_goto_goal or check_goto_not_goal
 
-class PickVerifier(AOVerifier):
-    def is_succeed_action_object(self, action, obj_pos):
-        check_action = action == self.actions.toggle
-        check_position = is_in_front_of(self.env, obj_pos)
-        check_not_carrying = self.env.carrying == None
-
-        return check_action and check_position and check_not_carrying
-
-class OpenVerifier(AOVerifier):
-    def is_succeed_action_object(self, action, obj_pos):
-        obj_cell = self.env.grid.get(*obj_pos)
-
-        check_action = action == self.actions.toggle
-        check_position = is_in_front_of(self.env, obj_pos)
-        check_closed = not(obj_cell.isOpen)
-        check_not_locked = obj_cell.type != "locked_door"
-        check_carrying = self.env.carrying != None and self.env.carrying.type == 'key' and self.env.carrying.color == obj_cell.color
-
-        return check_action and check_position and check_closed and (check_not_locked or check_carrying)
-
-class DropVerifier(Verifier):
-    def __init__(self, env):
+class PickVerifier(AInstrVerifier):
+    def __init__(self, env, obj):
         super().__init__(env)
+        self.obj_poss = obj_desc_to_poss(env, obj)
+        self.obj_cells = [self.env.grid.get(*pos) for pos in self.obj_poss]
+    
+    def _done(self):
+        check_wasnt_carrying = self.previous_state.carry == None
+        check_carrying = self.state.carry in self.obj_cells
 
-    def is_succeed_action(self, action):
-        check_action = action == self.actions.toggle
-        check_empty_front = is_empty_in_front_of(self.env)
-        check_carrying = self.env.carrying != None
+        return check_wasnt_carrying and check_carrying
 
-        return check_action and check_empty_front and check_carrying
+class OpenVerifier(AInstrVerifier):
+    def __init__(self, env, obj):
+        super().__init__(env)
+        if obj.state == None:
+            obj = obj._replace(state="closed")
+        self.obj_poss = obj_desc_to_poss(env, obj)
+        self.obj_cells = [self.env.grid.get(*pos) for pos in self.obj_poss]
+
+    def _done(self):
+        ifo_pos = get_in_front_of_pos(self.env)
+        ifo_cell = self.env.grid.get(*ifo_pos)
+
+        check_opened = ifo_cell in self.obj_cells and ifo_cell.isOpen
+
+        return check_opened
+
+class DropVerifier(AInstrVerifier):
+    def __init__(self, env, obj_to_drop):
+        super().__init__(env)
+        self.obj_to_drop = obj_to_drop
+
+    def _done(self):
+        check_was_carrying = self.previous_state.carry == self.obj_to_drop
+        check_isnt_carrying = self.state.carry == None
+
+        return check_was_carrying and check_isnt_carrying
