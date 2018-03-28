@@ -60,7 +60,7 @@ def gen_env(instr, seed):
     # For each instruction
     for ainstr in instr:
         # The pick, goto and open actions mean the referenced objects must exist
-        if ainstr.action == 'pick' or ainstr.action == 'goto' or ainstr.action == 'open':
+        if ainstr.action == 'pickup' or ainstr.action == 'goto' or ainstr.action == 'open':
             obj = ainstr.object
             objs.add(obj)
 
@@ -135,7 +135,7 @@ def test():
 
     env = gen_env(
         [
-            Instr(action="pick", object=Object(color="red", loc=RelLoc('front'), type="key", state=None)),
+            Instr(action="pickup", object=Object(color="red", loc=RelLoc('front'), type="key", state=None)),
             Instr(action="drop", object=Object(color=None, loc=None, type="key", state=None)),
         ],
         seed
@@ -143,7 +143,7 @@ def test():
 
     # No location specified
     env = gen_env(
-        [Instr(action="pick", object=Object(color="red", loc=None, type="ball", state=None))],
+        [Instr(action="pickup", object=Object(color="red", loc=None, type="ball", state=None))],
         seed
     )
 
@@ -165,7 +165,7 @@ def test():
     )
 
     # The same seed should always yield the same environment
-    instrs = [Instr(action="pick", object=Object(color=None, loc=None, type="key", state=None))]
+    instrs = [Instr(action="pickup", object=Object(color=None, loc=None, type="key", state=None))]
     grid1 = gen_env(instrs, seed).grid.encode()
     grid2 = gen_env(instrs, seed).grid.encode()
     assert np.array_equal(grid2, grid1)

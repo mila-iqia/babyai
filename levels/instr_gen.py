@@ -5,25 +5,27 @@ from collections import namedtuple, defaultdict
 from copy import deepcopy
 import itertools
 import random
+
 from .instrs import *
+from gym_minigrid.minigrid import COLOR_NAMES
 
 CONCEPTS = {
-    'action': {'pick', 'goto', 'drop', 'open'},
+    'action': {'pickup', 'goto', 'drop', 'open'},
     'object': {'door', 'wall', 'ball', 'key', 'box'},
     'attr': {'color', 'loc', 'state'},
     'loc': {'loc_abs', 'loc_rel'},
-    'color': {'red', 'blue', 'green'},
+    'color': COLOR_NAMES,
     'loc_abs': {'east', 'west', 'north', 'south'},
     'loc_rel': {'left', 'right'},
     'state': {'locked'}}
 
 # constraints (a, b) means that a and b can appear at the same time.
 CONSTRAINTS = \
-    {('key', v) for v in {'goto', 'pick', 'drop'}} | \
+    {('key', v) for v in {'goto', 'pickup', 'drop'}} | \
     {('wall', 'goto')} | \
     {('door', v) for v in {'goto', 'open', 'locked'}} | \
-    {('ball', v) for v in {'goto', 'pick', 'drop'}} | \
-    {('box', v) for v in  {'goto', 'pick', 'drop', 'open', 'locked'}} | \
+    {('ball', v) for v in {'goto', 'pickup', 'drop'}} | \
+    {('box', v) for v in  {'goto', 'pickup', 'drop', 'open', 'locked'}} | \
     {('object', 'color'), ('object', 'loc')}
 
 def check_valid_concept(name):
@@ -225,8 +227,8 @@ def gen_surface(ntup, seed=0, conditions={}):
     if ntup == 'goto':
         return random.choice(['go to', 'reach', 'find', 'walk to'])
 
-    if ntup == 'pick':
-        return random.choice(['pick', 'pick up', 'grasp', 'go pick', 'go grasp', 'go get', 'get', 'go fetch', 'fetch'])
+    if ntup == 'pickup':
+        return random.choice(['pickup', 'pick up', 'grasp', 'go pick', 'go grasp', 'go get', 'get', 'go fetch', 'fetch'])
 
     if ntup == 'drop':
         return random.choice(['drop', 'drop down', 'put down'])
@@ -265,7 +267,7 @@ def test():
         gen_surface(instr, seed)
 
     for i in range(10):
-        instr = gen_instr_seq(i, constraintss=[{"pick", "key"}, {"drop"}])
+        instr = gen_instr_seq(i, constraintss=[{'pickup', 'key'}, {'drop'}])
         #print(instr)
         gen_surface(instr, seed)
 

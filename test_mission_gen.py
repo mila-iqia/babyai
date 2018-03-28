@@ -10,23 +10,9 @@ from levels.verifier import InstrSeqVerifier
 def test():
     seed = random.randint(0, 0xFFFF)
 
-    """
-    instrs = [
-        [Instr(action="pick", object=Object(color="red", loc=RelLoc('front'), type="key"))],
-        #[Instr(action="pick", object=Object(color="blue", loc=RelLoc('front'), type="key"))],
-
-        [Instr(action="pick", object=Object(color=None, loc=RelLoc('left'), type="ball"))],
-
-        #[Instr(action="drop", object=Object(color="red", loc=None, type="key"))],
-        #[Instr(action="goto", object=Object(color="blue", loc=AbsLoc('north'), type="ball"))],
-        #[Instr(action="goto", object=Object(color="green", loc=AbsLoc('east'), type="box"))],
-        #[Instr(action="open", object=Object(color="yellow", loc=AbsLoc('north'), type="door"))],
-    ]
-    """
-
     instr = [
         Instr(action="open", object=Object(type="door", color="red", loc=None, state="locked")),
-        Instr(action="pick", object=Object(type="key", color="green", loc=None, state=None)),
+        Instr(action="pickup", object=Object(type="key", color="green", loc=None, state=None)),
         Instr(action="open", object=Object(type="door", color="blue", loc=None, state=None)),
         Instr(action="drop", object=None)
     ]
