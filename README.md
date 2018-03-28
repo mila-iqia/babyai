@@ -55,18 +55,12 @@ The `main.py` script implements a template of a user interface for interactive h
 
 ## Instructions for Committers
 
-If you have been given write access to this repository, please avoid pushing
-commits to the `master` branch directly, and instead create your own branch
-using the `git checkout -b <branch_name>` command. This will allow everyone to
-run their own experiments and structure their code as they see fit, without
-interfering with the work of others.
+To contribute to this project, you should first create your own fork, and remember to periodically [sync changes from this repository](https://stackoverflow.com/questions/7244321/how-do-i-update-a-github-forked-repository). You can then create [pull requests](https://yangsu.github.io/pull-request-tutorial/) for modifications you have made. Your changes will be tested and reviewed before they are merged into this repository. If you are not familiar with forks and pull requests, I recommend doing a Google or YouTube search to find many useful tutorials on the issue. Knowing how to use git and GitHub effectively are valuable skills for any programmer.
 
 If you have found a bug, or would like to request a change or improvement
 to the grid world environment or user interface, please
 [open an issue](https://github.com/maximecb/baby-ai-game/issues)
-on this repository. The master branch is meant to serve as a blank template
-to get people started with their research. Changes to the master branch should
-be made by creating a pull request, please avoid directly pushing commits to it.
+on this repository. For bug reports, please paste complete error messages and describe your system configuration (are you running on Mac, Linux?).
 
 ## Usage
 
