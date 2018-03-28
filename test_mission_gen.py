@@ -50,8 +50,10 @@ def test():
             action = env.actions.forward
         elif keyName == 'SPACE':
             action = env.actions.toggle
-        elif keyName == 'CTRL':
-            action = env.actions.wait
+        elif keyName == 'PAGE_UP':
+            action = env.actions.pickup
+        elif keyName == 'PAGE_DOWN':
+            action = env.actions.drop
         else:
             return
 
