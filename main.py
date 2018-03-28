@@ -169,12 +169,18 @@ class AIGameWindow(QMainWindow):
     def keyPressEvent(self, e):
         # Manual agent control
         actions = self.env.unwrapped.actions
+
         if e.key() == Qt.Key_Left:
             self.stepEnv(actions.left)
         elif e.key() == Qt.Key_Right:
             self.stepEnv(actions.right)
         elif e.key() == Qt.Key_Up:
             self.stepEnv(actions.forward)
+
+        elif e.key() == Qt.Key_PageUp:
+            self.stepEnv(actions.pickup)
+        elif e.key() == Qt.Key_PageDown:
+            self.stepEnv(actions.drop)
         elif e.key() == Qt.Key_Space:
             self.stepEnv(actions.toggle)
 
