@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 
-from levels.instr_gen import gen_instr_seq, gen_instr_seq_surface
+import random
+
+from levels.instr_gen import gen_instr_seq, gen_surface
 from levels.env_gen import gen_env
 from levels.instrs import *
 from levels.verifier import InstrSeqVerifier
 
 def test():
-
-    import random
-
     seed = random.randint(0, 0xFFFF)
 
     """
@@ -25,10 +24,6 @@ def test():
     ]
     """
 
-    # while True:
-    #     instr = gen_instr()
-    #     if instr[0].object.type == 'door':
-    #         break
     instr = [
         Instr(action="open", object=Object(type="door", color="red", loc=None, state="locked")),
         Instr(action="pick", object=Object(type="key", color="green", loc=None, state=None)),
@@ -37,7 +32,7 @@ def test():
     ]
 
     print(instr)
-    print(gen_instr_seq_surface(instr, seed))
+    print(gen_surface(instr))
 
     env = gen_env(instr, seed)
     verifier = InstrSeqVerifier(env, instr)
@@ -67,7 +62,7 @@ def test():
     renderer = env.render('human')
     renderer.window.setKeyDownCb(keyDownCb)
 
-    import time    
+    import time
 
     while True:
         time.sleep(0.01)

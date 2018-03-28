@@ -181,18 +181,18 @@ def gen_locrel(obj=None, act=None, constraints=set()):
 def gen_state(obj=None, act=None, constraints=set()):
     return gen_subattr('state', constraints|(set() if not obj else {obj}))
 
-def gen_instr_seq_surface(instr, seed):
-    random.seed(seed)
-    s_instr = ''
-    for i, ainstr in enumerate(instr):
-        if i > 0:
-            s_instr += random.choice([' and then', ', then']) + ' '
-        s_instr += gen_surface(ainstr)
-    return s_instr
-
-def gen_surface(ntup, conditions={}):
+def gen_surface(ntup, seed=0, conditions={}):
     if ntup == None:
         return ''
+
+    if isinstance(ntup, list):
+        random.seed(seed)
+        s_instr = ''
+        for i, ainstr in enumerate(ntup):
+            if i > 0:
+                s_instr += random.choice([' and then', ', then']) + ' '
+            s_instr += gen_surface(ainstr)
+        return s_instr
 
     if isinstance(ntup, Instr):
         s_ainstr = gen_surface(ntup.action)
@@ -257,17 +257,22 @@ def gen_surface(ntup, conditions={}):
     if ntup in CONCEPTS['state']:
         return random.choice([ntup])
 
-if __name__ == "__main__":
-    print("> Unconstrainted instrs")
+def test():
     for i in range(10):
         seed = i
         instr = gen_instr_seq(seed)
-        print(instr)
-        print(gen_instr_seq_surface(instr, seed))
+        #print(instr)
+        gen_surface(instr, seed)
 
-    print()
-    print("> Constrained instrs")
     for i in range(10):
         instr = gen_instr_seq(i, constraintss=[{"pick", "key"}, {"drop"}])
-        print(instr)
-        print(gen_instr_seq_surface(instr, seed))
+        #print(instr)
+        gen_surface(instr, seed)
+
+    # Same seed must yield the same instructions and string
+    str1 = gen_surface(gen_instr_seq(seed), seed=7)
+    str2 = gen_surface(gen_instr_seq(seed), seed=7)
+    assert str1 == str2
+
+if __name__ == "__main__":
+    test()
