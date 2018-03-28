@@ -4,13 +4,17 @@ from collections import namedtuple
 # locations that are near or far. This way, the difficulty level would be
 # implicitly represented in instructions.
 
-# Actions: goto, open, pick, drop
+# action: goto, open, pick, drop
 Instr = namedtuple('Instr', ['action', 'object'])
 
+# loc: RelLoc, AbsLoc
+# state: locked
 Object = namedtuple('Object', ['type', 'color', 'loc', 'state'])
 
-# Relative locations: left, right, front, behind
+# Relative locations
+# loc: left, right, front, behind
 RelLoc = namedtuple('RelLoc', ['loc'])
 
-# Absolute locations: north, south, east, west
+# Absolute locations
+# loc: north, south, east, west
 AbsLoc = namedtuple('RelLoc', ['loc'])
