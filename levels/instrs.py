@@ -17,4 +17,4 @@ RelLoc = namedtuple('RelLoc', ['loc'])
 
 # Absolute locations
 # loc: north, south, east, west
-AbsLoc = namedtuple('RelLoc', ['loc'])
+AbsLoc = namedtuple('AbsLoc', ['loc'])
