@@ -6,10 +6,8 @@ from optparse import OptionParser
 
 from levels import level_list
 
-#from levels.instr_gen import gen_instr_seq, gen_surface
-#from levels.env_gen import gen_env
-#from levels.instrs import *
-#from levels.verifier import InstrSeqVerifier
+from PyQt5.QtWidgets import QApplication
+from gym_minigrid.rendering import Window
 
 def test():
     parser = OptionParser()
@@ -33,9 +31,18 @@ def test():
     print(mission.instrs)
     print(mission.surface)
 
+    app = QApplication([])
+    window = Window()
+
+    def reset():
+        mission.reset()
+        pixmap = mission.render('pixmap')
+        window.setPixmap(pixmap)
+        window.setKeyDownCb(keyDownCb)
+
     def keyDownCb(keyName):
         if keyName == 'ESCAPE':
-            renderer.window.close()
+            window.close()
 
         action = 0
         if keyName == 'LEFT':
@@ -56,13 +63,17 @@ def test():
         obs, reward, done, info = mission.step(action)
         print(done)
 
-    renderer = mission.render('human')
-    renderer.window.setKeyDownCb(keyDownCb)
+        if done == True:
+            reset()
+
+    reset()
 
     while True:
         time.sleep(0.01)
-        mission.render('human')
-        if renderer.window.closed:
-            break
+        pixmap = mission.render('pixmap')
+        window.setPixmap(pixmap)
+        app.processEvents()
+        if window.closed:
+           break
 
 test()
