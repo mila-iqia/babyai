@@ -18,12 +18,17 @@ def test():
         type="int",
         default=0
     )
+    parser.add_option(
+        "--seed",
+        type="int",
+        default=0
+    )
     (options, args) = parser.parse_args()
 
-    seed = 7
-
     level = level_list[options.level_no]
-    mission = level.gen_mission(seed)
+    mission = level.gen_mission(options.seed)
+
+    # TODO: if seed is -1, pick random?
 
     print(mission.instrs)
     print(mission.surface)

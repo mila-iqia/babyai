@@ -1,3 +1,4 @@
+import random
 from copy import deepcopy
 import gym
 import gym_minigrid
@@ -76,14 +77,32 @@ class Level0(Level):
 
 class Level1(Level):
     """
-    Level 1: go to the door (of any color, in the current room)
+    Level 1: go to the door (of a given color, in the current room)
     """
 
     def __init__(self):
         super().__init__()
 
     def gen_mission(self, seed):
-        instrs = [Instr(action="goto", object=Object(type="door", color=None, loc=None, state=None))]
+        random.seed(seed)
+        color = random.choice(COLOR_NAMES)
+        instrs = [Instr(action="goto", object=Object(type="door", color=color, loc=None, state=None))]
+        env = gen_env(instrs, seed)
+        return Mission(instrs, env)
+
+class Level2(Level):
+    """
+    Level 2: go to an object or door (of a given type and color, in the current room)
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def gen_mission(self, seed):
+        random.seed(seed)
+        color = random.choice(COLOR_NAMES)
+        type = random.choice(['door', 'ball', 'key', 'box'])
+        instrs = [Instr(action="goto", object=Object(type=type, color=color, loc=None, state=None))]
         env = gen_env(instrs, seed)
         return Mission(instrs, env)
 
@@ -91,7 +110,8 @@ class Level1(Level):
 # ie: level_list[0] is a Level0 instance
 level_list = [
     Level0(),
-    Level1()
+    Level1(),
+    Level2()
 ]
 
 def test():
