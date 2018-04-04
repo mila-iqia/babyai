@@ -45,7 +45,7 @@ def door_from_loc(env, loc):
     if loc == 'north' or loc == 'left':
         return (1, 0), 1
 
-    assert False
+    assert False, 'door without location'
 
 def gen_env(instr, seed):
     """
@@ -55,14 +55,14 @@ def gen_env(instr, seed):
     """
 
     # Set of objects to be placed
-    objs = set()
+    objs = []
 
     # For each instruction
     for ainstr in instr:
         # The pick, goto and open actions mean the referenced objects must exist
         if ainstr.action == 'pickup' or ainstr.action == 'goto' or ainstr.action == 'open':
             obj = ainstr.object
-            objs.add(obj)
+            objs.append(obj)
 
     # Create the environment
     # Note: we must have at least 3x3 rooms to support absolute locations
@@ -70,32 +70,32 @@ def gen_env(instr, seed):
     env.seed(seed)
 
     # Assign colors to objects that don't have one
-    for obj in objs:
+    for obj in objs[:]:
         if obj.color is None:
             objs.remove(obj)
             color = env._randElem(COLOR_NAMES)
             obj = Object(type=obj.type, loc=obj.loc, state=obj.state, color=color)
-            objs.add(obj)
+            objs.append(obj)
 
     # Assign unique locations to doors without one
-    locs = set(['north', 'south', 'west', 'east'])
-    for obj in objs:
+    locs = ['north', 'south', 'west', 'east']
+    for obj in objs[:]:
         if obj.type == 'door' and obj.loc == None:
             objs.remove(obj)
             while True:
                 loc = env._randElem(locs)
-                doors = set(filter(lambda o: o.type == 'door' and o.loc == loc, objs))
+                doors = list(filter(lambda o: o.type == 'door' and o.loc == loc, objs))
                 if len(doors) == 0:
                     break
             obj = Object(type=obj.type, loc=loc, state=obj.state, color=obj.color)
-            objs.add(obj)
+            objs.append(obj)
 
     # Make sure that locked doors have matching keys
-    for obj in set(objs):
+    for obj in objs[:]:
         if obj.type == 'door' and obj.state == 'locked':
             keys = filter(lambda o: o.type == 'key' and o.color == obj.color, objs)
             if len(list(keys)) == 0:
-                objs.add(Object('key', obj.color, None, None))
+                objs.append(Object('key', obj.color, None, None))
 
     # For each object to be added
     for obj in objs:
@@ -110,7 +110,7 @@ def gen_env(instr, seed):
     env.connect_all()
 
     # Remove attributes from objects
-    objs = set(map(lambda o: (o.type, o.color), objs))
+    objs = list(map(lambda o: (o.type, o.color), objs))
 
     # Generate random distractor objects with unique properties
     while len(objs) < env.num_rows * env.num_cols:
@@ -121,7 +121,7 @@ def gen_env(instr, seed):
         if obj in objs:
             continue
 
-        objs.add(obj)
+        objs.append(obj)
         i = env._randInt(0, env.num_rows)
         j = env._randInt(0, env.num_cols)
         env.add_object(i, j, *obj)
