@@ -1,61 +1,63 @@
 #!/usr/bin/env python3
 
 import random
+import time
+from optparse import OptionParser
 
-from levels.instr_gen import gen_instr_seq, gen_surface
-from levels.env_gen import gen_env
-from levels.instrs import *
-from levels.verifier import InstrSeqVerifier
+from levels import level_list
+
+#from levels.instr_gen import gen_instr_seq, gen_surface
+#from levels.env_gen import gen_env
+#from levels.instrs import *
+#from levels.verifier import InstrSeqVerifier
 
 def test():
-    seed = random.randint(0, 0xFFFF)
+    parser = OptionParser()
+    parser.add_option(
+        "--level-no",
+        type="int",
+        default=0
+    )
+    (options, args) = parser.parse_args()
 
-    instr = [
-        Instr(action="open", object=Object(type="door", color="red", loc=None, state="locked")),
-        Instr(action="pickup", object=Object(type="key", color="green", loc=None, state=None)),
-        Instr(action="open", object=Object(type="door", color="blue", loc=None, state=None)),
-        Instr(action="drop", object=None)
-    ]
+    seed = 7
 
-    print(instr)
-    print(gen_surface(instr))
+    level = level_list[options.level_no]
+    mission = level.gen_mission(seed)
 
-    env = gen_env(instr, seed)
-    verifier = InstrSeqVerifier(env, instr)
+    print(mission.instrs)
+    print(mission.surface)
 
     def keyDownCb(keyName):
         if keyName == 'ESCAPE':
-            env.gridRender.window.close()
+            renderer.window.close()
 
         action = 0
         if keyName == 'LEFT':
-            action = env.actions.left
+            action = mission.actions.left
         elif keyName == 'RIGHT':
-            action = env.actions.right
+            action = mission.actions.right
         elif keyName == 'UP':
-            action = env.actions.forward
+            action = mission.actions.forward
         elif keyName == 'SPACE':
-            action = env.actions.toggle
+            action = mission.actions.toggle
         elif keyName == 'PAGE_UP':
-            action = env.actions.pickup
+            action = mission.actions.pickup
         elif keyName == 'PAGE_DOWN':
-            action = env.actions.drop
+            action = mission.actions.drop
         else:
             return
 
-        _, _, _, _ = env.step(action)
-        done = verifier.step()
+        obs, reward, done, info = mission.step(action)
         print(done)
 
-    renderer = env.render('human')
+    renderer = mission.render('human')
     renderer.window.setKeyDownCb(keyDownCb)
-
-    import time
 
     while True:
         time.sleep(0.01)
-        env.render('human')
-        if env.gridRender.window.closed:
+        mission.render('human')
+        if renderer.window.closed:
             break
 
 test()

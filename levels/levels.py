@@ -1,16 +1,12 @@
 from copy import deepcopy
 import gym
+import gym_minigrid
+from gym_minigrid.minigrid import COLOR_NAMES
 
 from .instrs import *
 from .instr_gen import gen_instr_seq, gen_surface
 from .env_gen import gen_env
 from .verifier import InstrSeqVerifier
-
-# - want way to iterate through levels
-# - generate environments and instructions given seeds
-# - probably want way to sample mission objects for a given level
-
-# TODO: more commenting
 
 class Mission(gym.Wrapper):
     """
@@ -20,9 +16,11 @@ class Mission(gym.Wrapper):
     def __init__(self, instrs, env):
         self.instrs = instrs
 
-        # Keep a copy of the original env
+        # Keep a copy of the original environment so we can reset it
         self.orig_env = env
         self.env = deepcopy(self.orig_env)
+
+        self.actions = env.actions
 
         super().__init__(self.env)
 
@@ -37,10 +35,16 @@ class Mission(gym.Wrapper):
     def step(self, action):
         obs, reward, done, info = self.env.step(action)
 
+        # Check if the mission has been completed
         done = self.verifier.step()
         reward = 1 if done else 0
 
         return obs, reward, done, info
+
+    @property
+    def surface(self):
+        """Produce an English string for the instructions"""
+        return gen_surface(self.instrs)
 
 class Level:
     """
@@ -54,6 +58,7 @@ class Level:
         pass
 
     def gen_mission(self, seed):
+        """Generate a mission (instructions and matching environment)"""
         raise NotImplementedError
 
 class Level0(Level):
@@ -69,14 +74,31 @@ class Level0(Level):
         env = gen_env(instrs, seed)
         return Mission(instrs, env)
 
-# Levels array, indexable by level number
-# ie: levels[0] is a Level0 instance
-levels = [
-    Level0()
+class Level1(Level):
+    """
+    Level 1: go to the door (of any color, in the current room)
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def gen_mission(self, seed):
+        instrs = [Instr(action="goto", object=Object(type="door", color=None, loc=None, state=None))]
+        env = gen_env(instrs, seed)
+        return Mission(instrs, env)
+
+# Level list, indexable by level number
+# ie: level_list[0] is a Level0 instance
+level_list = [
+    Level0(),
+    Level1()
 ]
 
 def test():
-    mission = levels[0].gen_mission(0)
-    mission.step(0)
-    mission.reset()
-    mission.step(0)
+    for idx, level in enumerate(level_list):
+        print('Level %d' % idx)
+        mission = level.gen_mission(0)
+        mission.step(0)
+        mission.reset()
+        mission.step(0)
+        assert isinstance(mission.surface, str)

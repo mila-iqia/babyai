@@ -16,5 +16,9 @@ print('Testing instruction generation')
 levels.instr_gen.test()
 
 # TODO: verifier tests
+# could potentially use a tiny environment for this
+# something with an object in a fixed location, and short known action
+# sequence to succeed
 
+print('Testing levels, mission generation')
 levels.levels.test()
