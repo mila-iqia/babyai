@@ -31,7 +31,7 @@ def test():
     #         break
     instr = [
         Instr(action="open", object=Object(type="door", color="red", loc=None, state="locked")),
-        Instr(action="pick", object=Object(type="key", color="green", loc=None, state=None)),
+        Instr(action="pick", object=Object(type="key", color="green", loc="left", state=None)),
         Instr(action="open", object=Object(type="door", color="blue", loc=None, state=None)),
         Instr(action="drop", object=None)
     ]
@@ -62,7 +62,7 @@ def test():
 
         _, _, _, _ = env.step(action)
         done = verifier.step()
-        print(done)
+        print("is done:", done)
 
     renderer = env.render('human')
     renderer.window.setKeyDownCb(keyDownCb)
