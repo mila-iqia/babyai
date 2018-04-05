@@ -240,7 +240,7 @@ def gen_surface(ntup, seed=0, conditions={}):
         if {'pre'} & conditions:
             return ntup
         if {'after'} & conditions:
-            return random.choice(['with the color of {}'.format(ntup), 'in {}'.format(ntup)])
+            return random.choice(['in {}'.format(ntup)]) #'with the color of {}'.format(ntup), 
         if {'which is', 'that is'} & conditions:
             return ntup 
 
@@ -254,7 +254,7 @@ def gen_surface(ntup, seed=0, conditions={}):
         if {'pre'} & conditions:
             return ntup
         if {'which is', 'that is', 'after'} & conditions:
-            return random.choice(['on the {}'.format(ntup), 'on your {}'.format(ntup)])
+            return random.choice(['on your {}'.format(ntup)])
 
     if ntup in CONCEPTS['state']:
         return random.choice([ntup])
