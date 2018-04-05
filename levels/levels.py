@@ -63,6 +63,14 @@ class Level:
 
     def gen_mission(self, seed):
         """Generate a mission (instructions and matching environment)"""
+
+        # Create a random-number generator using the seed
+        rng = random.Random(seed)
+
+        return self._gen_mission(seed, rng)
+
+    def _gen_mission(self, seed, rng):
+        """Derived level classes should implement this method"""
         raise NotImplementedError
 
 class Level0(Level):
@@ -73,7 +81,7 @@ class Level0(Level):
     def __init__(self):
         super().__init__()
 
-    def gen_mission(self, seed):
+    def _gen_mission(self, seed, rng):
         instrs = [Instr(action="goto", object=Object(type="door", color="red", loc=None, state=None))]
         env = gen_env(instrs, seed, max_steps=50)
         return Mission(seed, instrs, env)
@@ -86,8 +94,7 @@ class Level1(Level):
     def __init__(self):
         super().__init__()
 
-    def gen_mission(self, seed):
-        rng = random.Random(seed)
+    def _gen_mission(self, seed, rng):
         color = rng.choice(COLOR_NAMES)
         instrs = [Instr(action="goto", object=Object(type="door", color=color, loc=None, state=None))]
         env = gen_env(instrs, seed, max_steps=50)
@@ -101,20 +108,47 @@ class Level2(Level):
     def __init__(self):
         super().__init__()
 
-    def gen_mission(self, seed):
-        rng = random.Random(seed)
+    def _gen_mission(self, seed, rng):
         color = rng.choice(COLOR_NAMES)
         type = rng.choice(['door', 'ball', 'key', 'box'])
         instrs = [Instr(action="goto", object=Object(type=type, color=color, loc=None, state=None))]
         env = gen_env(instrs, seed, max_steps=50, distractors=True)
         return Mission(seed, instrs, env)
 
+class Level3(Level):
+    """
+    Level 3: [pick up an object] or [go to an object or door] (in the current room)
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def _gen_mission(self, seed, rng):
+        color = rng.choice(COLOR_NAMES)
+
+        if rng.choice([True, False]):
+            type = rng.choice(['ball', 'key', 'box'])
+            instr = Instr(action="pickup", object=Object(type=type, color=color, loc=None, state=None))
+        else:
+            type = rng.choice(['door', 'ball', 'key', 'box'])
+            instr = Instr(action="goto", object=Object(type=type, color=color, loc=None, state=None))
+
+        env = gen_env(
+            [instr],
+            seed,
+            max_steps=50,
+            distractors=True
+        )
+
+        return Mission(seed, [instr], env)
+
 # Level list, indexable by level number
 # ie: level_list[0] is a Level0 instance
 level_list = [
     Level0(),
     Level1(),
-    Level2()
+    Level2(),
+    Level3()
 ]
 
 def test():
