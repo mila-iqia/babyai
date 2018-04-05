@@ -99,7 +99,7 @@ class InstrSeqVerifier(Verifier):
 
         self.obj_to_drop = None
         self.intermediary_state = None
-    
+
         self._load_next_verifier()
 
     def step(self):
@@ -111,7 +111,7 @@ class InstrSeqVerifier(Verifier):
     def _load_next_verifier(self):
         if self.ainstrIndex >= len(self.instr):
             return
-        
+
         ainstr = self.instr[self.ainstrIndex]
         self.ainstrIndex += 1
 
@@ -119,17 +119,17 @@ class InstrSeqVerifier(Verifier):
             self.verifier = OpenVerifier(self.env, ainstr.object)
         elif ainstr.action == "goto":
             self.verifier = GotoVerifier(self.env, ainstr.object)
-        elif ainstr.action == "pick":
-            self.verifier = PickVerifier(self.env, ainstr.object)
+        elif ainstr.action == "pickup":
+            self.verifier = PickupVerifier(self.env, ainstr.object)
         else:
             self.verifier = DropVerifier(self.env, self.obj_to_drop)
-        
+
         self.verifier.state = self.intermediary_state
-    
+
     def _close_verifier(self):
-        if isinstance(self.verifier, PickVerifier):
+        if isinstance(self.verifier, PickupVerifier):
             self.obj_to_drop = self.verifier.state.carry
-        
+
         self.intermediary_state = self.verifier.state
 
         self.verifier = None
@@ -140,7 +140,7 @@ class InstrVerifier(Verifier):
 
         self.previous_state = None
         self.state = None
-    
+
     def step(self):
         """
         Update verifier's internal state and returns true
@@ -152,9 +152,9 @@ class InstrVerifier(Verifier):
             dir=self.env.agentDir,
             pos=self.env.agentPos,
             carry=self.env.carrying)
-        
+
         return self._done()
-    
+
     @abstractmethod
     def _done(self):
         """
@@ -169,7 +169,7 @@ class GotoVerifier(InstrVerifier):
 
         self.obj_poss = self._obj_desc_to_poss(obj)
         self.obj_cells = [self.env.grid.get(*pos) for pos in self.obj_poss]
-    
+
     def _done(self):
         on_cell = self.env.grid.get(*self.state.pos)
         ifo_pos = self._get_in_front_of_pos()
@@ -183,13 +183,13 @@ class GotoVerifier(InstrVerifier):
 
         return check_goto_goal or check_goto_not_goal
 
-class PickVerifier(InstrVerifier):
+class PickupVerifier(InstrVerifier):
     def __init__(self, env, obj):
         super().__init__(env)
 
         self.obj_poss = self._obj_desc_to_poss(obj)
         self.obj_cells = [self.env.grid.get(*pos) for pos in self.obj_poss]
-    
+
     def _done(self):
         check_wasnt_carrying = self.previous_state.carry == None
         check_carrying = self.state.carry in self.obj_cells

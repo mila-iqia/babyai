@@ -5,25 +5,27 @@ from collections import namedtuple, defaultdict
 from copy import deepcopy
 import itertools
 import random
+
 from .instrs import *
+from gym_minigrid.minigrid import COLOR_NAMES
 
 CONCEPTS = {
-    'action': {'pick', 'goto', 'drop', 'open'},
+    'action': {'pickup', 'goto', 'drop', 'open'},
     'object': {'door', 'wall', 'ball', 'key', 'box'},
     'attr': {'color', 'loc', 'state'},
     'loc': {'loc_rel'},
-    'color': {'red', 'blue', 'green'},
+    'color': COLOR_NAMES,
     'loc_abs': {'east', 'west', 'north', 'south'},
     'loc_rel': {'left', 'right', 'front', 'behind'},
     'state': {'locked'}}
 
 # constraints (a, b) means that a and b can appear at the same time.
 CONSTRAINTS = \
-    {('key', v) for v in {'goto', 'pick', 'drop'}} | \
+    {('key', v) for v in {'goto', 'pickup', 'drop'}} | \
     {('wall', 'goto')} | \
     {('door', v) for v in {'goto', 'open', 'locked'}} | \
-    {('ball', v) for v in {'goto', 'pick', 'drop'}} | \
-    {('box', v) for v in  {'goto', 'pick', 'drop', 'open', 'locked'}} | \
+    {('ball', v) for v in {'goto', 'pickup', 'drop'}} | \
+    {('box', v) for v in  {'goto', 'pickup', 'drop', 'open', 'locked'}} | \
     {('object', 'color'), ('object', 'loc')}
 
 def check_valid_concept(name):
@@ -181,18 +183,18 @@ def gen_locrel(obj=None, act=None, constraints=set()):
 def gen_state(obj=None, act=None, constraints=set()):
     return gen_subattr('state', constraints|(set() if not obj else {obj}))
 
-def gen_instr_seq_surface(instr, seed):
-    random.seed(seed)
-    s_instr = ''
-    for i, ainstr in enumerate(instr):
-        if i > 0:
-            s_instr += random.choice([' and then', ', then']) + ' '
-        s_instr += gen_surface(ainstr)
-    return s_instr
-
-def gen_surface(ntup, conditions={}):
+def gen_surface(ntup, seed=0, conditions={}):
     if ntup == None:
         return ''
+
+    if isinstance(ntup, list):
+        random.seed(seed)
+        s_instr = ''
+        for i, ainstr in enumerate(ntup):
+            if i > 0:
+                s_instr += random.choice([' and then', ', then']) + ' '
+            s_instr += gen_surface(ainstr)
+        return s_instr
 
     if isinstance(ntup, Instr):
         s_ainstr = gen_surface(ntup.action)
@@ -225,8 +227,8 @@ def gen_surface(ntup, conditions={}):
     if ntup == 'goto':
         return random.choice(['go to', 'reach', 'find', 'walk to'])
 
-    if ntup == 'pick':
-        return random.choice(['pick', 'pick up', 'grasp', 'go pick', 'go grasp', 'go get', 'get', 'go fetch', 'fetch'])
+    if ntup == 'pickup':
+        return random.choice(['pickup', 'pick up', 'grasp', 'go pick', 'go grasp', 'go get', 'get', 'go fetch', 'fetch'])
 
     if ntup == 'drop':
         return random.choice(['drop', 'drop down', 'put down'])
@@ -240,7 +242,7 @@ def gen_surface(ntup, conditions={}):
         if {'after'} & conditions:
             return random.choice(['with the color of {}'.format(ntup), 'in {}'.format(ntup)])
         if {'which is', 'that is'} & conditions:
-            return 'in {}'.format(ntup)
+            return ntup 
 
     if ntup in CONCEPTS['loc_abs']:
         if {'pre'} & conditions:
@@ -257,17 +259,22 @@ def gen_surface(ntup, conditions={}):
     if ntup in CONCEPTS['state']:
         return random.choice([ntup])
 
-if __name__ == "__main__":
-    print("> Unconstrainted instrs")
+def test():
     for i in range(10):
         seed = i
         instr = gen_instr_seq(seed)
-        print(instr)
-        print(gen_instr_seq_surface(instr, seed))
+        #print(instr)
+        gen_surface(instr, seed)
 
-    print()
-    print("> Constrained instrs")
     for i in range(10):
-        instr = gen_instr_seq(i, constraintss=[{"pick", "key"}, {"drop"}])
-        print(instr)
-        print(gen_instr_seq_surface(instr, seed))
+        instr = gen_instr_seq(i, constraintss=[{'pickup', 'key'}, {'drop'}])
+        #print(instr)
+        gen_surface(instr, seed)
+
+    # Same seed must yield the same instructions and string
+    str1 = gen_surface(gen_instr_seq(seed), seed=7)
+    str2 = gen_surface(gen_instr_seq(seed), seed=7)
+    assert str1 == str2
+
+if __name__ == "__main__":
+    test()

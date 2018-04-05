@@ -1,78 +1,79 @@
 #!/usr/bin/env python3
 
-from levels.instr_gen import gen_instr_seq, gen_instr_seq_surface
-from levels.env_gen import gen_env
-from levels.instrs import *
-from levels.verifier import InstrSeqVerifier
+import random
+import time
+from optparse import OptionParser
+
+from levels import level_list
+
+from PyQt5.QtWidgets import QApplication
+from gym_minigrid.rendering import Window
 
 def test():
+    parser = OptionParser()
+    parser.add_option(
+        "--level-no",
+        type="int",
+        default=0
+    )
+    parser.add_option(
+        "--seed",
+        type="int",
+        default=0
+    )
+    (options, args) = parser.parse_args()
 
-    import random
+    level = level_list[options.level_no]
+    mission = level.gen_mission(options.seed)
 
-    seed = random.randint(0, 0xFFFF)
+    # TODO: if seed is -1, pick random?
 
-    """
-    instrs = [
-        [Instr(action="pick", object=Object(color="red", loc=RelLoc('front'), type="key"))],
-        #[Instr(action="pick", object=Object(color="blue", loc=RelLoc('front'), type="key"))],
+    print(mission.instrs)
+    print(mission.surface)
 
-        [Instr(action="pick", object=Object(color=None, loc=RelLoc('left'), type="ball"))],
+    app = QApplication([])
+    window = Window()
 
-        #[Instr(action="drop", object=Object(color="red", loc=None, type="key"))],
-        #[Instr(action="goto", object=Object(color="blue", loc=AbsLoc('north'), type="ball"))],
-        #[Instr(action="goto", object=Object(color="green", loc=AbsLoc('east'), type="box"))],
-        #[Instr(action="open", object=Object(color="yellow", loc=AbsLoc('north'), type="door"))],
-    ]
-    """
-
-    # while True:
-    #     instr = gen_instr()
-    #     if instr[0].object.type == 'door':
-    #         break
-    instr = [
-        Instr(action="open", object=Object(type="door", color="red", loc=None, state="locked")),
-        Instr(action="pick", object=Object(type="key", color="green", loc="left", state=None)),
-        Instr(action="open", object=Object(type="door", color="blue", loc=None, state=None)),
-        Instr(action="drop", object=None)
-    ]
-
-    print(instr)
-    print(gen_instr_seq_surface(instr, seed))
-
-    env = gen_env(instr, seed)
-    verifier = InstrSeqVerifier(env, instr)
+    def reset():
+        mission.reset()
+        pixmap = mission.render('pixmap')
+        window.setPixmap(pixmap)
+        window.setKeyDownCb(keyDownCb)
 
     def keyDownCb(keyName):
         if keyName == 'ESCAPE':
-            env.gridRender.window.close()
+            window.close()
 
         action = 0
         if keyName == 'LEFT':
-            action = env.actions.left
+            action = mission.actions.left
         elif keyName == 'RIGHT':
-            action = env.actions.right
+            action = mission.actions.right
         elif keyName == 'UP':
-            action = env.actions.forward
+            action = mission.actions.forward
         elif keyName == 'SPACE':
-            action = env.actions.toggle
-        elif keyName == 'CTRL':
-            action = env.actions.wait
+            action = mission.actions.toggle
+        elif keyName == 'PAGE_UP':
+            action = mission.actions.pickup
+        elif keyName == 'PAGE_DOWN':
+            action = mission.actions.drop
         else:
             return
 
-        _, _, _, _ = env.step(action)
-        done = verifier.step()
+        obs, reward, done, info = mission.step(action)
         print("is done:", done)
 
-    renderer = env.render('human')
-    renderer.window.setKeyDownCb(keyDownCb)
+        if done == True:
+            reset()
 
-    import time    
+    reset()
 
     while True:
         time.sleep(0.01)
-        env.render('human')
-        if env.gridRender.window.closed:
-            break
+        pixmap = mission.render('pixmap')
+        window.setPixmap(pixmap)
+        app.processEvents()
+        if window.closed:
+           break
 
 test()
