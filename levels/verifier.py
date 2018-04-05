@@ -3,54 +3,17 @@ from collections import namedtuple
 
 State = namedtuple("State", ["dir", "pos", "carry"])
 
-def get_in_front_of_pos(env):
+def dot_product(v1, v2):
     """
-    Get the position in front of the agent.
-    The agent's state is the 2-tuple (agentDir, agentPos).
-    """
-
-    pos = env.agentPos
-    u, v = env.getDirVec()
-    pos = (pos[0] + u, pos[1] + v)
-
-    return pos
-
-def obj_desc_to_poss(env, obj_desc):
-    """
-    Get the positions of all the objects that match object's description.
+    Compute the dot product of the vectors v1 and v2.
     """
 
-    poss = []
-
-    for i in range(env.grid.width):
-        for j in range(env.grid.height):
-            cell = env.grid.get(i, j)
-            if cell == None:
-                continue
-
-            if obj_desc.type == "door" and obj_desc.state == "locked":
-                type = "locked_door"
-            else:
-                type = obj_desc.type
-
-            if cell.type != type:
-                continue
-
-            if obj_desc.state in ["closed", "locked"] and cell.isOpen:
-                continue
-
-            if obj_desc.color != None and cell.color != obj_desc.color:
-                continue
-
-            # TODO: handle positions
-
-            poss.append((i, j))
-
-    return poss
+    return sum([i*j for i, j in zip(v1, v2)])
 
 class Verifier(ABC):
     def __init__(self, env):
         self.env = env
+        self.startDirVec = env.getDirVec()
 
     @abstractmethod
     def step(self):
@@ -61,9 +24,76 @@ class Verifier(ABC):
 
         return
 
+    def _obj_desc_to_poss(self, obj_desc):
+        """
+        Get the positions of all the objects that match the description.
+        """
+
+        poss = []
+
+        for i in range(self.env.grid.width):
+            for j in range(self.env.grid.height):
+                cell = self.env.grid.get(i, j)
+                if cell == None:
+                    continue
+
+                # Check if object's type matches description
+                if obj_desc.type == "door" and obj_desc.state == "locked":
+                    type = "locked_door"
+                else:
+                    type = obj_desc.type
+
+                if cell.type != type:
+                    continue
+                
+                # Check if object's state matches description
+                if obj_desc.state in ["closed", "locked"] and cell.isOpen:
+                    continue
+                
+                # Check if object's color matches description
+                if obj_desc.color != None and cell.color != obj_desc.color:
+                    continue
+
+                # Check if object's position matches description
+                if obj_desc.loc in ["left", "right", "front", "behind"]:
+                    # Direction from the agent to the object
+                    v = (i-self.env.startPos[0], j-self.env.startPos[1])
+
+                    # (d1, d2) is an oriented orthonormal basis
+                    d1 = self.startDirVec
+                    d2 = (-d1[1], d1[0])
+
+                    # Check if object's position matches with location
+                    pos_matches = {
+                        "left": dot_product(v, d2) > 0,
+                        "right": dot_product(v, d2) < 0,
+                        "front": dot_product(v, d1) > 0,
+                        "behind": dot_product(v, d1) < 0
+                    }
+
+                    if not(pos_matches[obj_desc.loc]):
+                        continue
+
+                poss.append((i, j))
+        
+        return poss
+    
+    def _get_in_front_of_pos(self):
+        """
+        Get the position in front of the agent.
+        The agent's state is the 2-tuple (agentDir, agentPos).
+        """
+
+        pos = self.env.agentPos
+        d = self.env.getDirVec()
+        pos = (pos[0] + d[0], pos[1] + d[1])
+
+        return pos
+
 class InstrSeqVerifier(Verifier):
     def __init__(self, env, instr):
         super().__init__(env)
+
         self.instr = instr
         self.ainstrIndex = 0
 
@@ -107,6 +137,7 @@ class InstrSeqVerifier(Verifier):
 class InstrVerifier(Verifier):
     def __init__(self, env):
         super().__init__(env)
+
         self.previous_state = None
         self.state = None
 
@@ -135,12 +166,13 @@ class InstrVerifier(Verifier):
 class GotoVerifier(InstrVerifier):
     def __init__(self, env, obj):
         super().__init__(env)
-        self.obj_poss = obj_desc_to_poss(env, obj)
+
+        self.obj_poss = self._obj_desc_to_poss(obj)
         self.obj_cells = [self.env.grid.get(*pos) for pos in self.obj_poss]
 
     def _done(self):
         on_cell = self.env.grid.get(*self.state.pos)
-        ifo_pos = get_in_front_of_pos(self.env)
+        ifo_pos = self._get_in_front_of_pos()
         ifo_cell = self.env.grid.get(*ifo_pos)
 
         check_on_goal = on_cell != None and on_cell.type == "goal"
@@ -154,7 +186,8 @@ class GotoVerifier(InstrVerifier):
 class PickupVerifier(InstrVerifier):
     def __init__(self, env, obj):
         super().__init__(env)
-        self.obj_poss = obj_desc_to_poss(env, obj)
+
+        self.obj_poss = self._obj_desc_to_poss(obj)
         self.obj_cells = [self.env.grid.get(*pos) for pos in self.obj_poss]
 
     def _done(self):
@@ -166,13 +199,14 @@ class PickupVerifier(InstrVerifier):
 class OpenVerifier(InstrVerifier):
     def __init__(self, env, obj):
         super().__init__(env)
+
         if obj.state == None:
             obj = obj._replace(state="closed")
-        self.obj_poss = obj_desc_to_poss(env, obj)
+        self.obj_poss = self._obj_desc_to_poss(obj)
         self.obj_cells = [self.env.grid.get(*pos) for pos in self.obj_poss]
 
     def _done(self):
-        ifo_pos = get_in_front_of_pos(self.env)
+        ifo_pos = self._get_in_front_of_pos()
         ifo_cell = self.env.grid.get(*ifo_pos)
 
         check_opened = ifo_cell in self.obj_cells and ifo_cell.isOpen
@@ -182,6 +216,7 @@ class OpenVerifier(InstrVerifier):
 class DropVerifier(InstrVerifier):
     def __init__(self, env, obj_to_drop):
         super().__init__(env)
+
         self.obj_to_drop = obj_to_drop
 
     def _done(self):

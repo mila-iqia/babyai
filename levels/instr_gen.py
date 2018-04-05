@@ -13,10 +13,10 @@ CONCEPTS = {
     'action': {'pickup', 'goto', 'drop', 'open'},
     'object': {'door', 'wall', 'ball', 'key', 'box'},
     'attr': {'color', 'loc', 'state'},
-    'loc': {'loc_abs', 'loc_rel'},
+    'loc': {'loc_rel'},
     'color': COLOR_NAMES,
     'loc_abs': {'east', 'west', 'north', 'south'},
-    'loc_rel': {'left', 'right'},
+    'loc_rel': {'left', 'right', 'front', 'behind'},
     'state': {'locked'}}
 
 # constraints (a, b) means that a and b can appear at the same time.
