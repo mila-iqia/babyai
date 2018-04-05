@@ -191,7 +191,7 @@ class PickupVerifier(InstrVerifier):
         self.obj_cells = [self.env.grid.get(*pos) for pos in self.obj_poss]
 
     def _done(self):
-        check_wasnt_carrying = self.previous_state.carry == None
+        check_wasnt_carrying = self.previous_state == None or self.previous_state.carry == None
         check_carrying = self.state.carry in self.obj_cells
 
         return check_wasnt_carrying and check_carrying
@@ -220,7 +220,7 @@ class DropVerifier(InstrVerifier):
         self.obj_to_drop = obj_to_drop
 
     def _done(self):
-        check_was_carrying = self.previous_state.carry == self.obj_to_drop
+        check_was_carrying = self.previous_state != None and self.previous_state.carry == self.obj_to_drop
         check_isnt_carrying = self.state.carry == None
 
         return check_was_carrying and check_isnt_carrying
