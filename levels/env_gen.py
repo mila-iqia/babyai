@@ -47,11 +47,13 @@ def door_from_loc(env, loc):
 
     assert False, 'door without location'
 
-def gen_env(instr, seed):
+def gen_env(instr, seed, max_steps=200, distractors=False):
     """
     Generate an environment from a list of instructions (structured instruction).
 
     :param seed: seed to be used for the random number generator.
+    :param max_steps: maximum number of time steps allowed by the environment.
+    :param distractors: add random distractor objects to the environment.
     """
 
     # Set of objects to be placed
@@ -66,7 +68,7 @@ def gen_env(instr, seed):
 
     # Create the environment
     # Note: we must have at least 3x3 rooms to support absolute locations
-    env = RoomGrid(room_size=7, num_cols=3)
+    env = RoomGrid(room_size=7, num_cols=3, max_steps=max_steps)
     env.seed(seed)
 
     # Assign colors to objects that don't have one
@@ -113,18 +115,19 @@ def gen_env(instr, seed):
     objs = list(map(lambda o: (o.type, o.color), objs))
 
     # Generate random distractor objects with unique properties
-    while len(objs) < env.num_rows * env.num_cols:
-        color = env._randElem(COLOR_NAMES)
-        type = env._randElem(['key', 'ball', 'box'])
-        obj = (type, color)
+    if distractors:
+        while len(objs) < env.num_rows * env.num_cols:
+            color = env._randElem(COLOR_NAMES)
+            type = env._randElem(['key', 'ball', 'box'])
+            obj = (type, color)
 
-        if obj in objs:
-            continue
+            if obj in objs:
+                continue
 
-        objs.append(obj)
-        i = env._randInt(0, env.num_rows)
-        j = env._randInt(0, env.num_cols)
-        env.add_object(i, j, *obj)
+            objs.append(obj)
+            i = env._randInt(0, env.num_rows)
+            j = env._randInt(0, env.num_cols)
+            env.add_object(i, j, *obj)
 
     return env
 

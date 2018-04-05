@@ -15,7 +15,9 @@ class Mission(gym.Wrapper):
     Wrapper for missions, usable as a gym environment.
     """
 
-    def __init__(self, instrs, env):
+    def __init__(self, seed, instrs, env):
+        self.seed = seed
+
         self.instrs = instrs
 
         # Keep a copy of the original environment so we can reset it
@@ -46,7 +48,7 @@ class Mission(gym.Wrapper):
     @property
     def surface(self):
         """Produce an English string for the instructions"""
-        return gen_surface(self.instrs)
+        return gen_surface(self.instrs, seed=self.seed)
 
 class Level:
     """
@@ -73,8 +75,8 @@ class Level0(Level):
 
     def gen_mission(self, seed):
         instrs = [Instr(action="goto", object=Object(type="door", color="red", loc=None, state=None))]
-        env = gen_env(instrs, seed)
-        return Mission(instrs, env)
+        env = gen_env(instrs, seed, max_steps=50)
+        return Mission(seed, instrs, env)
 
 class Level1(Level):
     """
@@ -85,11 +87,11 @@ class Level1(Level):
         super().__init__()
 
     def gen_mission(self, seed):
-        random.seed(seed)
-        color = random.choice(COLOR_NAMES)
+        rng = random.Random(seed)
+        color = rng.choice(COLOR_NAMES)
         instrs = [Instr(action="goto", object=Object(type="door", color=color, loc=None, state=None))]
-        env = gen_env(instrs, seed)
-        return Mission(instrs, env)
+        env = gen_env(instrs, seed, max_steps=50)
+        return Mission(seed, instrs, env)
 
 class Level2(Level):
     """
@@ -100,12 +102,12 @@ class Level2(Level):
         super().__init__()
 
     def gen_mission(self, seed):
-        random.seed(seed)
-        color = random.choice(COLOR_NAMES)
-        type = random.choice(['door', 'ball', 'key', 'box'])
+        rng = random.Random(seed)
+        color = rng.choice(COLOR_NAMES)
+        type = rng.choice(['door', 'ball', 'key', 'box'])
         instrs = [Instr(action="goto", object=Object(type=type, color=color, loc=None, state=None))]
-        env = gen_env(instrs, seed)
-        return Mission(instrs, env)
+        env = gen_env(instrs, seed, max_steps=50, distractors=True)
+        return Mission(seed, instrs, env)
 
 # Level list, indexable by level number
 # ie: level_list[0] is a Level0 instance
