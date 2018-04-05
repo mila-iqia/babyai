@@ -135,7 +135,7 @@ def test():
 
     env = gen_env(
         [
-            Instr(action="pickup", object=Object(color="red", loc=RelLoc('front'), type="key", state=None)),
+            Instr(action="pickup", object=Object(color="red", loc='front', type="key", state=None)),
             Instr(action="drop", object=Object(color=None, loc=None, type="key", state=None)),
         ],
         seed
