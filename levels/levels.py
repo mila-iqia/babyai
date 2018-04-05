@@ -6,7 +6,7 @@ import gym_minigrid
 from gym_minigrid.minigrid import COLOR_NAMES
 
 from .instrs import *
-from .instr_gen import gen_instr_seq, gen_surface
+from .instr_gen import gen_instr_seq, gen_object, gen_surface
 from .env_gen import gen_env
 from .verifier import InstrSeqVerifier
 
@@ -96,7 +96,9 @@ class Level1(Level):
 
     def _gen_mission(self, seed, rng):
         color = rng.choice(COLOR_NAMES)
-        instrs = [Instr(action="goto", object=Object(type="door", color=color, loc=None, state=None))]
+        state = rng.choice(['locked', None])
+        object = Object(type="door", color=color, loc=None, state=state)
+        instrs = [Instr(action="goto", object=object)]
         env = gen_env(instrs, seed, max_steps=50)
         return Mission(seed, instrs, env)
 
@@ -117,7 +119,38 @@ class Level2(Level):
 
 class Level3(Level):
     """
-    Level 3: [pick up an object] or [go to an object or door] (in the current room)
+    Level 3: [pick up an object] or [go to an object or door] or [open a door] (in the current room)
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def _gen_mission(self, seed, rng):
+        action = rng.choice(['goto', 'pickup', 'open'])
+
+        if action == 'goto':
+            type = rng.choice(['door', 'ball', 'key', 'box'])
+        elif action == 'pickup':
+            type = rng.choice(['ball', 'key', 'box'])
+        else:
+            type = 'door'
+
+        color = rng.choice(COLOR_NAMES)
+        object = Object(type=type, color=color, loc=None, state=None)
+        instrs = [Instr(action=action, object=object)]
+
+        env = gen_env(
+            instrs,
+            seed,
+            max_steps=50,
+            distractors=True
+        )
+
+        return Mission(seed, instrs, env)
+
+class Level4(Level):
+    """
+    Level 4: fetch a key and unlock a door (in the current room)
     """
 
     def __init__(self):
@@ -125,22 +158,42 @@ class Level3(Level):
 
     def _gen_mission(self, seed, rng):
         color = rng.choice(COLOR_NAMES)
-
-        if rng.choice([True, False]):
-            type = rng.choice(['ball', 'key', 'box'])
-            instr = Instr(action="pickup", object=Object(type=type, color=color, loc=None, state=None))
-        else:
-            type = rng.choice(['door', 'ball', 'key', 'box'])
-            instr = Instr(action="goto", object=Object(type=type, color=color, loc=None, state=None))
+        instrs = [
+            Instr(action="pickup", object=Object(type='key', color=color, loc=None, state=None)),
+            Instr(action="open", object=Object(type='door', color=color, loc=None, state='locked'))
+        ]
 
         env = gen_env(
-            [instr],
+            instrs,
             seed,
             max_steps=50,
             distractors=True
         )
 
-        return Mission(seed, [instr], env)
+        return Mission(seed, instrs, env)
+
+class Level5(Level):
+    """
+    Level 5: pick up an object (in another room)
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    # FIXME: there are some issues with this level
+    # we need some kind of concept of how far objects are placed from
+    # the agent, and this concept probably needs to take into account the
+    # number of rooms to be traversed, because not all rooms are connected
+    # to all of their neighbors
+    def _gen_mission(self, seed, rng):
+        color = rng.choice(COLOR_NAMES)
+        type = rng.choice(['ball', 'key', 'box'])
+        loc = rng.choice(['north', 'south', 'west', 'east'])
+
+        object = Object(type=type, color=color, loc=loc, state=None)
+        instrs = [Instr(action="pickup", object=object)]
+        env = gen_env(instrs, seed, max_steps=50, distractors=True)
+        return Mission(seed, instrs, env)
 
 # Level list, indexable by level number
 # ie: level_list[0] is a Level0 instance
@@ -148,7 +201,9 @@ level_list = [
     Level0(),
     Level1(),
     Level2(),
-    Level3()
+    Level3(),
+    Level4(),
+    Level5()
 ]
 
 def test():
