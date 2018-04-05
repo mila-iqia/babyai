@@ -1,8 +1,6 @@
 import random
 from copy import deepcopy
 
-import numpy as np
-
 import gym
 import gym_minigrid
 from gym_minigrid.minigrid import COLOR_NAMES
@@ -130,7 +128,7 @@ def test():
         # The same seed should always yield the same mission
         m0 = level.gen_mission(0)
         m1 = level.gen_mission(0)
-        grid1 = m0.unwrapped.grid.encode()
-        grid2 = m1.unwrapped.grid.encode()
-        assert np.array_equal(grid2, grid1)
+        grid1 = m0.unwrapped.grid
+        grid2 = m1.unwrapped.grid
+        assert grid1 == grid2
         assert m0.surface == m1.surface

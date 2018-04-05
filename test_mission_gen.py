@@ -19,22 +19,32 @@ def test():
     parser.add_option(
         "--seed",
         type="int",
-        default=0
+        default=-1
     )
     (options, args) = parser.parse_args()
 
+    rng = random.Random()
+    seed = options.seed
+
     level = level_list[options.level_no]
-    mission = level.gen_mission(options.seed)
-
-    # TODO: if seed is -1, pick random?
-
-    print(mission.instrs)
-    print(mission.surface)
+    mission = None
 
     app = QApplication([])
     window = Window()
 
     def reset():
+        nonlocal seed
+        nonlocal mission
+
+        if options.seed == -1:
+            seed = rng.randint(0, 0xFFFFFF)
+
+        mission = level.gen_mission(seed)
+
+        print('seed=%d' % seed)
+        print(mission.instrs)
+        print(mission.surface)
+
         mission.reset()
         pixmap = mission.render('pixmap')
         window.setPixmap(pixmap)
