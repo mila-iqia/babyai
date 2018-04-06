@@ -188,7 +188,7 @@ class Level5(Level):
     def _gen_mission(self, seed, rng):
         color = rng.choice(COLOR_NAMES)
         type = rng.choice(['ball', 'key', 'box'])
-        loc = rng.choice(['north', 'south', 'west', 'east'])
+        loc = rng.choice(['left', 'right', 'front', 'behind'])
 
         object = Object(type=type, color=color, loc=loc, state=None)
         instrs = [Instr(action="pickup", object=object)]
