@@ -15,10 +15,12 @@ class Mission(gym.Wrapper):
     Wrapper for missions, usable as a gym environment.
     """
 
-    def __init__(self, seed, instrs, env):
+    def __init__(self, seed, instrs, surface, env):
         self.seed = seed
 
         self.instrs = instrs
+
+        self.surface = surface
 
         # Keep a copy of the original environment so we can reset it
         self.orig_env = env
@@ -44,11 +46,6 @@ class Mission(gym.Wrapper):
         reward = 1 if done else 0
 
         return obs, reward, done, info
-
-    @property
-    def surface(self):
-        """Produce an English string for the instructions"""
-        return gen_surface(self.instrs, seed=self.seed)
 
 class Level:
     """
@@ -83,8 +80,9 @@ class Level0(Level):
 
     def _gen_mission(self, seed, rng):
         instrs = [Instr(action="goto", object=Object(type="door", color="red", loc=None, state=None))]
+        surface = gen_surface(instrs, seed, lang_variation=1)
         env = gen_env(instrs, seed, max_steps=50)
-        return Mission(seed, instrs, env)
+        return Mission(seed, instrs, surface, env)
 
 class Level1(Level):
     """
@@ -99,8 +97,9 @@ class Level1(Level):
         state = rng.choice(['locked', None])
         object = Object(type="door", color=color, loc=None, state=state)
         instrs = [Instr(action="goto", object=object)]
+        surface = gen_surface(instrs, seed, lang_variation=1)
         env = gen_env(instrs, seed, max_steps=50)
-        return Mission(seed, instrs, env)
+        return Mission(seed, instrs, surface, env)
 
 class Level2(Level):
     """
@@ -114,8 +113,9 @@ class Level2(Level):
         color = rng.choice(COLOR_NAMES)
         type = rng.choice(['door', 'ball', 'key', 'box'])
         instrs = [Instr(action="goto", object=Object(type=type, color=color, loc=None, state=None))]
+        surface = gen_surface(instrs, seed, lang_variation=2)
         env = gen_env(instrs, seed, max_steps=50, distractors=True)
-        return Mission(seed, instrs, env)
+        return Mission(seed, instrs, surface, env)
 
 class Level3(Level):
     """
@@ -138,6 +138,7 @@ class Level3(Level):
         color = rng.choice(COLOR_NAMES)
         object = Object(type=type, color=color, loc=None, state=None)
         instrs = [Instr(action=action, object=object)]
+        surface = gen_surface(instrs, seed)
 
         env = gen_env(
             instrs,
@@ -146,7 +147,7 @@ class Level3(Level):
             distractors=True
         )
 
-        return Mission(seed, instrs, env)
+        return Mission(seed, instrs, surface, env)
 
 class Level4(Level):
     """
@@ -162,6 +163,7 @@ class Level4(Level):
             Instr(action="pickup", object=Object(type='key', color=color, loc=None, state=None)),
             Instr(action="open", object=Object(type='door', color=color, loc=None, state='locked'))
         ]
+        surface = gen_surface(instrs, seed)
 
         env = gen_env(
             instrs,
@@ -170,7 +172,7 @@ class Level4(Level):
             distractors=True
         )
 
-        return Mission(seed, instrs, env)
+        return Mission(seed, instrs, surface, env)
 
 class Level5(Level):
     """
@@ -192,8 +194,9 @@ class Level5(Level):
 
         object = Object(type=type, color=color, loc=loc, state=None)
         instrs = [Instr(action="pickup", object=object)]
+        surface = gen_surface(instrs, seed)
         env = gen_env(instrs, seed, max_steps=50, distractors=True)
-        return Mission(seed, instrs, env)
+        return Mission(seed, instrs, surface, env)
 
 # Level list, indexable by level number
 # ie: level_list[0] is a Level0 instance
