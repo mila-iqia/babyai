@@ -154,7 +154,8 @@ class Level4(Level):
     Level 4: fetch a key and unlock a door (in the current room)
     """
 
-    def __init__(self):
+    def __init__(self, distractors=False):
+        self.distractors = distractors
         super().__init__()
 
     def _gen_mission(self, seed, rng):
@@ -169,14 +170,22 @@ class Level4(Level):
             instrs,
             seed,
             max_steps=50,
-            distractors=True
+            distractors=self.distractors
         )
 
         return Mission(seed, instrs, surface, env)
 
-class Level5(Level):
+class Level5(Level4):
     """
-    Level 5: pick up an object (in another room)
+    Level 5: fetch a key and unlock a door (in the current room, with distractors)
+    """
+
+    def __init__(self):
+        super().__init__(distractors=True)
+
+class Level6(Level):
+    """
+    Level 6: pick up an object (in another room)
     """
 
     def __init__(self):
@@ -206,7 +215,8 @@ level_list = [
     Level2(),
     Level3(),
     Level4(),
-    Level5()
+    Level5(),
+    Level6()
 ]
 
 def test():

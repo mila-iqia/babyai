@@ -53,6 +53,11 @@ def test():
     def keyDownCb(keyName):
         if keyName == 'ESCAPE':
             window.close()
+            return
+
+        if keyName == 'BACKSPACE':
+            reset()
+            return
 
         action = 0
         if keyName == 'LEFT':
