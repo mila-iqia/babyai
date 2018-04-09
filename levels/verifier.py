@@ -65,8 +65,8 @@ class Verifier(ABC):
 
                     # Check if object's position matches with location
                     pos_matches = {
-                        "left": dot_product(v, d2) > 0,
-                        "right": dot_product(v, d2) < 0,
+                        "left": dot_product(v, d2) < 0,
+                        "right": dot_product(v, d2) > 0,
                         "front": dot_product(v, d1) > 0,
                         "behind": dot_product(v, d1) < 0
                     }
@@ -75,7 +75,7 @@ class Verifier(ABC):
                         continue
 
                 poss.append((i, j))
-        
+                
         return poss
     
     def _get_in_front_of_pos(self):
