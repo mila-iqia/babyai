@@ -15,7 +15,7 @@ class Mission(gym.Wrapper):
     Wrapper for missions, usable as a gym environment.
     """
 
-    def __init__(self, seed, instrs, env):
+    def __init__(self, seed, instrs, env, diversity=None):
         self.seed = seed
 
         self.instrs = instrs
@@ -23,6 +23,8 @@ class Mission(gym.Wrapper):
         # Keep a copy of the original environment so we can reset it
         self.orig_env = env
         self.env = deepcopy(self.orig_env)
+
+        self.diversity = diversity
 
         self.actions = env.actions
 
@@ -48,7 +50,7 @@ class Mission(gym.Wrapper):
     @property
     def surface(self):
         """Produce an English string for the instructions"""
-        return gen_surface(self.instrs, seed=self.seed)
+        return gen_surface(self.instrs, seed=self.seed, diversity=self.diversity)
 
 class Level:
     """
