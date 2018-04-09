@@ -47,6 +47,17 @@ def door_from_loc(env, loc):
 
     assert False, 'door without location'
 
+def reject_next_to(env, pos):
+    """
+    Function to filter out object positions that are right next to
+    the agent's starting point
+    """
+
+    sx, sy = env.startPos
+    x, y = pos
+    d = abs(sx - x) + abs(sy - y)
+    return d < 2
+
 def gen_env(instr, seed, max_steps=200, distractors=False):
     """
     Generate an environment from a list of instructions (structured instruction).
@@ -106,7 +117,7 @@ def gen_env(instr, seed, max_steps=200, distractors=False):
             env.add_door(*room, door, obj.color, obj.state == 'locked')
         else:
             room = room_from_loc(env, obj.loc)
-            env.add_object(*room, obj.type, obj.color)
+            env.add_object(*room, obj.type, obj.color, reject_fn=reject_next_to)
 
     # Make sure that all rooms are reachable by the agent
     env.connect_all()
@@ -127,7 +138,7 @@ def gen_env(instr, seed, max_steps=200, distractors=False):
             objs.append(obj)
             i = env._randInt(0, env.num_rows)
             j = env._randInt(0, env.num_cols)
-            env.add_object(i, j, *obj)
+            env.add_object(i, j, *obj, reject_fn=reject_next_to)
 
     return env
 
