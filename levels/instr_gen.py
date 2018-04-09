@@ -184,7 +184,6 @@ def gen_state(obj=None, act=None, constraints=set()):
     return gen_subattr('state', constraints|(set() if not obj else {obj}))
 
 def choice(elems, lang_variation=None):
-    print(lang_variation)
     if lang_variation != None:
         elems = elems[:lang_variation]
     return random.choice(elems)
@@ -248,9 +247,9 @@ def gen_surface(ntup, seed=0, conditions={}, lang_variation=None):
         if {'pre'} & conditions:
             return ntup
         if {'after'} & conditions:
-            return choice(['in {}'.format(ntup)], lang_variation) #'with the color of {}'.format(ntup), 
+            return choice(['in {}'.format(ntup)], lang_variation) #'with the color of {}'.format(ntup),
         if {'which is', 'that is'} & conditions:
-            return ntup 
+            return ntup
 
     if ntup in CONCEPTS['loc_abs']:
         if {'pre'} & conditions:

@@ -53,7 +53,7 @@ def reject_next_to(env, pos):
     the agent's starting point
     """
 
-    sx, sy = env.startPos
+    sx, sy = env.start_pos
     x, y = pos
     d = abs(sx - x) + abs(sy - y)
     return d < 2

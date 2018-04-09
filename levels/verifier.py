@@ -45,11 +45,11 @@ class Verifier(ABC):
 
                 if cell.type != type:
                     continue
-                
+
                 # Check if object's state matches description
                 if obj_desc.state in ["closed", "locked"] and cell.isOpen:
                     continue
-                
+
                 # Check if object's color matches description
                 if obj_desc.color != None and cell.color != obj_desc.color:
                     continue
@@ -57,7 +57,7 @@ class Verifier(ABC):
                 # Check if object's position matches description
                 if obj_desc.loc in ["left", "right", "front", "behind"]:
                     # Direction from the agent to the object
-                    v = (i-self.env.startPos[0], j-self.env.startPos[1])
+                    v = (i-self.env.start_pos[0], j-self.env.start_pos[1])
 
                     # (d1, d2) is an oriented orthonormal basis
                     d1 = self.startDirVec
@@ -75,16 +75,16 @@ class Verifier(ABC):
                         continue
 
                 poss.append((i, j))
-                
+
         return poss
-    
+
     def _get_in_front_of_pos(self):
         """
         Get the position in front of the agent.
-        The agent's state is the 2-tuple (agentDir, agentPos).
+        The agent's state is the 2-tuple (agent_dir, agent_pos).
         """
 
-        pos = self.env.agentPos
+        pos = self.env.agent_pos
         d = self.env.getDirVec()
         pos = (pos[0] + d[0], pos[1] + d[1])
 
@@ -149,9 +149,10 @@ class InstrVerifier(Verifier):
 
         self.previous_state = self.state
         self.state = State(
-            dir=self.env.agentDir,
-            pos=self.env.agentPos,
-            carry=self.env.carrying)
+            dir=self.env.agent_dir,
+            pos=self.env.agent_pos,
+            carry=self.env.carrying
+        )
 
         return self._done()
 
