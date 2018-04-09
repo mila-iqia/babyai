@@ -183,13 +183,13 @@ def gen_locrel(obj=None, act=None, constraints=set()):
 def gen_state(obj=None, act=None, constraints=set()):
     return gen_subattr('state', constraints|(set() if not obj else {obj}))
 
-def choice(elems, diversity=None):
-    print(diversity)
-    if diversity != None:
-        elems = elems[:diversity]
+def choice(elems, lang_variation=None):
+    print(lang_variation)
+    if lang_variation != None:
+        elems = elems[:lang_variation]
     return random.choice(elems)
 
-def gen_surface(ntup, seed=0, conditions={}, diversity=None):
+def gen_surface(ntup, seed=0, conditions={}, lang_variation=None):
     if ntup == None:
         return ''
 
@@ -198,14 +198,14 @@ def gen_surface(ntup, seed=0, conditions={}, diversity=None):
         s_instr = ''
         for i, ainstr in enumerate(ntup):
             if i > 0:
-                s_instr += choice([' and then', ', then'], diversity) + ' '
-            s_instr += gen_surface(ainstr, diversity=diversity)
+                s_instr += choice([' and then', ', then'], lang_variation) + ' '
+            s_instr += gen_surface(ainstr, lang_variation=lang_variation)
         return s_instr
 
     if isinstance(ntup, Instr):
-        s_ainstr = gen_surface(ntup.action, diversity=diversity)
+        s_ainstr = gen_surface(ntup.action, lang_variation=lang_variation)
         if ntup.action != 'drop':
-            s_ainstr += ' ' + gen_surface(ntup.object, diversity=diversity)
+            s_ainstr += ' ' + gen_surface(ntup.object, lang_variation=lang_variation)
         return s_ainstr
 
     if isinstance(ntup, Object):
@@ -215,40 +215,40 @@ def gen_surface(ntup, seed=0, conditions={}, diversity=None):
         for f in s_attrs:
             if not f:
                 continue
-            cond = choice(['pre', 'after', 'which is', 'that is'], diversity)
+            cond = choice(['pre', 'after', 'which is', 'that is'], lang_variation)
             if cond == 'pre':
-                s_obj = gen_surface(f, conditions={cond}, diversity=diversity) + ' ' + s_obj
+                s_obj = gen_surface(f, conditions={cond}, lang_variation=lang_variation) + ' ' + s_obj
             if cond == 'after':
                 if 'which is' in s_obj or 'that is' in s_obj:
-                    s_obj = s_obj + ' and is ' + gen_surface(f, conditions={cond}, diversity=diversity)
+                    s_obj = s_obj + ' and is ' + gen_surface(f, conditions={cond}, lang_variation=lang_variation)
                 else:
-                    s_obj = s_obj + ' ' + (('which is ' + gen_surface(f, conditions={cond}, diversity=diversity)) if f in CONCEPTS['state'] else gen_surface(f, conditions={cond}, diversity=diversity))
+                    s_obj = s_obj + ' ' + (('which is ' + gen_surface(f, conditions={cond}, lang_variation=lang_variation)) if f in CONCEPTS['state'] else gen_surface(f, conditions={cond}, lang_variation=lang_variation))
             if cond in ['which is', 'that is']:
                 if 'which is' in s_obj or 'that is' in s_obj:
-                    s_obj = s_obj + ' and is ' + gen_surface(f, conditions={cond}, diversity=diversity)
+                    s_obj = s_obj + ' and is ' + gen_surface(f, conditions={cond}, lang_variation=lang_variation)
                 else:
-                    s_obj = s_obj + ' {} '.format(cond) + gen_surface(f, conditions={cond}, diversity=diversity)
+                    s_obj = s_obj + ' {} '.format(cond) + gen_surface(f, conditions={cond}, lang_variation=lang_variation)
         return 'the '+ s_obj
 
     if ntup == 'goto':
-        return choice(['go to', 'reach', 'find', 'walk to'], diversity)
+        return choice(['go to', 'reach', 'find', 'walk to'], lang_variation)
 
     if ntup == 'pickup':
         return choice(
             ['pickup', 'pick up', 'grasp', 'go pick', 'go grasp', 'go get', 'get', 'go fetch', 'fetch'],
-            diversity)
+            lang_variation)
 
     if ntup == 'drop':
-        return choice(['drop', 'drop down', 'put down'], diversity)
+        return choice(['drop', 'drop down', 'put down'], lang_variation)
 
     if ntup == 'open':
-        return choice(['open'], diversity)
+        return choice(['open'], lang_variation)
 
     if ntup in CONCEPTS['color']:
         if {'pre'} & conditions:
             return ntup
         if {'after'} & conditions:
-            return choice(['in {}'.format(ntup)], diversity) #'with the color of {}'.format(ntup), 
+            return choice(['in {}'.format(ntup)], lang_variation) #'with the color of {}'.format(ntup), 
         if {'which is', 'that is'} & conditions:
             return ntup 
 
@@ -256,16 +256,16 @@ def gen_surface(ntup, seed=0, conditions={}, diversity=None):
         if {'pre'} & conditions:
             return ntup
         if {'after', 'which is', 'that is'} & conditions:
-            return choice(['on the {}'.format(ntup), 'on the {} direction'.format(ntup)], diversity)
+            return choice(['on the {}'.format(ntup), 'on the {} direction'.format(ntup)], lang_variation)
 
     if ntup in CONCEPTS['loc_rel']:
         if {'pre'} & conditions:
             return ntup
         if {'which is', 'that is', 'after'} & conditions:
-            return choice(['on your {}'.format(ntup)], diversity)
+            return choice(['on your {}'.format(ntup)], lang_variation)
 
     if ntup in CONCEPTS['state']:
-        return choice([ntup], diversity)
+        return choice([ntup], lang_variation)
 
 def test():
     for i in range(10):
