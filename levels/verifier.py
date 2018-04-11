@@ -13,7 +13,7 @@ def dot_product(v1, v2):
 class Verifier(ABC):
     def __init__(self, env):
         self.env = env
-        self.startDirVec = env.getDirVec()
+        self.startDirVec = env.get_dir_vec()
 
     @abstractmethod
     def step(self):
@@ -85,7 +85,7 @@ class Verifier(ABC):
         """
 
         pos = self.env.agent_pos
-        d = self.env.getDirVec()
+        d = self.env.get_dir_vec()
         pos = (pos[0] + d[0], pos[1] + d[1])
 
         return pos

@@ -249,16 +249,16 @@ class AIGameWindow(QMainWindow):
             y += random.randint(-viewSz, viewSz)
             x = max(0, min(x, env2.grid.width - 1))
             y = max(0, min(y, env2.grid.height - 1))
-            env2.agentPos = (x, y)
-            env2.agentDir = random.randint(0, 3)
+            env2.agent_pos = (x, y)
+            env2.agent_dir = random.randint(0, 3)
 
             # Don't want to place the agent on top of something
-            if env2.grid.get(*env2.agentPos) != None:
+            if env2.grid.get(*env2.agent_pos) != None:
                 continue
 
-            agentSees = env2.agentSees(i, j)
+            agent_sees = env2.agent_sees(i, j)
 
-            obs, _, _, _ = env2.step(env2.actions.wait)
+            obs = env2.gen_obs()
             img = obs['image'] if isinstance(obs, dict) else obs
             obsGrid = minigrid.Grid.decode(img)
 
@@ -266,14 +266,14 @@ class AIGameWindow(QMainWindow):
                 'desc': desc,
                 'img': img,
                 'pos': (i, j),
-                'present': agentSees
+                'present': agent_sees
             }
 
-            if agentSees and numPos < NUM_TARGET:
+            if agent_sees and numPos < NUM_TARGET:
                 self.pointingData.append(datum)
                 numPos += 1
 
-            if not agentSees and numNeg < NUM_TARGET:
+            if not agent_sees and numNeg < NUM_TARGET:
                 # Don't want identical object in mismatch examples
                 if (pointObj.color, pointObj.type) not in obsGrid:
                     self.pointingData.append(datum)
@@ -337,7 +337,7 @@ class AIGameWindow(QMainWindow):
 
         # Render and display the agent's view
         image = obs['image']
-        obsPixmap = unwrapped.getObsRender(image)
+        obsPixmap = unwrapped.get_obs_render(image)
         self.obsImgLabel.setPixmap(obsPixmap)
 
         # Update the mission text
@@ -345,7 +345,7 @@ class AIGameWindow(QMainWindow):
         self.missionBox.setPlainText(mission)
 
         # Set the steps remaining
-        stepsRem = unwrapped.getStepsRemaining()
+        stepsRem = unwrapped.steps_remaining
         self.stepsLabel.setText(str(stepsRem))
 
     def stepEnv(self, action=None):
