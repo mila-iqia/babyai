@@ -41,9 +41,10 @@ class Mission(gym.Wrapper):
     def step(self, action):
         obs, reward, done, info = self.env.step(action)
 
-        # Check if the mission has been completed
-        done = self.verifier.step()
-        reward = 1 if done else 0
+        # If we've successfully completed the mission
+        if self.verifier.step() is True:
+            done = True
+            reward = 1
 
         return obs, reward, done, info
 
@@ -222,12 +223,18 @@ level_list = [
 def test():
     for idx, level in enumerate(level_list):
         print('Level %d' % idx)
-        mission = level.gen_mission(0)
-        mission.step(0)
-        mission.reset()
-        mission.step(0)
 
+        mission = level.gen_mission(0)
         assert isinstance(mission.surface, str)
+
+        # Run the mission for a few episodes
+        num_episodes = 0
+        while num_episodes < 10:
+            action = random.randint(0, mission.action_space.n - 1)
+            obs, reward, done, info = mission.step(action)
+            if done:
+                num_episodes += 1
+                mission.reset()
 
         # The same seed should always yield the same mission
         m0 = level.gen_mission(0)
