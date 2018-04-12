@@ -47,7 +47,7 @@ class Verifier(ABC):
                     continue
 
                 # Check if object's state matches description
-                if obj_desc.state in ["closed", "locked"] and cell.isOpen:
+                if obj_desc.state in ["closed", "locked"] and cell.is_open:
                     continue
 
                 # Check if object's color matches description
@@ -210,7 +210,7 @@ class OpenVerifier(InstrVerifier):
         ifo_pos = self._get_in_front_of_pos()
         ifo_cell = self.env.grid.get(*ifo_pos)
 
-        check_opened = ifo_cell in self.obj_cells and ifo_cell.isOpen
+        check_opened = ifo_cell in self.obj_cells and ifo_cell.is_open
 
         return check_opened
 
