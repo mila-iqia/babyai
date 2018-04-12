@@ -4,10 +4,10 @@ from copy import deepcopy
 import gym
 import gym_minigrid
 from gym_minigrid.minigrid import COLOR_NAMES
+from .roomgrid import RoomGrid
 
 from .instrs import *
 from .instr_gen import gen_instr_seq, gen_object, gen_surface
-from .env_gen import gen_env
 from .verifier import InstrSeqVerifier
 
 class Mission(gym.Wrapper):
@@ -36,6 +36,7 @@ class Mission(gym.Wrapper):
         # Reset the environment by making a copy of the original
         self.env = deepcopy(self.orig_env)
 
+        # Recreate the verifier
         self.verifier = InstrSeqVerifier(self.env, self.instrs)
 
     def step(self, action):
@@ -82,7 +83,10 @@ class Level0(Level):
     def _gen_mission(self, seed, rng):
         instrs = [Instr(action="goto", object=Object(type="door", color="red", loc=None, state=None))]
         surface = gen_surface(instrs, seed, lang_variation=1)
-        env = gen_env(instrs, seed, max_steps=50)
+
+        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        env.add_door(1, 1, 3, 'red')
+
         return Mission(seed, instrs, surface, env)
 
 class Level1(Level):
@@ -96,10 +100,16 @@ class Level1(Level):
     def _gen_mission(self, seed, rng):
         color = rng.choice(COLOR_NAMES)
         state = rng.choice(['locked', None])
+        door_idx = rng.randint(0, 3)
+
         object = Object(type="door", color=color, loc=None, state=state)
         instrs = [Instr(action="goto", object=object)]
         surface = gen_surface(instrs, seed, lang_variation=1)
-        env = gen_env(instrs, seed, max_steps=50)
+
+        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        env.add_door(1, 1, door_idx, color, state)
+        env.connect_all()
+
         return Mission(seed, instrs, surface, env)
 
 class Level2(Level):
@@ -113,9 +123,18 @@ class Level2(Level):
     def _gen_mission(self, seed, rng):
         color = rng.choice(COLOR_NAMES)
         type = rng.choice(['door', 'ball', 'key', 'box'])
+        door_idx = rng.randint(0, 3)
+
         instrs = [Instr(action="goto", object=Object(type=type, color=color, loc=None, state=None))]
         surface = gen_surface(instrs, seed, lang_variation=2)
-        env = gen_env(instrs, seed, max_steps=50, distractors=True)
+
+        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        if type is 'door':
+            env.add_door(1, 1, door_idx, color)
+        else:
+            env.add_object(1, 1, type, color)
+        env.connect_all()
+
         return Mission(seed, instrs, surface, env)
 
 class Level3(Level):
@@ -137,16 +156,18 @@ class Level3(Level):
             type = 'door'
 
         color = rng.choice(COLOR_NAMES)
+        door_idx = rng.randint(0, 3)
         object = Object(type=type, color=color, loc=None, state=None)
         instrs = [Instr(action=action, object=object)]
         surface = gen_surface(instrs, seed)
 
-        env = gen_env(
-            instrs,
-            seed,
-            max_steps=50,
-            distractors=True
-        )
+        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        if type is 'door':
+            env.add_door(1, 1, door_idx, color)
+        else:
+            env.add_object(1, 1, type, color)
+        env.connect_all()
+        env.add_distractors()
 
         return Mission(seed, instrs, surface, env)
 
@@ -161,18 +182,20 @@ class Level4(Level):
 
     def _gen_mission(self, seed, rng):
         color = rng.choice(COLOR_NAMES)
+        door_idx = rng.randint(0, 3)
+
         instrs = [
             Instr(action="pickup", object=Object(type='key', color=color, loc=None, state=None)),
             Instr(action="open", object=Object(type='door', color=color, loc=None, state='locked'))
         ]
         surface = gen_surface(instrs, seed)
 
-        env = gen_env(
-            instrs,
-            seed,
-            max_steps=50,
-            distractors=self.distractors
-        )
+        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        env.add_door(1, 1, door_idx, color, 'locked')
+        env.add_object(1, 1, 'key', color)
+        env.connect_all()
+        if self.distractors:
+            env.add_distractors()
 
         return Mission(seed, instrs, surface, env)
 
@@ -192,20 +215,21 @@ class Level6(Level):
     def __init__(self):
         super().__init__()
 
-    # FIXME: there are some issues with this level
-    # we need some kind of concept of how far objects are placed from
-    # the agent, and this concept probably needs to take into account the
-    # number of rooms to be traversed, because not all rooms are connected
-    # to all of their neighbors
     def _gen_mission(self, seed, rng):
         color = rng.choice(COLOR_NAMES)
         type = rng.choice(['ball', 'key', 'box'])
-        loc = rng.choice(['left', 'right', 'front', 'behind'])
 
-        object = Object(type=type, color=color, loc=loc, state=None)
+        object = Object(type=type, color=color, loc=None, state=None)
         instrs = [Instr(action="pickup", object=object)]
         surface = gen_surface(instrs, seed)
-        env = gen_env(instrs, seed, max_steps=50, distractors=True)
+
+        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        # TODO: make sure the two rooms are directly connected
+        #env.add_door(1, 1, 3, color, 'locked')
+        env.add_object(1, 0, type, color)
+        env.connect_all()
+        env.add_distractors()
+
         return Mission(seed, instrs, surface, env)
 
 # Level list, indexable by level number
