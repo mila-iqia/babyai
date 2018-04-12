@@ -86,7 +86,7 @@ def gen_env(instr, seed, max_steps=200, distractors=False):
     for obj in objs[:]:
         if obj.color is None:
             objs.remove(obj)
-            color = env._randElem(COLOR_NAMES)
+            color = env._rand_elem(COLOR_NAMES)
             obj = Object(type=obj.type, loc=obj.loc, state=obj.state, color=color)
             objs.append(obj)
 
@@ -96,7 +96,7 @@ def gen_env(instr, seed, max_steps=200, distractors=False):
         if obj.type == 'door' and obj.loc == None:
             objs.remove(obj)
             while True:
-                loc = env._randElem(locs)
+                loc = env._rand_elem(locs)
                 doors = list(filter(lambda o: o.type == 'door' and o.loc == loc, objs))
                 if len(doors) == 0:
                     break
@@ -128,16 +128,16 @@ def gen_env(instr, seed, max_steps=200, distractors=False):
     # Generate random distractor objects with unique properties
     if distractors:
         while len(objs) < env.num_rows * env.num_cols:
-            color = env._randElem(COLOR_NAMES)
-            type = env._randElem(['key', 'ball', 'box'])
+            color = env._rand_elem(COLOR_NAMES)
+            type = env._rand_elem(['key', 'ball', 'box'])
             obj = (type, color)
 
             if obj in objs:
                 continue
 
             objs.append(obj)
-            i = env._randInt(0, env.num_rows)
-            j = env._randInt(0, env.num_cols)
+            i = env._rand_int(0, env.num_rows)
+            j = env._rand_int(0, env.num_cols)
             env.add_object(i, j, *obj, reject_fn=reject_next_to)
 
     return env
