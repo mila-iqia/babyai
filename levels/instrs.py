@@ -7,23 +7,17 @@ class Instr:
         self.object = object
 
 class Object:
-    def __init__(
-        self,
-        type,
-        color
-    ):
-        if type is 'locked_door':
-            type = 'door'
-            locked = True
+    def __init__(self, obj, pos):
+        self.type = obj.type
+        self.color = obj.color
+        self.pos = pos
+
+        if self.type is 'locked_door':
+            self.type = 'door'
+            self.state = 'locked'
         else:
-            locked = False
+            self.state = None
 
-        self.type = type
-        self.color = color
-
+        # TODO: eventually, gen_surface should just use
+        # the pos variable to describe the object location
         self.loc = None
-
-        # Locked flag, applies to doors only
-        self.locked = locked
-
-        self.state = 'locked' if locked else None

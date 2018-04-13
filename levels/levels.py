@@ -76,9 +76,9 @@ class Level0(Level):
 
     def gen_mission(self, seed):
         env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
-        env.add_door(1, 1, 3, 'red')
+        obj, pos = env.add_door(1, 1, 3, 'red')
 
-        instrs = [Instr(action="goto", object=Object(type="door", color="red"))]
+        instrs = [Instr(action="goto", object=Object(obj, pos))]
         surface = gen_surface(instrs, seed, lang_variation=1)
 
         return Mission(seed, instrs, surface, env)
@@ -97,8 +97,7 @@ class Level1(Level):
         door, pos = env.add_door(1, 1)
         env.connect_all()
 
-        object = Object(type="door", color=door.color)
-        instrs = [Instr(action="goto", object=object)]
+        instrs = [Instr(action="goto", object=Object(door, pos))]
         surface = gen_surface(instrs, seed, lang_variation=1)
 
         return Mission(seed, instrs, surface, env)
@@ -120,7 +119,7 @@ class Level2(Level):
             obj, pos = env.add_object(1, 1)
         env.connect_all()
 
-        instrs = [Instr(action="goto", object=Object(type=obj.type, color=obj.color))]
+        instrs = [Instr(action="goto", object=Object(obj, pos))]
         surface = gen_surface(instrs, seed, lang_variation=2)
 
         return Mission(seed, instrs, surface, env)
@@ -151,8 +150,7 @@ class Level3(Level):
         else:
             action = env._rand_elem(['goto', 'pickup'])
 
-        object = Object(type=obj.type, color=obj.color)
-        instrs = [Instr(action=action, object=object)]
+        instrs = [Instr(action=action, object=Object(obj, pos))]
         surface = gen_surface(instrs, seed)
 
         return Mission(seed, instrs, surface, env)
@@ -176,8 +174,8 @@ class Level4(Level):
             env.add_distractors()
 
         instrs = [
-            Instr(action="pickup", object=Object(type='key', color=key.color)),
-            Instr(action="open", object=Object(type=door.type, color=door.color))
+            Instr(action="pickup", object=Object(key, key_pos)),
+            Instr(action="open", object=Object(door, door_pos))
         ]
         surface = gen_surface(instrs, seed)
 
@@ -209,8 +207,33 @@ class Level6(Level):
         env.connect_all()
         env.add_distractors()
 
-        object = Object(type=obj.type, color=obj.color)
-        instrs = [Instr(action="pickup", object=object)]
+        instrs = [Instr(action="pickup", object=Object(obj, pos))]
+        surface = gen_surface(instrs, seed)
+
+        return Mission(seed, instrs, surface, env)
+
+class Level7(Level):
+    """
+    Level 7: unlock a door, then pick up an object in another room.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def gen_mission(self, seed):
+        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        # Add a random object to the top-middle room
+        obj, pos = env.add_object(1, 0)
+        # Make sure the two rooms are directly connected by a locked door
+        door, door_pos = env.add_door(1, 1, 3, locked=True)
+        env.add_object(1, 1, 'key', door.color)
+        env.connect_all()
+        env.add_distractors()
+
+        instrs = [
+            Instr(action="open", object=Object(door, door_pos)),
+            Instr(action="pickup", object=Object(obj, pos))
+        ]
         surface = gen_surface(instrs, seed)
 
         return Mission(seed, instrs, surface, env)
@@ -224,7 +247,8 @@ level_list = [
     Level3(),
     Level4(),
     Level5(),
-    Level6()
+    Level6(),
+    Level7()
 ]
 
 def test():
