@@ -202,7 +202,7 @@ class OpenVerifier(InstrVerifier):
         super().__init__(env)
 
         if obj.state == None:
-            obj = obj._replace(state="closed")
+            obj.state = "closed"
         self.obj_poss = self._obj_desc_to_poss(obj)
         self.obj_cells = [self.env.grid.get(*pos) for pos in self.obj_poss]
 

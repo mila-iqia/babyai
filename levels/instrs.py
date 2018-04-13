@@ -1,12 +1,24 @@
 from collections import namedtuple
 
-# Note: we may want to have an implicit parameter to distinguish between
-# locations that are near or far. This way, the difficulty level would be
-# implicitly represented in instructions.
+class Instr:
+    def __init__(self, action, object):
+        # action: goto, open, pickup, drop
+        self.action = action
+        self.object = object
 
-# action: goto, open, pick, drop
-Instr = namedtuple('Instr', ['action', 'object'])
+class Object:
+    def __init__(
+        self,
+        type,
+        color,
+        locked=None
+    ):
+        self.type = type
+        self.color = color
 
-# loc: loc_rel (ie. left, right, front, behind)
-# state: locked
-Object = namedtuple('Object', ['type', 'color', 'loc', 'state'])
+        self.loc = None
+
+        # Locked flag, applies to doors only
+        self.locked = locked
+
+        self.state = 'locked' if locked else None

@@ -152,7 +152,7 @@ class RoomGrid(MiniGridEnv):
         # By default, this environment has no mission
         self.mission = ''
 
-    def add_object(self, i, j, kind, color, reject_fn=None):
+    def add_object(self, i, j, kind, color):
         """
         Add a new object to room (i, j)
         """
@@ -168,7 +168,12 @@ class RoomGrid(MiniGridEnv):
 
         room = self.get_room(i, j)
 
-        pos = self.place_obj(obj, room.top, room.size, reject_fn)
+        pos = self.place_obj(
+            obj,
+            room.top,
+            room.size,
+            reject_fn=reject_next_to
+        )
 
         room.objs.append(obj)
 
@@ -261,7 +266,7 @@ class RoomGrid(MiniGridEnv):
             # Add the object to a random room
             i = self._rand_int(0, self.num_rows)
             j = self._rand_int(0, self.num_cols)
-            self.add_object(i, j, *obj, reject_fn=reject_next_to)
+            self.add_object(i, j, *obj)
 
             objs.append(obj)
             num_added += 1

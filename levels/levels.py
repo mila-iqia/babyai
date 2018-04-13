@@ -74,14 +74,15 @@ class Level:
 
 class Level0(Level):
     """
-    Level 0: go to the red door (which in the current room)
+    Level 0: go to the red door
+    (which in the current room)
     """
 
     def __init__(self):
         super().__init__()
 
     def _gen_mission(self, seed, rng):
-        instrs = [Instr(action="goto", object=Object(type="door", color="red", loc=None, state=None))]
+        instrs = [Instr(action="goto", object=Object(type="door", color="red"))]
         surface = gen_surface(instrs, seed, lang_variation=1)
 
         env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
@@ -91,7 +92,8 @@ class Level0(Level):
 
 class Level1(Level):
     """
-    Level 1: go to the door (of a given color, in the current room)
+    Level 1: go to the door
+    (of a given color, in the current room)
     """
 
     def __init__(self):
@@ -102,7 +104,7 @@ class Level1(Level):
         state = rng.choice(['locked', None])
         door_idx = rng.randint(0, 3)
 
-        object = Object(type="door", color=color, loc=None, state=state)
+        object = Object(type="door", color=color)
         instrs = [Instr(action="goto", object=object)]
         surface = gen_surface(instrs, seed, lang_variation=1)
 
@@ -114,7 +116,8 @@ class Level1(Level):
 
 class Level2(Level):
     """
-    Level 2: go to an object or door (of a given type and color, in the current room)
+    Level 2: go to an object or door
+    (of a given type and color, in the current room)
     """
 
     def __init__(self):
@@ -125,7 +128,7 @@ class Level2(Level):
         type = rng.choice(['door', 'ball', 'key', 'box'])
         door_idx = rng.randint(0, 3)
 
-        instrs = [Instr(action="goto", object=Object(type=type, color=color, loc=None, state=None))]
+        instrs = [Instr(action="goto", object=Object(type=type, color=color))]
         surface = gen_surface(instrs, seed, lang_variation=2)
 
         env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
@@ -139,7 +142,11 @@ class Level2(Level):
 
 class Level3(Level):
     """
-    Level 3: [pick up an object] or [go to an object or door] or [open a door] (in the current room)
+    Level 3:
+    [pick up an object] or
+    [go to an object or door] or
+    [open a door]
+    (in the current room)
     """
 
     def __init__(self):
@@ -157,7 +164,7 @@ class Level3(Level):
 
         color = rng.choice(COLOR_NAMES)
         door_idx = rng.randint(0, 3)
-        object = Object(type=type, color=color, loc=None, state=None)
+        object = Object(type=type, color=color)
         instrs = [Instr(action=action, object=object)]
         surface = gen_surface(instrs, seed)
 
@@ -173,7 +180,8 @@ class Level3(Level):
 
 class Level4(Level):
     """
-    Level 4: fetch a key and unlock a door (in the current room)
+    Level 4: fetch a key and unlock a door
+    (in the current room)
     """
 
     def __init__(self, distractors=False):
@@ -185,8 +193,8 @@ class Level4(Level):
         door_idx = rng.randint(0, 3)
 
         instrs = [
-            Instr(action="pickup", object=Object(type='key', color=color, loc=None, state=None)),
-            Instr(action="open", object=Object(type='door', color=color, loc=None, state='locked'))
+            Instr(action="pickup", object=Object(type='key', color=color)),
+            Instr(action="open", object=Object(type='door', color=color, locked=True))
         ]
         surface = gen_surface(instrs, seed)
 
@@ -201,7 +209,8 @@ class Level4(Level):
 
 class Level5(Level4):
     """
-    Level 5: fetch a key and unlock a door (in the current room, with distractors)
+    Level 5: fetch a key and unlock a door
+    (in the current room, with distractors)
     """
 
     def __init__(self):
@@ -219,13 +228,13 @@ class Level6(Level):
         color = rng.choice(COLOR_NAMES)
         type = rng.choice(['ball', 'key', 'box'])
 
-        object = Object(type=type, color=color, loc=None, state=None)
+        object = Object(type=type, color=color)
         instrs = [Instr(action="pickup", object=object)]
         surface = gen_surface(instrs, seed)
 
         env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
-        # TODO: make sure the two rooms are directly connected
-        #env.add_door(1, 1, 3, color, 'locked')
+        # Make sure the two rooms are directly connected
+        env.add_door(1, 1, 3, env._rand_color())
         env.add_object(1, 0, type, color)
         env.connect_all()
         env.add_distractors()
@@ -252,9 +261,10 @@ def test():
         assert isinstance(mission.surface, str)
 
         # Run the mission for a few episodes
+        rng = random.Random(0)
         num_episodes = 0
-        while num_episodes < 10:
-            action = random.randint(0, mission.action_space.n - 1)
+        while num_episodes < 20:
+            action = rng.randint(0, mission.action_space.n - 1)
             obs, reward, done, info = mission.step(action)
             if done:
                 num_episodes += 1
