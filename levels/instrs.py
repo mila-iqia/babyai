@@ -10,9 +10,14 @@ class Object:
     def __init__(
         self,
         type,
-        color,
-        locked=None
+        color
     ):
+        if type is 'locked_door':
+            type = 'door'
+            locked = True
+        else:
+            locked = False
+
         self.type = type
         self.color = color
 

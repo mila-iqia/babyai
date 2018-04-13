@@ -2,10 +2,8 @@ import random
 from copy import deepcopy
 
 import gym
-import gym_minigrid
-from gym_minigrid.minigrid import COLOR_NAMES
-from .roomgrid import RoomGrid
 
+from .roomgrid import RoomGrid
 from .instrs import *
 from .instr_gen import gen_instr_seq, gen_object, gen_surface
 from .verifier import InstrSeqVerifier
@@ -61,15 +59,10 @@ class Level:
         pass
 
     def gen_mission(self, seed):
-        """Generate a mission (instructions and matching environment)"""
-
-        # Create a random-number generator using the seed
-        rng = random.Random(seed)
-
-        return self._gen_mission(seed, rng)
-
-    def _gen_mission(self, seed, rng):
-        """Derived level classes should implement this method"""
+        """
+        Generate a mission (instructions and matching environment)
+        Derived level classes should implement this method
+        """
         raise NotImplementedError
 
 class Level0(Level):
@@ -81,12 +74,12 @@ class Level0(Level):
     def __init__(self):
         super().__init__()
 
-    def _gen_mission(self, seed, rng):
-        instrs = [Instr(action="goto", object=Object(type="door", color="red"))]
-        surface = gen_surface(instrs, seed, lang_variation=1)
-
+    def gen_mission(self, seed):
         env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
         env.add_door(1, 1, 3, 'red')
+
+        instrs = [Instr(action="goto", object=Object(type="door", color="red"))]
+        surface = gen_surface(instrs, seed, lang_variation=1)
 
         return Mission(seed, instrs, surface, env)
 
@@ -99,18 +92,14 @@ class Level1(Level):
     def __init__(self):
         super().__init__()
 
-    def _gen_mission(self, seed, rng):
-        color = rng.choice(COLOR_NAMES)
-        state = rng.choice(['locked', None])
-        door_idx = rng.randint(0, 3)
+    def gen_mission(self, seed):
+        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        door, pos = env.add_door(1, 1)
+        env.connect_all()
 
-        object = Object(type="door", color=color)
+        object = Object(type="door", color=door.color)
         instrs = [Instr(action="goto", object=object)]
         surface = gen_surface(instrs, seed, lang_variation=1)
-
-        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
-        env.add_door(1, 1, door_idx, color, state)
-        env.connect_all()
 
         return Mission(seed, instrs, surface, env)
 
@@ -123,20 +112,16 @@ class Level2(Level):
     def __init__(self):
         super().__init__()
 
-    def _gen_mission(self, seed, rng):
-        color = rng.choice(COLOR_NAMES)
-        type = rng.choice(['door', 'ball', 'key', 'box'])
-        door_idx = rng.randint(0, 3)
-
-        instrs = [Instr(action="goto", object=Object(type=type, color=color))]
-        surface = gen_surface(instrs, seed, lang_variation=2)
-
+    def gen_mission(self, seed):
         env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
-        if type is 'door':
-            env.add_door(1, 1, door_idx, color)
+        if env._rand_bool():
+            obj, pos = env.add_door(1, 1)
         else:
-            env.add_object(1, 1, type, color)
+            obj, pos = env.add_object(1, 1)
         env.connect_all()
+
+        instrs = [Instr(action="goto", object=Object(type=obj.type, color=obj.color))]
+        surface = gen_surface(instrs, seed, lang_variation=2)
 
         return Mission(seed, instrs, surface, env)
 
@@ -152,29 +137,23 @@ class Level3(Level):
     def __init__(self):
         super().__init__()
 
-    def _gen_mission(self, seed, rng):
-        action = rng.choice(['goto', 'pickup', 'open'])
-
-        if action == 'goto':
-            type = rng.choice(['door', 'ball', 'key', 'box'])
-        elif action == 'pickup':
-            type = rng.choice(['ball', 'key', 'box'])
-        else:
-            type = 'door'
-
-        color = rng.choice(COLOR_NAMES)
-        door_idx = rng.randint(0, 3)
-        object = Object(type=type, color=color)
-        instrs = [Instr(action=action, object=object)]
-        surface = gen_surface(instrs, seed)
-
+    def gen_mission(self, seed):
         env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
-        if type is 'door':
-            env.add_door(1, 1, door_idx, color)
+        if env._rand_bool():
+            obj, pos = env.add_door(1, 1)
         else:
-            env.add_object(1, 1, type, color)
+            obj, pos = env.add_object(1, 1)
         env.connect_all()
         env.add_distractors()
+
+        if obj.type == 'door':
+            action = env._rand_elem(['goto', 'open'])
+        else:
+            action = env._rand_elem(['goto', 'pickup'])
+
+        object = Object(type=obj.type, color=obj.color)
+        instrs = [Instr(action=action, object=object)]
+        surface = gen_surface(instrs, seed)
 
         return Mission(seed, instrs, surface, env)
 
@@ -188,22 +167,19 @@ class Level4(Level):
         self.distractors = distractors
         super().__init__()
 
-    def _gen_mission(self, seed, rng):
-        color = rng.choice(COLOR_NAMES)
-        door_idx = rng.randint(0, 3)
-
-        instrs = [
-            Instr(action="pickup", object=Object(type='key', color=color)),
-            Instr(action="open", object=Object(type='door', color=color, locked=True))
-        ]
-        surface = gen_surface(instrs, seed)
-
+    def gen_mission(self, seed):
         env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
-        env.add_door(1, 1, door_idx, color, 'locked')
-        env.add_object(1, 1, 'key', color)
+        door, door_pos = env.add_door(1, 1, locked=True)
+        key, key_pos = env.add_object(1, 1, 'key', door.color)
         env.connect_all()
         if self.distractors:
             env.add_distractors()
+
+        instrs = [
+            Instr(action="pickup", object=Object(type='key', color=key.color)),
+            Instr(action="open", object=Object(type=door.type, color=door.color))
+        ]
+        surface = gen_surface(instrs, seed)
 
         return Mission(seed, instrs, surface, env)
 
@@ -224,20 +200,18 @@ class Level6(Level):
     def __init__(self):
         super().__init__()
 
-    def _gen_mission(self, seed, rng):
-        color = rng.choice(COLOR_NAMES)
-        type = rng.choice(['ball', 'key', 'box'])
-
-        object = Object(type=type, color=color)
-        instrs = [Instr(action="pickup", object=object)]
-        surface = gen_surface(instrs, seed)
-
+    def gen_mission(self, seed):
         env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        # Add a random object to the top-middle room
+        obj, pos = env.add_object(1, 0)
         # Make sure the two rooms are directly connected
-        env.add_door(1, 1, 3, env._rand_color())
-        env.add_object(1, 0, type, color)
+        env.add_door(1, 1, 3)
         env.connect_all()
         env.add_distractors()
+
+        object = Object(type=obj.type, color=obj.color)
+        instrs = [Instr(action="pickup", object=object)]
+        surface = gen_surface(instrs, seed)
 
         return Mission(seed, instrs, surface, env)
 

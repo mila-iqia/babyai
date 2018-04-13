@@ -152,10 +152,16 @@ class RoomGrid(MiniGridEnv):
         # By default, this environment has no mission
         self.mission = ''
 
-    def add_object(self, i, j, kind, color):
+    def add_object(self, i, j, kind=None, color=None):
         """
         Add a new object to room (i, j)
         """
+
+        if kind == None:
+            kind = self._rand_elem(['key', 'ball', 'box'])
+
+        if color == None:
+            color = self._rand_color()
 
         # TODO: we probably want to add an Object.make helper function
         assert kind in ['key', 'ball', 'box']
@@ -177,15 +183,24 @@ class RoomGrid(MiniGridEnv):
 
         room.objs.append(obj)
 
-        return obj
+        return obj, pos
 
-    def add_door(self, i, j, k, color, locked=False):
+    def add_door(self, i, j, door_idx=None, color=None, locked=None):
         """
         Add a door to a room, connecting it to a neighbor
         """
 
+        if door_idx == None:
+            door_idx = self._rand_int(0, 4)
+
+        if color == None:
+            color = self._rand_color()
+
+        if locked is None:
+            locked = self._rand_bool()
+
         room = self.get_room(i, j)
-        assert room.doors[k] is None, "door already exists"
+        assert room.doors[door_idx] is None, "door already exists"
 
         if locked:
             door = LockedDoor(color)
@@ -193,11 +208,14 @@ class RoomGrid(MiniGridEnv):
         else:
             door = Door(color)
 
-        self.grid.set(*room.door_pos[k], door)
+        pos = room.door_pos[door_idx]
+        self.grid.set(*pos, door)
 
-        neighbor = room.neighbors[k]
-        room.doors[k] = door
-        neighbor.doors[(k+2) % 4] = door
+        neighbor = room.neighbors[door_idx]
+        room.doors[door_idx] = door
+        neighbor.doors[(door_idx+2) % 4] = door
+
+        return door, pos
 
     def connect_all(self):
         """
@@ -240,7 +258,7 @@ class RoomGrid(MiniGridEnv):
                 continue
 
             color = self._rand_elem(COLOR_NAMES)
-            self.add_door(i, j, k, color)
+            self.add_door(i, j, k, color, False)
 
     def add_distractors(self, num_distractors=10):
         """
