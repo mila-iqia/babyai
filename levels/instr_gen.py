@@ -216,6 +216,8 @@ def gen_surface(ntup, seed=0, conditions={}, lang_variation=None):
                 continue
             if f == ntup.color:
                 cond = choice(['pre'], lang_variation)
+            elif f == ntup.loc:
+                cond = choice(['after', 'which is', 'that is'], lang_variation)
             else:
                 cond = choice(['pre', 'after', 'which is', 'that is'], lang_variation)
             if cond == 'pre':
