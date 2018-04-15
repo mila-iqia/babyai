@@ -214,17 +214,22 @@ def gen_surface(ntup, seed=0, conditions={}, lang_variation=None):
         for f in s_attrs:
             if not f:
                 continue
-            cond = choice(['pre', 'after', 'which is', 'that is'], lang_variation)
+            if f == ntup.color:
+                cond = choice(['pre'], lang_variation)
+            elif f == ntup.loc:
+                cond = choice(['after', 'which is', 'that is'], lang_variation)
+            else:
+                cond = choice(['pre', 'after', 'which is', 'that is'], lang_variation)
             if cond == 'pre':
                 s_obj = gen_surface(f, conditions={cond}, lang_variation=lang_variation) + ' ' + s_obj
             if cond == 'after':
                 if 'which is' in s_obj or 'that is' in s_obj:
-                    s_obj = s_obj + ' and is ' + gen_surface(f, conditions={cond}, lang_variation=lang_variation)
+                    s_obj = s_obj + ' and ' + gen_surface(f, conditions={cond}, lang_variation=lang_variation)
                 else:
                     s_obj = s_obj + ' ' + (('which is ' + gen_surface(f, conditions={cond}, lang_variation=lang_variation)) if f in CONCEPTS['state'] else gen_surface(f, conditions={cond}, lang_variation=lang_variation))
             if cond in ['which is', 'that is']:
                 if 'which is' in s_obj or 'that is' in s_obj:
-                    s_obj = s_obj + ' and is ' + gen_surface(f, conditions={cond}, lang_variation=lang_variation)
+                    s_obj = s_obj + ' and ' + gen_surface(f, conditions={cond}, lang_variation=lang_variation)
                 else:
                     s_obj = s_obj + ' {} '.format(cond) + gen_surface(f, conditions={cond}, lang_variation=lang_variation)
         return 'the '+ s_obj
@@ -255,12 +260,14 @@ def gen_surface(ntup, seed=0, conditions={}, lang_variation=None):
         if {'pre'} & conditions:
             return ntup
         if {'after', 'which is', 'that is'} & conditions:
-            return choice(['on the {}'.format(ntup), 'on the {} direction'.format(ntup)], lang_variation)
+            return choice(['to the {}'.format(ntup), 'on the {} direction'.format(ntup)], lang_variation)
 
     if ntup in CONCEPTS['loc_rel']:
         if {'pre'} & conditions:
             return ntup
         if {'which is', 'that is', 'after'} & conditions:
+            if ntup == 'front':
+                return 'in front of you'
             return choice(['on your {}'.format(ntup)], lang_variation)
 
     if ntup in CONCEPTS['state']:
