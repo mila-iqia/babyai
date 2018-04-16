@@ -40,7 +40,7 @@ class Mission(gym.Wrapper):
         # Recreate the verifier
         self.verifier = InstrSeqVerifier(self.env, self.instrs)
 
-        obs = self.env.reset()
+        obs = self.env.gen_obs()
 
         return obs
 
@@ -82,7 +82,7 @@ class Level0(Level):
         super().__init__()
 
     def gen_mission(self, seed):
-        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        env = RoomGrid(room_size=6, num_rows=2, num_cols=2, max_steps=50, seed=seed)
         obj, pos = env.add_door(1, 1, 3, 'red', locked=False)
 
         instrs = [Instr(action="goto", object=Object(obj, pos))]
@@ -100,7 +100,7 @@ class Level1(Level):
         super().__init__()
 
     def gen_mission(self, seed):
-        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        env = RoomGrid(max_steps=50, seed=seed)
         door, pos = env.add_door(1, 1)
         env.connect_all()
 
@@ -119,7 +119,7 @@ class Level2(Level):
         super().__init__()
 
     def gen_mission(self, seed):
-        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        env = RoomGrid(max_steps=50, seed=seed)
         if env._rand_bool():
             obj, pos = env.add_door(1, 1)
         else:
@@ -144,7 +144,7 @@ class Level3(Level):
         super().__init__()
 
     def gen_mission(self, seed):
-        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        env = RoomGrid(max_steps=50, seed=seed)
         if env._rand_bool():
             obj, pos = env.add_door(1, 1)
         else:
@@ -173,7 +173,7 @@ class Level4(Level):
         super().__init__()
 
     def gen_mission(self, seed):
-        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        env = RoomGrid(max_steps=50, seed=seed)
         door, door_pos = env.add_door(1, 1, locked=True)
         key, key_pos = env.add_object(1, 1, 'key', door.color)
         env.connect_all()
@@ -206,7 +206,7 @@ class Level6(Level):
         super().__init__()
 
     def gen_mission(self, seed):
-        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        env = RoomGrid(max_steps=50, seed=seed)
         # Add a random object to the top-middle room
         obj, pos = env.add_object(1, 0)
         # Make sure the two rooms are directly connected
@@ -228,7 +228,7 @@ class Level7(Level):
         super().__init__()
 
     def gen_mission(self, seed):
-        env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
+        env = RoomGrid(max_steps=50, seed=seed)
         # Add a random object to the top-middle room
         obj, pos = env.add_object(1, 0)
         # Make sure the two rooms are directly connected by a locked door

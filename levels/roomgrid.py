@@ -53,19 +53,23 @@ class RoomGrid(MiniGridEnv):
 
     def __init__(
         self,
-        room_size=6,
-        num_cols=4,
+        room_size=7,
+        num_rows=3,
+        num_cols=3,
         max_steps=100,
         seed=0
     ):
         assert room_size > 0
         assert room_size >= 4
+        assert num_rows > 0
         assert num_cols > 0
         self.room_size = room_size
+        self.num_rows = num_rows
         self.num_cols = num_cols
-        self.num_rows = num_cols
 
-        grid_size = (room_size - 1) * num_cols + 1
+        height = (room_size - 1) * num_rows + 1
+        width = (room_size - 1) * num_cols + 1
+        grid_size = max(width, height)
 
         # By default, this environment has no mission
         self.mission = ''
@@ -112,7 +116,6 @@ class RoomGrid(MiniGridEnv):
                     (i * (self.room_size-1), j * (self.room_size-1)),
                     (self.room_size, self.room_size)
                 )
-
                 row.append(room)
 
                 # Generate the walls for this room
@@ -188,8 +191,14 @@ class RoomGrid(MiniGridEnv):
         Add a door to a room, connecting it to a neighbor
         """
 
+        room = self.get_room(i, j)
+
         if door_idx == None:
-            door_idx = self._rand_int(0, 4)
+            # Need to make sure that there is a neighbor along this wall
+            while True:
+                door_idx = self._rand_int(0, 4)
+                if room.neighbors[door_idx]:
+                    break
 
         if color == None:
             color = self._rand_color()
@@ -197,7 +206,6 @@ class RoomGrid(MiniGridEnv):
         if locked is None:
             locked = self._rand_bool()
 
-        room = self.get_room(i, j)
         assert room.doors[door_idx] is None, "door already exists"
 
         if locked:
