@@ -20,8 +20,11 @@ class Mission(gym.Wrapper):
 
         self.surface = surface
 
+        env.mission = surface
+
         # Keep a copy of the original environment so we can reset it
         self.orig_env = env
+
         self.env = deepcopy(self.orig_env)
 
         self.actions = env.actions
@@ -36,6 +39,10 @@ class Mission(gym.Wrapper):
 
         # Recreate the verifier
         self.verifier = InstrSeqVerifier(self.env, self.instrs)
+
+        obs = self.env.reset()
+
+        return obs
 
     def step(self, action):
         obs, reward, done, info = self.env.step(action)
@@ -68,7 +75,7 @@ class Level:
 class Level0(Level):
     """
     Level 0: go to the red door
-    (which in the current room)
+    (always unlocked, in the current room)
     """
 
     def __init__(self):
@@ -76,7 +83,7 @@ class Level0(Level):
 
     def gen_mission(self, seed):
         env = RoomGrid(room_size=7, num_cols=3, max_steps=50, seed=seed)
-        obj, pos = env.add_door(1, 1, 3, 'red')
+        obj, pos = env.add_door(1, 1, 3, 'red', locked=False)
 
         instrs = [Instr(action="goto", object=Object(obj, pos))]
         surface = gen_surface(instrs, seed, lang_variation=1)
@@ -255,18 +262,24 @@ def test():
     for idx, level in enumerate(level_list):
         print('Level %d' % idx)
 
-        mission = level.gen_mission(0)
-        assert isinstance(mission.surface, str)
-
         # Run the mission for a few episodes
         rng = random.Random(0)
         num_episodes = 0
-        while num_episodes < 20:
-            action = rng.randint(0, mission.action_space.n - 1)
-            obs, reward, done, info = mission.step(action)
-            if done:
-                num_episodes += 1
-                mission.reset()
+        for i in range(0, 20):
+            mission = level.gen_mission(i)
+            assert isinstance(mission.surface, str)
+
+            obs = mission.reset()
+            assert obs['mission'] == mission.surface
+
+            while True:
+                action = rng.randint(0, mission.action_space.n - 1)
+                obs, reward, done, info = mission.step(action)
+                if done:
+                    obs = mission.reset()
+                    break
+
+            num_episodes += 1
 
         # The same seed should always yield the same mission
         m0 = level.gen_mission(0)

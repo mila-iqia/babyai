@@ -67,14 +67,15 @@ class RoomGrid(MiniGridEnv):
 
         grid_size = (room_size - 1) * num_cols + 1
 
+        # By default, this environment has no mission
+        self.mission = ''
+
         super().__init__(
             grid_size=grid_size,
             max_steps=max_steps,
             see_through_walls=False,
             seed=seed
         )
-
-        self.reward_range = (0, 1)
 
     def room_from_pos(self, x, y):
         """Get the room a given position maps to"""
@@ -148,9 +149,6 @@ class RoomGrid(MiniGridEnv):
             (self.num_rows // 2) * (self.room_size-1) + (self.room_size // 2)
         )
         self.start_dir = 0
-
-        # By default, this environment has no mission
-        self.mission = ''
 
     def add_object(self, i, j, kind=None, color=None):
         """
