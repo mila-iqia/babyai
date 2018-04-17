@@ -210,7 +210,7 @@ class Level6(Level):
         # Add a random object to the top-middle room
         obj, pos = env.add_object(1, 0)
         # Make sure the two rooms are directly connected
-        env.add_door(1, 1, 3)
+        env.add_door(1, 1, 3, locked=False)
         env.connect_all()
         env.add_distractors()
 
