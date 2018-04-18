@@ -225,14 +225,15 @@ class Level7(Level):
     This level requires potentially exhaustive exploration
     """
 
-    def __init__(self):
+    def __init__(self, room_size=5):
+        self.room_size = room_size
         super().__init__()
 
     def gen_mission(self, seed):
-        env = RoomGrid(max_steps=200, seed=seed)
+        env = RoomGrid(room_size=self.room_size, max_steps=120, seed=seed)
         # Add a random object to a random room
-        i = env._rand_int(0, 3)
-        j = env._rand_int(0, 3)
+        i = env._rand_int(0, env.num_rows)
+        j = env._rand_int(0, env.num_cols)
         obj, pos = env.add_object(i, j)
         env.connect_all()
 
@@ -241,9 +242,17 @@ class Level7(Level):
 
         return Mission(seed, instrs, surface, env)
 
-class Level8(Level):
+class Level8(Level7):
     """
-    Level 8: unlock a door, then pick up an object in another room.
+    Level 8: the same as level 7, but with larger rooms
+    """
+
+    def __init__(self):
+        super().__init__(room_size=7)
+
+class Level9(Level):
+    """
+    Level 9: unlock a door, then pick up an object in another room.
     """
 
     def __init__(self):
@@ -278,7 +287,8 @@ level_list = [
     Level5(),
     Level6(),
     Level7(),
-    Level8()
+    Level8(),
+    Level9()
 ]
 
 def test():

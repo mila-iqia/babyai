@@ -223,6 +223,22 @@ class RoomGrid(MiniGridEnv):
 
         return door, pos
 
+    def place_agent(self, i=None, j=None):
+        """
+        Place the agent in a room
+        """
+
+        if i == None:
+            i = self._rand_int(0, self.num_cols)
+        if j == None:
+            j = self._rand_int(0, self.num_rows)
+
+        room = self.room_grid[j][i]
+
+        super().place_agent(room.top, room.size)
+        self.agent_pos = self.start_pos
+        self.agent_dir = self.start_dir
+
     def connect_all(self):
         """
         Make sure that all rooms are reachable by the agent from its
