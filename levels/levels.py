@@ -8,44 +8,28 @@ from .instrs import *
 from .instr_gen import gen_instr_seq, gen_object, gen_surface
 from .verifier import InstrSeqVerifier
 
-class Mission(gym.Wrapper):
+class RoomGridLevel(RoomGrid):
     """
-    Wrapper for missions, usable as a gym environment.
+    Base for levels based on RoomGrid
+    A level, given a random seed, generates missions generated from
+    one or more patterns. Levels should produce a family of missions
+    of approximately similar difficulty.
     """
 
-    def __init__(self, seed, instrs, surface, env):
-        self.seed = seed
-
-        self.instrs = instrs
-
-        self.surface = surface
-
-        env.mission = surface
-
-        # Keep a copy of the original environment so we can reset it
-        self.orig_env = env
-
-        self.env = deepcopy(self.orig_env)
-
-        self.actions = env.actions
-
-        super().__init__(self.env)
-
-        self.reset()
+    def __init__(self, lang_variation=1, **kwargs):
+        self.lang_variation = lang_variation
+        super().__init__(**kwargs)
 
     def reset(self, **kwargs):
-        # Reset the environment by making a copy of the original
-        self.env = deepcopy(self.orig_env)
+        obs = super().reset(**kwargs)
 
         # Recreate the verifier
-        self.verifier = InstrSeqVerifier(self.env, self.instrs)
-
-        obs = self.env.gen_obs()
+        self.verifier = InstrSeqVerifier(self, self.instrs)
 
         return obs
 
     def step(self, action):
-        obs, reward, done, info = self.env.step(action)
+        obs, reward, done, info = super().step(action)
 
         # If we've successfully completed the mission
         if self.verifier.step() is True:
@@ -54,84 +38,85 @@ class Mission(gym.Wrapper):
 
         return obs, reward, done, info
 
-class Level:
-    """
-    Base class for all levels.
-    A level, given a random seed, generates missions generated from
-    one or more patterns. Levels should produce a family of missions
-    of approximately similar difficulty.
-    """
+    def _gen_grid(self, width, height):
+        super()._gen_grid(width, height)
 
-    def __init__(self):
-        pass
+        # Generate the mission
+        self.gen_mission()
 
-    def gen_mission(self, seed):
+        # Make sure all rooms are reachable
+        self.connect_all()
+
+        # Generate the surface form for the instructions
+        seed = self._rand_int(0, 0xFFFFFFFF)
+        self.surface = gen_surface(self.instrs, seed, self.lang_variation)
+        self.mission = self.surface
+
+    def gen_mission(self):
         """
         Generate a mission (instructions and matching environment)
         Derived level classes should implement this method
         """
         raise NotImplementedError
 
-class Level0(Level):
+class Level0(RoomGridLevel):
     """
     Level 0: go to the red door
     (always unlocked, in the current room)
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, seed=None):
+        super().__init__(
+            num_rows=2,
+            num_cols=2,
+            max_steps=50,
+            lang_variation=1,
+            seed=seed
+        )
 
-    def gen_mission(self, seed):
-        env = RoomGrid(room_size=6, num_rows=2, num_cols=2, max_steps=50, seed=seed)
-        obj, pos = env.add_door(1, 1, 3, 'red', locked=False)
+    def gen_mission(self):
+        obj, pos = self.add_door(1, 1, 3, 'red', locked=False)
+        self.instrs = [Instr(action="goto", object=Object(obj, pos))]
 
-        instrs = [Instr(action="goto", object=Object(obj, pos))]
-        surface = gen_surface(instrs, seed, lang_variation=1)
-
-        return Mission(seed, instrs, surface, env)
-
-class Level1(Level):
+class Level1(RoomGridLevel):
     """
     Level 1: go to the door
     (of a given color, in the current room)
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, seed=None):
+        super().__init__(
+            max_steps=50,
+            lang_variation=1,
+            seed=seed
+        )
 
-    def gen_mission(self, seed):
-        env = RoomGrid(max_steps=50, seed=seed)
-        door, pos = env.add_door(1, 1)
-        env.connect_all()
+    def gen_mission(self):
+        door, pos = self.add_door(1, 1)
+        self.instrs = [Instr(action="goto", object=Object(door, pos))]
 
-        instrs = [Instr(action="goto", object=Object(door, pos))]
-        surface = gen_surface(instrs, seed, lang_variation=1)
-
-        return Mission(seed, instrs, surface, env)
-
-class Level2(Level):
+class Level2(RoomGridLevel):
     """
     Level 2: go to an object or door
     (of a given type and color, in the current room)
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, seed=None):
+        super().__init__(
+            max_steps=50,
+            lang_variation=2,
+            seed=seed
+        )
 
-    def gen_mission(self, seed):
-        env = RoomGrid(max_steps=50, seed=seed)
-        if env._rand_bool():
-            obj, pos = env.add_door(1, 1)
+    def gen_mission(self):
+        if self._rand_bool():
+            obj, pos = self.add_door(1, 1)
         else:
-            obj, pos = env.add_object(1, 1)
-        env.connect_all()
+            obj, pos = self.add_object(1, 1)
 
-        instrs = [Instr(action="goto", object=Object(obj, pos))]
-        surface = gen_surface(instrs, seed, lang_variation=2)
+        self.instrs = [Instr(action="goto", object=Object(obj, pos))]
 
-        return Mission(seed, instrs, surface, env)
-
-class Level3(Level):
+class Level3(RoomGridLevel):
     """
     Level 3:
     [pick up an object] or
@@ -140,53 +125,50 @@ class Level3(Level):
     (in the current room)
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, seed=None):
+        super().__init__(
+            max_steps=50,
+            lang_variation=2,
+            seed=seed
+        )
 
-    def gen_mission(self, seed):
-        env = RoomGrid(max_steps=50, seed=seed)
-        if env._rand_bool():
-            obj, pos = env.add_door(1, 1)
+    def gen_mission(self):
+        if self._rand_bool():
+            obj, pos = self.add_door(1, 1)
         else:
-            obj, pos = env.add_object(1, 1)
-        env.connect_all()
-        env.add_distractors()
+            obj, pos = self.add_object(1, 1)
 
         if obj.type == 'door':
-            action = env._rand_elem(['goto', 'open'])
+            action = self._rand_elem(['goto', 'open'])
         else:
-            action = env._rand_elem(['goto', 'pickup'])
+            action = self._rand_elem(['goto', 'pickup'])
 
-        instrs = [Instr(action=action, object=Object(obj, pos))]
-        surface = gen_surface(instrs, seed)
+        self.instrs = [Instr(action=action, object=Object(obj, pos))]
 
-        return Mission(seed, instrs, surface, env)
-
-class Level4(Level):
+class Level4(RoomGridLevel):
     """
     Level 4: fetch a key and unlock a door
     (in the current room)
     """
 
-    def __init__(self, distractors=False):
+    def __init__(self, distractors=False, seed=None):
         self.distractors = distractors
-        super().__init__()
+        super().__init__(
+            max_steps=50,
+            lang_variation=2,
+            seed=seed
+        )
 
-    def gen_mission(self, seed):
-        env = RoomGrid(max_steps=50, seed=seed)
-        door, door_pos = env.add_door(1, 1, locked=True)
-        key, key_pos = env.add_object(1, 1, 'key', door.color)
-        env.connect_all()
+    def gen_mission(self):
+        door, door_pos = self.add_door(1, 1, locked=True)
+        key, key_pos = self.add_object(1, 1, 'key', door.color)
         if self.distractors:
-            env.add_distractors()
+            self.add_distractors()
 
-        instrs = [
+        self.instrs = [
             Instr(action="pickup", object=Object(key, key_pos)),
             Instr(action="open", object=Object(door, door_pos))
         ]
-        surface = gen_surface(instrs, seed)
-
-        return Mission(seed, instrs, surface, env)
 
 class Level5(Level4):
     """
@@ -194,101 +176,102 @@ class Level5(Level4):
     (in the current room, with distractors)
     """
 
-    def __init__(self):
-        super().__init__(distractors=True)
+    def __init__(self, seed=None):
+        super().__init__(distractors=True, seed=seed)
 
-class Level6(Level):
+class Level6(RoomGridLevel):
     """
     Level 6: pick up an object (in the room above)
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, seed=None):
+        super().__init__(
+            max_steps=50,
+            lang_variation=2,
+            seed=seed
+        )
 
-    def gen_mission(self, seed):
-        env = RoomGrid(max_steps=50, seed=seed)
+    def gen_mission(self):
         # Add a random object to the top-middle room
-        obj, pos = env.add_object(1, 0)
+        obj, pos = self.add_object(1, 0)
         # Make sure the two rooms are directly connected
-        env.add_door(1, 1, 3, locked=False)
-        env.connect_all()
-        env.add_distractors()
+        self.add_door(1, 1, 3, locked=False)
+        self.add_distractors()
 
-        instrs = [Instr(action="pickup", object=Object(obj, pos))]
-        surface = gen_surface(instrs, seed)
+        self.instrs = [Instr(action="pickup", object=Object(obj, pos))]
 
-        return Mission(seed, instrs, surface, env)
-
-class Level7(Level):
+class Level7(RoomGridLevel):
     """
     Level 7: pick up an object (in a random room)
     This level requires potentially exhaustive exploration
     """
 
-    def __init__(self, room_size=5):
-        self.room_size = room_size
-        super().__init__()
+    def __init__(self, room_size=5, max_steps=120, seed=None):
+        super().__init__(
+            room_size=room_size,
+            max_steps=max_steps,
+            lang_variation=1,
+            seed=seed
+        )
 
-    def gen_mission(self, seed):
-        env = RoomGrid(room_size=self.room_size, max_steps=120, seed=seed)
+    def gen_mission(self):
         # Add a random object to a random room
-        i = env._rand_int(0, env.num_rows)
-        j = env._rand_int(0, env.num_cols)
-        obj, pos = env.add_object(i, j)
-        env.connect_all()
+        i = self._rand_int(0, self.num_rows)
+        j = self._rand_int(0, self.num_cols)
+        obj, pos = self.add_object(i, j)
 
-        instrs = [Instr(action="pickup", object=Object(obj, pos))]
-        surface = gen_surface(instrs, seed)
-
-        return Mission(seed, instrs, surface, env)
+        self.instrs = [Instr(action="pickup", object=Object(obj, pos))]
 
 class Level8(Level7):
     """
     Level 8: the same as level 7, but with larger rooms
     """
 
-    def __init__(self):
-        super().__init__(room_size=7)
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=7,
+            max_steps=200,
+            seed=seed
+    )
 
-class Level9(Level):
+class Level9(RoomGridLevel):
     """
     Level 9: unlock a door, then pick up an object in another room.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, seed=None):
+        super().__init__(
+            max_steps=75,
+            lang_variation=1,
+            seed=seed
+        )
 
-    def gen_mission(self, seed):
-        env = RoomGrid(max_steps=50, seed=seed)
+    def gen_mission(self):
         # Add a random object to the top-middle room
-        obj, pos = env.add_object(1, 0)
+        obj, pos = self.add_object(1, 0)
         # Make sure the two rooms are directly connected by a locked door
-        door, door_pos = env.add_door(1, 1, 3, locked=True)
-        env.add_object(1, 1, 'key', door.color)
-        env.connect_all()
-        env.add_distractors()
+        door, door_pos = self.add_door(1, 1, 3, locked=True)
+        self.add_object(1, 1, 'key', door.color)
+        self.add_distractors()
 
-        instrs = [
+        self.instrs = [
             Instr(action="open", object=Object(door, door_pos)),
             Instr(action="pickup", object=Object(obj, pos))
         ]
-        surface = gen_surface(instrs, seed)
-
-        return Mission(seed, instrs, surface, env)
 
 # Level list, indexable by level number
 # ie: level_list[0] is a Level0 instance
 level_list = [
-    Level0(),
-    Level1(),
-    Level2(),
-    Level3(),
-    Level4(),
-    Level5(),
-    Level6(),
-    Level7(),
-    Level8(),
-    Level9()
+    Level0,
+    Level1,
+    Level2,
+    Level3,
+    Level4,
+    Level5,
+    Level6,
+    Level7,
+    Level8,
+    Level9
 ]
 
 def test():
@@ -299,7 +282,7 @@ def test():
         rng = random.Random(0)
         num_episodes = 0
         for i in range(0, 20):
-            mission = level.gen_mission(i)
+            mission = level(seed=i)
             assert isinstance(mission.surface, str)
 
             obs = mission.reset()
@@ -315,8 +298,8 @@ def test():
             num_episodes += 1
 
         # The same seed should always yield the same mission
-        m0 = level.gen_mission(0)
-        m1 = level.gen_mission(0)
+        m0 = level(seed=0)
+        m1 = level(seed=0)
         grid1 = m0.unwrapped.grid
         grid2 = m1.unwrapped.grid
         assert grid1 == grid2

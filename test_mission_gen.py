@@ -39,13 +39,12 @@ def test():
         if options.seed == -1:
             seed = rng.randint(0, 0xFFFFFF)
 
-        mission = level.gen_mission(seed)
+        mission = level(seed=seed)
 
         print('seed=%d' % seed)
         print(mission.instrs)
         print(mission.surface)
 
-        mission.reset()
         pixmap = mission.render('pixmap')
         window.setPixmap(pixmap)
         window.setKeyDownCb(keyDownCb)
