@@ -67,7 +67,7 @@ class Level0(RoomGridLevel):
 
     def __init__(self, seed=None):
         super().__init__(
-            num_rows=2,
+            num_rows=1,
             num_cols=2,
             max_steps=50,
             lang_variation=1,
@@ -75,7 +75,8 @@ class Level0(RoomGridLevel):
         )
 
     def gen_mission(self):
-        obj, pos = self.add_door(1, 1, 3, 'red', locked=False)
+        obj, pos = self.add_door(0, 0, 0, 'red', locked=False)
+        self.place_agent(0, 0)
         self.instrs = [Instr(action="goto", object=Object(obj, pos))]
 
 class Level1(RoomGridLevel):
@@ -93,6 +94,7 @@ class Level1(RoomGridLevel):
 
     def gen_mission(self):
         door, pos = self.add_door(1, 1)
+        self.place_agent(1, 1)
         self.instrs = [Instr(action="goto", object=Object(door, pos))]
 
 class Level2(RoomGridLevel):
@@ -113,6 +115,7 @@ class Level2(RoomGridLevel):
             obj, pos = self.add_door(1, 1)
         else:
             obj, pos = self.add_object(1, 1)
+        self.place_agent(1, 1)
 
         self.instrs = [Instr(action="goto", object=Object(obj, pos))]
 
@@ -137,6 +140,7 @@ class Level3(RoomGridLevel):
             obj, pos = self.add_door(1, 1)
         else:
             obj, pos = self.add_object(1, 1)
+        self.place_agent(1, 1)
 
         if obj.type == 'door':
             action = self._rand_elem(['goto', 'open'])
@@ -164,6 +168,7 @@ class Level4(RoomGridLevel):
         key, key_pos = self.add_object(1, 1, 'key', door.color)
         if self.distractors:
             self.add_distractors()
+        self.place_agent(1, 1)
 
         self.instrs = [
             Instr(action="pickup", object=Object(key, key_pos)),
@@ -197,6 +202,7 @@ class Level6(RoomGridLevel):
         # Make sure the two rooms are directly connected
         self.add_door(1, 1, 3, locked=False)
         self.add_distractors()
+        self.place_agent(1, 1)
 
         self.instrs = [Instr(action="pickup", object=Object(obj, pos))]
 
@@ -219,6 +225,7 @@ class Level7(RoomGridLevel):
         i = self._rand_int(0, self.num_rows)
         j = self._rand_int(0, self.num_cols)
         obj, pos = self.add_object(i, j)
+        self.place_agent(1, 1)
 
         self.instrs = [Instr(action="pickup", object=Object(obj, pos))]
 
@@ -253,6 +260,7 @@ class Level9(RoomGridLevel):
         door, door_pos = self.add_door(1, 1, 3, locked=True)
         self.add_object(1, 1, 'key', door.color)
         self.add_distractors()
+        self.place_agent(1, 1)
 
         self.instrs = [
             Instr(action="open", object=Object(door, door_pos)),

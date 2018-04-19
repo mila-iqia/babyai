@@ -223,7 +223,7 @@ class RoomGrid(MiniGridEnv):
 
         return door, pos
 
-    def place_agent(self, i=None, j=None):
+    def place_agent(self, i=None, j=None, rand_dir=True):
         """
         Place the agent in a room
         """
@@ -235,9 +235,15 @@ class RoomGrid(MiniGridEnv):
 
         room = self.room_grid[j][i]
 
-        super().place_agent(room.top, room.size)
-        self.agent_pos = self.start_pos
-        self.agent_dir = self.start_dir
+        # Find a position that is not right in front of an object
+        while True:
+            super().place_agent(room.top, room.size, rand_dir)
+            pos = self.start_pos
+            dir = DIR_TO_VEC[self.start_dir]
+            front_pos = pos + dir
+            front_cell = self.grid.get(*front_pos)
+            if front_cell is None or front_cell.type is 'wall':
+                break
 
     def connect_all(self):
         """
