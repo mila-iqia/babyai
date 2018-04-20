@@ -77,7 +77,7 @@ class Level0(RoomGridLevel):
     def gen_mission(self):
         obj, pos = self.add_door(0, 0, 0, 'red', locked=False)
         self.place_agent(0, 0)
-        self.instrs = [Instr(action="goto", object=Object(obj, pos))]
+        self.instrs = [Instr(action="goto", object=Object(obj.type, obj.color))]
 
 class Level1(RoomGridLevel):
     """
@@ -95,7 +95,7 @@ class Level1(RoomGridLevel):
     def gen_mission(self):
         door, pos = self.add_door(1, 1)
         self.place_agent(1, 1)
-        self.instrs = [Instr(action="goto", object=Object(door, pos))]
+        self.instrs = [Instr(action="goto", object=Object(door.type, door.color))]
 
 class Level2(RoomGridLevel):
     """
@@ -117,7 +117,7 @@ class Level2(RoomGridLevel):
             obj, pos = self.add_object(1, 1)
         self.place_agent(1, 1)
 
-        self.instrs = [Instr(action="goto", object=Object(obj, pos))]
+        self.instrs = [Instr(action="goto", object=Object(obj.type, obj.color))]
 
 class Level3(RoomGridLevel):
     """
@@ -147,7 +147,7 @@ class Level3(RoomGridLevel):
         else:
             action = self._rand_elem(['goto', 'pickup'])
 
-        self.instrs = [Instr(action=action, object=Object(obj, pos))]
+        self.instrs = [Instr(action=action, object=Object(obj.type, obj.color))]
 
 class Level4(RoomGridLevel):
     """
@@ -171,8 +171,8 @@ class Level4(RoomGridLevel):
         self.place_agent(1, 1)
 
         self.instrs = [
-            Instr(action="pickup", object=Object(key, key_pos)),
-            Instr(action="open", object=Object(door, door_pos))
+            Instr(action="pickup", object=Object(key.type, key.color)),
+            Instr(action="open", object=Object(door.type, door.color))
         ]
 
 class Level5(Level4):
@@ -204,7 +204,7 @@ class Level6(RoomGridLevel):
         self.add_distractors()
         self.place_agent(1, 1)
 
-        self.instrs = [Instr(action="pickup", object=Object(obj, pos))]
+        self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
 
 class Level7(RoomGridLevel):
     """
@@ -227,7 +227,7 @@ class Level7(RoomGridLevel):
         obj, pos = self.add_object(i, j)
         self.place_agent(1, 1)
 
-        self.instrs = [Instr(action="pickup", object=Object(obj, pos))]
+        self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
 
 class Level8(Level7):
     """
@@ -263,8 +263,8 @@ class Level9(RoomGridLevel):
         self.place_agent(1, 1)
 
         self.instrs = [
-            Instr(action="open", object=Object(door, door_pos)),
-            Instr(action="pickup", object=Object(obj, pos))
+            Instr(action="open", object=Object(door.type, door.color)),
+            Instr(action="pickup", object=Object(obj.type, obj.color))
         ]
 
 # Level list, indexable by level number
