@@ -267,6 +267,40 @@ class Level9(RoomGridLevel):
             Instr(action="pickup", object=Object(obj.type, obj.color))
         ]
 
+class Level10(RoomGridLevel):
+    """
+    Level 10: four identical objects in four different rooms. The task is
+    to pick up the right one, distinguished by its location.
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            max_steps=75,
+            lang_variation=2,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        obj, _ = self.add_object(1, 0)
+        self.add_object(1, 2, obj.type, obj.color)
+        self.add_object(0, 1, obj.type, obj.color)
+        self.add_object(2, 1, obj.type, obj.color)
+
+        self.add_distractors()
+
+        # Make sure the start room is directly connected to the
+        # four adjacent rooms
+        for i in range(0, 4):
+            _, _ = self.add_door(1, 1, i, locked=False)
+
+        # The agent starts facing right
+        self.place_agent(1, 1, rand_dir = False)
+
+        # Choose a random object to pick up
+        loc = self._rand_elem(['left', 'right', 'front', 'behind'])
+        rand_obj = Object(obj.type, obj.color, loc)
+        self.instrs = [Instr(action="pickup", object=rand_obj)]
+
 # Level list, indexable by level number
 # ie: level_list[0] is a Level0 instance
 level_list = [
@@ -279,7 +313,8 @@ level_list = [
     Level6,
     Level7,
     Level8,
-    Level9
+    Level9,
+    Level10
 ]
 
 def test():
