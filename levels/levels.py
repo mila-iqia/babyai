@@ -317,6 +317,22 @@ level_list = [
     Level10
 ]
 
+# Register the levels with OpenAI Gym
+for level in level_list:
+    module_name = __name__
+    class_name = level.__name__
+
+    level_id = 'BabyAI-%s-v0' % (class_name)
+    entry_point = '%s:%s' % (module_name, class_name)
+
+    #print(level_id)
+    #print(entry_point)
+
+    gym.envs.registration.register(
+        id=level_id,
+        entry_point=entry_point,
+    )
+
 def test():
     for idx, level in enumerate(level_list):
         print('Level %d' % idx)
