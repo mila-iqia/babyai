@@ -137,15 +137,12 @@ class Level3(RoomGridLevel):
 
     def gen_mission(self):
         if self._rand_bool():
-            obj, pos = self.add_door(1, 1)
-        else:
-            obj, pos = self.add_object(1, 1)
-        self.place_agent(1, 1)
-
-        if obj.type == 'door':
+            obj, pos = self.add_door(1, 1, locked=False)
             action = self._rand_elem(['goto', 'open'])
         else:
+            obj, pos = self.add_object(1, 1)
             action = self._rand_elem(['goto', 'pickup'])
+        self.place_agent(1, 1)
 
         self.instrs = [Instr(action=action, object=Object(obj.type, obj.color))]
 
