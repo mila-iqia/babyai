@@ -9,9 +9,9 @@ class Instr:
         self.object = object
 
 class Object:
-    def __init__(self, type, color, loc=None):
+    def __init__(self, type, color=None, loc=None):
         assert isinstance(type, str)
-        assert color in COLOR_NAMES
+        assert color in [None, *COLOR_NAMES]
         assert loc in [None, 'left', 'right', 'front', 'behind']
 
         self.type = type

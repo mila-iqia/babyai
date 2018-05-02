@@ -95,7 +95,7 @@ class InstrSeqVerifier(Verifier):
         super().__init__(env)
 
         self.instr = instr
-        self.ainstrIndex = 0
+        self.instr_index = 0
 
         self.obj_to_drop = None
         self.intermediary_state = None
@@ -109,18 +109,18 @@ class InstrSeqVerifier(Verifier):
         return self.verifier == None
 
     def _load_next_verifier(self):
-        if self.ainstrIndex >= len(self.instr):
+        if self.instr_index >= len(self.instr):
             return
 
-        ainstr = self.instr[self.ainstrIndex]
-        self.ainstrIndex += 1
+        instr = self.instr[self.instr_index]
+        self.instr_index += 1
 
-        if ainstr.action == "open":
-            self.verifier = OpenVerifier(self.env, ainstr.object)
-        elif ainstr.action == "goto":
-            self.verifier = GotoVerifier(self.env, ainstr.object)
-        elif ainstr.action == "pickup":
-            self.verifier = PickupVerifier(self.env, ainstr.object)
+        if instr.action == "open":
+            self.verifier = OpenVerifier(self.env, instr.object)
+        elif instr.action == "goto":
+            self.verifier = GotoVerifier(self.env, instr.object)
+        elif instr.action == "pickup":
+            self.verifier = PickupVerifier(self.env, instr.object)
         else:
             self.verifier = DropVerifier(self.env, self.obj_to_drop)
 

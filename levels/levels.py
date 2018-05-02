@@ -49,7 +49,7 @@ class RoomGridLevel(RoomGrid):
 
         # Generate the surface form for the instructions
         seed = self._rand_int(0, 0xFFFFFFFF)
-        self.surface = gen_surface(self.instrs, seed, self.lang_variation)
+        self.surface = gen_surface(self.instrs, seed, lang_variation=self.lang_variation)
         self.mission = self.surface
 
     def gen_mission(self):
@@ -66,10 +66,13 @@ class Level0(RoomGridLevel):
     """
 
     def __init__(self, seed=None):
+        room_size = 6
+
         super().__init__(
             num_rows=1,
             num_cols=2,
-            max_steps=50,
+            room_size=room_size,
+            max_steps=4*room_size**2,
             lang_variation=1,
             seed=seed
         )
@@ -86,8 +89,11 @@ class Level1(RoomGridLevel):
     """
 
     def __init__(self, seed=None):
+        room_size = 6
+
         super().__init__(
-            max_steps=50,
+            room_size=room_size,
+            max_steps=4*room_size**2,
             lang_variation=1,
             seed=seed
         )
@@ -104,8 +110,11 @@ class Level2(RoomGridLevel):
     """
 
     def __init__(self, seed=None):
+        room_size = 6
+
         super().__init__(
-            max_steps=50,
+            room_size=room_size,
+            max_steps=4*room_size**2,
             lang_variation=2,
             seed=seed
         )
@@ -129,8 +138,11 @@ class Level3(RoomGridLevel):
     """
 
     def __init__(self, seed=None):
+        room_size = 6
+
         super().__init__(
-            max_steps=50,
+            room_size=room_size,
+            max_steps=4*room_size**2,
             lang_variation=2,
             seed=seed
         )
@@ -154,21 +166,21 @@ class Level4(RoomGridLevel):
 
     def __init__(self, distractors=False, seed=None):
         self.distractors = distractors
+
         super().__init__(
             max_steps=50,
-            lang_variation=2,
+            lang_variation=1,
             seed=seed
         )
 
     def gen_mission(self):
-        door, door_pos = self.add_door(1, 1, locked=True)
-        key, key_pos = self.add_object(1, 1, 'key', door.color)
+        door, _ = self.add_door(1, 1, locked=True)
+        self.add_object(1, 1, 'key', door.color)
         if self.distractors:
-            self.add_distractors()
+            self.add_distractors(3)
         self.place_agent(1, 1)
 
         self.instrs = [
-            Instr(action="pickup", object=Object(key.type, key.color)),
             Instr(action="open", object=Object(door.type, door.color))
         ]
 
