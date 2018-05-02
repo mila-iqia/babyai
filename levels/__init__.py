@@ -1,1 +1,1 @@
-from .levels import level_list
+from .levels import level_dict

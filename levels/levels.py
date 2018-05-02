@@ -1,4 +1,5 @@
 import random
+from collections import OrderedDict
 from copy import deepcopy
 
 import gym
@@ -56,7 +57,7 @@ class RoomGridLevel(RoomGrid):
         """
         raise NotImplementedError
 
-class Level0(RoomGridLevel):
+class Level_RedDoor(RoomGridLevel):
     """
     Go to the red door
     (always unlocked, in the current room)
@@ -79,7 +80,7 @@ class Level0(RoomGridLevel):
         self.place_agent(0, 0)
         self.instrs = [Instr(action="goto", object=Object(obj.type, obj.color))]
 
-class Level1(RoomGridLevel):
+class Level_GoToDoor(RoomGridLevel):
     """
     Go to the door
     (of a given color, in the current room)
@@ -101,7 +102,7 @@ class Level1(RoomGridLevel):
         self.connect_all()
         self.instrs = [Instr(action="goto", object=Object(door.type, door.color))]
 
-class Level2(RoomGridLevel):
+class Level_GoToObjDoor(RoomGridLevel):
     """
     Go to an object or door
     (of a given type and color, in the current room)
@@ -127,7 +128,7 @@ class Level2(RoomGridLevel):
 
         self.instrs = [Instr(action="goto", object=Object(obj.type, obj.color))]
 
-class Level3(RoomGridLevel):
+class Level_LocalAction(RoomGridLevel):
     """
     [pick up an object] or
     [go to an object or door] or
@@ -157,7 +158,7 @@ class Level3(RoomGridLevel):
 
         self.instrs = [Instr(action=action, object=Object(obj.type, obj.color))]
 
-class Level4(RoomGridLevel):
+class Level_UnlockDoor(RoomGridLevel):
     """
     Fetch a key and unlock a door
     (in the current room)
@@ -184,7 +185,7 @@ class Level4(RoomGridLevel):
             Instr(action="open", object=Object(door.type, door.color))
         ]
 
-class Level5(Level4):
+class Level_UnlockDoorDist(Level_UnlockDoor):
     """
     Fetch a key and unlock a door
     (in the current room, with distractors)
@@ -193,7 +194,7 @@ class Level5(Level4):
     def __init__(self, seed=None):
         super().__init__(distractors=True, seed=seed)
 
-class Level6(RoomGridLevel):
+class Level_PickupAbove(RoomGridLevel):
     """
     Pick up an object (in the room above)
     """
@@ -216,7 +217,7 @@ class Level6(RoomGridLevel):
 
         self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
 
-class Level7(RoomGridLevel):
+class Level_TwoDoors(RoomGridLevel):
     """
     Open door X, then open door Y
     The two doors are facing opposite directions, so that the agent
@@ -251,7 +252,7 @@ class Level7(RoomGridLevel):
             Instr(action="open", object=Object(door2.type, door2.color))
         ]
 
-class Level8(RoomGridLevel):
+class Level_FindObj(RoomGridLevel):
     """
     Pick up an object (in a random room)
     This level requires potentially exhaustive exploration
@@ -275,7 +276,7 @@ class Level8(RoomGridLevel):
 
         self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
 
-class Level9(Level8):
+class Level_FindObjLarge(Level_FindObj):
     """
     Same as the previous level, but with larger rooms
     """
@@ -287,7 +288,7 @@ class Level9(Level8):
             seed=seed
     )
 
-class Level10(RoomGridLevel):
+class Level_UnlockPickup(RoomGridLevel):
     """
     Unlock a door, then pick up an object in another room.
     """
@@ -314,7 +315,7 @@ class Level10(RoomGridLevel):
             Instr(action="pickup", object=Object(obj.type, obj.color))
         ]
 
-class Level11(RoomGridLevel):
+class Level_FourObjects(RoomGridLevel):
     """
     Four identical objects in four different rooms. The task is
     to pick up the correct one, distinguished by its location.
@@ -350,42 +351,35 @@ class Level11(RoomGridLevel):
         rand_obj = Object(obj.type, obj.color, loc)
         self.instrs = [Instr(action="pickup", object=rand_obj)]
 
-# Level list, indexable by level number
-# ie: level_list[0] is a Level0 instance
-level_list = [
-    Level0,
-    Level1,
-    Level2,
-    Level3,
-    Level4,
-    Level5,
-    Level6,
-    Level7,
-    Level8,
-    Level9,
-    Level10,
-    Level11
-]
+# Dictionary of levels, indexed by name, lexically sorted
+level_dict = OrderedDict()
 
-# Register the levels with OpenAI Gym
-for level in level_list:
+# Iterate through global names
+for global_name in sorted(list(globals().keys())):
+    if not global_name.startswith('Level_'):
+        continue
+
     module_name = __name__
-    class_name = level.__name__
+    level_name = global_name.split('Level_')[-1]
 
-    level_id = 'BabyAI-%s-v0' % (class_name)
-    entry_point = '%s:%s' % (module_name, class_name)
+    # Add the level to the dictionary
+    level_dict[level_name] = globals()[global_name]
 
+    # Register the levels with OpenAI Gym
+    level_id = 'BabyAI-%s-v0' % (level_name)
+    entry_point = '%s:%s' % (module_name, global_name)
     #print(level_id)
     #print(entry_point)
-
     gym.envs.registration.register(
         id=level_id,
         entry_point=entry_point,
     )
 
 def test():
-    for idx, level in enumerate(level_list):
-        print('Level %d' % idx)
+    for idx, level_name in enumerate(level_dict.keys()):
+        print('Level %s (%d/%d)' % (level_name, idx, len(level_dict)))
+
+        level = level_dict[level_name]
 
         # Run the mission for a few episodes
         rng = random.Random(0)

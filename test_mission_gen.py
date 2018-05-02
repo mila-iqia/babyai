@@ -4,7 +4,7 @@ import random
 import time
 from optparse import OptionParser
 
-from levels import level_list
+from levels import level_dict
 
 from PyQt5.QtWidgets import QApplication
 from gym_minigrid.rendering import Window
@@ -12,9 +12,8 @@ from gym_minigrid.rendering import Window
 def test():
     parser = OptionParser()
     parser.add_option(
-        "--level-no",
-        type="int",
-        default=0
+        "--level-name",
+        default='RedDoor'
     )
     parser.add_option(
         "--seed",
@@ -26,7 +25,7 @@ def test():
     rng = random.Random()
     seed = options.seed
 
-    level = level_list[options.level_no]
+    level = level_dict[options.level_name]
     mission = None
 
     app = QApplication([])
