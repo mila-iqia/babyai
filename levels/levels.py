@@ -44,9 +44,6 @@ class RoomGridLevel(RoomGrid):
         # Generate the mission
         self.gen_mission()
 
-        # Make sure all rooms are reachable
-        self.connect_all()
-
         # Generate the surface form for the instructions
         seed = self._rand_int(0, 0xFFFFFFFF)
         self.surface = gen_surface(self.instrs, seed, lang_variation=self.lang_variation)
@@ -61,7 +58,7 @@ class RoomGridLevel(RoomGrid):
 
 class Level0(RoomGridLevel):
     """
-    Level 0: go to the red door
+    Go to the red door
     (always unlocked, in the current room)
     """
 
@@ -84,7 +81,7 @@ class Level0(RoomGridLevel):
 
 class Level1(RoomGridLevel):
     """
-    Level 1: go to the door
+    Go to the door
     (of a given color, in the current room)
     """
 
@@ -101,11 +98,12 @@ class Level1(RoomGridLevel):
     def gen_mission(self):
         door, pos = self.add_door(1, 1)
         self.place_agent(1, 1)
+        self.connect_all()
         self.instrs = [Instr(action="goto", object=Object(door.type, door.color))]
 
 class Level2(RoomGridLevel):
     """
-    Level 2: go to an object or door
+    Go to an object or door
     (of a given type and color, in the current room)
     """
 
@@ -125,12 +123,12 @@ class Level2(RoomGridLevel):
         else:
             obj, pos = self.add_object(1, 1)
         self.place_agent(1, 1)
+        self.connect_all()
 
         self.instrs = [Instr(action="goto", object=Object(obj.type, obj.color))]
 
 class Level3(RoomGridLevel):
     """
-    Level 3:
     [pick up an object] or
     [go to an object or door] or
     [open a door]
@@ -155,12 +153,13 @@ class Level3(RoomGridLevel):
             obj, pos = self.add_object(1, 1)
             action = self._rand_elem(['goto', 'pickup'])
         self.place_agent(1, 1)
+        self.connect_all()
 
         self.instrs = [Instr(action=action, object=Object(obj.type, obj.color))]
 
 class Level4(RoomGridLevel):
     """
-    Level 4: fetch a key and unlock a door
+    Fetch a key and unlock a door
     (in the current room)
     """
 
@@ -179,6 +178,7 @@ class Level4(RoomGridLevel):
         if self.distractors:
             self.add_distractors(3)
         self.place_agent(1, 1)
+        self.connect_all()
 
         self.instrs = [
             Instr(action="open", object=Object(door.type, door.color))
@@ -186,7 +186,7 @@ class Level4(RoomGridLevel):
 
 class Level5(Level4):
     """
-    Level 5: fetch a key and unlock a door
+    Fetch a key and unlock a door
     (in the current room, with distractors)
     """
 
@@ -195,7 +195,7 @@ class Level5(Level4):
 
 class Level6(RoomGridLevel):
     """
-    Level 6: pick up an object (in the room above)
+    Pick up an object (in the room above)
     """
 
     def __init__(self, seed=None):
@@ -212,12 +212,48 @@ class Level6(RoomGridLevel):
         self.add_door(1, 1, 3, locked=False)
         self.add_distractors()
         self.place_agent(1, 1)
+        self.connect_all()
 
         self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
 
 class Level7(RoomGridLevel):
     """
-    Level 7: pick up an object (in a random room)
+    Open door X, then open door Y
+    The two doors are facing opposite directions, so that the agent
+    Can't see whether the door behind him is open.
+    This task requires memory (recurrent policy) to solve effectively.
+    """
+
+    def __init__(self, seed=None):
+        room_size = 6
+
+        super().__init__(
+            room_size=room_size,
+            max_steps=4*room_size**2,
+            lang_variation=1,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        door1, _ = self.add_door(1, 1, 0, locked=False)
+
+        # Pick a different color for the second door
+        colors = COLOR_NAMES[:]
+        colors.remove(door1.color)
+        color2 = self._rand_elem(colors)
+
+        door2, _ = self.add_door(1, 1, 2, color=color2, locked=False)
+
+        self.place_agent(1, 1)
+
+        self.instrs = [
+            Instr(action="open", object=Object(door1.type, door1.color)),
+            Instr(action="open", object=Object(door2.type, door2.color))
+        ]
+
+class Level8(RoomGridLevel):
+    """
+    Pick up an object (in a random room)
     This level requires potentially exhaustive exploration
     """
 
@@ -235,12 +271,13 @@ class Level7(RoomGridLevel):
         j = self._rand_int(0, self.num_cols)
         obj, pos = self.add_object(i, j)
         self.place_agent(1, 1)
+        self.connect_all()
 
         self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
 
-class Level8(Level7):
+class Level9(Level8):
     """
-    Level 8: the same as level 7, but with larger rooms
+    Same as the previous level, but with larger rooms
     """
 
     def __init__(self, seed=None):
@@ -250,9 +287,9 @@ class Level8(Level7):
             seed=seed
     )
 
-class Level9(RoomGridLevel):
+class Level10(RoomGridLevel):
     """
-    Level 9: unlock a door, then pick up an object in another room.
+    Unlock a door, then pick up an object in another room.
     """
 
     def __init__(self, seed=None):
@@ -270,16 +307,17 @@ class Level9(RoomGridLevel):
         self.add_object(1, 1, 'key', door.color)
         self.add_distractors()
         self.place_agent(1, 1)
+        self.connect_all()
 
         self.instrs = [
             Instr(action="open", object=Object(door.type, door.color)),
             Instr(action="pickup", object=Object(obj.type, obj.color))
         ]
 
-class Level10(RoomGridLevel):
+class Level11(RoomGridLevel):
     """
-    Level 10: four identical objects in four different rooms. The task is
-    to pick up the right one, distinguished by its location.
+    Four identical objects in four different rooms. The task is
+    to pick up the correct one, distinguished by its location.
     """
 
     def __init__(self, seed=None):
@@ -305,6 +343,8 @@ class Level10(RoomGridLevel):
         # The agent starts facing right
         self.place_agent(1, 1, rand_dir = False)
 
+        self.connect_all()
+
         # Choose a random object to pick up
         loc = self._rand_elem(['left', 'right', 'front', 'behind'])
         rand_obj = Object(obj.type, obj.color, loc)
@@ -323,7 +363,8 @@ level_list = [
     Level7,
     Level8,
     Level9,
-    Level10
+    Level10,
+    Level11
 ]
 
 # Register the levels with OpenAI Gym
