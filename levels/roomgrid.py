@@ -27,11 +27,11 @@ class Room:
         self.doors = [None] * 4
         self.door_pos = [None] * 4
 
-        # List of rooms this is connected to
+        # List of rooms adjacent to this one
         # Order of the neighbors is right, down, left, up
         self.neighbors = [None] * 4
 
-        # Indicates if this room is locked
+        # Indicates if this room is behind a locked door
         self.locked = False
 
         # List of objects contained
