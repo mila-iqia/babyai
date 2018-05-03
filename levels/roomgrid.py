@@ -223,6 +223,42 @@ class RoomGrid(MiniGridEnv):
 
         return door, pos
 
+    def remove_wall(self, i, j, wall_idx):
+        """
+        Remove a wall between two rooms
+        """
+
+        room = self.get_room(i, j)
+
+        assert wall_idx >= 0 and wall_idx < 4
+        assert room.doors[wall_idx] is None, "door exists on this wall"
+        assert room.neighbors[wall_idx], "invalid wall"
+
+        neighbor = room.neighbors[wall_idx]
+
+        tx, ty = room.top
+        w, h = room.size
+
+        # Ordering of walls is right, down, left, up
+        if wall_idx == 0:
+            for i in range(1, h - 1):
+                self.grid.set(tx + w - 1, ty + i, None)
+        elif wall_idx == 1:
+            for i in range(1, w - 1):
+                self.grid.set(tx + i, ty + h - 1, None)
+        elif wall_idx == 2:
+            for i in range(1, h - 1):
+                self.grid.set(tx, ty + i, None)
+        elif wall_idx == 3:
+            for i in range(1, w - 1):
+                self.grid.set(tx + i, ty, None)
+        else:
+            assert False, "invalid wall index"
+
+        # Mark the rooms as connected
+        room.doors[wall_idx] = True
+        neighbor.doors[(wall_idx+2) % 4] = True
+
     def place_agent(self, i=None, j=None, rand_dir=True):
         """
         Place the agent in a room

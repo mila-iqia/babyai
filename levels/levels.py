@@ -342,7 +342,7 @@ class Level_FourObjects(RoomGridLevel):
             _, _ = self.add_door(1, 1, i, locked=False)
 
         # The agent starts facing right
-        self.place_agent(1, 1, rand_dir = False)
+        self.place_agent(1, 1, rand_dir=False)
 
         self.connect_all()
 
@@ -350,6 +350,46 @@ class Level_FourObjects(RoomGridLevel):
         loc = self._rand_elem(['left', 'right', 'front', 'behind'])
         rand_obj = Object(obj.type, obj.color, loc)
         self.instrs = [Instr(action="pickup", object=rand_obj)]
+
+class Level_LockedRoom(RoomGridLevel):
+    """
+    An object is behind a locked door, the key is placed in a
+    random room.
+    """
+
+    def __init__(self, num_rows=3, room_size=6, seed=None):
+        super().__init__(
+            room_size=room_size,
+            num_rows=num_rows,
+            max_steps=500,
+            lang_variation=3,
+            seed=seed,
+        )
+
+    def gen_mission(self):
+        # Connect the middle column rooms into a hallway
+        for j in range(1, self.num_rows):
+            self.remove_wall(1, j, 3)
+
+        # Add a locked door on the bottom right
+        # Add an object behind the locked door
+        room_idx = self._rand_int(0, 3)
+        door, _ = self.add_door(2, room_idx, 2, locked=True)
+        obj, _ = self.add_object(2, room_idx)
+
+        # Add a key in a random room on the left side
+        self.add_object(0, self._rand_int(0, 3), 'key', door.color)
+
+        # Place the agent in the middle
+        self.place_agent(1, 1)
+
+        # Make sure all rooms are accessible
+        self.connect_all()
+
+        self.instrs = [
+            Instr(action="open", object=Object(door.type, door.color)),
+            Instr(action="pickup", object=Object(obj.type, obj.color))
+        ]
 
 # Dictionary of levels, indexed by name, lexically sorted
 level_dict = OrderedDict()
@@ -387,6 +427,7 @@ def test():
         for i in range(0, 20):
             mission = level(seed=i)
             assert isinstance(mission.surface, str)
+            assert len(mission.surface) > 0
 
             obs = mission.reset()
             assert obs['mission'] == mission.surface
