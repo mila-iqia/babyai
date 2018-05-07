@@ -60,7 +60,7 @@ class RoomGrid(MiniGridEnv):
         seed=0
     ):
         assert room_size > 0
-        assert room_size >= 4
+        assert room_size >= 3
         assert num_rows > 0
         assert num_cols > 0
         self.room_size = room_size
