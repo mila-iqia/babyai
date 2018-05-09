@@ -17,9 +17,23 @@ class RoomGridLevel(RoomGrid):
     of approximately similar difficulty.
     """
 
-    def __init__(self, lang_variation=1, **kwargs):
+    def __init__(
+        self,
+        lang_variation=1,
+        room_size=6,
+        max_steps=None,
+        **kwargs
+    ):
+        # Default max steps computation
+        if max_steps is None:
+            max_steps = 4 * (room_size ** 2)
+
         self.lang_variation = lang_variation
-        super().__init__(**kwargs)
+        super().__init__(
+            room_size=room_size,
+            max_steps=max_steps,
+            **kwargs
+        )
 
     def reset(self, **kwargs):
         obs = super().reset(**kwargs)
@@ -61,16 +75,15 @@ class Level_GoToRedDoor(RoomGridLevel):
     """
     Go to the red door
     (always unlocked, in the current room)
+    Note: this level is intentionally meant for debugging and is
+    intentionally kept very simple.
     """
 
     def __init__(self, seed=None):
-        room_size = 6
-
         super().__init__(
             num_rows=1,
             num_cols=2,
-            room_size=room_size,
-            max_steps=4*room_size**2,
+            room_size=5,
             lang_variation=1,
             seed=seed
         )
@@ -87,11 +100,7 @@ class Level_GoToDoor(RoomGridLevel):
     """
 
     def __init__(self, seed=None):
-        room_size = 6
-
         super().__init__(
-            room_size=room_size,
-            max_steps=4*room_size**2,
             lang_variation=1,
             seed=seed
         )
@@ -107,6 +116,7 @@ class Level_GoToDoor(RoomGridLevel):
             objs.append(obj)
 
         self.place_agent(1, 1)
+
         self.instrs = [Instr(action="goto", object=Object(objs[0].type, objs[0].color))]
 
 class Level_GoToObjDoor(RoomGridLevel):
@@ -116,11 +126,7 @@ class Level_GoToObjDoor(RoomGridLevel):
     """
 
     def __init__(self, seed=None):
-        room_size = 6
-
         super().__init__(
-            room_size=room_size,
-            max_steps=4*room_size**2,
             lang_variation=2,
             seed=seed
         )
@@ -130,7 +136,7 @@ class Level_GoToObjDoor(RoomGridLevel):
             obj, pos = self.add_door(1, 1)
         else:
             obj, pos = self.add_object(1, 1)
-        self.add_distractors(2)
+        self.add_distractors()
         self.place_agent(1, 1)
         self.connect_all()
 
@@ -145,11 +151,7 @@ class Level_LocalAction(RoomGridLevel):
     """
 
     def __init__(self, seed=None):
-        room_size = 6
-
         super().__init__(
-            room_size=room_size,
-            max_steps=4*room_size**2,
             lang_variation=2,
             seed=seed
         )
@@ -175,7 +177,6 @@ class Level_UnlockDoor(RoomGridLevel):
         self.distractors = distractors
 
         super().__init__(
-            max_steps=50,
             lang_variation=1,
             seed=seed
         )
@@ -184,7 +185,8 @@ class Level_UnlockDoor(RoomGridLevel):
         door, _ = self.add_door(1, 1, locked=True)
         self.add_object(1, 1, 'key', door.color)
         if self.distractors:
-            self.add_distractors(2)
+            self.add_distractors()
+        self.connect_all()
         self.place_agent(1, 1)
 
         self.instrs = [
@@ -207,7 +209,7 @@ class Level_PickupAbove(RoomGridLevel):
 
     def __init__(self, seed=None):
         super().__init__(
-            max_steps=50,
+            max_steps=300,
             lang_variation=2,
             seed=seed
         )
@@ -233,7 +235,6 @@ class Level_OpenRedBlueDoors(RoomGridLevel):
 
     def __init__(self, seed=None):
         room_size = 6
-
         super().__init__(
             room_size=room_size,
             max_steps=20*room_size**2,
@@ -263,7 +264,6 @@ class Level_OpenTwoDoors(RoomGridLevel):
 
     def __init__(self, seed=None):
         room_size = 6
-
         super().__init__(
             room_size=room_size,
             max_steps=20*room_size**2,
@@ -331,7 +331,6 @@ class Level_UnlockPickup(RoomGridLevel):
 
     def __init__(self, seed=None):
         super().__init__(
-            max_steps=75,
             lang_variation=1,
             seed=seed
         )
@@ -359,7 +358,7 @@ class Level_FourObjects(RoomGridLevel):
 
     def __init__(self, seed=None):
         super().__init__(
-            max_steps=75,
+            max_steps=300,
             lang_variation=2,
             seed=seed
         )
