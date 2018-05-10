@@ -13,12 +13,16 @@ def test():
     parser = OptionParser()
     parser.add_option(
         "--level-name",
-        default='RedDoor'
+        default='GoToRedDoor'
     )
     parser.add_option(
         "--seed",
         type="int",
         default=-1
+    )
+    parser.add_option(
+        "--partial-obs",
+        action='store_true'
     )
     (options, args) = parser.parse_args()
 
@@ -83,7 +87,13 @@ def test():
 
     while True:
         time.sleep(0.01)
-        pixmap = mission.render('pixmap')
+
+        if options.partial_obs:
+            obs = mission.gen_obs()
+            pixmap = mission.unwrapped.get_obs_render(obs['image'], 32)
+        else:
+            pixmap = mission.render('pixmap')
+
         window.setPixmap(pixmap)
         app.processEvents()
         if window.closed:
