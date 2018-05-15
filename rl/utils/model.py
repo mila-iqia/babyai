@@ -7,12 +7,14 @@ import utils
 def get_model_path(model_name):
     return os.path.join(utils.storage_dir(), "models", model_name, "model.pt")
 
-def load_model(observation_space, action_space, model_name):
+def load_model(observation_space, action_space, model_name,
+               use_instr=False, use_memory=False, use_cnn=False):
     path = get_model_path(model_name)
     if os.path.exists(path):
         acmodel = torch.load(path)
     else:
-        acmodel = ACModel(observation_space, action_space)
+        acmodel = ACModel(observation_space, action_space,
+                          use_instr, use_memory, use_cnn)
     acmodel.eval()
     return acmodel
 

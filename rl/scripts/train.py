@@ -58,6 +58,12 @@ parser.add_argument("--epochs", type=int, default=4,
                     help="number of epochs for PPO (default: 4)")
 parser.add_argument("--batch-size", type=int, default=256,
                     help="batch size for PPO (default: 256, 0 means all)")
+parser.add_argument("--model-instr", action="store_true", default=False,
+                    help="use instructions in the model")
+parser.add_argument("--model-mem", action="store_true", default=False,
+                    help="use memory in the model")
+parser.add_argument("--model-cnn", action="store_true", default=False,
+                    help="use ConvNet in the model")
 args = parser.parse_args()
 
 # Set seed for all randomness sources
@@ -83,7 +89,8 @@ obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space
 
 # Define actor-critic model
 
-acmodel = utils.load_model(obss_preprocessor.obs_space, envs[0].action_space, model_name)
+acmodel = utils.load_model(obss_preprocessor.obs_space, envs[0].action_space, model_name,
+                           args.model_instr, args.model_mem, args.model_cnn)
 if torch.cuda.is_available():
     acmodel.cuda()
 
