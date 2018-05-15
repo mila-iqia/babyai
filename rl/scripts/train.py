@@ -80,7 +80,7 @@ for i in range(args.procs):
 
 # Define model name
 
-suffix = datetime.datetime.now().strftime("%y%m%d%H%M%S")
+suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
 
 default_model_name = [args.env, args.algo]
 if args.model_instr:
@@ -92,6 +92,7 @@ if args.model_cnn:
 default_model_name.append(suffix)
 
 model_name = args.model or "_".join(default_model_name)
+print("The model is saved in {}".format(model_name))
 
 # Define obss preprocessor
 
@@ -118,7 +119,7 @@ elif args.algo == "ppo":
 else:
     raise ValueError
 
-# Define logger and tensorboard writer then log command and model
+# Define logger and tensorboard writer
 
 log_name = model_name + ("_" + suffix if args.model is not None else "")
 
@@ -127,7 +128,10 @@ if args.tb:
     from tensorboardX import SummaryWriter
     writer = SummaryWriter(utils.get_log_path(log_name, ext=False))
 
+# Log command, availability of CUDA, and model
+
 logger.log(args, to_print=False)
+logger.log("CUDA is {}available".format('' if torch.cuda.is_available() else 'not '))
 logger.log(acmodel)
 
 # Train model
