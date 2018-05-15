@@ -89,6 +89,7 @@ if args.model_mem:
     default_model_name.append("mem")
 if args.model_cnn:
     default_model_name.append("cnn")
+default_model_name.append(args.seed)
 default_model_name.append(suffix)
 
 model_name = args.model or "_".join(default_model_name)
