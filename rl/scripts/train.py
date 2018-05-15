@@ -30,7 +30,7 @@ parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs (default: 1)")
 parser.add_argument("--save-interval", type=int, default=0,
                     help="number of updates between two saves (default: 0, 0 means no saving)")
-parser.add_argument("--no-tb", action="store_true", default=False,
+parser.add_argument("--tb", action="store_true", default=False,
                     help="don't log into tensorboard")
 parser.add_argument("--frames-per-proc", type=int, default=None,
                     help="number of frames per process before update (default: 5 for A2C and 128 for PPO)")
@@ -106,7 +106,7 @@ else:
 log_name = model_name + ("_" + suffix if args.model is not None else "")
 
 logger = utils.Logger(log_name)
-if not(args.no_tb):
+if args.tb:
     from tensorboardX import SummaryWriter
     writer = SummaryWriter(utils.get_log_path(log_name, ext=False))
 
@@ -145,7 +145,7 @@ while num_frames < args.frames:
                     *rreturn_per_episode.values(),
                     *num_frames_per_episode.values(),
                     log["entropy"], log["value"], log["policy_loss"], log["value_loss"]))
-        if not(args.no_tb):
+        if args.tb:
             writer.add_scalar("frames", num_frames, i)
             writer.add_scalar("FPS", fps, i)
             writer.add_scalar("duration", total_ellapsed_time, i)
