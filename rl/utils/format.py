@@ -42,7 +42,6 @@ class ObssPreprocessor:
 
         if "image" in self.obs_space.keys():
             images = numpy.array([obs["image"] for obs in obss])
-            images = images.reshape(images.shape[0], -1)
             images = torch.tensor(images, device=device, dtype=torch.float)
 
             obs_.image = images

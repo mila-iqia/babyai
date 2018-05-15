@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 import torch_rl
 
+
 # Function from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/model.py
 def initialize_parameters(m):
     classname = m.__class__.__name__
@@ -13,17 +14,32 @@ def initialize_parameters(m):
         if m.bias is not None:
             m.bias.data.fill_(0)
 
+
 class ACModel(nn.Module, torch_rl.RecurrentACModel):
-    def __init__(self, obs_space, action_space):
+    def __init__(self, obs_space, action_space, use_instr, use_memory, use_cnn):
         super().__init__()
 
         # Decide which components are enabled
-        self.use_instr = "instr" in obs_space.keys()
-        self.use_memory = True
+        self.use_instr = use_instr
+        self.use_memory = use_memory
+        self.use_cnn = use_cnn
 
         # Define image embedding
-        self.image_embedding_size = 64        
-        self.image_fc = nn.Linear(obs_space["image"], self.image_embedding_size)
+        self.image_embedding_size = 64
+        if not self.use_cnn:
+            self.image_fc = nn.Linear(obs_space["image"], self.image_embedding_size)
+        else:
+            self.image_fc = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=16,
+                                                    kernel_size=(2, 2)),
+                                          nn.ReLU(),
+                                          nn.MaxPool2d(kernel_size=(2, 2), stride=2),
+                                          nn.Conv2d(in_channels=16, out_channels=32,
+                                                    kernel_size=(2, 2)),
+                                          nn.ReLU(),
+                                          nn.Conv2d(in_channels=32, out_channels=self.image_embedding_size,
+                                                    kernel_size=(2, 2)),
+                                          nn.ReLU()
+                                          )
 
         # Define memory
         if self.use_memory:
@@ -54,7 +70,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
 
     @property
     def memory_size(self):
-        return 2*self.semi_memory_size
+        return 2 * self.semi_memory_size
 
     @property
     def semi_memory_size(self):
@@ -64,7 +80,15 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
         if self.use_instr:
             embed_instr = self._get_embed_instr(obs.instr)
 
+        if not self.use_cnn:
+            obs.image = obs.image.reshape(obs.image.shape[0], -1)
+        else:
+            obs.image = torch.transpose(torch.transpose(obs.image, 1, 3), 2, 3)
+
         x = self.image_fc(obs.image)
+
+        if self.use_cnn:
+            x = x.reshape(x.shape[0], -1)
 
         if self.use_memory:
             hidden = (memory[:, :self.semi_memory_size], memory[:, self.semi_memory_size:])
@@ -73,7 +97,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
             memory = torch.cat(hidden, dim=1)
         else:
             embedding = x
-        
+
         if self.use_instr:
             embedding = torch.cat((embedding, embed_instr), dim=1)
 
