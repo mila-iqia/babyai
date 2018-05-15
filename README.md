@@ -33,6 +33,24 @@ cd baby-ai-game
 pip3 install -e .
 ```
 
+#### for this branch specifically
+After installing minigrid and baby-ai-game (necessary to access the levels), you need to install [pytorch-a2c-ppo](https://github.com/lcswillems/pytorch-a2c-ppo)
+
+```
+git clone https://github.com/lcswillems/pytorch-a2c-ppo.git
+cd pytorch-a2c-ppo
+pip3 install -e torch_rl
+cd ..
+```
+
+To train an RL agent, you can do:
+```
+cd baby-ai-game
+cd rl
+python -m scripts.train --env BabyAI-GoToDoor-v0 --algo ppo
+```
+More options available in [`train.py`](rl/scripts/train.py)
+
 ### For conda users
 
 If you are using conda, you can create a `babyai` environment with all the dependencies by running:
