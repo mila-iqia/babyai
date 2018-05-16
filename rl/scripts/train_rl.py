@@ -89,7 +89,7 @@ default_model_name = "{}/{}_{}_{}_{}_seed{}_lr{:.1e}_{}".format(
     "cnn" if args.model_cnn else "mlp",
     args.seed, args.lr, suffix)
 
-model_name = args.model or "_".join(default_model_name)
+model_name = args.model or default_model_name
 print("The model is saved in {}".format(model_name))
 
 # Define obss preprocessor
