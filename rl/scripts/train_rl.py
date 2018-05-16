@@ -64,7 +64,6 @@ parser.add_argument("--model-mem", action="store_true", default=False,
                     help="use memory in the model")
 parser.add_argument("--model-cnn", action="store_true", default=False,
                     help="use ConvNet in the model")
-parser.add
 args = parser.parse_args()
 
 # Set seed for all randomness sources
