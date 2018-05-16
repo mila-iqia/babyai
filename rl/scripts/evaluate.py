@@ -33,13 +33,9 @@ utils.seed(args.seed)
 env = gym.make(args.env)
 env.seed(args.seed)
 
-# Define model name
-
-model_name = args.model or args.env+"_"+args.algo
-
 # Define agent
 
-agent = utils.Agent(model_name, env.observation_space, env.action_space)
+agent = utils.Agent(args.model, env.observation_space, env.action_space)
 
 # Initialize logs
 
