@@ -64,6 +64,7 @@ parser.add_argument("--model-mem", action="store_true", default=False,
                     help="use memory in the model")
 parser.add_argument("--model-cnn", action="store_true", default=False,
                     help="use ConvNet in the model")
+parser.add
 args = parser.parse_args()
 
 # Set seed for all randomness sources
@@ -82,12 +83,12 @@ for i in range(args.procs):
 
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
 
-default_model_name = "{}/{}_{}_{}_{}_seed{}_{}".format(
+default_model_name = "{}/{}_{}_{}_{}_seed{}_lr{:.1e}_{}".format(
     args.env, args.algo,
     "instr" if args.model_instr else "noinstr",
     "mem" if args.model_mem else "nomem",
     "cnn" if args.model_cnn else "mlp",
-    args.seed, suffix)
+    args.seed, args.lr, suffix)
 
 model_name = args.model or "_".join(default_model_name)
 print("The model is saved in {}".format(model_name))
