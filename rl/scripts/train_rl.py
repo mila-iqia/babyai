@@ -82,15 +82,12 @@ for i in range(args.procs):
 
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
 
-default_model_name = [args.env, args.algo]
-if args.model_instr:
-    default_model_name.append("instr")
-if args.model_mem:
-    default_model_name.append("mem")
-if args.model_cnn:
-    default_model_name.append("cnn")
-default_model_name.append(args.seed)
-default_model_name.append(suffix)
+default_model_name = "{}/{}_{}_{}_{}_seed{}_{}".format(
+    args.env, args.algo,
+    "instr" if args.model_instr else "noinstr",
+    "mem" if args.model_mem else "nomem",
+    "cnn" if args.model_cnn else "mlp",
+    args.seed, suffix)
 
 model_name = args.model or "_".join(default_model_name)
 print("The model is saved in {}".format(model_name))
