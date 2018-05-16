@@ -195,9 +195,10 @@ class RoomGrid(MiniGridEnv):
 
         if door_idx == None:
             # Need to make sure that there is a neighbor along this wall
+            # and that there is not already a door
             while True:
                 door_idx = self._rand_int(0, 4)
-                if room.neighbors[door_idx]:
+                if room.neighbors[door_idx] and room.doors[door_idx] is None:
                     break
 
         if color == None:
@@ -324,7 +325,7 @@ class RoomGrid(MiniGridEnv):
             color = self._rand_elem(COLOR_NAMES)
             self.add_door(i, j, k, color, False)
 
-    def add_distractors(self, num_distractors=10):
+    def add_distractors(self, num_distractors=10, room_i=None, room_j=None):
         """
         Add random objects that can potentially distract/confuse the agent.
         """
@@ -345,10 +346,18 @@ class RoomGrid(MiniGridEnv):
             if obj in objs:
                 continue
 
-            # Add the object to a random room
-            i = self._rand_int(0, self.num_rows)
-            j = self._rand_int(0, self.num_cols)
+            # Add the object to a random room if no room specified
+            if room_i == None:
+                i = self._rand_int(0, self.num_cols)
+            else:
+                i = room_i
+            if room_j == None:
+                j = self._rand_int(0, self.num_rows)
+            else:
+                j = room_j
             self.add_object(i, j, *obj)
 
             objs.append(obj)
             num_added += 1
+
+        return objs

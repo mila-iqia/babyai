@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import gym
 
-from .roomgrid import RoomGrid
+from .roomgrid import RoomGrid, Ball
 from .instrs import *
 from .instr_gen import gen_instr_seq, gen_object, gen_surface
 from .verifier import InstrSeqVerifier
@@ -116,7 +116,6 @@ class Level_GoToDoor(RoomGridLevel):
             objs.append(obj)
 
         self.place_agent(1, 1)
-
         self.instrs = [Instr(action="goto", object=Object(objs[0].type, objs[0].color))]
 
 class Level_GoToObjDoor(RoomGridLevel):
@@ -127,20 +126,21 @@ class Level_GoToObjDoor(RoomGridLevel):
 
     def __init__(self, seed=None):
         super().__init__(
+            room_size=7,
             lang_variation=2,
             seed=seed
         )
 
     def gen_mission(self):
-        if self._rand_bool():
-            obj, pos = self.add_door(1, 1)
-        else:
-            obj, pos = self.add_object(1, 1)
-        self.add_distractors()
+        objs = self.add_distractors(num_distractors=5, room_i=1, room_j=1)
+        for _ in range(4):
+            door, _ = self.add_door(1, 1)
+            objs.append((door.type, door.color))
+        
         self.place_agent(1, 1)
-        self.connect_all()
 
-        self.instrs = [Instr(action="goto", object=Object(obj.type, obj.color))]
+        type, color = self._rand_elem(objs)
+        self.instrs = [Instr(action="goto", object=Object(type, color))]
 
 class Level_LocalAction(RoomGridLevel):
     """
@@ -152,20 +152,25 @@ class Level_LocalAction(RoomGridLevel):
 
     def __init__(self, seed=None):
         super().__init__(
+            room_size=7,
             lang_variation=2,
             seed=seed
         )
 
     def gen_mission(self):
-        if self._rand_bool():
-            obj, pos = self.add_door(1, 1, locked=False)
-            action = self._rand_elem(['goto', 'open'])
-        else:
-            obj, pos = self.add_object(1, 1)
-            action = self._rand_elem(['goto', 'pickup'])
+        objs = self.add_distractors(num_distractors=5, room_i=1, room_j=1)
+        for _ in range(4):
+            door, _ = self.add_door(1, 1, locked=False)
+            objs.append((door.type, door.color))
+
         self.place_agent(1, 1)
 
-        self.instrs = [Instr(action=action, object=Object(obj.type, obj.color))]
+        type, color = self._rand_elem(objs)
+        if type == door.type:
+            action = self._rand_elem(['goto', 'open'])
+        else:
+            action = self._rand_elem(['goto', 'pickup'])
+        self.instrs = [Instr(action=action, object=Object(type, color))]
 
 class Level_UnlockDoor(RoomGridLevel):
     """
@@ -185,13 +190,10 @@ class Level_UnlockDoor(RoomGridLevel):
         door, _ = self.add_door(1, 1, locked=True)
         self.add_object(1, 1, 'key', door.color)
         if self.distractors:
-            self.add_distractors()
-        self.connect_all()
+            self.add_distractors(num_distractors=3, room_i=1, room_j=1)
         self.place_agent(1, 1)
 
-        self.instrs = [
-            Instr(action="open", object=Object(door.type, door.color))
-        ]
+        self.instrs = [Instr(action="open", object=Object(door.type, door.color))]
 
 class Level_UnlockDoorDist(Level_UnlockDoor):
     """
@@ -202,14 +204,130 @@ class Level_UnlockDoorDist(Level_UnlockDoor):
     def __init__(self, seed=None):
         super().__init__(distractors=True, seed=seed)
 
+class Level_UnlockPickup(RoomGridLevel):
+    """
+    Unlock a door, then pick up an object in another room
+    """
+
+    def __init__(self, distractors=False, seed=None):
+        self.distractors = distractors
+
+        room_size = 6
+        super().__init__(
+            num_rows=1,
+            num_cols=2,
+            room_size=room_size,
+            max_steps=8*room_size**2,
+            lang_variation=1,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        # Add a random object to the room on the right
+        obj, _ = self.add_object(1, 0)
+        # Make sure the two rooms are directly connected by a locked door
+        door, _ = self.add_door(0, 0, 0, locked=True)
+        # Add a key to unlock the door
+        self.add_object(0, 0, 'key', door.color)
+        if self.distractors:
+            self.add_distractors(num_distractors=4)
+
+        self.place_agent(0, 0)
+
+        self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
+
+class Level_UnlockPickupDist(Level_UnlockPickup):
+    """
+    Unlock a door, then pick up an object in another room
+    (with distractors)
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(distractors=True, seed=seed)
+
+class Level_BlockedUnlockPickup(RoomGridLevel):
+    """
+    Unlock a door blocked by an object, then pick up an object
+    in another room
+    """
+
+    def __init__(self, seed=None):
+        room_size = 6
+        super().__init__(
+            num_rows=1,
+            num_cols=2,
+            room_size=room_size,
+            max_steps=16*room_size**2,
+            lang_variation=1,
+            seed=seed
+        )
+    
+    def gen_mission(self):
+        # Add a random object to the room on the right
+        obj, _ = self.add_object(1, 0)
+        # Make sure the two rooms are directly connected by a locked door
+        door, pos = self.add_door(0, 0, 0, locked=True)
+        # Block the door with a ball
+        color = self._rand_elem(COLOR_NAMES)
+        self.grid.set(pos[0]-1, pos[1], Ball(color))
+        # Add a key to unlock the door
+        self.add_object(0, 0, 'key', door.color)
+
+        self.place_agent(0, 0)
+
+        self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
+
+class Level_UnlockForUnlock(RoomGridLevel):
+    """
+    Unlock a door A that requires to unlock a door B before
+    """
+
+    def __init__(self, seed=None):
+        room_size = 6
+        super().__init__(
+            num_rows=1,
+            num_cols=3,
+            room_size=room_size,
+            max_steps=30*room_size**2,
+            lang_variation=1,
+            seed=seed
+        )
+    
+    def gen_mission(self):
+        colors = COLOR_NAMES[:]
+
+        # Add a door of color A connecting left and middle room
+        color1 = self._rand_elem(colors)
+        colors.remove(color1)
+        self.add_door(0, 0, door_idx=0, color=color1)
+
+        # Add a key of color A in the room on the right
+        self.add_object(2, 0, kind="key", color=color1)
+
+        # Add a door of color B connecting middle and right room
+        color2 = self._rand_elem(colors)
+        colors.remove(color2)
+        self.add_door(1, 0, door_idx=0, color=color2)
+
+        # Add a key of color B in the middle room
+        self.add_object(1, 0, kind="key", color=color2)
+
+        obj, _ = self.add_object(0, 0, kind="ball")
+
+        self.place_agent(1, 0)
+
+        self.instrs = [Instr(action="goto", object=Object(obj.type))]
+
 class Level_PickupAbove(RoomGridLevel):
     """
     Pick up an object (in the room above)
     """
 
     def __init__(self, seed=None):
+        room_size = 6
         super().__init__(
-            max_steps=300,
+            room_size=room_size,
+            max_steps=8*room_size**2,
             lang_variation=2,
             seed=seed
         )
@@ -294,10 +412,11 @@ class Level_FindObj(RoomGridLevel):
     This level requires potentially exhaustive exploration
     """
 
-    def __init__(self, room_size=5, max_steps=120, seed=None):
+    def __init__(self, room_size=5, obj_kind=None, seed=None):
+        self.obj_kind = obj_kind
         super().__init__(
             room_size=room_size,
-            max_steps=max_steps,
+            max_steps=20*room_size**2,
             lang_variation=1,
             seed=seed
         )
@@ -306,49 +425,34 @@ class Level_FindObj(RoomGridLevel):
         # Add a random object to a random room
         i = self._rand_int(0, self.num_rows)
         j = self._rand_int(0, self.num_cols)
-        obj, pos = self.add_object(i, j)
+        obj, _ = self.add_object(i, j, kind=self.obj_kind)
         self.place_agent(1, 1)
         self.connect_all()
 
-        self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
+        self.instrs = [Instr(action="pickup", object=Object(obj.type))]
+
+class Level_FindBall(Level_FindObj):
+    """
+    Pick up a ball (in a random room)
+    This level requires potentially exhaustive exploration
+    """
+
+    def __init__(self, room_size=5, seed=None):
+        super().__init__(
+            room_size=room_size,
+            seed=seed
+        )
 
 class Level_FindObjLarge(Level_FindObj):
     """
-    Same as the previous level, but with larger rooms
+    Same as the FindObj level, but with larger rooms
     """
 
     def __init__(self, seed=None):
         super().__init__(
             room_size=7,
-            max_steps=200,
-            seed=seed
-    )
-
-class Level_UnlockPickup(RoomGridLevel):
-    """
-    Unlock a door, then pick up an object in another room.
-    """
-
-    def __init__(self, seed=None):
-        super().__init__(
-            lang_variation=1,
             seed=seed
         )
-
-    def gen_mission(self):
-        # Add a random object to the top-middle room
-        obj, pos = self.add_object(1, 0)
-        # Make sure the two rooms are directly connected by a locked door
-        door, door_pos = self.add_door(1, 1, 3, locked=True)
-        self.add_object(1, 1, 'key', door.color)
-        self.add_distractors()
-        self.place_agent(1, 1)
-        self.connect_all()
-
-        self.instrs = [
-            Instr(action="open", object=Object(door.type, door.color)),
-            Instr(action="pickup", object=Object(obj.type, obj.color))
-        ]
 
 class Level_FourObjects(RoomGridLevel):
     """
@@ -357,8 +461,10 @@ class Level_FourObjects(RoomGridLevel):
     """
 
     def __init__(self, seed=None):
+        room_size=6
         super().__init__(
-            max_steps=300,
+            room_size=room_size,
+            max_steps=20*room_size**2,
             lang_variation=2,
             seed=seed
         )
@@ -396,7 +502,7 @@ class Level_LockedRoom(RoomGridLevel):
         super().__init__(
             room_size=room_size,
             num_rows=num_rows,
-            max_steps=500,
+            max_steps=30*room_size**2,
             lang_variation=3,
             seed=seed,
         )
