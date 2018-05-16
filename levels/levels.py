@@ -106,12 +106,10 @@ class Level_GoToDoor(RoomGridLevel):
         )
 
     def gen_mission(self):
-        colors = COLOR_NAMES[:]
+        door_colors = self._rand_subset(COLOR_NAMES, 4)
         objs = []
 
-        for i in range(4):
-            color = self._rand_elem(colors)
-            colors.remove(color)
+        for i, color in enumerate(door_colors):
             obj, _ = self.add_door(1, 1, door_idx=i, color=color, locked=False)
             objs.append(obj)
 
@@ -136,7 +134,7 @@ class Level_GoToObjDoor(RoomGridLevel):
         for _ in range(4):
             door, _ = self.add_door(1, 1)
             objs.append((door.type, door.color))
-        
+
         self.place_agent(1, 1)
 
         type, color = self._rand_elem(objs)
@@ -261,7 +259,7 @@ class Level_BlockedUnlockPickup(RoomGridLevel):
             lang_variation=1,
             seed=seed
         )
-    
+
     def gen_mission(self):
         # Add a random object to the room on the right
         obj, _ = self.add_object(1, 0)
@@ -292,7 +290,7 @@ class Level_UnlockForUnlock(RoomGridLevel):
             lang_variation=1,
             seed=seed
         )
-    
+
     def gen_mission(self):
         colors = COLOR_NAMES[:]
 
