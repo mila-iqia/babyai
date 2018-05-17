@@ -134,7 +134,6 @@ class Level_GoToObjDoor(RoomGridLevel):
         for _ in range(4):
             door, _ = self.add_door(1, 1)
             objs.append((door.type, door.color))
-
         self.place_agent(1, 1)
 
         type, color = self._rand_elem(objs)
@@ -245,7 +244,7 @@ class Level_UnlockPickupDist(Level_UnlockPickup):
 
 class Level_BlockedUnlockPickup(RoomGridLevel):
     """
-    Unlock a door blocked by an object, then pick up an object
+    Unlock a door blocked by a ball, then pick up a box
     in another room
     """
 
@@ -261,12 +260,12 @@ class Level_BlockedUnlockPickup(RoomGridLevel):
         )
 
     def gen_mission(self):
-        # Add a random object to the room on the right
-        obj, _ = self.add_object(1, 0)
+        # Add a box to the room on the right
+        obj, _ = self.add_object(1, 0, kind="box")
         # Make sure the two rooms are directly connected by a locked door
         door, pos = self.add_door(0, 0, 0, locked=True)
         # Block the door with a ball
-        color = self._rand_elem(COLOR_NAMES)
+        color = self._rand_color()
         self.grid.set(pos[0]-1, pos[1], Ball(color))
         # Add a key to unlock the door
         self.add_object(0, 0, 'key', door.color)
@@ -275,7 +274,7 @@ class Level_BlockedUnlockPickup(RoomGridLevel):
 
         self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
 
-class Level_UnlockForUnlock(RoomGridLevel):
+class Level_UnlockToUnlock(RoomGridLevel):
     """
     Unlock a door A that requires to unlock a door B before
     """
@@ -292,23 +291,19 @@ class Level_UnlockForUnlock(RoomGridLevel):
         )
 
     def gen_mission(self):
-        colors = COLOR_NAMES[:]
+        colors = self._rand_subset(COLOR_NAMES, 2)
 
         # Add a door of color A connecting left and middle room
-        color1 = self._rand_elem(colors)
-        colors.remove(color1)
-        self.add_door(0, 0, door_idx=0, color=color1)
+        self.add_door(0, 0, door_idx=0, color=colors[0])
 
         # Add a key of color A in the room on the right
-        self.add_object(2, 0, kind="key", color=color1)
+        self.add_object(2, 0, kind="key", color=colors[0])
 
         # Add a door of color B connecting middle and right room
-        color2 = self._rand_elem(colors)
-        colors.remove(color2)
-        self.add_door(1, 0, door_idx=0, color=color2)
+        self.add_door(1, 0, door_idx=0, color=colors[1])
 
         # Add a key of color B in the middle room
-        self.add_object(1, 0, kind="key", color=color2)
+        self.add_object(1, 0, kind="key", color=colors[1])
 
         obj, _ = self.add_object(0, 0, kind="ball")
 
@@ -319,6 +314,7 @@ class Level_UnlockForUnlock(RoomGridLevel):
 class Level_PickupAbove(RoomGridLevel):
     """
     Pick up an object (in the room above)
+    This task requires to use the compass to be solved effectively.
     """
 
     def __init__(self, seed=None):
@@ -335,7 +331,6 @@ class Level_PickupAbove(RoomGridLevel):
         obj, pos = self.add_object(1, 0)
         # Make sure the two rooms are directly connected
         self.add_door(1, 1, 3, locked=False)
-        self.add_distractors()
         self.place_agent(1, 1)
         self.connect_all()
 
@@ -438,6 +433,7 @@ class Level_FindBall(Level_FindObj):
     def __init__(self, room_size=5, seed=None):
         super().__init__(
             room_size=room_size,
+            obj_kind="ball",
             seed=seed
         )
 
@@ -472,8 +468,6 @@ class Level_FourObjects(RoomGridLevel):
         self.add_object(1, 2, obj.type, obj.color)
         self.add_object(0, 1, obj.type, obj.color)
         self.add_object(2, 1, obj.type, obj.color)
-
-        self.add_distractors()
 
         # Make sure the start room is directly connected to the
         # four adjacent rooms
