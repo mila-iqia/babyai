@@ -524,6 +524,58 @@ class Level_LockedRoom(RoomGridLevel):
             Instr(action="pickup", object=Object(obj.type, obj.color))
         ]
 
+class Level_1RoomS8(RoomGridLevel):
+    """
+    Pick up the ball in a room of size 8
+    """
+
+    def __init__(self, room_size=8, seed=None):
+        super().__init__(
+            room_size=room_size,
+            num_rows=1,
+            num_cols=1,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        obj, _ = self.add_object(0, 0, kind="ball")
+        self.place_agent()
+
+        self.instrs = [Instr(action="pickup", object=Object(obj.type))]
+
+class Level_1RoomS12(Level_1RoomS8):
+    """
+    Pick up the ball in a room of size 12
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=12,
+            seed=seed
+        )
+
+class Level_1RoomS16(Level_1RoomS8):
+    """
+    Pick up the ball in a room of size 16
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=16,
+            seed=seed
+        )
+
+class Level_1RoomS20(Level_1RoomS8):
+    """
+    Pick up the ball in a room of size 20
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=20,
+            seed=seed
+        )
+
 # Dictionary of levels, indexed by name, lexically sorted
 level_dict = OrderedDict()
 
