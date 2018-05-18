@@ -214,6 +214,8 @@ def gen_surface(ntup, conditions={}, seed=0, lang_variation=None):
 
         if isinstance(ntup, Object):
             s_obj = ntup.type
+            if s_obj is None:
+                s_obj = "thing"
             s_attrs = list([ntup.color, ntup.loc, ntup.state])
             random.shuffle(s_attrs)
             for f in s_attrs:

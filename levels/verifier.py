@@ -43,7 +43,7 @@ class Verifier(ABC):
                 else:
                     type = obj_desc.type
 
-                if cell.type != type:
+                if type != None and cell.type != type:
                     continue
 
                 # Check if object's state matches description
@@ -121,7 +121,7 @@ class InstrSeqVerifier(Verifier):
             self.verifier = GotoVerifier(self.env, instr.object)
         elif instr.action == "pickup":
             self.verifier = PickupVerifier(self.env, instr.object)
-        else:
+        elif instr.action == "drop":
             self.verifier = DropVerifier(self.env, self.obj_to_drop)
 
         self.verifier.state = self.intermediary_state
