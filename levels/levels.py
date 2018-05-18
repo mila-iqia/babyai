@@ -348,13 +348,13 @@ class Level_UnlockToUnlock(RoomGridLevel):
         colors = self._rand_subset(COLOR_NAMES, 2)
 
         # Add a door of color A connecting left and middle room
-        self.add_door(0, 0, door_idx=0, color=colors[0])
+        self.add_door(0, 0, door_idx=0, color=colors[0], locked=True)
 
         # Add a key of color A in the room on the right
         self.add_object(2, 0, kind="key", color=colors[0])
 
         # Add a door of color B connecting middle and right room
-        self.add_door(1, 0, door_idx=0, color=colors[1])
+        self.add_door(1, 0, door_idx=0, color=colors[1], locked=True)
 
         # Add a key of color B in the middle room
         self.add_object(1, 0, kind="key", color=colors[1])

@@ -140,7 +140,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Level id: `BabyAI-OpenRedDoor-v0`
 - Evaluate: image understanding
 
-<p align="center"><img src="media/OpenRedDoor.png" style="max-width: 250px"></p>
+<p align="center"><img src="media/OpenRedDoor.png" width="250"></p>
 
 ### OpenDoor
 
@@ -152,7 +152,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Level id: `BabyAI-OpenDoor-v0`, `BabyAI-OpenDoorColor-v0`, `BabyAI-OpenDoorLoc-v0`
 - Evaluate: image & text understanding, memory in `OpenDoor` and `OpenDoorLoc`
 
-<p align="center"><img src="media/OpenDoor.png" style="max-width: 250px"></p>
+<p align="center"><img src="media/OpenDoor.png" width="250"></p>
 
 ### GoToObjDoor
 
@@ -161,7 +161,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Level id: `BabyAI-GoToObjDoor-v0`
 - Evaluate: image & text understanding
 
-<p align="center"><img src="media/GoToObjDoor.png" style="max-width: 250px"></p>
+<p align="center"><img src="media/GoToObjDoor.png" width="250"></p>
 
 ### ActionObjDoor
 
@@ -170,7 +170,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Level id: `BabyAI-ActionObjDoor-v0`
 - Evaluate: image & text understanding
 
-<p align="center"><img src="media/ActionObjDoor.png" style="max-width: 250px"></p>
+<p align="center"><img src="media/ActionObjDoor.png" width="250"></p>
 
 ### Unlock
 
@@ -180,8 +180,8 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Evaluate: image understanding, memory in `UnlockDist`
 
 <p align="center">
-    <img src="media/Unlock.png" style="max-width: 250px; margin-right: 10px">
-    <img src="media/UnlockDist.png" style="max-width: 250px">
+    <img src="media/Unlock.png" width="250">
+    <img src="media/UnlockDist.png" width="250">
 </p>
 
 ### UnlockPickup
@@ -192,8 +192,8 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Evaluate: image understanding, memory in `UnlockPickupDist`
 
 <p align="center">
-    <img src="media/UnlockPickup.png" style="max-width: 250px; margin-right: 10px">
-    <img src="media/UnlockPickupDist.png" style="max-width: 250px">
+    <img src="media/UnlockPickup.png" width="250">
+    <img src="media/UnlockPickupDist.png" width="250">
 </p>
 
 ### BlockedUnlockPickup
@@ -203,7 +203,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Level id: `BabyAI-BlockedUnlockPickup-v0`
 - Evaluate: image understanding
 
-<p align="center"><img src="media/BlockedUnlockPickup.png" style="max-width: 250px"></p>
+<p align="center"><img src="media/BlockedUnlockPickup.png" width="250"></p>
 
 ### UnlockToUnlock
 
@@ -212,7 +212,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Level id: `BabyAI-UnlockToUnlock-v0`
 - Evaluate: image understanding
 
-<p align="center"><img src="media/UnlockToUnlock.png" style="max-width: 250px"></p>
+<p align="center"><img src="media/UnlockToUnlock.png" width="250"></p>
 
 ### PickupDist
 
@@ -221,7 +221,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Level id: `BabyAI-PickupDist-v0`
 - Evaluate: image & text understanding
 
-<p align="center"><img src="media/PickupDist.png" style="max-width: 250px"></p>
+<p align="center"><img src="media/PickupDist.png" width="250"></p>
 
 ### PickupAbove
 
@@ -230,7 +230,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Level id: `BabyAI-PickupAbove-v0`
 - Evaluate: image & text understanding, memory
 
-<p align="center"><img src="media/PickupAbove.png" style="max-width: 250px"></p>
+<p align="center"><img src="media/PickupAbove.png" width="250"></p>
 
 ### OpenRedBlueDoors
 
@@ -239,7 +239,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Level id: `BabyAI-OpenRedBlueDoors-v0`
 - Evaluate: image understanding, memory
 
-<p align="center"><img src="media/OpenRedBlueDoors.png" style="max-width: 250px"></p>
+<p align="center"><img src="media/OpenRedBlueDoors.png" width="250"></p>
 
 ### OpenTwoDoors
 
@@ -248,7 +248,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Level id: `BabyAI-OpenTwoDoors-v0`
 - Evaluate: image & text understanding, memory
 
-<p align="center"><img src="media/OpenTwoDoors.png" style="max-width: 250px"></p>
+<p align="center"><img src="media/OpenTwoDoors.png" width="250"></p>
 
 ### FindObj
 
@@ -258,9 +258,9 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Evaluate: image understanding, memory
 
 <p align="center">
-    <img src="media/FindObjS5.png" style="max-width: 250px; margin-right: 10px">
-    <img src="media/FindObjS6.png" style="max-width: 250px; margin-right: 10px">
-    <img src="media/FindObjS7.png" style="max-width: 250px">
+    <img src="media/FindObjS5.png" width="250">
+    <img src="media/FindObjS6.png" width="250">
+    <img src="media/FindObjS7.png" width="250">
 </p>
 
 ### FourObjs
@@ -271,9 +271,9 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Evaluate: image understanding, memory
 
 <p align="center">
-    <img src="media/FourObjsS5.png" style="max-width: 250px; margin-right: 10px">
-    <img src="media/FourObjsS6.png" style="max-width: 250px; margin-right: 10px">
-    <img src="media/FourObjsS7.png" style="max-width: 250px">
+    <img src="media/FourObjsS5.png" width="250">
+    <img src="media/FourObjsS6.png" width="250">
+    <img src="media/FourObjsS7.png" width="250">
 </p>
 
 ### HiddenKeyCorridor
@@ -283,7 +283,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Level id: `BabyAI-HiddenKeyCorridor-v0`
 - Evaluate: image understanding, memory
 
-<p align="center"><img src="media/HiddenKeyCorridor.png" style="max-width: 250px"></p>
+<p align="center"><img src="media/HiddenKeyCorridor.png" width="250"></p>
 
 ### 1Room
 
@@ -293,8 +293,8 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Evaluate: image understanding, memory
 
 <p align="center">
-    <img src="media/1RoomS8.png" style="max-width: 250px; margin-right: 10px">
-    <img src="media/1RoomS12.png" style="max-width: 250px; margin-right: 10px">
-    <img src="media/1RoomS16.png" style="max-width: 250px; margin-right: 10px">
-    <img src="media/1RoomS20.png" style="max-width: 250px">
+    <img src="media/1RoomS8.png" width="250">
+    <img src="media/1RoomS12.png" width="250">
+    <img src="media/1RoomS16.png" width="250">
+    <img src="media/1RoomS20.png" width="250">
 </p>
