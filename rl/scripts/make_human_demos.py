@@ -3,24 +3,34 @@
 import sys
 import copy
 import random
-from optparse import OptionParser
-
+import argparse
+import datetime
+import gym
+import levels
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QInputDialog
 from PyQt5.QtWidgets import QLabel, QTextEdit, QFrame
 from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
 
-import time
-
-import datetime
-
-# Gym environment used by the Baby AI Game
-import gym
-from gym_minigrid import minigrid
-
 import utils
 
-import levels
+parser = argparse.ArgumentParser()
+parser.add_argument("--env", required=True,
+                    help="name of the environment to be loaded (REQUIRED)")
+parser.add_argument("--seed", type=int, default=1,
+                    help="random seed (default: 1)")
+parser.add_argument("--shift", type=int, default=None,
+                    help="number of times the environment is reset at the beginning (default: NUM_DEMOS")
+parser.add_argument("--show-full-view", action="store_true", default=False,
+                    help="show the full environment view")
+args = parser.parse_args()
+
+def synthesize_demos(demos):
+    print('{} demonstrations'.format(len(demos)))
+    demo_lens = [len(demo) for demo in demos]
+    if len(demos) > 0:
+        print('Demo sizes: {}'.format(demo_lens))
+        print('Synthesis: {}'.format(utils.synthesize(demo_lens)))
 
 class ImgWidget(QLabel):
     """
@@ -36,7 +46,7 @@ class ImgWidget(QLabel):
 class AIGameWindow(QMainWindow):
     """Application window for the baby AI game"""
 
-    def __init__(self, env, env_name, seed):
+    def __init__(self, env):
         super().__init__()
         self.initUI()
 
@@ -46,20 +56,17 @@ class AIGameWindow(QMainWindow):
         self.env = env
         self.lastObs = None
 
-        # Demonstrations data
-        self.demos = []
-        self.env_name = env_name
-        self.seed = seed
-
+        # Demonstrations
+        self.demos = utils.load_demos(args.env, human=True)
+        synthesize_demos(self.demos)
         self.current_demo = []
 
-        self.env.seed(self.seed)
-        self.resetEnv(starting=2)
+        self.shift = len(self.demos) if args.shift is None else args.shift
+
+        self.shiftEnv()
 
         # Pointing and naming data
         self.pointingData = []
-
-
 
     def initUI(self):
         """Create and connect the UI elements"""
@@ -111,7 +118,7 @@ class AIGameWindow(QMainWindow):
         self.stepsLabel.setAlignment(Qt.AlignCenter)
         self.stepsLabel.setMinimumSize(60, 10)
         restartBtn = QPushButton("Restart")
-        restartBtn.clicked.connect(self.restart)
+        restartBtn.clicked.connect(self.shiftEnv)
         stepsBox = QHBoxLayout()
         stepsBox.addStretch(1)
         stepsBox.addWidget(QLabel("Steps remaining"))
@@ -138,13 +145,9 @@ class AIGameWindow(QMainWindow):
     def createButtons(self):
         """Create the row of UI buttons"""
 
-        saveButton = QPushButton("Save")
-        saveButton.clicked.connect(self.saveClicked)
-
         # Assemble the buttons into a horizontal layout
         hbox = QHBoxLayout()
         hbox.addStretch(1)
-        hbox.addWidget(saveButton)
         hbox.addStretch(1)
 
         return hbox
@@ -168,7 +171,7 @@ class AIGameWindow(QMainWindow):
             self.stepEnv(actions.toggle)
 
         elif e.key() == Qt.Key_Backspace:
-            self.restart()
+            self.shiftEnv()
         elif e.key() == Qt.Key_Escape:
             self.close()
 
@@ -268,56 +271,35 @@ class AIGameWindow(QMainWindow):
         print('negative examples: %d' % numNeg)
         print('total examples: %d' % len(self.pointingData))
 
+    def shiftEnv(self):
+        assert self.shift <= len(self.demos)
 
-    def saveClicked(self):
-        self.missionBox.append('Saving...')
-        self.missionBox.append('There are {} demonstrations'.format(len(self.demos)))
-        len_demos = ', '.join([str(len(demo)) for demo in self.demos])
-        self.missionBox.append('The demo sizes are respectively: {}.'.format(len_demos))
+        self.env.seed(args.seed)
+        self.resetEnv()
+        for _ in range(self.shift):
+            self.resetEnv()
 
-        suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-
-        demos_name = "{}_demos_seed_{}_{}.demo".format(len(self.demos),
-                                                        self.seed,
-                                                        suffix)
-        if len(self.demos) > 0:
-            utils.save_demos(self.env_name, self.demos, demos_name, human=True)
-            self.missionBox.append('Saved... Please quit now !')
-        else:
-            self.missionBox.append('Nothing to save !')
-
-    def restart(self):
-        self.env.seed(self.seed)
-        for _ in range(len(self.demos)):
-            self.resetEnv(starting=0)
-        self.resetEnv(starting=1)
-
-    def resetEnv(self, starting=1):
+    def resetEnv(self):
         self.current_demo = []
+        
         obs = self.env.reset()
         self.lastObs = obs
-        self.showEnv(obs, starting=starting)
+        self.showEnv(obs)
 
+        self.missionBox.setText(obs["mission"])
 
-    def showEnv(self, obs, starting=0):
+    def showEnv(self, obs):
         unwrapped = self.env.unwrapped
 
         # Render and display the environment
-        pixmap = self.env.render(mode='pixmap')
-        self.imgLabel.setPixmap(pixmap)
+        if args.show_full_view:
+            pixmap = self.env.render(mode='pixmap')
+            self.imgLabel.setPixmap(pixmap)
 
         # Render and display the agent's view
         image = obs['image']
         obsPixmap = unwrapped.get_obs_render(image)
         self.obsImgLabel.setPixmap(obsPixmap)
-
-        # Update the mission text
-        mission = obs['mission']
-        text = "MISSION: {}. To restart on the same instance, click Restart".format(mission)
-        if starting == 2:
-            self.missionBox.setPlainText(text)
-        elif starting == 1:
-            self.missionBox.append(text)
 
         # Set the steps remaining
         stepsRem = unwrapped.steps_remaining
@@ -336,26 +318,24 @@ class AIGameWindow(QMainWindow):
         self.lastObs = obs
 
         if done:
-            self.demos.append(self.current_demo)
+            if self.shift < len(self.demos):
+                self.demos[self.shift] = self.current_demo
+            else:
+                self.demos.append(self.current_demo)
+            utils.save_demos(self.demos, args.env, human=True)
+            self.missionBox.append('Demonstrations are saved.')
+            synthesize_demos(self.demos)
+
+            self.shift += 1
             self.resetEnv()
 
 def main(argv):
-    parser = OptionParser()
-    parser.add_option(
-        "--env",
-        help="gym environment to load",
-        default='FindObj'
-    )
-    parser.add_option("--seed", type=int, default=1337,
-                      help="random seed (default: 1337)")
-    (options, args) = parser.parse_args()
-
     # Load the gym environment
-    env = gym.make('BabyAI-{}-v0'.format(options.env))
+    env = gym.make(args.env)
 
     # Create the application window
     app = QApplication(sys.argv)
-    window = AIGameWindow(env, options.env, options.seed)
+    window = AIGameWindow(env)
 
     # Run the application
     sys.exit(app.exec_())
