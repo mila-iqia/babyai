@@ -277,12 +277,11 @@ class AIGameWindow(QMainWindow):
 
         suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
 
-        demos_name = "{}/human/{}_demos_seed_{}_{}.demo".format(self.env_name,
-                                                                len(self.demos),
-                                                                self.seed,
-                                                                suffix)
+        demos_name = "{}_demos_seed_{}_{}.demo".format(len(self.demos),
+                                                        self.seed,
+                                                        suffix)
         if len(self.demos) > 0:
-            utils.save_demos(self.demos, demos_name)
+            utils.save_demos(self.env_name, self.demos, demos_name, human=True)
             self.missionBox.append('Saved... Please quit now !')
         else:
             self.missionBox.append('Nothing to save !')
@@ -343,20 +342,20 @@ class AIGameWindow(QMainWindow):
 def main(argv):
     parser = OptionParser()
     parser.add_option(
-        "--env-name",
+        "--env",
         help="gym environment to load",
-        default='BabyAI-FindObj-v0'
+        default='FindObj'
     )
     parser.add_option("--seed", type=int, default=1337,
                       help="random seed (default: 1337)")
     (options, args) = parser.parse_args()
 
     # Load the gym environment
-    env = gym.make(options.env_name)
+    env = gym.make('BabyAI-{}-v0'.format(options.env))
 
     # Create the application window
     app = QApplication(sys.argv)
-    window = AIGameWindow(env, options.env_name.split('-')[1], options.seed)
+    window = AIGameWindow(env, options.env, options.seed)
 
     # Run the application
     sys.exit(app.exec_())
