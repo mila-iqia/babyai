@@ -62,8 +62,8 @@ parser.add_argument("--model-instr", action="store_true", default=False,
                     help="use instructions in the model")
 parser.add_argument("--model-mem", action="store_true", default=False,
                     help="use memory in the model")
-parser.add_argument("--model-cnn", action="store_true", default=False,
-                    help="use ConvNet in the model")
+parser.add_argument("--arch", default='cnn1',
+                    help="Architecture of Actor")
 args = parser.parse_args()
 
 # Set seed for all randomness sources
@@ -86,7 +86,7 @@ default_model_name = "{}/{}_{}_{}_{}_seed{}_lr{:.1e}_{}".format(
     args.env, args.algo,
     "instr" if args.model_instr else "noinstr",
     "mem" if args.model_mem else "nomem",
-    "cnn" if args.model_cnn else "mlp",
+    args.arch,
     args.seed, args.lr, suffix)
 
 model_name = args.model or default_model_name
@@ -99,7 +99,7 @@ obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space
 # Define actor-critic model
 
 acmodel = utils.load_model(obss_preprocessor.obs_space, envs[0].action_space, model_name,
-                           args.model_instr, args.model_mem, args.model_cnn)
+                           args.model_instr, args.model_mem, args.arch)
 if torch.cuda.is_available():
     acmodel.cuda()
 

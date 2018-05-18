@@ -49,7 +49,7 @@ class RoomGridLevel(RoomGrid):
         # If we've successfully completed the mission
         if self.verifier.step() is True:
             done = True
-            reward = 1
+            reward = self._reward()
 
         return obs, reward, done, info
 
@@ -141,7 +141,7 @@ class Level_OpenDoor(RoomGridLevel):
         # If we've successfully completed the mission
         if self.verifier.step() is True:
             done = True
-            reward = 1
+            reward = self._reward()
         # If we've opened the wrong door
         elif self.open_verifier.step() is True:
             done = True
@@ -412,7 +412,7 @@ class Level_PickupDist(RoomGridLevel):
         # If we've successfully completed the mission
         if self.verifier.step() is True:
             done = True
-            reward = 1
+            reward = self._reward()
         # If we've picked up the wrong object
         elif self.pickup_verifier.step() is True:
             done = True
@@ -501,7 +501,7 @@ class Level_OpenTwoDoors(RoomGridLevel):
         # If we've successfully completed the mission
         if self.verifier.step() is True:
             done = True
-            reward = 1
+            reward = self._reward()
         # If we've opened the wrong door
         elif self.open_last_verifier.step() is True:
             done = True

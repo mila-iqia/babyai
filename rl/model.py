@@ -16,19 +16,22 @@ def initialize_parameters(m):
 
 
 class ACModel(nn.Module, torch_rl.RecurrentACModel):
-    def __init__(self, obs_space, action_space, use_instr, use_memory, use_cnn):
+    def __init__(self, obs_space, action_space, use_instr, use_memory, arch):
         super().__init__()
 
         # Decide which components are enabled
         self.use_instr = use_instr
         self.use_memory = use_memory
-        self.use_cnn = use_cnn
+
+        # Define architecture
+        assert arch in ('mlp', 'cnn1', 'cnn2', 'cnn3', 'cnn4')
+        self.use_cnn = arch != 'mlp'
 
         # Define image embedding
         self.image_embedding_size = 64
-        if not self.use_cnn:
+        if arch == 'mlp':
             self.image_fc = nn.Linear(obs_space["image"], self.image_embedding_size)
-        else:
+        elif arch == 'cnn1':
             self.image_fc = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=16,
                                                     kernel_size=(2, 2)),
                                           nn.ReLU(),
@@ -40,6 +43,37 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
                                                     kernel_size=(2, 2)),
                                           nn.ReLU()
                                           )
+        elif arch == 'cnn2':
+            self.image_fc = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=16,
+                                                    kernel_size=(3, 3)),
+                                          nn.ReLU(),
+                                          nn.MaxPool2d(kernel_size=(2, 2), stride=2, ceil_mode=True),
+                                          nn.Conv2d(in_channels=16, out_channels=self.image_embedding_size,
+                                                    kernel_size=(3, 3)),
+                                          nn.ReLU()
+                                          )
+        elif arch == 'cnn3':
+            self.image_fc = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=16,
+                                                    kernel_size=(3, 3)),
+                                          nn.ReLU(),
+                                          nn.Conv2d(in_channels=16, out_channels=32,
+                                                    kernel_size=(3, 3)),
+                                          nn.ReLU(),
+                                          nn.Conv2d(in_channels=32, out_channels=self.image_embedding_size,
+                                                    kernel_size=(3, 3)),
+                                          nn.ReLU()
+                                          )
+
+        else:  # arch == 'cnn4
+            self.image_fc = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=16,
+                                                    kernel_size=(3, 3), padding=2),
+                                          nn.ReLU(),
+                                          nn.MaxPool2d(kernel_size=(3, 3), stride=3),
+                                          nn.Conv2d(in_channels=16, out_channels=self.image_embedding_size,
+                                                    kernel_size=(3, 3)),
+                                          nn.ReLU()
+                                          )
+
 
         # Define memory
         if self.use_memory:
