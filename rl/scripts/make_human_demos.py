@@ -292,7 +292,7 @@ class AIGameWindow(QMainWindow):
         unwrapped = self.env.unwrapped
 
         # Render and display the environment
-        if args.show_full_view:
+        if args.full_view:
             pixmap = self.env.render(mode='pixmap')
             self.imgLabel.setPixmap(pixmap)
 
