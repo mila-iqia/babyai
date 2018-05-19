@@ -311,6 +311,7 @@ class AIGameWindow(QMainWindow):
             action = random.randint(0, self.env.action_space.n - 1)
 
         obs, reward, done, info = self.env.step(action)
+        print(done, reward)
 
         self.current_demo.append((self.lastObs, action))
 
@@ -318,16 +319,19 @@ class AIGameWindow(QMainWindow):
         self.lastObs = obs
 
         if done:
-            if self.shift < len(self.demos):
-                self.demos[self.shift] = self.current_demo
-            else:
-                self.demos.append(self.current_demo)
-            utils.save_demos(self.demos, args.env, human=True)
-            self.missionBox.append('Demonstrations are saved.')
-            synthesize_demos(self.demos)
+            if reward > 0:  # i.e. we did not lose
+                if self.shift < len(self.demos):
+                    self.demos[self.shift] = self.current_demo
+                else:
+                    self.demos.append(self.current_demo)
+                utils.save_demos(self.demos, args.env, human=True)
+                self.missionBox.append('Demonstrations are saved.')
+                synthesize_demos(self.demos)
 
-            self.shift += 1
-            self.resetEnv()
+                self.shift += 1
+                self.resetEnv()
+            else:
+                self.shiftEnv()
 
 def main(argv):
     # Load the gym environment

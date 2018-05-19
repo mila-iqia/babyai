@@ -11,27 +11,20 @@ import utils
 # Parse arguments
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--env", required=True, default='FindObj',
+parser.add_argument("--env", required=True,
                     help="name of the environment to be run (REQUIRED)")
-parser.add_argument("--demos-name", required=True,
-                    help="filename containing the demos")
 parser.add_argument("--rl-generated", action="store_true", default=False,
                     help="if not specified, the human demos will be loaded")
 args = parser.parse_args()
 
 # Load the demos and the corresponding information
 
-demos_info = utils.load_demos(args.env, args.demos_name, human=not args.rl_generated)
-seed = demos_info['seed']
-demos = demos_info['demos']
-date = demos_info['date']  # unused
-potential_error = "The number of demos doesn't match the meta-data ({}, {})".format(demos_info['n_demos'], len(demos))
-assert demos_info['n_demos'] == len(demos), potential_error
+demos = utils.load_demos(args.env, human=not args.rl_generated)
 
 # Generate environment
 
-env = gym.make('BabyAI-{}-v0'.format(args.env))
-env.seed(seed)
+env = gym.make(args.env)
+env.seed(1)
 
 # Define the demonstrator
 
