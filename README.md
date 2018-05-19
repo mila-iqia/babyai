@@ -186,7 +186,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 ### UnlockPickup
 
-- Environment: The agent is placed in a room with a key and a locked door. The door opens onto a room with an object. Rooms have either no distractors in `UnlockPickup` or 4 distractors in `UnlockPickupDist`.
+- Environment: The agent is placed in a room with a key and a locked door. The door opens onto a room with a box. Rooms have either no distractors in `UnlockPickup` or 4 distractors in `UnlockPickupDist`.
 - Instruction: Pick up an object of a given type and color
 - Level id: `BabyAI-UnlockPickup-v0`, `BabyAI-UnlockPickupDist-v0`
 - Evaluate: image understanding, memory in `UnlockPickupDist`
@@ -216,7 +216,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 ### PickupDist
 
-- Environment: The agent is placed in a room with 5 objects. The environment is done when an object is picked up.
+- Environment: The agent is placed in a room with 5 objects.
 - Instruction: Pick up an object of a given type and color
 - Level id: `BabyAI-PickupDist-v0`
 - Evaluate: image & text understanding
@@ -278,7 +278,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 ### HiddenKeyCorridor
 
-- Environment: The agent is placed in the middle of the corridor. One of the rooms is locked and contains an object. Another room contains a key for opening the previous one.
+- Environment: The agent is placed in the middle of the corridor. One of the rooms is locked and contains a ball. Another room contains a key for opening the previous one.
 - Instruction: Pick up an object of a given type
 - Level id: `BabyAI-HiddenKeyCorridor-v0`
 - Evaluate: image understanding, memory
