@@ -260,7 +260,7 @@ class Level_UnlockDist(Level_Unlock):
 
 class Level_UnlockPickup(RoomGridLevel):
     """
-    Unlock a door, then pick up an object in another room
+    Unlock a door, then pick up a box in another room
     """
 
     def __init__(self, distractors=False, seed=None):
@@ -395,6 +395,29 @@ class Level_PickupDist(RoomGridLevel):
             color = None
 
         self.instrs = [Instr(action="pickup", object=Object(type, color))]
+
+    def reset(self, **kwargs):
+        obs = super().reset(**kwargs)
+
+        # Recreate the verifier
+        self.verifier = InstrSeqVerifier(self, self.instrs)
+        # Recreate the pickup verifier
+        self.pickup_verifier = PickupVerifier(self, Object())
+
+        return obs
+
+    def step(self, action):
+        obs, reward, done, info = super().step(action)
+
+        # If we've successfully completed the mission
+        if self.verifier.step() is True:
+            done = True
+            reward = self._reward()
+        # If we've picked up the wrong object
+        elif self.pickup_verifier.step() is True:
+            done = True
+
+        return obs, reward, done, info
 
 class Level_PickupAbove(RoomGridLevel):
     """
@@ -604,11 +627,13 @@ class Level_FourObjsS7(Level_FourObjsS5):
 
 class Level_HiddenKeyCorridor(RoomGridLevel):
     """
-    An object is behind a locked door, the key is placed in a
+    A ball is behind a locked door, the key is placed in a
     random room.
     """
 
-    def __init__(self, num_rows=3, room_size=6, seed=None):
+    def __init__(self, num_rows=3, obj_type="ball", room_size=6, seed=None):
+        self.obj_type = obj_type
+
         super().__init__(
             room_size=room_size,
             num_rows=num_rows,
@@ -626,7 +651,7 @@ class Level_HiddenKeyCorridor(RoomGridLevel):
         # Add an object behind the locked door
         room_idx = self._rand_int(0, 3)
         door, _ = self.add_door(2, room_idx, 2, locked=True)
-        obj, _ = self.add_object(2, room_idx, kind="ball")
+        obj, _ = self.add_object(2, room_idx, kind=self.obj_type)
 
         # Add a key in a random room on the left side
         self.add_object(0, self._rand_int(0, 3), 'key', door.color)
