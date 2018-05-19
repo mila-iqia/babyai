@@ -21,7 +21,7 @@ parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
 parser.add_argument("--shift", type=int, default=None,
                     help="number of times the environment is reset at the beginning (default: NUM_DEMOS")
-parser.add_argument("--show-full-view", action="store_true", default=False,
+parser.add_argument("--full-view", action="store_true", default=False,
                     help="show the full environment view")
 args = parser.parse_args()
 
