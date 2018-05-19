@@ -13,6 +13,8 @@ import utils
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to be run (REQUIRED)")
+parser.add_argument("--seed", type=int, default=1,
+                    help="random seed (default: 1)")
 parser.add_argument("--rl-generated", action="store_true", default=False,
                     help="if not specified, the human demos will be loaded")
 args = parser.parse_args()
@@ -24,7 +26,7 @@ demos = utils.load_demos(args.env, human=not args.rl_generated)
 # Generate environment
 
 env = gym.make(args.env)
-env.seed(1)
+env.seed(args.seed)
 
 # Define the demonstrator
 
