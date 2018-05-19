@@ -37,17 +37,19 @@ class Verifier(ABC):
                 if cell == None:
                     continue
 
-                # Check if object's type matches description
-                if obj_desc.type == "door" and obj_desc.state == "locked":
-                    type = "locked_door"
+                if cell.type == "locked_door":
+                    type = "door"
+                    state = "locked"
                 else:
-                    type = obj_desc.type
+                    type = cell.type
+                    state = None
 
-                if type != None and cell.type != type:
+                # Check if object's type matches description                
+                if obj_desc.type != None and type != obj_desc.type:
                     continue
 
                 # Check if object's state matches description
-                if obj_desc.state in ["closed", "locked"] and cell.is_open:
+                if obj_desc.state != None and state != obj_desc.state:
                     continue
 
                 # Check if object's color matches description
@@ -201,8 +203,6 @@ class OpenVerifier(InstrVerifier):
     def __init__(self, env, obj):
         super().__init__(env)
 
-        if obj.state == None:
-            obj.state = "closed"
         self.obj_poss = self._obj_desc_to_poss(obj)
         self.obj_cells = [self.env.grid.get(*pos) for pos in self.obj_poss]
 

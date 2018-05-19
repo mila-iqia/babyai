@@ -277,7 +277,7 @@ class Level_UnlockPickup(RoomGridLevel):
 
     def gen_mission(self):
         # Add a random object to the room on the right
-        obj, _ = self.add_object(1, 0)
+        obj, _ = self.add_object(1, 0, kind="box")
         # Make sure the two rooms are directly connected by a locked door
         door, _ = self.add_door(0, 0, 0, locked=True)
         # Add a key to unlock the door
@@ -348,13 +348,13 @@ class Level_UnlockToUnlock(RoomGridLevel):
         colors = self._rand_subset(COLOR_NAMES, 2)
 
         # Add a door of color A connecting left and middle room
-        self.add_door(0, 0, door_idx=0, color=colors[0])
+        self.add_door(0, 0, door_idx=0, color=colors[0], locked=True)
 
         # Add a key of color A in the room on the right
         self.add_object(2, 0, kind="key", color=colors[0])
 
         # Add a door of color B connecting middle and right room
-        self.add_door(1, 0, door_idx=0, color=colors[1])
+        self.add_door(1, 0, door_idx=0, color=colors[1], locked=True)
 
         # Add a key of color B in the middle room
         self.add_object(1, 0, kind="key", color=colors[1])
@@ -395,29 +395,6 @@ class Level_PickupDist(RoomGridLevel):
             color = None
 
         self.instrs = [Instr(action="pickup", object=Object(type, color))]
-
-    def reset(self, **kwargs):
-        obs = super().reset(**kwargs)
-
-        # Recreate the verifier
-        self.verifier = InstrSeqVerifier(self, self.instrs)
-        # Recreate the pickup verifier
-        self.pickup_verifier = PickupVerifier(self, Object())
-
-        return obs
-
-    def step(self, action):
-        obs, reward, done, info = super().step(action)
-
-        # If we've successfully completed the mission
-        if self.verifier.step() is True:
-            done = True
-            reward = self._reward()
-        # If we've picked up the wrong object
-        elif self.pickup_verifier.step() is True:
-            done = True
-
-        return obs, reward, done, info
 
 class Level_PickupAbove(RoomGridLevel):
     """
@@ -649,7 +626,7 @@ class Level_HiddenKeyCorridor(RoomGridLevel):
         # Add an object behind the locked door
         room_idx = self._rand_int(0, 3)
         door, _ = self.add_door(2, room_idx, 2, locked=True)
-        obj, _ = self.add_object(2, room_idx)
+        obj, _ = self.add_object(2, room_idx, kind="ball")
 
         # Add a key in a random room on the left side
         self.add_object(0, self._rand_int(0, 3), 'key', door.color)
