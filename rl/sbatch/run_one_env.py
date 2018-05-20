@@ -7,9 +7,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True, default="UnlockPickup",
                     help="name of the environment to train on (REQUIRED)")
 parser.add_argument("--tune_lr", action="store_true", default=False,
-                    help="use ConvNet in the model")
+                    help="tune lr")
 parser.add_argument("--use_gpu", action="store_true", default=False,
-                    help="use ConvNet in the model")
+                    help="use gpu")
 args = parser.parse_args()
 
 if args.tune_lr:
