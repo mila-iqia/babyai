@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="VcsDirectoryMappings">
-    <mapping directory="" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/../../../Courses/IFT6135/project/mos" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/../pytorch-a2c-ppo" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/../../pytorch-a2c-ppo" vcs="Git" />
-  </component>
-</project>
