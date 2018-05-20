@@ -64,6 +64,9 @@ parser.add_argument("--model-mem", action="store_true", default=False,
                     help="use memory in the model")
 parser.add_argument("--arch", default='cnn1',
                     help="Architecture of Actor")
+parser.add_argument("--exp-name", default=None,
+                    help="Name of the experiment to run.")
+
 args = parser.parse_args()
 
 # Set seed for all randomness sources
@@ -80,9 +83,13 @@ for i in range(args.procs):
 
 # Define model name
 
-suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
+prefix = datetime.datetime.now().strftime("%y-%m-%d")
+suffix = datetime.datetime.now().strftime("%H-%M-%S")
 
-default_model_name = "{}/{}_{}_{}_{}_seed{}_lr{:.1e}_{}".format(
+
+
+default_model_name = "{}/{}{}/{}_{}_{}_{}_seed{}_lr{:.1e}_{}".format(
+    prefix, args.exp_name + '/' if args.exp_name else '',
     args.env, args.algo,
     "instr" if args.model_instr else "noinstr",
     "mem" if args.model_mem else "nomem",
@@ -119,7 +126,9 @@ else:
 
 # Define logger and tensorboard writer
 
-log_name = model_name + ("_" + suffix if args.model is not None else "")
+# log_name = model_name + ("_" + suffix if args.model is else "")
+
+log_name = model_name
 
 logger = utils.Logger(log_name)
 if args.tb:
