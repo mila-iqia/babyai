@@ -84,3 +84,9 @@ print("F {} | FPS {:.0f} | D {} | R:x̄σmM {:.2f} {:.2f} {:.2f} {:.2f} | F:x̄�
       .format(num_frames, fps, duration,
               *return_per_episode.values(),
               *num_frames_per_episode.values()))
+
+indexes = sorted(range(len(log["return_per_episode"])), key=lambda k: log["return_per_episode"][k])
+n = 10
+print("{} worst episodes:".format(n))
+for i in indexes[:n]:
+    print("- episode {}: R={}, F={}".format(i, log["return_per_episode"][i], log["num_frames_per_episode"][i]))
