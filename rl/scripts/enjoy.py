@@ -19,6 +19,8 @@ parser.add_argument("--demos-origin", default=None,
                     help="origin of the demonstrations: human | agent (REQUIRED or --model REQUIRED)")
 parser.add_argument("--seed", type=int, default=None,
                     help="random seed (default: 0 if model agent, 1 if demo agent)")
+parser.add_argument("--shift", type=int, default=0,
+                    help="number of times the environment is reset at the beginning (default: 0)")
 parser.add_argument("--deterministic", action="store_true", default=False,
                     help="action with highest probability is selected for model agent")
 args = parser.parse_args()
@@ -42,6 +44,8 @@ agent = utils.load_agent(args, env)
 
 # Run the agent
 
+for _ in range(args.shift):
+    env.reset()
 obs = env.reset()
 print("Mission: {}".format(obs["mission"]))
 
