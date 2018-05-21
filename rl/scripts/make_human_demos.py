@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
 
 import utils
 
+# Parse arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to be loaded (REQUIRED)")
@@ -24,13 +25,6 @@ parser.add_argument("--shift", type=int, default=None,
 parser.add_argument("--full-view", action="store_true", default=False,
                     help="show the full environment view")
 args = parser.parse_args()
-
-def synthesize_demos(demos):
-    print('{} demonstrations'.format(len(demos)))
-    demo_lens = [len(demo) for demo in demos]
-    if len(demos) > 0:
-        print('Demo sizes: {}'.format(demo_lens))
-        print('Synthesis: {}'.format(utils.synthesize(demo_lens)))
 
 class ImgWidget(QLabel):
     """
@@ -58,7 +52,7 @@ class AIGameWindow(QMainWindow):
 
         # Demonstrations
         self.demos = utils.load_demos(args.env, human=True)
-        synthesize_demos(self.demos)
+        utils.synthesize_demos(self.demos)
         self.current_demo = []
 
         self.shift = len(self.demos) if args.shift is None else args.shift
@@ -325,7 +319,7 @@ class AIGameWindow(QMainWindow):
                     self.demos.append(self.current_demo)
                 utils.save_demos(self.demos, args.env, human=True)
                 self.missionBox.append('Demonstrations are saved.')
-                synthesize_demos(self.demos)
+                utils.synthesize_demos(self.demos)
 
                 self.shift += 1
                 self.resetEnv()
@@ -333,7 +327,7 @@ class AIGameWindow(QMainWindow):
                 self.shiftEnv()
 
 def main(argv):
-    # Load the gym environment
+    # Generate environment
     env = gym.make(args.env)
 
     # Create the application window

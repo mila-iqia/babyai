@@ -18,21 +18,8 @@ def seed(seed):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
-def check_2_obs_equal(obs1, obs2):
-    if not (obs1.keys() == obs2.keys()):
-        return False
-    for key in obs1.keys():
-        if type(obs1[key]) in (str, int):
-            if not(obs1[key] == obs2[key]):
-                return False
-        else:
-            if not (obs1[key] == obs2[key]).all():
-                return False
-    return True
-
-from utils.agent import Agent
+from utils.agent import load_agent
+from utils.demos import load_demos, save_demos, synthesize_demos
 from utils.format import ObssPreprocessor, reshape_reward
 from utils.log import get_log_path, synthesize, Logger
 from utils.model import load_model, save_model
-from utils.demos import load_demos, save_demos
-from utils.demonstrator import Demonstrator
