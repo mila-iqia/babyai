@@ -37,6 +37,8 @@ utils.seed(args.seed)
 
 env = gym.make(args.env)
 env.seed(args.seed)
+for _ in range(args.shift):
+    env.reset()
 
 # Define agent
 
@@ -44,8 +46,6 @@ agent = utils.load_agent(args, env)
 
 # Run the agent
 
-for _ in range(args.shift):
-    env.reset()
 obs = env.reset()
 print("Mission: {}".format(obs["mission"]))
 
