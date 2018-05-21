@@ -306,7 +306,7 @@ class AIGameWindow(QMainWindow):
 
         obs, reward, done, info = self.env.step(action)
 
-        self.current_demo.append((self.lastObs, action))
+        self.current_demo.append((self.lastObs, action, reward, done))
 
         self.showEnv(obs)
         self.lastObs = obs

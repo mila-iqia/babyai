@@ -54,7 +54,7 @@ for i in range(1, args.demonstrations+1):
         new_obs, reward, done, _ = env.step(action)
         agent.analyze_feedback(reward, done)
 
-        demo.append((obs, action))
+        demo.append((obs, action, reward, done))
         obs = new_obs
 
     demos.append(demo)
