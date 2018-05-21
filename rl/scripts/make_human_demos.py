@@ -51,7 +51,7 @@ class AIGameWindow(QMainWindow):
         self.lastObs = None
 
         # Demonstrations
-        self.demos = utils.load_demos(args.env, human=True)
+        self.demos = utils.load_demos(args.env, "human")
         utils.synthesize_demos(self.demos)
         self.current_demo = []
 
@@ -317,7 +317,7 @@ class AIGameWindow(QMainWindow):
                     self.demos[self.shift] = self.current_demo
                 else:
                     self.demos.append(self.current_demo)
-                utils.save_demos(self.demos, args.env, human=True)
+                utils.save_demos(self.demos, args.env, "human")
                 self.missionBox.append('Demonstrations are saved.')
                 utils.synthesize_demos(self.demos)
 

@@ -35,11 +35,11 @@ env.seed(args.seed)
 
 # Define agent
 
-agent = utils.Agent(args.model, env.observation_space, env.action_space)
+agent = utils.load_agent(args, env)
 
 # Load demonstrations
 
-demos = utils.load_demos(args.env)
+demos = utils.load_demos(args.env, "agent")
 utils.synthesize_demos(demos)
 
 for i in range(1, args.demonstrations+1):
@@ -50,7 +50,7 @@ for i in range(1, args.demonstrations+1):
     demo = []
 
     while not(done):
-        action = agent.get_action(obs, deterministic=args.deterministic)
+        action = agent.get_action(obs)
         new_obs, reward, done, _ = env.step(action)
         agent.analyze_feedback(reward, done)
 
@@ -62,10 +62,10 @@ for i in range(1, args.demonstrations+1):
     # Save demonstrations
 
     if args.save_interval > 0 and i < args.demonstrations and i % args.save_interval == 0:
-        utils.save_demos(demos, args.env)
+        utils.save_demos(demos, args.env, "agent")
         utils.synthesize_demos(demos)
 
 # Save demonstrations
 
-utils.save_demos(demos, args.env)
+utils.save_demos(demos, args.env, "agent")
 utils.synthesize_demos(demos)
