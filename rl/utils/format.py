@@ -30,7 +30,8 @@ class Vocabulary:
         json.dump(self.vocab, open(self.path, "w"))
 
 class ObssPreprocessor:
-    def __init__(self, model_name, obs_space):
+    def __init__(self, model_name, obs_space, normalize=False):
+        self.normalize = normalize
         self.vocab = Vocabulary(model_name)
         self.obs_space = {
             "image": 147,
@@ -42,6 +43,8 @@ class ObssPreprocessor:
 
         if "image" in self.obs_space.keys():
             images = numpy.array([obs["image"] for obs in obss])
+            if self.normalize:
+                images /= 10
             images = torch.tensor(images, device=device, dtype=torch.float)
 
             obs_.image = images

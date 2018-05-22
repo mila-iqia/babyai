@@ -64,6 +64,8 @@ parser.add_argument("--model-mem", action="store_true", default=False,
                     help="use memory in the model")
 parser.add_argument("--arch", default='cnn1',
                     help="image embedding architecture")
+parser.add_argument("--normalize", action="store_true", default=False,
+                    help="Normalize the images")
 parser.add_argument("--exp-name", default=None,
                     help="name of the experiment to run")
 
@@ -88,11 +90,12 @@ suffix = datetime.datetime.now().strftime("%H-%M-%S")
 
 
 
-default_model_name = "{}/{}{}/{}_{}_{}_{}_seed{}_lr{:.1e}_{}".format(
+default_model_name = "{}/{}{}/{}_{}_{}_{}{}_seed{}_lr{:.1e}_{}".format(
     prefix, args.exp_name + '/' if args.exp_name else '',
     args.env, args.algo,
     "instr" if args.model_instr else "noinstr",
     "mem" if args.model_mem else "nomem",
+    "_normalize" if args.normalize else '',
     args.arch,
     args.seed, args.lr, suffix)
 
@@ -101,7 +104,7 @@ print("The model is saved in {}".format(model_name))
 
 # Define obss preprocessor
 
-obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space)
+obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space, args.normalize)
 
 # Define actor-critic model
 
