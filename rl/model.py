@@ -21,8 +21,6 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
         self.use_instr = use_instr
         self.use_memory = use_memory
 
-        assert arch in ['cnn1', 'cnn2']
-
         # Define image embedding
         self.image_embedding_size = 64
         if arch == "cnn1":
@@ -43,6 +41,8 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
                 nn.Conv2d(in_channels=16, out_channels=self.image_embedding_size, kernel_size=(3, 3)),
                 nn.ReLU()
             )
+        else:
+            raise ValueError("Incorrect architecture name: {}".format(arch))
 
         # Define memory
         if self.use_memory:
