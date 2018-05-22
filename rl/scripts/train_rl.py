@@ -164,7 +164,7 @@ while num_frames < args.frames:
         num_frames_per_episode = utils.synthesize(log["num_frames_per_episode"])
 
         logger.log(
-            "U {} | F {:06} | FPS {:04.0f} | D {} | rR:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | F:x̄σmM {:.1f} {:.1f} {:.1f} {:.1f} | H {:.3f} | V {:.3f} | pL {: .3f} | vL {:.3f}"
+            "U {} | F {:06} | FPS {:04.0f} | D {} | rR:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {: .3f} | vL {:.3f}"
             .format(i, num_frames, fps, duration,
                     *rreturn_per_episode.values(),
                     *num_frames_per_episode.values(),

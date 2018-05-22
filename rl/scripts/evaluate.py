@@ -80,7 +80,7 @@ duration = datetime.timedelta(seconds=ellapsed_time)
 return_per_episode = utils.synthesize(log["return_per_episode"])
 num_frames_per_episode = utils.synthesize(log["num_frames_per_episode"])
 
-print("F {} | FPS {:.0f} | D {} | R:x̄σmM {:.2f} {:.2f} {:.2f} {:.2f} | F:x̄σmM {:.1f} {:.1f} {:.1f} {:.1f}"
+print("F {} | FPS {:.0f} | D {} | R:x̄σmM {:.2f} {:.2f} {:.2f} {:.2f} | F:x̄σmM {:.1f} {:.1f} {} {}"
       .format(num_frames, fps, duration,
               *return_per_episode.values(),
               *num_frames_per_episode.values()))
