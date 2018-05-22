@@ -4,7 +4,6 @@ import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 import torch_rl
 
-
 # Function from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/model.py
 def initialize_parameters(m):
     classname = m.__class__.__name__
@@ -13,7 +12,6 @@ def initialize_parameters(m):
         m.weight.data *= 1 / torch.sqrt(m.weight.data.pow(2).sum(1, keepdim=True))
         if m.bias is not None:
             m.bias.data.fill_(0)
-
 
 class ACModel(nn.Module, torch_rl.RecurrentACModel):
     def __init__(self, obs_space, action_space, use_instr, use_memory, arch):
