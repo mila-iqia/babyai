@@ -57,15 +57,15 @@ parser.add_argument("--clip-eps", type=float, default=0.2,
 parser.add_argument("--epochs", type=int, default=4,
                     help="number of epochs for PPO (default: 4)")
 parser.add_argument("--batch-size", type=int, default=256,
-                    help="batch size for PPO (default: 256, 0 means all)")
+                    help="batch size for PPO (default: 256)")
 parser.add_argument("--model-instr", action="store_true", default=False,
                     help="use instructions in the model")
 parser.add_argument("--model-mem", action="store_true", default=False,
                     help="use memory in the model")
 parser.add_argument("--arch", default='cnn1',
-                    help="Architecture of Actor")
+                    help="image embedding architecture")
 parser.add_argument("--exp-name", default=None,
-                    help="Name of the experiment to run.")
+                    help="name of the experiment to run")
 
 args = parser.parse_args()
 
