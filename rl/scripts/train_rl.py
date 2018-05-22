@@ -125,7 +125,7 @@ elif args.algo == "ppo":
                             args.optim_eps, args.clip_eps, args.epochs, args.batch_size, obss_preprocessor,
                             utils.reshape_reward)
 else:
-    raise ValueError
+    raise ValueError("Incorrect algorithm name: {}".format(args.algo))
 
 # Define logger and Tensorboard writer
 
