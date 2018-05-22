@@ -84,10 +84,9 @@ acmodel = utils.load_model(obss_preprocessor.obs_space, env.action_space, model_
 if torch.cuda.is_available():
     acmodel.cuda()
 
-# Define optimizer and loss
+# Define optimizer
 
 optimizer = torch.optim.Adam(acmodel.parameters(), args.lr, eps=args.optim_eps)
-loss = torch.nn.CrossEntropyLoss()
 
 # Define logger and Tensorboard writer
 
