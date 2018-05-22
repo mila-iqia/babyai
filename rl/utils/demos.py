@@ -19,11 +19,10 @@ def save_demos(demos, env_name, origin):
 
 def synthesize_demos(demos):
     print('{} demonstrations saved'.format(len(demos)))
-    rewards = [[step[2] for step in demo] for demo in demos]
-    assert all([sum(reward) == reward[-1] for reward in rewards])
-    reward_per_episode = [sum(reward) for reward in rewards]
-    demo_lens = [len(demo) for demo in demos]
+    reward_per_episode = [sum([step[2] for step in demo]) for demo in demos]
+    num_frames_per_episode = [len(demo) for demo in demos]
     if len(demos) > 0:
-        print('Demo sizes: {}'.format(demo_lens))
-        print('Synthesis (steps - reward): {} - {}'.format(utils.synthesize(demo_lens),
-                                                           utils.synthesize(reward_per_episode)))
+        print('Demo steps: {}'.format(num_frames_per_episode))
+        print('R:x̄σmM {: .3f} {: .3f} {: .3f} {: .3f} | F:x̄σmM {:.1f} {:.1f} {} {}'
+              .format(*utils.synthesize(reward_per_episode).values(),
+                      *utils.synthesize(num_frames_per_episode).values()))
