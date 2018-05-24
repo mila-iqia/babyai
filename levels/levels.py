@@ -396,6 +396,11 @@ class Level_PickupDist(RoomGridLevel):
 
         self.instrs = [Instr(action="pickup", object=Object(type, color))]
 
+class Level_PickupDistDebug(Level_PickupDist):
+    """
+    Same as PickupDist but the level stops when any object is picked
+    """
+
     def reset(self, **kwargs):
         obs = super().reset(**kwargs)
 
@@ -452,9 +457,9 @@ class Level_OpenTwoDoors(RoomGridLevel):
     This task requires memory (recurrent policy) to be solved effectively.
     """
 
-    def __init__(self, first_color=None, last_color=None, seed=None):
+    def __init__(self, first_color=None, second_color=None, seed=None):
         self.first_color = first_color
-        self.last_color = last_color
+        self.second_color = second_color
 
         room_size = 6
         super().__init__(
@@ -470,12 +475,12 @@ class Level_OpenTwoDoors(RoomGridLevel):
         first_color = self.first_color
         if first_color is None:
             first_color = colors[0]
-        last_color = self.last_color
-        if last_color is None:
-            last_color = colors[1]
+        second_color = self.second_color
+        if second_color is None:
+            second_color = colors[1]
 
         door1, _ = self.add_door(1, 1, 2, color=first_color, locked=False)
-        door2, _ = self.add_door(1, 1, 0, color=last_color, locked=False)
+        door2, _ = self.add_door(1, 1, 0, color=second_color, locked=False)
 
         self.place_agent(1, 1)
 
@@ -484,14 +489,19 @@ class Level_OpenTwoDoors(RoomGridLevel):
             Instr(action="open", object=Object(door2.type, door2.color))
         ]
 
+class Level_OpenTwoDoorsDebug(Level_OpenTwoDoors):
+    """
+    Same as OpenTwoDoors but the level stops when the second door is opened
+    """
+
     def reset(self, **kwargs):
         obs = super().reset(**kwargs)
 
         # Recreate the verifier
         self.verifier = InstrSeqVerifier(self, self.instrs)
-        # Recreate the open last verifier
-        last_color = self.instrs[1].object.color
-        self.open_last_verifier = OpenVerifier(self, Object("door", last_color))
+        # Recreate the open second verifier
+        second_color = self.instrs[1].object.color
+        self.open_second_verifier = OpenVerifier(self, Object("door", second_color))
 
         return obs
 
@@ -503,7 +513,7 @@ class Level_OpenTwoDoors(RoomGridLevel):
             done = True
             reward = self._reward()
         # If we've opened the wrong door
-        elif self.open_last_verifier.step() is True:
+        elif self.open_second_verifier.step() is True:
             done = True
 
         return obs, reward, done, info
@@ -519,7 +529,19 @@ class Level_OpenRedBlueDoors(Level_OpenTwoDoors):
     def __init__(self, seed=None):
         super().__init__(
             first_color="red",
-            last_color="blue",
+            second_color="blue",
+            seed=seed
+        )
+
+class Level_OpenRedBlueDoorsDebug(Level_OpenTwoDoorsDebug):
+    """
+    Same as OpenRedBlueDoors but the level stops when the blue door is opened
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            first_color="red",
+            second_color="blue",
             seed=seed
         )
 
