@@ -47,7 +47,7 @@ To train an RL agent, you can do:
 ```
 cd baby-ai-game
 cd rl
-python -m scripts.train --env BabyAI-GoToDoor-v0 --algo ppo
+python -m scripts.train_rl --env BabyAI-OpenDoorColor-v0 --algo ppo
 ```
 More options available in [`train.py`](rl/scripts/train.py)
 
