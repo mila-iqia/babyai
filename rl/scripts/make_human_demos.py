@@ -303,6 +303,7 @@ class AIGameWindow(QMainWindow):
         # If no manual action was specified by the user
         if action is None:
             action = random.randint(0, self.env.action_space.n - 1)
+        action = int(action)
 
         obs, reward, done, info = self.env.step(action)
 
