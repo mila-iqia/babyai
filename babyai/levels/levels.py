@@ -71,6 +71,14 @@ class RoomGridLevel(RoomGrid):
         """
         raise NotImplementedError
 
+    @property
+    def level_name(self):
+        return self.__class__.level_name
+
+    @property
+    def gym_id(self):
+        return self.__class__.gym_id
+
 class Level_OpenRedDoor(RoomGridLevel):
     """
     Go to the red door
@@ -752,19 +760,22 @@ for global_name in sorted(list(globals().keys())):
 
     module_name = __name__
     level_name = global_name.split('Level_')[-1]
-
-    # Add the level to the dictionary
-    level_dict[level_name] = globals()[global_name]
+    level_class = globals()[global_name]
 
     # Register the levels with OpenAI Gym
-    level_id = 'BabyAI-%s-v0' % (level_name)
+    gym_id = 'BabyAI-%s-v0' % (level_name)
     entry_point = '%s:%s' % (module_name, global_name)
-    #print(level_id)
-    #print(entry_point)
     gym.envs.registration.register(
-        id=level_id,
+        id=gym_id,
         entry_point=entry_point,
     )
+
+    # Add the level to the dictionary
+    level_dict[level_name] = level_class
+
+    # Store the name and gym id on the level class
+    level_class.level_name = level_name
+    level_class.gym_id = gym_id
 
 def test():
     for idx, level_name in enumerate(level_dict.keys()):
