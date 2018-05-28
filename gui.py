@@ -18,8 +18,7 @@ import gym
 import gym_minigrid
 from gym_minigrid import minigrid
 
-import levels
-import agents
+import babyai
 
 class ImgWidget(QLabel):
     """

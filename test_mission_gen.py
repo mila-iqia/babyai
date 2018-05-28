@@ -4,7 +4,7 @@ import random
 import time
 from optparse import OptionParser
 
-from levels import level_dict
+from babyai.levels import level_dict
 
 from PyQt5.QtWidgets import QApplication
 from gym_minigrid.rendering import Window
@@ -13,7 +13,7 @@ def test():
     parser = OptionParser()
     parser.add_option(
         "--level-name",
-        default='GoToRedDoor'
+        default='OpenRedDoor'
     )
     parser.add_option(
         "--seed",

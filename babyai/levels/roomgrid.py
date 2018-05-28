@@ -153,6 +153,24 @@ class RoomGrid(MiniGridEnv):
         )
         self.start_dir = 0
 
+    def place_in_room(self, i, j, obj):
+        """
+        Add an existing object to room (i, j)
+        """
+
+        room = self.get_room(i, j)
+
+        pos = self.place_obj(
+            obj,
+            room.top,
+            room.size,
+            reject_fn=reject_next_to
+        )
+
+        room.objs.append(obj)
+
+        return obj, pos
+
     def add_object(self, i, j, kind=None, color=None):
         """
         Add a new object to room (i, j)
@@ -173,18 +191,7 @@ class RoomGrid(MiniGridEnv):
         elif kind == 'box':
             obj = Box(color)
 
-        room = self.get_room(i, j)
-
-        pos = self.place_obj(
-            obj,
-            room.top,
-            room.size,
-            reject_fn=reject_next_to
-        )
-
-        room.objs.append(obj)
-
-        return obj, pos
+        return self.place_in_room(i, j, obj)
 
     def add_door(self, i, j, door_idx=None, color=None, locked=None):
         """

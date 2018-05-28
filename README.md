@@ -162,12 +162,12 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 ### OpenDoor
 
-- Environment: The agent is placed in a room with 4 different doors. The environment is done when a door is opened.
+- Environment: The agent is placed in a room with 4 different doors. The environment is done when the instruction is executed in the regular mode or when a door is opened in the `debug` mode.
 - Instruction: Open a door of:
+    - a given color or location in `OpenDoor`
     - a given color in `OpenDoorColor`
     - a given location in `OpenDoorLoc`
-    - a given color or location in `OpenDoor`
-- Level id: `BabyAI-OpenDoor-v0`, `BabyAI-OpenDoorColor-v0`, `BabyAI-OpenDoorLoc-v0`
+- Level id: `BabyAI-OpenDoor-v0`, `BabyAI-OpenDoorDebug-v0`, `BabyAI-OpenDoorColor-v0`, `BabyAI-OpenDoorColorDebug-v0`, `BabyAI-OpenDoorLoc-v0`, `BabyAI-OpenDoorLocDebug-v0`
 - Evaluate: image & text understanding, memory in `OpenDoor` and `OpenDoorLoc`
 
 <p align="center"><img src="media/OpenDoor.png" width="250"></p>
@@ -234,7 +234,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 ### PickupDist
 
-- Environment: The agent is placed in a room with 5 objects. The environment is done when the instruction is executed in `PickupDist` and when any object is picked in `PickupDistDebug`.
+- Environment: The agent is placed in a room with 5 objects. The environment is done when the instruction is executed in the regular mode or when any object is picked in the `debug` mode.
 - Instruction: Pick up an object of a given type and color
 - Level id: `BabyAI-PickupDist-v0`, `BabyAI-PickupDistDebug-v0`
 - Evaluate: image & text understanding
@@ -252,7 +252,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 ### OpenRedBlueDoors
 
-- Environment: The agent is placed in a room with a red door and a blue door facing each other. The environment is done when the instruction is executed in `OpenRedBlueDoors` and when the blue door is opened in `OpenRedBlueDoorsDebug`.
+- Environment: The agent is placed in a room with a red door and a blue door facing each other. The environment is done when the instruction is executed in the regular mode or when the blue door is opened in the `debug` mode.
 - Instruction: Open the red door then open the blue door
 - Level id: `BabyAI-OpenRedBlueDoors-v0`, `BabyAI-OpenRedBlueDoorsDebug-v0`
 - Evaluate: image understanding, memory
@@ -261,7 +261,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 ### OpenTwoDoors
 
-- Environment: The agent is placed in a room with a red door and a blue door facing each other. The environment is done when the instruction is executed in `OpenTwoDoors` and when the second door is opened in `OpenTwoDoorsDebug`.
+- Environment: The agent is placed in a room with a red door and a blue door facing each other. The environment is done when the instruction is executed in the regular mode or when the second door is opened in the `debug` mode.
 - Instruction: Open the door of color X then open the door of color Y
 - Level id: `BabyAI-OpenTwoDoors-v0`, `BabyAI-OpenTwoDoorsDebug-v0`
 - Evaluate: image & text understanding, memory

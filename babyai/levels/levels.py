@@ -4,7 +4,9 @@ from copy import deepcopy
 
 import gym
 
-from .roomgrid import RoomGrid, Ball
+from gym_minigrid.envs import Key, Ball, Box
+
+from .roomgrid import RoomGrid
 from .instrs import *
 from .instr_gen import gen_instr_seq, gen_object, gen_surface
 from .verifier import InstrSeqVerifier, OpenVerifier, PickupVerifier
@@ -71,6 +73,14 @@ class RoomGridLevel(RoomGrid):
         """
         raise NotImplementedError
 
+    @property
+    def level_name(self):
+        return self.__class__.level_name
+
+    @property
+    def gym_id(self):
+        return self.__class__.gym_id
+
 class Level_OpenRedDoor(RoomGridLevel):
     """
     Go to the red door
@@ -113,7 +123,7 @@ class Level_OpenDoor(RoomGridLevel):
         for i, color in enumerate(door_colors):
             obj, _ = self.add_door(1, 1, door_idx=i, color=color, locked=False)
             objs.append(obj)
-        
+
         select_by = self.select_by
         if select_by is None:
             select_by = self._rand_elem(["color", "loc"])
@@ -124,7 +134,12 @@ class Level_OpenDoor(RoomGridLevel):
 
         self.place_agent(1, 1)
         self.instrs = [Instr(action="open", object=object)]
-    
+
+class Level_OpenDoorDebug(Level_OpenDoor):
+    """
+    Same as OpenDoor but the level stops when any door is opened
+    """
+
     def reset(self, **kwargs):
         obs = super().reset(**kwargs)
 
@@ -161,6 +176,13 @@ class Level_OpenDoorColor(Level_OpenDoor):
             seed=seed
         )
 
+class Level_OpenDoorColorDebug(Level_OpenDoorColor, Level_OpenDoorDebug):
+    """
+    Same as OpenDoorColor but the level stops when any door is opened
+    """
+
+    pass
+
 class Level_OpenDoorLoc(Level_OpenDoor):
     """
     Go to the door
@@ -173,6 +195,13 @@ class Level_OpenDoorLoc(Level_OpenDoor):
             select_by="loc",
             seed=seed
         )
+
+class Level_OpenDoorLocDebug(Level_OpenDoorLoc, Level_OpenDoorDebug):
+    """
+    Same as OpenDoorLoc but the level stops when any door is opened
+    """
+
+    pass
 
 class Level_GoToObjDoor(RoomGridLevel):
     """
@@ -257,6 +286,28 @@ class Level_UnlockDist(Level_Unlock):
 
     def __init__(self, seed=None):
         super().__init__(distractors=True, seed=seed)
+
+class Level_KeyInBox(RoomGridLevel):
+    """
+    Unlock a door. Key is in a box (in the current room).
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            seed=seed
+        )
+
+    def gen_mission(self):
+        door, _ = self.add_door(1, 1, locked=True)
+
+        # Put the key in the box, then place the box in the room
+        key = Key(door.color)
+        box = Box(self._rand_color(), key)
+        self.place_in_room(1, 1, box)
+
+        self.place_agent(1, 1)
+
+        self.instrs = [Instr(action="open", object=Object(door.type))]
 
 class Level_UnlockPickup(RoomGridLevel):
     """
@@ -381,7 +432,7 @@ class Level_PickupDist(RoomGridLevel):
             lang_variation=2,
             seed=seed
         )
-    
+
     def gen_mission(self):
         # Add 5 random objects in the room
         objs = self.add_distractors(5)
@@ -752,23 +803,26 @@ for global_name in sorted(list(globals().keys())):
 
     module_name = __name__
     level_name = global_name.split('Level_')[-1]
-
-    # Add the level to the dictionary
-    level_dict[level_name] = globals()[global_name]
+    level_class = globals()[global_name]
 
     # Register the levels with OpenAI Gym
-    level_id = 'BabyAI-%s-v0' % (level_name)
+    gym_id = 'BabyAI-%s-v0' % (level_name)
     entry_point = '%s:%s' % (module_name, global_name)
-    #print(level_id)
-    #print(entry_point)
     gym.envs.registration.register(
-        id=level_id,
+        id=gym_id,
         entry_point=entry_point,
     )
 
+    # Add the level to the dictionary
+    level_dict[level_name] = level_class
+
+    # Store the name and gym id on the level class
+    level_class.level_name = level_name
+    level_class.gym_id = gym_id
+
 def test():
     for idx, level_name in enumerate(level_dict.keys()):
-        print('Level %s (%d/%d)' % (level_name, idx, len(level_dict)))
+        print('Level %s (%d/%d)' % (level_name, idx+1, len(level_dict)))
 
         level = level_dict[level_name]
 
