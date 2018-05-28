@@ -214,6 +214,15 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 <p align="center"><img src="media/UnlockToUnlock.png" width="250"></p>
 
+### KeyInBox
+
+- Environment: The agent is placed in a room with a box containing a key and a locked door.
+- Instruction: Open the door
+- Level id: `BabyAI-KeyInBox-v0`
+- Evaluate: image understanding
+
+<p align="center"><img src="media/KeyInBox.png" width="250"></p>
+
 ### PickupDist
 
 - Environment: The agent is placed in a room with 5 objects. The environment is done when the instruction is executed in the regular mode or when any object is picked in the `debug` mode.
