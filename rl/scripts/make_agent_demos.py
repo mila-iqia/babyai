@@ -2,7 +2,7 @@
 
 import argparse
 import gym
-import levels
+from babyai import levels
 import torch_rl
 
 import utils
