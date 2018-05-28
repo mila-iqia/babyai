@@ -4,7 +4,9 @@ from copy import deepcopy
 
 import gym
 
-from .roomgrid import RoomGrid, Ball
+from gym_minigrid.envs import Key, Ball, Box
+
+from .roomgrid import RoomGrid
 from .instrs import *
 from .instr_gen import gen_instr_seq, gen_object, gen_surface
 from .verifier import InstrSeqVerifier, OpenVerifier, PickupVerifier
@@ -132,7 +134,7 @@ class Level_OpenDoor(RoomGridLevel):
 
         self.place_agent(1, 1)
         self.instrs = [Instr(action="open", object=object)]
-    
+
 class Level_OpenDoorDebug(Level_OpenDoor):
     """
     Same as OpenDoor but the level stops when any door is opened
@@ -284,6 +286,28 @@ class Level_UnlockDist(Level_Unlock):
 
     def __init__(self, seed=None):
         super().__init__(distractors=True, seed=seed)
+
+class Level_KeyInBox(RoomGridLevel):
+    """
+    Unlock a door. Key is in a box (in the current room).
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            seed=seed
+        )
+
+    def gen_mission(self):
+        door, _ = self.add_door(1, 1, locked=True)
+
+        # Put the key in the box, then place the box in the room
+        key = Key(door.color)
+        box = Box(self._rand_color(), key)
+        self.place_in_room(1, 1, box)
+
+        self.place_agent(1, 1)
+
+        self.instrs = [Instr(action="open", object=Object(door.type))]
 
 class Level_UnlockPickup(RoomGridLevel):
     """
