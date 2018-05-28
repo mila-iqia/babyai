@@ -132,6 +132,11 @@ class Level_OpenDoor(RoomGridLevel):
 
         self.place_agent(1, 1)
         self.instrs = [Instr(action="open", object=object)]
+    
+class Level_OpenDoorDebug(Level_OpenDoor):
+    """
+    Same as OpenDoor but the level stops when any door is opened
+    """
 
     def reset(self, **kwargs):
         obs = super().reset(**kwargs)
@@ -169,6 +174,13 @@ class Level_OpenDoorColor(Level_OpenDoor):
             seed=seed
         )
 
+class Level_OpenDoorColorDebug(Level_OpenDoorColor, Level_OpenDoorDebug):
+    """
+    Same as OpenDoorColor but the level stops when any door is opened
+    """
+
+    pass
+
 class Level_OpenDoorLoc(Level_OpenDoor):
     """
     Go to the door
@@ -181,6 +193,13 @@ class Level_OpenDoorLoc(Level_OpenDoor):
             select_by="loc",
             seed=seed
         )
+
+class Level_OpenDoorLocDebug(Level_OpenDoorLoc, Level_OpenDoorDebug):
+    """
+    Same as OpenDoorLoc but the level stops when any door is opened
+    """
+
+    pass
 
 class Level_GoToObjDoor(RoomGridLevel):
     """
