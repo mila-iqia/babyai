@@ -83,21 +83,9 @@ for i in range(args.procs):
 
 # Define model name
 
-prefix = datetime.datetime.now().strftime("%y-%m-%d")
-suffix = datetime.datetime.now().strftime("%H-%M-%S")
-
-
-
-default_model_name = "{}/{}{}/{}_{}_{}_{}_seed{}_lr{:.1e}_{}".format(
-    prefix, args.exp_name + '/' if args.exp_name else '',
-    args.env, args.algo,
-    "instr" if args.model_instr else "noinstr",
-    "mem" if args.model_mem else "nomem",
-    args.arch,
-    args.seed, args.lr, suffix)
-
+suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
+default_model_name = "{}_{}_seed{}_{}".format(args.env, args.algo, args.seed, suffix)
 model_name = args.model or default_model_name
-print("The model is saved in {}".format(model_name))
 
 # Define obss preprocessor
 
