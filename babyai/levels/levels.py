@@ -113,7 +113,7 @@ class Level_OpenDoor(RoomGridLevel):
         for i, color in enumerate(door_colors):
             obj, _ = self.add_door(1, 1, door_idx=i, color=color, locked=False)
             objs.append(obj)
-        
+
         select_by = self.select_by
         if select_by is None:
             select_by = self._rand_elem(["color", "loc"])
@@ -124,7 +124,7 @@ class Level_OpenDoor(RoomGridLevel):
 
         self.place_agent(1, 1)
         self.instrs = [Instr(action="open", object=object)]
-    
+
     def reset(self, **kwargs):
         obs = super().reset(**kwargs)
 
@@ -381,7 +381,7 @@ class Level_PickupDist(RoomGridLevel):
             lang_variation=2,
             seed=seed
         )
-    
+
     def gen_mission(self):
         # Add 5 random objects in the room
         objs = self.add_distractors(5)
@@ -768,7 +768,7 @@ for global_name in sorted(list(globals().keys())):
 
 def test():
     for idx, level_name in enumerate(level_dict.keys()):
-        print('Level %s (%d/%d)' % (level_name, idx, len(level_dict)))
+        print('Level %s (%d/%d)' % (level_name, idx+1, len(level_dict)))
 
         level = level_dict[level_name]
 
