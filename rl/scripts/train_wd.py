@@ -280,9 +280,8 @@ def run_epoch_recurrence():
 
             if len(inds) == 0:
                 break     
-
         offset += batch_size
-        return log
+    return log
 
 total_start_time = time.time()
 
