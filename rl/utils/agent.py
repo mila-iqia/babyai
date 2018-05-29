@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 import torch
-from torch_rl import RecurrentACModel
 
 import utils
 
@@ -16,24 +15,23 @@ class Agent(ABC):
 class ModelAgent(Agent):
     def __init__(self, model_name, observation_space, action_space, deterministic):
         self.obss_preprocessor = utils.ObssPreprocessor(model_name, observation_space)
-        self.acmodel = utils.load_model(self.obss_preprocessor.obs_space, action_space, model_name)
+        self.model = utils.load_model(self.obss_preprocessor.obs_space, action_space, model_name)
         self.deterministic = deterministic
 
-        self.is_recurrent = isinstance(self.acmodel, RecurrentACModel)
-        if self.is_recurrent:
+        if self.model.recurrent:
             self._initialize_memory()
     
     def _initialize_memory(self):
-        self.memory = torch.zeros(1, self.acmodel.memory_size)
+        self.memory = torch.zeros(1, self.model.memory_size)
 
     def get_action(self, obs):
         preprocessed_obs = self.obss_preprocessor([obs])
 
         with torch.no_grad():
-            if self.is_recurrent:
-                dist, _, self.memory = self.acmodel(preprocessed_obs, self.memory)
+            if self.model.recurrent:
+                dist, _, self.memory = self.model(preprocessed_obs, self.memory)
             else:
-                dist, _ = self.acmodel(preprocessed_obs)
+                dist, _ = self.model(preprocessed_obs)
         
         if self.deterministic:
             action = dist.probs.max(1, keepdim=True)[1]
@@ -43,7 +41,7 @@ class ModelAgent(Agent):
         return action.item()
     
     def analyze_feedback(self, reward, done):
-        if done and self.is_recurrent:
+        if done and self.model.recurrent:
             self._initialize_memory()
 
 class DemoAgent(Agent):
