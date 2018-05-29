@@ -6,7 +6,7 @@ import random
 import argparse
 import datetime
 import gym
-import levels
+from babyai import levels
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QInputDialog
 from PyQt5.QtWidgets import QLabel, QTextEdit, QFrame
