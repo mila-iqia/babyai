@@ -3,9 +3,11 @@ import numpy
 
 import utils
 
-def get_log_path(log_name, ext=True):
-    log_basename = log_name + (".txt" if ext else "")
-    return os.path.join(utils.storage_dir(), "logs", log_basename)
+def get_log_dir(log_name):
+    return os.path.join(utils.storage_dir(), "logs", log_name)
+
+def get_log_path(log_name):
+    return os.path.join(get_log_dir(log_name), "log.txt")
 
 def synthesize(array):
     return {
@@ -19,7 +21,7 @@ class Logger:
     def __init__(self, log_name):
         self.path = get_log_path(log_name)
 
-    def log(self, obj, to_print=True):
+    def __call__(self, obj, to_print=True):
         obj_str = str(obj)
 
         if to_print:

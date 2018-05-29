@@ -114,16 +114,16 @@ else:
 
 # Define logger and Tensorboard writer
 
-logger = utils.Logger(model_name)
+log = utils.Logger(model_name)
 if args.tb:
     from tensorboardX import SummaryWriter
-    writer = SummaryWriter(utils.get_log_path(model_name, ext=False))
+    writer = SummaryWriter(utils.get_log_dir(model_name))
 
-# Log command, availability of CUDA, and model
+# Log command, availability of CUDA and model
 
-logger.log(args, to_print=False)
-logger.log("CUDA is {}available".format('' if torch.cuda.is_available() else 'not '))
-logger.log(acmodel)
+log(args, to_print=False)
+log("CUDA available: {}".format(torch.cuda.is_available()))
+log(acmodel)
 
 # Train model
 
@@ -135,28 +135,28 @@ while num_frames < args.frames:
     # Update parameters
 
     update_start_time = time.time()
-    log = algo.update_parameters()
+    logs = algo.update_parameters()
     update_end_time = time.time()
     
-    num_frames += log["num_frames"]
+    num_frames += logs["num_frames"]
     i += 1
 
     # Print logs
 
     if i % args.log_interval == 0:
         total_ellapsed_time = int(time.time() - total_start_time)
-        fps = log["num_frames"]/(update_end_time - update_start_time)
+        fps = logs["num_frames"]/(update_end_time - update_start_time)
         duration = datetime.timedelta(seconds=total_ellapsed_time)
-        return_per_episode = utils.synthesize(log["return_per_episode"])
-        rreturn_per_episode = utils.synthesize(log["reshaped_return_per_episode"])
-        num_frames_per_episode = utils.synthesize(log["num_frames_per_episode"])
+        return_per_episode = utils.synthesize(logs["return_per_episode"])
+        rreturn_per_episode = utils.synthesize(logs["reshaped_return_per_episode"])
+        num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
-        logger.log(
+        log(
             "U {} | F {:06} | FPS {:04.0f} | D {} | rR:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {: .3f} | vL {:.3f}"
             .format(i, num_frames, fps, duration,
                     *rreturn_per_episode.values(),
                     *num_frames_per_episode.values(),
-                    log["entropy"], log["value"], log["policy_loss"], log["value_loss"]))
+                    logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"]))
         if args.tb:
             writer.add_scalar("frames", num_frames, i)
             writer.add_scalar("FPS", fps, i)
@@ -167,10 +167,10 @@ while num_frames < args.frames:
                 writer.add_scalar("rreturn_" + key, value, i)
             for key, value in num_frames_per_episode.items():
                 writer.add_scalar("num_frames_" + key, value, i)
-            writer.add_scalar("entropy", log["entropy"], i)
-            writer.add_scalar("value", log["value"], i)
-            writer.add_scalar("policy_loss", log["policy_loss"], i)
-            writer.add_scalar("value_loss", log["value_loss"], i)
+            writer.add_scalar("entropy", logs["entropy"], i)
+            writer.add_scalar("value", logs["value"], i)
+            writer.add_scalar("policy_loss", logs["policy_loss"], i)
+            writer.add_scalar("value_loss", logs["value_loss"], i)
 
     # Save obss preprocessor vocabulary and model
 
