@@ -45,10 +45,10 @@ parser.add_argument("--epochs", type=int, default=10,
                     help="number of epochs (default: 10)")
 parser.add_argument("--batch-size", type=int, default=256,
                     help="batch size (default: 256)")
-parser.add_argument("--model-instr", action="store_true", default=False,
-                    help="use instructions in the model")
-parser.add_argument("--model-mem", action="store_true", default=False,
-                    help="use memory in the model")
+parser.add_argument("--no-instr", action="store_true", default=False,
+                    help="don't use instructions in the model")
+parser.add_argument("--no-mem", action="store_true", default=False,
+                    help="don't use memory in the model")
 parser.add_argument("--arch", default='cnn1',
                     help="image embedding architecture")
 args = parser.parse_args()
@@ -80,7 +80,8 @@ obss_preprocessor = utils.ObssPreprocessor(model_name, env.observation_space)
 
 # Define actor-critic model
 
-acmodel = utils.load_model(obss_preprocessor.obs_space, env.action_space, model_name)
+acmodel = utils.load_model(obss_preprocessor.obs_space, env.action_space, model_name,
+                           not(args.no_instr), not(args.no_mem), args.arch)
 if torch.cuda.is_available():
     acmodel.cuda()
 
