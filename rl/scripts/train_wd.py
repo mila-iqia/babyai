@@ -95,9 +95,9 @@ acmodel.train()
 
 
 # Log command, availability of CUDA, and model
-logger.log(args, to_print=False)
-logger.log("CUDA is {}available".format('' if torch.cuda.is_available() else 'not '))
-logger.log(acmodel)
+logger(args, to_print=False)
+logger("CUDA is {}available".format('' if torch.cuda.is_available() else 'not '))
+logger(acmodel)
 
 if torch.cuda.is_available():
     acmodel.cuda()
@@ -376,7 +376,7 @@ while True:
     for key in log:
         log[key] = np.mean(log[key])
 
-    logger.log(
+    logger(
         "U {} | FPS {:04.0f} | D {} | H {:.3f} | pL {: .3f} | vL {: .3f}"
             .format(i, fps, duration,
                     log["entropy"], log["policy_loss"],log["value_loss"]))
