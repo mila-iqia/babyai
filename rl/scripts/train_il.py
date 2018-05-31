@@ -186,5 +186,6 @@ for i in range(1, args.epochs + 1):
         if torch.cuda.is_available():
             acmodel.cpu()
         utils.save_model(acmodel, model_name)
+        logger.log("Model is saved.")
         if torch.cuda.is_available():
             acmodel.cuda()
