@@ -23,6 +23,9 @@ parser.add_argument("--shift", type=int, default=0,
                     help="number of times the environment is reset at the beginning (default: 0)")
 parser.add_argument("--deterministic", action="store_true", default=False,
                     help="action with highest probability is selected for model agent")
+parser.add_argument("--pause", type=float, default=0.1,
+                    help="the pause between two consequent actions of an agent")
+
 args = parser.parse_args()
 
 assert args.model is not None or args.demos_origin is not None, "--model or --demos-origin must be specified."
@@ -47,19 +50,21 @@ agent = utils.load_agent(args, env)
 # Run the agent
 
 obs = env.reset()
+done = False
 print("Mission: {}".format(obs["mission"]))
 
 while True:
-    time.sleep(0.1)
+    time.sleep(args.pause)
     renderer = env.render("human")
 
-    action = agent.get_action(obs)
-    obs, reward, done, _ = env.step(action)
-    agent.analyze_feedback(reward, done)
-
     if done:
+        print("Reward:", reward)
         obs = env.reset()
         print("Mission: {}".format(obs["mission"]))
 
     if renderer.window is None:
         break
+
+    action = agent.get_action(obs)
+    obs, reward, done, _ = env.step(action)
+    agent.analyze_feedback(reward, done)
