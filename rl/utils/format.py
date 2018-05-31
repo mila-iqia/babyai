@@ -8,7 +8,7 @@ import torch_rl
 import utils
 
 def get_vocab_path(model_name):
-    return os.path.join(utils.storage_dir(), "models", model_name, "vocab.json")
+    return os.path.join(utils.get_model_dir(model_name), "vocab.json")
 
 class Vocabulary:
     def __init__(self, model_name):

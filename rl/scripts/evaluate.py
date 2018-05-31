@@ -14,12 +14,12 @@ import utils
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to be run (REQUIRED)")
-parser.add_argument("--model", default=None,
+parser.add_argument("--model", required=True,
                     help="name of the trained model (REQUIRED or --demos-origin REQUIRED)")
 parser.add_argument("--demos-origin", default=None,
                     help="origin of the demonstrations: human | agent (REQUIRED or --model REQUIRED)")
-parser.add_argument("--episodes", type=int, default=100,
-                    help="number of episodes of evaluation (default: 100)")
+parser.add_argument("--episodes", type=int, default=1000,
+                    help="number of episodes of evaluation (default: 1000)")
 parser.add_argument("--seed", type=int, default=None,
                     help="random seed (default: 0 if model agent, 1 if demo agent)")
 parser.add_argument("--deterministic", action="store_true", default=False,
@@ -45,7 +45,7 @@ agent = utils.load_agent(args, env)
 
 # Initialize logs
 
-log = {"num_frames_per_episode": [], "return_per_episode": []}
+logs = {"num_frames_per_episode": [], "return_per_episode": []}
 
 # Run the agent
 
@@ -66,27 +66,27 @@ for _ in range(args.episodes):
         num_frames += 1
         returnn += reward
     
-    log["num_frames_per_episode"].append(num_frames)
-    log["return_per_episode"].append(returnn)
+    logs["num_frames_per_episode"].append(num_frames)
+    logs["return_per_episode"].append(returnn)
 
 end_time = time.time()
 
 # Print logs
 
-num_frames = sum(log["num_frames_per_episode"])
+num_frames = sum(logs["num_frames_per_episode"])
 fps = num_frames/(end_time - start_time)
 ellapsed_time = int(end_time - start_time)
 duration = datetime.timedelta(seconds=ellapsed_time)
-return_per_episode = utils.synthesize(log["return_per_episode"])
-num_frames_per_episode = utils.synthesize(log["num_frames_per_episode"])
+return_per_episode = utils.synthesize(logs["return_per_episode"])
+num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
 print("F {} | FPS {:.0f} | D {} | R:x̄σmM {:.2f} {:.2f} {:.2f} {:.2f} | F:x̄σmM {:.1f} {:.1f} {} {}"
       .format(num_frames, fps, duration,
               *return_per_episode.values(),
               *num_frames_per_episode.values()))
 
-indexes = sorted(range(len(log["return_per_episode"])), key=lambda k: log["return_per_episode"][k])
+indexes = sorted(range(len(logs["return_per_episode"])), key=lambda k: logs["return_per_episode"][k])
 n = 10
 print("{} worst episodes:".format(n))
 for i in indexes[:n]:
-    print("- episode {}: R={}, F={}".format(i, log["return_per_episode"][i], log["num_frames_per_episode"][i]))
+    print("- episode {}: R={}, F={}".format(i, logs["return_per_episode"][i], logs["num_frames_per_episode"][i]))

@@ -4,8 +4,11 @@ import torch
 from model import ACModel
 import utils
 
+def get_model_dir(model_name):
+    return os.path.join(utils.storage_dir(), "models", model_name)
+
 def get_model_path(model_name):
-    return os.path.join(utils.storage_dir(), "models", model_name, "model.pt")
+    return os.path.join(get_model_dir(model_name), "model.pt")
 
 def load_model(observation_space, action_space, model_name,
                use_instr=False, use_memory=False, arch="cnn1"):
