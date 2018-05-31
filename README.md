@@ -33,7 +33,8 @@ cd baby-ai-game
 pip3 install -e .
 ```
 
-#### for this branch specifically
+#### For this branch specifically
+
 After installing minigrid and baby-ai-game (necessary to access the levels), you need to install [pytorch-a2c-ppo](https://github.com/lcswillems/pytorch-a2c-ppo)
 
 ```
@@ -50,6 +51,8 @@ cd rl
 python -m scripts.train_rl --env BabyAI-OpenDoorColor-v0 --algo ppo
 ```
 More options available in [`train.py`](rl/scripts/train.py)
+
+By default, models and logs are stored in the `storage` folder. You can define a different folder in the environment variable `torch_rl_storage_dir`.
 
 ### For conda users
 
