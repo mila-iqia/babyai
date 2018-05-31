@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # TODO add support for recurrent policy
+# TODO merge it with train_wd.py
 
 import argparse
 import gym

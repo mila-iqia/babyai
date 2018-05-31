@@ -1,5 +1,7 @@
 import os
+import sys
 import numpy
+import logging
 
 import utils
 
@@ -7,7 +9,7 @@ def get_log_dir(log_name):
     return os.path.join(utils.storage_dir(), "logs", log_name)
 
 def get_log_path(log_name):
-    return os.path.join(get_log_dir(log_name), "log.txt")
+    return os.path.join(get_log_dir(log_name), "log.log")
 
 def synthesize(array):
     return {
@@ -17,16 +19,17 @@ def synthesize(array):
         "max": numpy.amax(array)
     }
 
-class Logger:
-    def __init__(self, log_name):
-        self.path = get_log_path(log_name)
+def get_logger(log_name):
+    path = get_log_path(log_name)
+    utils.create_folders_if_necessary(path)
 
-    def __call__(self, obj, to_print=True):
-        obj_str = str(obj)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[
+            logging.FileHandler(filename=path),
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
 
-        if to_print:
-            print(obj_str)
-
-        utils.create_folders_if_necessary(self.path)
-        with open(self.path, "a") as f:
-            f.write(obj_str + "\n")
+    return logging.getLogger()
