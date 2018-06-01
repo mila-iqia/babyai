@@ -1,7 +1,6 @@
 import os
 import torch
 
-from model import ACModel
 import utils
 
 def get_model_dir(model_name):
@@ -10,19 +9,11 @@ def get_model_dir(model_name):
 def get_model_path(model_name):
     return os.path.join(get_model_dir(model_name), "model.pt")
 
-def load_model(observation_space, action_space, model_name,
-               use_instr=False, use_memory=False, arch="cnn1",
-               create_if_not_exists=False):
+def load_model(model_name):
     path = get_model_path(model_name)
-    if os.path.exists(path):
-        acmodel = torch.load(path)
-    elif create_if_not_exists:
-        acmodel = ACModel(observation_space, action_space,
-                          use_instr, use_memory, arch)
-    else:
+    if not os.path.exists(path):
         raise ValueError("No model at `{}`".format(path))
-    acmodel.eval()
-    return acmodel
+    return torch.load(path)
 
 def save_model(acmodel, model_name):
     path = get_model_path(model_name)

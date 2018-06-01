@@ -12,6 +12,7 @@ import sys
 import torch
 import torch.nn.functional as F
 import torch_rl
+from model import ACModel
 
 import utils
 
@@ -81,9 +82,10 @@ obss_preprocessor = utils.ObssPreprocessor(model_name, env.observation_space)
 
 # Define actor-critic model
 
-acmodel = utils.load_model(obss_preprocessor.obs_space, env.action_space, model_name,
-                           not(args.no_instr), not(args.no_mem), args.arch,
-                           create_if_not_exists=True)
+acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
+                  not(args.no_instr), not(args.no_mem), args.arch)
+if  args.model:
+    acmodel = utils.load_model(args.model)
 if torch.cuda.is_available():
     acmodel.cuda()
 
@@ -156,7 +158,7 @@ for i in range(1, args.epochs + 1):
 
         log_entropies.append(entropy.data[0])
         log_policy_losses.append(policy_loss.data[0])
-    
+
     update_end_time = time.time()
 
     # Print logs
@@ -173,7 +175,7 @@ for i in range(1, args.epochs + 1):
             "U {} | FPS {:04.0f} | D {} | H {:.3f} | pL {: .3f}"
                 .format(i, fps, duration,
                         log_entropy, log_policy_loss))
-    
+
         if args.tb:
             writer.add_scalar("FPS", fps, i)
             writer.add_scalar("duration", total_ellapsed_time, i)
