@@ -11,29 +11,20 @@ Requirements:
 - OpenAI gym
 - NumPy
 - PyQT5
-- PyTorch
+- PyTorch 0.4+
 
 Start by manually installing PyTorch. See the [PyTorch website](http://pytorch.org/)
 for installation instructions specific to your platform.
-
-Then, install the [minigrid Gym environment](https://github.com/maximecb/gym-minigrid):
-
-```
-git clone https://github.com/maximecb/gym-minigrid.git
-cd gym-minigrid
-pip3 install -e .
-cd ..
-```
 
 Then, clone this repository and install the other dependencies with `pip3`:
 
 ```
 git clone https://github.com/maximecb/baby-ai-game.git
 cd baby-ai-game
-pip3 install -e .
+pip3 install --process-dependency-links --editable .
 ```
 
-### For conda users
+### Installation using Conda (Alternative Method)
 
 If you are using conda, you can create a `babyai` environment with all the dependencies by running:
 
@@ -51,7 +42,7 @@ The `agents` directory will contain a default implementation of one or more agen
 
 In `pytorch_rl`, there is an implementation of the A2C, PPO and ACKTR reinforcement learning algorithms. This is a custom fork of [this repository](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr) which has been adapted to work with the `gym-minigrid` environment. This RL implementation has issues and will hopefully be replaced by a better one soon. One important problem, for instance, is that it is not importable as a module.
 
-The `main.py` script implements a template of a user interface for interactive human teaching. The version found in the master branch allows you to control the agent manually with the arrow keys, but it is not currently connected to any model or teaching code. Currently, most experiments are done offline, without a user interface.
+The `gui.py` script implements a template of a user interface for interactive human teaching. The version found in the master branch allows you to control the agent manually with the arrow keys, but it is not currently connected to any model or teaching code. Currently, most experiments are done offline, without a user interface.
 
 ## Instructions for Committers
 
