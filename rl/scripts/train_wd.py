@@ -306,6 +306,7 @@ def run_epoch_recurrence():
 
 def validate():
     env.seed(args.val_seed)
+    utils.seed(args.val_seed)
     print("Validating the model")
     args.deterministic = False
     agent = utils.load_agent(args, env)
