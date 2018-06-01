@@ -8,7 +8,6 @@ import datetime
 import sys
 import torch
 import torch_rl
-from model import ACModel
 
 import utils
 
@@ -94,10 +93,9 @@ obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space
 
 # Define actor-critic model
 
-acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
-                  not(args.no_instr), not(args.no_mem), args.arch)
-if  args.model:
-    acmodel = utils.load_model(args.model)
+acmodel = utils.load_model(obss_preprocessor.obs_space, envs[0].action_space, model_name,
+                           not(args.no_instr), not(args.no_mem), args.arch,
+                           create_if_not_exists=True)
 if torch.cuda.is_available():
     acmodel.cuda()
 
@@ -140,7 +138,7 @@ while num_frames < args.frames:
     update_start_time = time.time()
     logs = algo.update_parameters()
     update_end_time = time.time()
-
+    
     num_frames += logs["num_frames"]
     i += 1
 
