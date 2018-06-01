@@ -61,12 +61,18 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
             self.embedding_size += self.instr_embedding_size
 
         # Define actor's model
-        self.a_fc1 = nn.Linear(self.embedding_size, 64)
-        self.a_fc2 = nn.Linear(64, action_space.n)
+        self.actor = nn.Sequential(
+            nn.Linear(self.embedding_size, 64),
+            nn.Tanh(),
+            nn.Linear(64, action_space.n)
+        )
 
         # Define critic's model
-        self.c_fc1 = nn.Linear(self.embedding_size, 64)
-        self.c_fc2 = nn.Linear(64, 1)
+        self.critic = nn.Sequential(
+            nn.Linear(self.embedding_size, 64),
+            nn.Tanh(),
+            nn.Linear(64, 1)
+        )
 
         # Initialize parameters correctly
         self.apply(initialize_parameters)
@@ -98,14 +104,10 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
         if self.use_instr:
             embedding = torch.cat((embedding, embed_instr), dim=1)
 
-        x = self.a_fc1(embedding)
-        x = F.tanh(x)
-        x = self.a_fc2(x)
+        x = self.actor(embedding)
         dist = Categorical(logits=F.log_softmax(x, dim=1))
 
-        x = self.c_fc1(embedding)
-        x = F.tanh(x)
-        x = self.c_fc2(x)
+        x = self.critic(embedding)
         value = x.squeeze(1)
 
         return dist, value, memory
