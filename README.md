@@ -278,19 +278,29 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 ### HiddenKeyCorridor
 
-- Environment: The agent is placed in the middle of the corridor. One of the rooms is locked and contains a ball. Another room contains a key for opening the previous one.
+- Environment: The agent is placed in the middle of the corridor. One of the rooms is locked and contains a ball. Another room contains a key for opening the previous one. The level is split into a curriculum starting with one row of 3x3 rooms, going up to 3 rows of 6x6 rooms.
 - Instruction: Pick up an object of a given type
-- Level id: `BabyAI-HiddenKeyCorridor-v0`
 - Evaluate: image understanding, memory
+- Level ids:
+  - `BabyAI-KeyCorridorS3R1-v0`
+  - `BabyAI-KeyCorridorS3R2-v0`
+  - `BabyAI-KeyCorridorS3R3-v0`
+  - `BabyAI-KeyCorridorS4R3-v0`
+  - `BabyAI-KeyCorridorS5R3-v0`
+  - `BabyAI-KeyCorridorS6R3-v0`
 
 <p align="center"><img src="media/HiddenKeyCorridor.png" width="250"></p>
 
 ### 1Room
 
-- Environment: The agent is placed in a room with a ball. Rooms have a size of 8, 12, 16 or 20.
+- Environment: The agent is placed in a room with a ball. The level is split into a curriculum with rooms of size 8, 12, 16 or 20.
 - Instruction: Pick up the ball
-- Level id: `BabyAI-1RoomS8-v0`, `BabyAI-1RoomS12-v0`, `BabyAI-1RoomS16-v0`, `BabyAI-1RoomS20-v0`
 - Evaluate: image understanding, memory
+- Level ids:
+  - `BabyAI-1RoomS8-v0`
+  - `BabyAI-1RoomS12-v0`
+  - `BabyAI-1RoomS16-v0`
+  - `BabyAI-1RoomS20-v0`
 
 <p align="center">
     <img src="media/1RoomS8.png" width="250">
