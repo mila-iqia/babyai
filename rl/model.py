@@ -135,15 +135,13 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
             _, hidden = self.instr_rnn(self.word_embedding(instr))
             return hidden[-1]
         elif self.use_instr == 'conv':
-            for conv in self.instr_convs:
-                conv.flatten_parameters()
             inputs = self.word_embedding(instr).unsqueeze(1) # (B,1,T,D)
             inputs = [F.relu(conv(inputs)).squeeze(3) for conv in self.instr_convs]
             inputs = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in inputs]
 
             return torch.cat(inputs, 1)
         elif self.use_instr == 'bow':
-            self.instr_bow.flatten_parameters()
+            #self.instr_bow.flatten_parameters()
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             input_dim = self.obs_space["instr"]
             input = torch.zeros((instr.size(0), input_dim), device=device)
