@@ -698,7 +698,7 @@ class Level_FourObjsS7(Level_FourObjsS5):
             seed=seed
         )
 
-class HiddenKeyCorridor(RoomGridLevel):
+class KeyCorridor(RoomGridLevel):
     """
     A ball is behind a locked door, the key is placed in a
     random room.
@@ -743,7 +743,7 @@ class HiddenKeyCorridor(RoomGridLevel):
 
         self.instrs = [Instr(action="pickup", object=Object(obj.type))]
 
-class Level_KeyCorridorS3R1(HiddenKeyCorridor):
+class Level_KeyCorridorS3R1(KeyCorridor):
     def __init__(self, seed=None):
         super().__init__(
             room_size=3,
@@ -751,7 +751,7 @@ class Level_KeyCorridorS3R1(HiddenKeyCorridor):
             seed=seed
         )
 
-class Level_KeyCorridorS3R2(HiddenKeyCorridor):
+class Level_KeyCorridorS3R2(KeyCorridor):
     def __init__(self, seed=None):
         super().__init__(
             room_size=3,
@@ -759,7 +759,7 @@ class Level_KeyCorridorS3R2(HiddenKeyCorridor):
             seed=seed
         )
 
-class Level_KeyCorridorS3R3(HiddenKeyCorridor):
+class Level_KeyCorridorS3R3(KeyCorridor):
     def __init__(self, seed=None):
         super().__init__(
             room_size=3,
@@ -767,7 +767,7 @@ class Level_KeyCorridorS3R3(HiddenKeyCorridor):
             seed=seed
         )
 
-class Level_KeyCorridorS4R3(HiddenKeyCorridor):
+class Level_KeyCorridorS4R3(KeyCorridor):
     def __init__(self, seed=None):
         super().__init__(
             room_size=4,
@@ -775,7 +775,7 @@ class Level_KeyCorridorS4R3(HiddenKeyCorridor):
             seed=seed
         )
 
-class Level_KeyCorridorS5R3(HiddenKeyCorridor):
+class Level_KeyCorridorS5R3(KeyCorridor):
     def __init__(self, seed=None):
         super().__init__(
             room_size=5,
@@ -783,7 +783,7 @@ class Level_KeyCorridorS5R3(HiddenKeyCorridor):
             seed=seed
         )
 
-class Level_KeyCorridorS6R3(HiddenKeyCorridor):
+class Level_KeyCorridorS6R3(KeyCorridor):
     def __init__(self, seed=None):
         super().__init__(
             room_size=6,
