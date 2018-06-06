@@ -22,7 +22,7 @@ parser.add_argument("--env", required=True,
                     help="name of the environment to train on (REQUIRED)")
 parser.add_argument("--demos-origin", required=True,
                     help="origin of the demonstrations: human | agent (REQUIRED)")
-parser.add_argument("--model", default=None,
+parser.add_argument("--model", required=True,
                     help="name of the model (default: ENV_ORIGIN_il)")
 parser.add_argument("--seed", type=int, default=0,
                     help="random seed (default: 0)")
