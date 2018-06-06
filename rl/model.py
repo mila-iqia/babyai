@@ -13,45 +13,6 @@ def initialize_parameters(m):
         if m.bias is not None:
             m.bias.data.fill_(0)
 
-
-# Inspired by FiLMedBlock from https://arxiv.org/abs/1709.07871
-class Controller_1(nn.Module):
-    def __init__(self, in_features, out_features):
-        super().__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=16, kernel_size=(1,1)),
-            nn.ReLU(),
-            nn.Conv2d(in_channels=16, out_channels=64, kernel_size=(1,1)),
-            nn.ReLU()
-        )
-        self.weight = nn.Linear(in_features, out_features)
-        self.bias = nn.Linear(in_features, out_features)
-
-        self.apply(initialize_parameters)
-
-    def forward(self, x, y):
-        return self.conv(x) * self.weight(y).unsqueeze(2).unsqueeze(3) + self.bias(y).unsqueeze(2).unsqueeze(3)
-
-class Controller_2(nn.Module):
-    def __init__(self, in_features, out_features):
-        super().__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(1,1)),
-            nn.ReLU(),
-            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(1,1)),
-            nn.ReLU()
-        )
-        self.weight = nn.Linear(in_features, out_features)
-        self.bias = nn.Linear(in_features, out_features)
-
-        self.apply(initialize_parameters)
-
-    def forward(self, x, y):
-        return self.conv(x) * self.weight(y).unsqueeze(2).unsqueeze(3) + self.bias(y).unsqueeze(2).unsqueeze(3)
-
-
-
-
 class ACModel(nn.Module, torch_rl.RecurrentACModel):
     def __init__(self, obs_space, action_space, use_instr=False, use_memory=False, arch="cnn1"):
         super().__init__()
@@ -62,17 +23,12 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
 
         # Define image embedding
         self.image_embedding_size = 64
-
-
-
         if arch == "cnn1":
-            self.image_conv_1 = nn.Sequential(
-                nn.Conv2d(in_channels=64, out_channels=32, kernel_size=(2, 2)),
+            self.image_conv = nn.Sequential(
+                nn.Conv2d(in_channels=3, out_channels=16, kernel_size=(2, 2)),
                 nn.ReLU(),
-                nn.MaxPool2d(kernel_size=(2, 2), stride=2))
-
-            self.image_conv_2 = nn.Sequential(
-                nn.Conv2d(in_channels=64, out_channels=32, kernel_size=(2, 2)),
+                nn.MaxPool2d(kernel_size=(2, 2), stride=2),
+                nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(2, 2)),
                 nn.ReLU(),
                 nn.Conv2d(in_channels=32, out_channels=self.image_embedding_size, kernel_size=(2, 2)),
                 nn.ReLU()
@@ -99,14 +55,10 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
             self.instr_embedding_size = 128
             self.instr_rnn = nn.GRU(self.word_embedding_size, self.instr_embedding_size, batch_first=True)
 
-        if self.use_instr:
-            self.controller_1 = Controller_1(self.instr_embedding_size, 64)
-            self.controller_2 = Controller_2(self.instr_embedding_size, 64)
-
         # Resize image embedding
         self.embedding_size = self.semi_memory_size
-        # if self.use_instr:
-        #     self.embedding_size  += self.instr_embedding_size
+        if self.use_instr:
+            self.embedding_size += self.instr_embedding_size
 
         # Define actor's model
         self.actor = nn.Sequential(
@@ -138,15 +90,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
             embed_instr = self._get_embed_instr(obs.instr)
 
         x = torch.transpose(torch.transpose(obs.image, 1, 3), 2, 3)
-        if self.use_instr:
-            x = self.controller_1(x,embed_instr)
-
-        x = self.image_conv_1(x)
-        
-        if self.use_instr:
-	        x = self.controller_2(x,embed_instr)
-        
-        x = self.image_conv_2(x)
+        x = self.image_conv(x)
         x = x.reshape(x.shape[0], -1)
 
         if self.use_memory:
@@ -155,10 +99,10 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
             embedding = hidden[0]
             memory = torch.cat(hidden, dim=1)
         else:
-            embedding = x        
+            embedding = x
 
-        # if self.use_instr:
-        #     embedding = torch.cat((embedding, embed_instr), dim=1)
+        if self.use_instr:
+            embedding = torch.cat((embedding, embed_instr), dim=1)
 
         x = self.actor(embedding)
         dist = Categorical(logits=F.log_softmax(x, dim=1))
@@ -170,6 +114,5 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
 
     def _get_embed_instr(self, instr):
         self.instr_rnn.flatten_parameters()
-        #return self.word_embedding(instr[:,2]).squeeze(1)
         _, hidden = self.instr_rnn(self.word_embedding(instr))
         return hidden[-1]
