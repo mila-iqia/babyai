@@ -4,8 +4,8 @@ import numpy
 import torch
 
 def storage_dir():
-    if "torch_rl_storage_dir" in os.environ:
-        return os.environ["torch_rl_storage_dir"]
+    if "BABYAI_STORAGE" in os.environ:
+        return os.environ["BABYAI_STORAGE"]
     return "storage"
 
 def create_folders_if_necessary(path):
