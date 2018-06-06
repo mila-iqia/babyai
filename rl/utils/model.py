@@ -11,7 +11,7 @@ def get_model_path(model_name):
     return os.path.join(get_model_dir(model_name), "model.pt")
 
 def load_model(observation_space, action_space, model_name,
-               use_instr=False, use_memory=False, arch="cnn1",
+               use_instr=None, use_memory=False, arch="cnn1",
                create_if_not_exists=False):
     path = get_model_path(model_name)
     if os.path.exists(path):
