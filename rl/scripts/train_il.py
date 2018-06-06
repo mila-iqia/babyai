@@ -44,8 +44,8 @@ parser.add_argument("--epochs", type=int, default=100,
                     help="number of epochs (default: 10)")
 parser.add_argument("--batch-size", type=int, default=10,
                     help="batch size (In case of memory, the batch size is the number of demos, otherwise, it is the number of frames)(default: 10)")
-parser.add_argument("--no-instr", action="store_true", default=False,
-                    help="don't use instructions in the model")
+parser.add_argument("--instr_model", default=None,
+                    help="model to encode instructions, None if not using instructions, possible values: gru, conv, bow")
 parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='cnn1',
@@ -91,7 +91,7 @@ if args.tb:
 
 # Define actor-critic model
 acmodel = utils.load_model(obss_preprocessor.obs_space, env.action_space, model_name,
-                           not(args.no_instr), not(args.no_mem), args.arch,
+                           args.instr_model, not(args.no_mem), args.arch,
                            create_if_not_exists=True)
 acmodel.train()
 
