@@ -58,7 +58,7 @@ parser.add_argument("--epochs", type=int, default=4,
                     help="number of epochs for PPO (default: 4)")
 parser.add_argument("--batch-size", type=int, default=256,
                     help="batch size for PPO (default: 256)")
-parser.add_argument("--instr_model", default=None,
+parser.add_argument("--instr-model", default=None,
                     help="model to encode instructions, None if not using instructions, possible values: gru, conv, bow")
 parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
