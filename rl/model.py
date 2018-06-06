@@ -142,7 +142,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
             return torch.cat(inputs, 1)
         elif self.use_instr == 'bow':
             #self.instr_bow.flatten_parameters()
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = torch.device("cuda" if instr.is_cuda else "cpu")
             input_dim = self.obs_space["instr"]
             input = torch.zeros((instr.size(0), input_dim), device=device)
             idx = torch.arange(instr.size(0), dtype=torch.int64)
