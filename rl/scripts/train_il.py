@@ -15,6 +15,7 @@ from scripts.evaluate import evaluate
 
 
 import utils
+from model import ACModel
 
 # Parse arguments
 parser = argparse.ArgumentParser()
@@ -90,20 +91,19 @@ if args.tb:
 
 
 # Define actor-critic model
-acmodel = utils.load_model(obss_preprocessor.obs_space, env.action_space, model_name,
-                           not(args.no_instr), not(args.no_mem), args.arch,
-                           create_if_not_exists=True)
+acmodel = utils.load_model(model_name, raise_not_found=False)
+if acmodel is None:
+    acmodel = ACModel(obss_preprocessor.obs_space, env.action_space,
+                      not args.no_instr, not args.no_mem, args.arch)
 acmodel.train()
+if torch.cuda.is_available():
+    acmodel.cuda()
 
 
 # Log command, availability of CUDA, and model
 logger.info(args)
 logger.info("CUDA available: {}".format(torch.cuda.is_available()))
 logger.info(acmodel)
-
-
-if torch.cuda.is_available():
-    acmodel.cuda()
 
 optimizer = torch.optim.Adam(acmodel.parameters(), args.lr, eps=args.optim_eps)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.9)

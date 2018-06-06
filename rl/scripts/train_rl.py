@@ -10,6 +10,7 @@ import torch
 import torch_rl
 
 import utils
+from model import ACModel
 
 # Parse arguments
 
@@ -93,9 +94,10 @@ obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space
 
 # Define actor-critic model
 
-acmodel = utils.load_model(obss_preprocessor.obs_space, envs[0].action_space, model_name,
-                           not(args.no_instr), not(args.no_mem), args.arch,
-                           create_if_not_exists=True)
+acmodel = utils.load_model(model_name, raise_not_found=False)
+if acmodel is None:
+    acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
+                      not args.no_instr, not args.no_mem, args.arch)
 if torch.cuda.is_available():
     acmodel.cuda()
 
