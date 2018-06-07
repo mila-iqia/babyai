@@ -2,19 +2,17 @@
 
 import argparse
 import gym
-from babyai import levels
 import time
 import datetime
-import torch
 
-import utils
+import babyai.utils as utils
 
 # Parse arguments
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to be run (REQUIRED)")
-parser.add_argument("--model", required=True,
+parser.add_argument("--model", default=None,
                     help="name of the trained model (REQUIRED or --demos-origin REQUIRED)")
 parser.add_argument("--demos-origin", default=None,
                     help="origin of the demonstrations: human | agent (REQUIRED or --model REQUIRED)")
@@ -24,7 +22,6 @@ parser.add_argument("--seed", type=int, default=None,
                     help="random seed (default: 0 if model agent, 1 if demo agent)")
 parser.add_argument("--deterministic", action="store_true", default=False,
                     help="action with highest probability is selected for model agent")
-
 
 
 def evaluate(agent, env, episodes):
@@ -71,6 +68,11 @@ if __name__ == "__main__":
     # Define agent
 
     agent = utils.load_agent(args, env)
+
+    if args.model is None and args.episodes > len(agent.demos):
+        # Set the number of episodes to be the number of demos
+
+        args.episodes = len(agent.demos)
 
     # Run the agent
 

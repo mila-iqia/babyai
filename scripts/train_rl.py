@@ -2,15 +2,13 @@
 
 import argparse
 import gym
-from babyai import levels
 import time
 import datetime
-import sys
 import torch
 import torch_rl
 
-import utils
-from model import ACModel
+import babyai.utils as utils
+from babyai.model import ACModel
 
 # Parse arguments
 

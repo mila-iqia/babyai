@@ -4,15 +4,13 @@ import sys
 import copy
 import random
 import argparse
-import datetime
 import gym
-from babyai import levels
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QInputDialog
 from PyQt5.QtWidgets import QLabel, QTextEdit, QFrame
-from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
+from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout
 
-import utils
+import babyai.utils as utils
 
 # Parse arguments
 parser = argparse.ArgumentParser()
@@ -33,9 +31,6 @@ class ImgWidget(QLabel):
     def __init__(self, window):
         super().__init__()
         self.window = window
-
-    def mousePressEvent(self, event):
-        self.window.imageClick(event.x(), event.y())
 
 class AIGameWindow(QMainWindow):
     """Application window for the baby AI game"""
@@ -179,91 +174,6 @@ class AIGameWindow(QMainWindow):
         self.imgLabel.setFocus()
 
         QMainWindow.mousePressEvent(self, event)
-
-    def imageClick(self, x, y):
-        """
-        Pointing and naming logic
-        """
-
-        # Set the focus on the full render image
-        self.imgLabel.setFocus()
-
-        env = self.env.unwrapped
-        imgW = self.imgLabel.size().width()
-        imgH = self.imgLabel.size().height()
-
-        i = (env.grid.width * x) // imgW
-        j = (env.grid.height * y) // imgH
-        assert i < env.grid.width
-        assert j < env.grid.height
-
-        print('grid clicked: i=%d, j=%d' % (i, j))
-
-        desc, ok = QInputDialog.getText(self, 'Pointing & Naming', 'Enter Description:')
-        desc = str(desc)
-
-        if not ok or len(desc) == 0:
-            return
-
-        pointObj = env.grid.get(i, j)
-
-        if pointObj is None:
-            return
-
-        print('description: "%s"' % desc)
-        print('object: %s %s' % (pointObj.color, pointObj.type))
-
-        viewSz = minigrid.AGENT_VIEW_SIZE
-
-        NUM_TARGET = 50
-        numItrs = 0
-        numPos = 0
-        numNeg = 0
-
-        while (numPos < NUM_TARGET or numNeg < NUM_TARGET) and numItrs < 300:
-            env2 = copy.deepcopy(env)
-
-            # Randomly place the agent around the selected point
-            x, y = i, j
-            x += random.randint(-viewSz, viewSz)
-            y += random.randint(-viewSz, viewSz)
-            x = max(0, min(x, env2.grid.width - 1))
-            y = max(0, min(y, env2.grid.height - 1))
-            env2.agent_pos = (x, y)
-            env2.agent_dir = random.randint(0, 3)
-
-            # Don't want to place the agent on top of something
-            if env2.grid.get(*env2.agent_pos) != None:
-                continue
-
-            agent_sees = env2.agent_sees(i, j)
-
-            obs = env2.gen_obs()
-            img = obs['image'] if isinstance(obs, dict) else obs
-            obsGrid = minigrid.Grid.decode(img)
-
-            datum = {
-                'desc': desc,
-                'img': img,
-                'pos': (i, j),
-                'present': agent_sees
-            }
-
-            if agent_sees and numPos < NUM_TARGET:
-                self.pointingData.append(datum)
-                numPos += 1
-
-            if not agent_sees and numNeg < NUM_TARGET:
-                # Don't want identical object in mismatch examples
-                if (pointObj.color, pointObj.type) not in obsGrid:
-                    self.pointingData.append(datum)
-                    numNeg += 1
-
-            numItrs += 1
-
-        print('positive examples: %d' % numPos)
-        print('negative examples: %d' % numNeg)
-        print('total examples: %d' % len(self.pointingData))
 
     def shiftEnv(self):
         assert self.shift <= len(self.demos)

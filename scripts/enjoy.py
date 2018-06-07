@@ -2,11 +2,9 @@
 
 import argparse
 import gym
-from babyai import levels
 import time
-import torch
 
-import utils
+import babyai.utils as utils
 
 # Parse arguments
 

@@ -2,4 +2,5 @@
 *egg-info
 .vscode
 sbatch/
+storage/
 *.sh

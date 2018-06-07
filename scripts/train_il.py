@@ -2,7 +2,6 @@
 
 import argparse
 import gym
-from babyai import levels
 import time
 import datetime
 import numpy as np

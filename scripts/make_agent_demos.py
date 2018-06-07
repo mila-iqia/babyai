@@ -2,10 +2,8 @@
 
 import argparse
 import gym
-from babyai import levels
-import torch_rl
 
-import utils
+import babyai.utils as utils
 
 # Parse arguments
 
@@ -42,7 +40,7 @@ agent = utils.load_agent(args, env)
 demos = utils.load_demos(args.env, "agent")
 utils.synthesize_demos(demos)
 
-for i in range(1, args.demonstrations+1):
+for i in range(1, args.episodes+1):
     # Run the expert for one episode
 
     done = False
@@ -61,7 +59,7 @@ for i in range(1, args.demonstrations+1):
 
     # Save demonstrations
 
-    if args.save_interval > 0 and i < args.demonstrations and i % args.save_interval == 0:
+    if args.save_interval > 0 and i < args.episodes and i % args.save_interval == 0:
         utils.save_demos(demos, args.env, "agent")
         utils.synthesize_demos(demos)
 
