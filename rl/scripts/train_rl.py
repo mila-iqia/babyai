@@ -10,6 +10,7 @@ import torch
 import torch_rl
 
 import utils
+from model import ACModel
 
 # Parse arguments
 
