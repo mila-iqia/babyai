@@ -90,9 +90,10 @@ if args.tb:
 
 
 # Define actor-critic model
-acmodel = utils.load_model(obss_preprocessor.obs_space, env.action_space, model_name,
-                           args.instr_model, not(args.no_mem), args.arch,
-                           create_if_not_exists=True)
+acmodel = utils.load_model(model_name, raise_not_found=False)
+if acmodel is None:
+    acmodel = ACModel(obss_preprocessor.obs_space, env.action_space,
+                      not args.no_instr, not args.no_mem, args.arch)
 acmodel.train()
 
 
