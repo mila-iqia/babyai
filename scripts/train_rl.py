@@ -57,8 +57,8 @@ parser.add_argument("--epochs", type=int, default=4,
                     help="number of epochs for PPO (default: 4)")
 parser.add_argument("--batch-size", type=int, default=256,
                     help="batch size for PPO (default: 256)")
-parser.add_argument("--no-instr", action="store_true", default=False,
-                    help="don't use instructions in the model")
+parser.add_argument("--instr-model", default=None,
+                    help="model to encode instructions, None if not using instructions, possible values: gru, conv, bow")
 parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='cnn1',
@@ -95,7 +95,7 @@ obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space
 acmodel = utils.load_model(model_name, raise_not_found=False)
 if acmodel is None:
     acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
-                      not args.no_instr, not args.no_mem, args.arch)
+                      args.instr_model, not args.no_mem, args.arch)
 if torch.cuda.is_available():
     acmodel.cuda()
 
