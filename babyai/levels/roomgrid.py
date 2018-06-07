@@ -297,6 +297,8 @@ class RoomGrid(MiniGridEnv):
 
         start_room = self.room_from_pos(*self.start_pos)
 
+        added_doors = []
+
         def find_reach():
             reach = set()
             stack = [start_room]
@@ -330,7 +332,10 @@ class RoomGrid(MiniGridEnv):
                 continue
 
             color = self._rand_elem(COLOR_NAMES)
-            self.add_door(i, j, k, color, False)
+            door, _ = self.add_door(i, j, k, color, False)
+            added_doors.append(door)
+
+        return added_doors
 
     def add_distractors(self, num_distractors=10, room_i=None, room_j=None):
         """
