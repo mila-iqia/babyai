@@ -13,9 +13,9 @@ class Agent(ABC):
         pass
 
 class ModelAgent(Agent):
-    def __init__(self, model_name, observation_space, action_space, deterministic):
+    def __init__(self, model_name, observation_space, deterministic):
         self.obss_preprocessor = utils.ObssPreprocessor(model_name, observation_space)
-        self.model = utils.load_model(self.obss_preprocessor.obs_space, action_space, model_name)
+        self.model = utils.load_model(model_name)
         self.deterministic = deterministic
 
         if self.model.recurrent:
@@ -81,6 +81,6 @@ class DemoAgent(Agent):
 
 def load_agent(args, env):
     if args.model is not None:
-        return ModelAgent(args.model, env.observation_space, env.action_space, args.deterministic)
+        return ModelAgent(args.model, env.observation_space, args.deterministic)
     elif args.demos_origin is not None:
         return DemoAgent(args.env, args.demos_origin)
