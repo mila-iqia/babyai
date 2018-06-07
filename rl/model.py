@@ -65,7 +65,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
                 
         elif self.use_instr == 'bow':
             self.instr_embedding_size = 128
-            hidden_units = [obs_space["instr"], 32, 64, self.instr_embedding_size]
+            hidden_units = [obs_space["instr"], 64, self.instr_embedding_size]
             layers = []
             for n_in, n_out in zip(hidden_units, hidden_units[1:]):
                 layers.append(nn.Linear(n_in, n_out))
