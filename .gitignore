@@ -105,3 +105,6 @@ ENV/
 
 # pycharm
 .idea/
+
+# storage
+storage/
