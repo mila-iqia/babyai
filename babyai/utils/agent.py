@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 import torch
 
-import utils
+from .. import utils
+
 
 class Agent(ABC):
     @abstractmethod
@@ -11,6 +12,7 @@ class Agent(ABC):
     @abstractmethod
     def analyze_feedback(self, reward, done):
         pass
+
 
 class ModelAgent(Agent):
     def __init__(self, model_name, observation_space, deterministic):
@@ -43,6 +45,7 @@ class ModelAgent(Agent):
     def analyze_feedback(self, reward, done):
         if done and self.model.recurrent:
             self._initialize_memory()
+
 
 class DemoAgent(Agent):
     def __init__(self, env_name, origin):
@@ -78,6 +81,7 @@ class DemoAgent(Agent):
         if done:
             self.demo_id += 1
             self.step_id = 0
+
 
 def load_agent(args, env):
     if args.model is not None:

@@ -5,10 +5,12 @@ import re
 import torch
 import torch_rl
 
-import utils
+from .. import utils
+
 
 def get_vocab_path(model_name):
     return os.path.join(utils.get_model_dir(model_name), "vocab.json")
+
 
 class Vocabulary:
     def __init__(self, model_name):
@@ -28,6 +30,7 @@ class Vocabulary:
     def save(self):
         utils.create_folders_if_necessary(self.path)
         json.dump(self.vocab, open(self.path, "w"))
+
 
 class ObssPreprocessor:
     def __init__(self, model_name, obs_space):
@@ -67,5 +70,6 @@ class ObssPreprocessor:
 
         return obs_
 
+
 def reshape_reward(obs, action, reward, done):
-    return 5*reward
+    return 5 * reward

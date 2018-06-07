@@ -1,10 +1,12 @@
 import os
 import pickle
 
-import utils
+from .. import utils
+
 
 def get_demos_path(env_name, origin):
     return os.path.join(utils.storage_dir(), 'demos', env_name+"_"+origin+".pkl")
+
 
 def load_demos(env_name, origin):
     path = get_demos_path(env_name, origin)
@@ -12,10 +14,12 @@ def load_demos(env_name, origin):
         return pickle.load(open(path, "rb"))
     return []
 
+
 def save_demos(demos, env_name, origin):
     path = get_demos_path(env_name, origin)
     utils.create_folders_if_necessary(path)
     pickle.dump(demos, open(path, "wb"))
+
 
 def synthesize_demos(demos):
     print('{} demonstrations saved'.format(len(demos)))
