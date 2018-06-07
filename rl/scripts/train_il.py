@@ -94,7 +94,7 @@ if args.tb:
 acmodel = utils.load_model(model_name, raise_not_found=False)
 if acmodel is None:
     acmodel = ACModel(obss_preprocessor.obs_space, env.action_space,
-                      not args.no_instr, not args.no_mem, args.arch)
+                      args.instr_model, not args.no_mem, args.arch)
 acmodel.train()
 if torch.cuda.is_available():
     acmodel.cuda()
