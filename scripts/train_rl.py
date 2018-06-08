@@ -63,8 +63,6 @@ parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='cnn1',
                     help="image embedding architecture")
-parser.add_argument("--exp-name", default=None,
-                    help="name of the experiment to run")
 
 args = parser.parse_args()
 
