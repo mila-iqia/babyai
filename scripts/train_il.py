@@ -62,7 +62,7 @@ parser.add_argument("--val-seed", type=int, default=0,
                     help="seed for environment used for validation (default: 0)")
 
 class ImitationLearning(object):
-    def __init__(args):
+    def __init__(self, args):
         self.args = args
 
     def calculate_values(self, demos):
