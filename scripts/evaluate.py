@@ -66,13 +66,9 @@ def main(args, seed, episodes):
 
         args.episodes = len(agent.demos)
 
-    # Run the agent
-
-    start_time = time.time()
-
+    # Evaluate
     logs = evaluate(agent, env, episodes)
 
-    end_time = time.time()
 
     return logs
 
@@ -83,7 +79,10 @@ if __name__ == "__main__":
     if args.seed is None:
         args.seed = 0 if args.model is not None else 1
 
+    start_time = time.time()
     logs = main(args, args.seed, args.episodes)
+    end_time = time.time()
+
     
     # Print logs
     num_frames = sum(logs["num_frames_per_episode"])
