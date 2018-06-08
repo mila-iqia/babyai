@@ -83,7 +83,15 @@ for i in range(args.procs):
 # Define model name
 
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-default_model_name = "{}_{}_seed{}_{}".format(args.env, args.algo, args.seed, suffix)
+instr = "instr" if args.model_instr else "noinstr"
+mem = "mem" if args.model_mem else "nomem"
+default_model_name = "{}_{}_{}_{}_{}_seed{}_{}".format(args.env,
+                                                       args.algo,
+                                                       args.arch,
+                                                       instr,
+                                                       mem,
+                                                       args.seed,
+                                                       suffix)
 model_name = args.model or default_model_name
 
 # Define obss preprocessor
