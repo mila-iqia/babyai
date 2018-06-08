@@ -13,8 +13,9 @@ from torch_rl.utils import DictList
 from scripts.evaluate import evaluate
 
 
-import utils
-from model import ACModel
+import babyai.utils as utils
+from babyai.model import ACModel
+
 
 # Parse arguments
 parser = argparse.ArgumentParser()
@@ -42,8 +43,10 @@ parser.add_argument("--optim-eps", type=float, default=1e-5,
                     help="Adam optimizer epsilon (default: 1e-5)")
 parser.add_argument("--batch-size", type=int, default=10,
                     help="batch size (In case of memory, the batch size is the number of demos, otherwise, it is the number of frames)(default: 10)")
-parser.add_argument("--instr-model", default=None,
-                    help="model to encode instructions, None if not using instructions, possible values: gru, conv, bow")
+parser.add_argument("--no-instr", action="store_true", default=False,
+                    help="don't use instructions in the model")
+parser.add_argument("--instr-arch", default="gru",
+                    help="arch to encode instructions, possible values: gru, conv, bow (default: gru)")
 parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='cnn1',
@@ -62,7 +65,7 @@ parser.add_argument("--val-seed", type=int, default=0,
                     help="seed for environment used for validation (default: 0)")
 
 class ImitationLearning(object):
-    def __init__(args):
+    def __init__(self,args):
         self.args = args
 
     def calculate_values(self, demos):
@@ -311,7 +314,7 @@ class ImitationLearning(object):
         self.acmodel = utils.load_model(model_name, raise_not_found=False)
         if self.acmodel is None:
             self.acmodel = ACModel(self.obss_preprocessor.obs_space, self.env.action_space,
-                              not self.args.no_instr, not self.args.no_mem, self.args.arch)
+                                not self.args.no_instr, self.args.instr_arch, not self.args.no_mem, self.args.arch)
         self.acmodel.train()
         if torch.cuda.is_available():
             self.acmodel.cuda()
