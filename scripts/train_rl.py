@@ -81,8 +81,8 @@ for i in range(args.procs):
 # Define model name
 
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-instr = "instr" if args.model_instr else "noinstr"
-mem = "mem" if args.model_mem else "nomem"
+instr = args.isntr_model if args.instr_model else "noinstr"
+mem = "mem" if not args.no_mem else "nomem"
 default_model_name = "{}_{}_{}_{}_{}_seed{}_{}".format(args.env,
                                                        args.algo,
                                                        args.arch,
