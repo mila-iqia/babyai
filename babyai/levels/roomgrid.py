@@ -1,6 +1,7 @@
 import gym_minigrid
 from gym_minigrid.minigrid import *
 
+
 def reject_next_to(env, pos):
     """
     Function to filter out object positions that are right next to
@@ -11,6 +12,7 @@ def reject_next_to(env, pos):
     x, y = pos
     d = abs(sx - x) + abs(sy - y)
     return d < 2
+
 
 class Room:
     def __init__(
@@ -44,6 +46,7 @@ class Room:
             topX + 1, topX + sizeX - 1,
             topY + 1, topY + sizeY - 1
         )
+
 
 class RoomGrid(MiniGridEnv):
     """

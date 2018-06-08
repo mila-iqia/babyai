@@ -144,7 +144,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
 
             return torch.cat(inputs, 1)
         elif self.use_instr == 'bow':
-            #self.instr_bow.flatten_parameters()
+            # self.instr_bow.flatten_parameters()
             device = torch.device("cuda" if instr.is_cuda else "cpu")
             input_dim = self.obs_space["instr"]
             input = torch.zeros((instr.size(0), input_dim), device=device)
@@ -153,4 +153,3 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
             return self.instr_bow(input)
         else:
             ValueError("Undefined instruction architecture: {}".format(self.use_instr))
-            
