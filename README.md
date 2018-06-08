@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/maximecb/baby-ai-game.svg?branch=master)](https://travis-ci.org/maximecb/baby-ai-game)
 
-Prototype of a game where a reinforcement learning agent is trained through natural language instructions. This is a research project based at the [Montreal Institute for Learning Algorithms (MILA)](https://mila.quebec/en/).
+Prototype of a game where a reinforcement learning agent is trained through natural language instructions. This is a research project based at [MILA](https://mila.quebec/en/).
 
 ## Installation
 
@@ -11,50 +11,21 @@ Requirements:
 - OpenAI gym
 - NumPy
 - PyQT5
-- PyTorch
+- PyTorch 0.4+
 
 Start by manually installing PyTorch. See the [PyTorch website](http://pytorch.org/)
 for installation instructions specific to your platform.
-
-Then, install the [minigrid Gym environment](https://github.com/maximecb/gym-minigrid):
-
-```
-git clone https://github.com/maximecb/gym-minigrid.git
-cd gym-minigrid
-pip3 install -e .
-cd ..
-```
 
 Then, clone this repository and install the other dependencies with `pip3`:
 
 ```
 git clone https://github.com/maximecb/baby-ai-game.git
 cd baby-ai-game
-pip3 install -e .
+pip3 install --process-dependency-links --editable .
 ```
 
-#### For this branch specifically
 
-After installing minigrid and baby-ai-game (necessary to access the levels), you need to install [pytorch-a2c-ppo](https://github.com/lcswillems/pytorch-a2c-ppo)
-
-```
-git clone https://github.com/lcswillems/pytorch-a2c-ppo.git
-cd pytorch-a2c-ppo
-pip3 install -e torch_rl
-cd ..
-```
-
-To train an RL agent, you can do:
-```
-cd baby-ai-game
-cd rl
-python -m scripts.train_rl --env BabyAI-OpenDoorColor-v0 --algo ppo
-```
-More options available in [`train.py`](rl/scripts/train.py)
-
-By default, models and logs are stored in the `storage` folder. You can define a different folder in the environment variable `torch_rl_storage_dir`.
-
-### For conda users
+### Installation using Conda (Alternative Method)
 
 If you are using conda, you can create a `babyai` environment with all the dependencies by running:
 
@@ -72,7 +43,7 @@ The `agents` directory will contain a default implementation of one or more agen
 
 In `pytorch_rl`, there is an implementation of the A2C, PPO and ACKTR reinforcement learning algorithms. This is a custom fork of [this repository](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr) which has been adapted to work with the `gym-minigrid` environment. This RL implementation has issues and will hopefully be replaced by a better one soon. One important problem, for instance, is that it is not importable as a module.
 
-The `main.py` script implements a template of a user interface for interactive human teaching. The version found in the master branch allows you to control the agent manually with the arrow keys, but it is not currently connected to any model or teaching code. Currently, most experiments are done offline, without a user interface.
+The `gui.py` script implements a template of a user interface for interactive human teaching. The version found in the master branch allows you to control the agent manually with the arrow keys, but it is not currently connected to any model or teaching code. Currently, most experiments are done offline, without a user interface.
 
 ## Instructions for Committers
 
@@ -158,8 +129,8 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 - Environment: The agent is placed in a room with a door.
 - Instruction: Open the red door
-- Level id: `BabyAI-OpenRedDoor-v0`
 - Evaluate: image understanding
+- Level id: `BabyAI-OpenRedDoor-v0`
 
 <p align="center"><img src="media/OpenRedDoor.png" width="250"></p>
 
@@ -170,8 +141,14 @@ A work-in-progress review of related work can be found [here](https://www.overle
     - a given color or location in `OpenDoor`
     - a given color in `OpenDoorColor`
     - a given location in `OpenDoorLoc`
-- Level id: `BabyAI-OpenDoor-v0`, `BabyAI-OpenDoorDebug-v0`, `BabyAI-OpenDoorColor-v0`, `BabyAI-OpenDoorColorDebug-v0`, `BabyAI-OpenDoorLoc-v0`, `BabyAI-OpenDoorLocDebug-v0`
 - Evaluate: image & text understanding, memory in `OpenDoor` and `OpenDoorLoc`
+- Level id:
+    - `BabyAI-OpenDoor-v0`
+    - `BabyAI-OpenDoorDebug-v0`
+    - `BabyAI-OpenDoorColor-v0`
+    - `BabyAI-OpenDoorColorDebug-v0`
+    - `BabyAI-OpenDoorLoc-v0`
+    - `BabyAI-OpenDoorLocDebug-v0`
 
 <p align="center"><img src="media/OpenDoor.png" width="250"></p>
 
@@ -179,8 +156,8 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 - Environment: The agent is placed in a room with 4 different doors and 5 different objects.
 - Instruction: Go to an object or a door of a given type and color
-- Level id: `BabyAI-GoToObjDoor-v0`
 - Evaluate: image & text understanding
+- Level id: `BabyAI-GoToObjDoor-v0`
 
 <p align="center"><img src="media/GoToObjDoor.png" width="250"></p>
 
@@ -188,8 +165,8 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 - Environment: The agent is placed in a room with 4 different doors and 5 different objects.
 - Instruction: [Pick up an object] or [go to an object or door] or [open a door]
-- Level id: `BabyAI-ActionObjDoor-v0`
 - Evaluate: image & text understanding
+- Level id: `BabyAI-ActionObjDoor-v0`
 
 <p align="center"><img src="media/ActionObjDoor.png" width="250"></p>
 
@@ -197,8 +174,10 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 - Environment: The agent is placed in a room with a key and a locked door. The room has either no distractors in `Unlock` or 3 distractors in `UnlockDist`.
 - Instruction: Open the door
-- Level id: `BabyAI-Unlock-v0`, `BabyAI-UnlockDist-v0`
 - Evaluate: image understanding, memory in `UnlockDist`
+- Level id:
+    - `BabyAI-Unlock-v0`
+    - `BabyAI-UnlockDist-v0`
 
 <p align="center">
     <img src="media/Unlock.png" width="250">
@@ -209,8 +188,8 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 - Environment: The agent is placed in a room with a key and a locked door. The door opens onto a room with a box. Rooms have either no distractors in `UnlockPickup` or 4 distractors in `UnlockPickupDist`.
 - Instruction: Pick up an object of a given type and color
-- Level id: `BabyAI-UnlockPickup-v0`, `BabyAI-UnlockPickupDist-v0`
 - Evaluate: image understanding, memory in `UnlockPickupDist`
+- Level id: `BabyAI-UnlockPickup-v0`, `BabyAI-UnlockPickupDist-v0`
 
 <p align="center">
     <img src="media/UnlockPickup.png" width="250">
@@ -221,8 +200,8 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 - Environment: The agent is placed in a room with a key and a locked door. The door is blocked by a ball. The door opens onto a room with a box.
 - Instruction: Pick up the box
-- Level id: `BabyAI-BlockedUnlockPickup-v0`
 - Evaluate: image understanding
+- Level id: `BabyAI-BlockedUnlockPickup-v0`
 
 <p align="center"><img src="media/BlockedUnlockPickup.png" width="250"></p>
 
@@ -230,17 +209,28 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 - Environment: The agent is placed in a room with a key of color A and two doors of color A and B. The door of color A opens onto a room with a key of color B. The door of color B opens onto a room with a ball.
 - Instruction: Pick up the ball
-- Level id: `BabyAI-UnlockToUnlock-v0`
 - Evaluate: image understanding
+- Level id: `BabyAI-UnlockToUnlock-v0`
 
 <p align="center"><img src="media/UnlockToUnlock.png" width="250"></p>
+
+### KeyInBox
+
+- Environment: The agent is placed in a room with a box containing a key and a locked door.
+- Instruction: Open the door
+- Evaluate: image understanding
+- Level id: `BabyAI-KeyInBox-v0`
+
+<p align="center"><img src="media/KeyInBox.png" width="250"></p>
 
 ### PickupDist
 
 - Environment: The agent is placed in a room with 5 objects. The environment is done when the instruction is executed in the regular mode or when any object is picked in the `debug` mode.
 - Instruction: Pick up an object of a given type and color
-- Level id: `BabyAI-PickupDist-v0`, `BabyAI-PickupDistDebug-v0`
 - Evaluate: image & text understanding
+- Level id:
+    - `BabyAI-PickupDist-v0`
+    - `BabyAI-PickupDistDebug-v0`
 
 <p align="center"><img src="media/PickupDist.png" width="250"></p>
 
@@ -248,8 +238,8 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 - Environment: The agent is placed in the middle room. An object is placed in the top-middle room.
 - Instruction: Pick up an object of a given type and color
-- Level id: `BabyAI-PickupAbove-v0`
 - Evaluate: image & text understanding, memory
+- Level id: `BabyAI-PickupAbove-v0`
 
 <p align="center"><img src="media/PickupAbove.png" width="250"></p>
 
@@ -257,8 +247,10 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 - Environment: The agent is placed in a room with a red door and a blue door facing each other. The environment is done when the instruction is executed in the regular mode or when the blue door is opened in the `debug` mode.
 - Instruction: Open the red door then open the blue door
-- Level id: `BabyAI-OpenRedBlueDoors-v0`, `BabyAI-OpenRedBlueDoorsDebug-v0`
 - Evaluate: image understanding, memory
+- Level id:
+    - `BabyAI-OpenRedBlueDoors-v0`
+    - `BabyAI-OpenRedBlueDoorsDebug-v0`
 
 <p align="center"><img src="media/OpenRedBlueDoors.png" width="250"></p>
 
@@ -266,8 +258,10 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 - Environment: The agent is placed in a room with a red door and a blue door facing each other. The environment is done when the instruction is executed in the regular mode or when the second door is opened in the `debug` mode.
 - Instruction: Open the door of color X then open the door of color Y
-- Level id: `BabyAI-OpenTwoDoors-v0`, `BabyAI-OpenTwoDoorsDebug-v0`
 - Evaluate: image & text understanding, memory
+- Level id:
+    - `BabyAI-OpenTwoDoors-v0`
+    - `BabyAI-OpenTwoDoorsDebug-v0`
 
 <p align="center"><img src="media/OpenTwoDoors.png" width="250"></p>
 
@@ -275,8 +269,11 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 - Environment: The agent is placed in the middle room. An object is placed in one of the rooms. Rooms have a size of 5 in `FindObjS5`, 6 in `FindObjS6` or 7 in `FindObjS7`.
 - Instruction: Pick up an object of a given type and color
-- Level id: `BabyAI-FindObjS5-v0`, `BabyAI-FindObjS6-v0`, `BabyAI-FindObjS7-v0`
 - Evaluate: image understanding, memory
+- Level id:
+    - `BabyAI-FindObjS5-v0`
+    - `BabyAI-FindObjS6-v0`
+    - `BabyAI-FindObjS7-v0`
 
 <p align="center">
     <img src="media/FindObjS5.png" width="250">
@@ -288,8 +285,11 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 - Environment: The agent is placed in the middle room. 4 different objects are placed in the adjacent rooms. Rooms have a size of 5 in `FourObjsS5`, 6 in `FourObjsS6` or 7 in `FourObjsS7`.
 - Instruction: Pick up an object of a given type and location
-- Level id: `BabyAI-FourObjsS5-v0`, `BabyAI-FourObjsS6-v0`, `BabyAI-FourObjsS7-v0`
 - Evaluate: image understanding, memory
+- Level id:
+    - `BabyAI-FourObjsS5-v0`
+    - `BabyAI-FourObjsS6-v0`
+    - `BabyAI-FourObjsS7-v0`
 
 <p align="center">
     <img src="media/FourObjsS5.png" width="250">
@@ -299,19 +299,36 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 ### HiddenKeyCorridor
 
-- Environment: The agent is placed in the middle of the corridor. One of the rooms is locked and contains a ball. Another room contains a key for opening the previous one.
+- Environment: The agent is placed in the middle of the corridor. One of the rooms is locked and contains a ball. Another room contains a key for opening the previous one. The level is split into a curriculum starting with one row of 3x3 rooms, going up to 3 rows of 6x6 rooms.
 - Instruction: Pick up an object of a given type
-- Level id: `BabyAI-HiddenKeyCorridor-v0`
 - Evaluate: image understanding, memory
+- Level ids:
+  - `BabyAI-KeyCorridorS3R1-v0`
+  - `BabyAI-KeyCorridorS3R2-v0`
+  - `BabyAI-KeyCorridorS3R3-v0`
+  - `BabyAI-KeyCorridorS4R3-v0`
+  - `BabyAI-KeyCorridorS5R3-v0`
+  - `BabyAI-KeyCorridorS6R3-v0`
 
-<p align="center"><img src="media/HiddenKeyCorridor.png" width="250"></p>
+<p align="center">
+    <img src="media/KeyCorridorS3R1.png" width="250">
+    <img src="media/KeyCorridorS3R2.png" width="250">
+    <img src="media/KeyCorridorS3R3.png" width="250">
+    <img src="media/KeyCorridorS4R3.png" width="250">
+    <img src="media/KeyCorridorS5R3.png" width="250">
+    <img src="media/KeyCorridorS6R3.png" width="250">
+</p>
 
 ### 1Room
 
-- Environment: The agent is placed in a room with a ball. Rooms have a size of 8, 12, 16 or 20.
+- Environment: The agent is placed in a room with a ball. The level is split into a curriculum with rooms of size 8, 12, 16 or 20.
 - Instruction: Pick up the ball
-- Level id: `BabyAI-1RoomS8-v0`, `BabyAI-1RoomS12-v0`, `BabyAI-1RoomS16-v0`, `BabyAI-1RoomS20-v0`
 - Evaluate: image understanding, memory
+- Level ids:
+  - `BabyAI-1RoomS8-v0`
+  - `BabyAI-1RoomS12-v0`
+  - `BabyAI-1RoomS16-v0`
+  - `BabyAI-1RoomS20-v0`
 
 <p align="center">
     <img src="media/1RoomS8.png" width="250">

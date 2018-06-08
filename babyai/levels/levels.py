@@ -729,13 +729,19 @@ class Level_FourObjsS7(Level_FourObjsS5):
         )
 
 
-class Level_HiddenKeyCorridor(RoomGridLevel):
+class KeyCorridor(RoomGridLevel):
     """
     A ball is behind a locked door, the key is placed in a
     random room.
     """
 
-    def __init__(self, num_rows=3, obj_type="ball", room_size=6, seed=None):
+    def __init__(
+        self,
+        num_rows=3,
+        obj_type="ball",
+        room_size=6,
+        seed=None
+    ):
         self.obj_type = obj_type
 
         super().__init__(
@@ -753,21 +759,69 @@ class Level_HiddenKeyCorridor(RoomGridLevel):
 
         # Add a locked door on the bottom right
         # Add an object behind the locked door
-        room_idx = self._rand_int(0, 3)
+        room_idx = self._rand_int(0, self.num_rows)
         door, _ = self.add_door(2, room_idx, 2, locked=True)
         obj, _ = self.add_object(2, room_idx, kind=self.obj_type)
 
         # Add a key in a random room on the left side
-        self.add_object(0, self._rand_int(0, 3), 'key', door.color)
+        self.add_object(0, self._rand_int(0, self.num_rows), 'key', door.color)
 
         # Place the agent in the middle
-        self.place_agent(1, 1)
+        self.place_agent(1, self.num_rows // 2)
 
         # Make sure all rooms are accessible
         self.connect_all()
 
         self.instrs = [Instr(action="pickup", object=Object(obj.type))]
 
+
+class Level_KeyCorridorS3R1(KeyCorridor):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=3,
+            num_rows=1,
+            seed=seed
+        )
+
+class Level_KeyCorridorS3R2(KeyCorridor):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=3,
+            num_rows=2,
+            seed=seed
+        )
+
+class Level_KeyCorridorS3R3(KeyCorridor):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=3,
+            num_rows=3,
+            seed=seed
+        )
+
+class Level_KeyCorridorS4R3(KeyCorridor):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=4,
+            num_rows=3,
+            seed=seed
+        )
+
+class Level_KeyCorridorS5R3(KeyCorridor):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=5,
+            num_rows=3,
+            seed=seed
+        )
+
+class Level_KeyCorridorS6R3(KeyCorridor):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=6,
+            num_rows=3,
+            seed=seed
+        )
 
 class Level_1RoomS8(RoomGridLevel):
     """
@@ -786,7 +840,6 @@ class Level_1RoomS8(RoomGridLevel):
     def gen_mission(self):
         obj, _ = self.add_object(0, 0, kind="ball")
         self.place_agent()
-
         self.instrs = [Instr(action="pickup", object=Object(obj.type))]
 
 
