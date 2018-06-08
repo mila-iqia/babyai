@@ -48,22 +48,14 @@ def evaluate(agent, env, episodes):
     
     return logs
 
-
-if __name__ == "__main__":
-    args = parser.parse_args()
-
-    assert args.model is not None or args.demos_origin is not None, "--model or --demos-origin must be specified."
-    if args.seed is None:
-        args.seed = 0 if args.model is not None else 1
-
+def main(args, seed, episodes):
     # Set seed for all randomness sources
-
-    utils.seed(args.seed)
+    utils.seed(seed)
 
     # Generate environment
 
     env = gym.make(args.env)
-    env.seed(args.seed)
+    env.seed(seed)
 
     # Define agent
 
@@ -78,12 +70,22 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    logs = evaluate(agent, env, args.episodes)
+    logs = evaluate(agent, env, episodes)
 
     end_time = time.time()
 
-    # Print logs
+    return logs
 
+
+if __name__ == "__main__":
+    args = parser.parse_args()
+    assert args.model is not None or args.demos_origin is not None, "--model or --demos-origin must be specified."
+    if args.seed is None:
+        args.seed = 0 if args.model is not None else 1
+
+    logs = main(args, args.seed, args.episodes)
+    
+    # Print logs
     num_frames = sum(logs["num_frames_per_episode"])
     fps = num_frames/(end_time - start_time)
     ellapsed_time = int(end_time - start_time)
