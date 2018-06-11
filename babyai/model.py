@@ -36,7 +36,7 @@ class Controller(nn.Module):
 
 
 class ACModel(nn.Module, torch_rl.RecurrentACModel):
-    def __init__(self, obs_space, action_space, use_instr=None, lang_model="gru", use_memory=False, arch="cnn1"):
+    def __init__(self, obs_space, action_space, use_instr=False, lang_model="gru", use_memory=False, arch="cnn1"):
         super().__init__()
 
         # Decide which components are enabled

@@ -3,7 +3,7 @@
 import numpy as np
 import argparse
 import csv
-from scripts.train_il import ImitationLearning
+import scripts.train_il as train_il 
 import scripts.evaluate as evaluate
 
 parser = argparse.ArgumentParser()
@@ -63,8 +63,7 @@ def run(num_demos):
 		args.model = "{}_{}_il_seed_{}_demos_{}".format(args.env, args.demos_origin, seed, num_demos)
 		args.episodes = num_demos
 		args.seed = seed
-		il_learn = ImitationLearning(args)
-		il_learn.main()
+		train_il.main(args)
 		logs = evaluate.main(args, args.test_seed, args.test_episodes)
 		results.append(np.mean(logs["return_per_episode"]))
 		writer.writerow([args.model, str(np.mean(logs["return_per_episode"]))])
@@ -87,7 +86,7 @@ while True:
 		print("Minimum No. of Samples Required = %d" % min_demo)
 		break
 	
-	if np.log2(max_demo/min_demo) <= 1:
+	if np.log2(max_demo/min_demo) <= 0.5:
 		print("Minimum No. of Samples Required = %d" % max_demo)
 		print("Ratio : %.3f" % np.log2(max_demo/min_demo))
 		break
@@ -98,7 +97,7 @@ while True:
 
 	assert return_mid >= return_min and return_mid <= return_max
 
-	if (max_performance_bar-return_mid) >= epsilon:
+	if (max_performance_bar-return_mid) >= args.epsilon:
 		min_demo = mid_demo
 		return_min = return_mid
 	else:
