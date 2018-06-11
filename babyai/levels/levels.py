@@ -11,6 +11,7 @@ from .instrs import *
 from .instr_gen import gen_instr_seq, gen_object, gen_surface
 from .verifier import InstrSeqVerifier, OpenVerifier, PickupVerifier
 
+
 class RoomGridLevel(RoomGrid):
     """
     Base for levels based on RoomGrid
@@ -81,6 +82,7 @@ class RoomGridLevel(RoomGrid):
     def gym_id(self):
         return self.__class__.gym_id
 
+
 class Level_OpenRedDoor(RoomGridLevel):
     """
     Go to the red door
@@ -101,6 +103,7 @@ class Level_OpenRedDoor(RoomGridLevel):
         obj, _ = self.add_door(0, 0, 0, 'red', locked=False)
         self.place_agent(0, 0)
         self.instrs = [Instr(action="open", object=Object(obj.type, obj.color))]
+
 
 class Level_OpenDoor(RoomGridLevel):
     """
@@ -135,6 +138,7 @@ class Level_OpenDoor(RoomGridLevel):
         self.place_agent(1, 1)
         self.instrs = [Instr(action="open", object=object)]
 
+
 class Level_OpenDoorDebug(Level_OpenDoor):
     """
     Same as OpenDoor but the level stops when any door is opened
@@ -163,6 +167,7 @@ class Level_OpenDoorDebug(Level_OpenDoor):
 
         return obs, reward, done, info
 
+
 class Level_OpenDoorColor(Level_OpenDoor):
     """
     Go to the door
@@ -176,12 +181,14 @@ class Level_OpenDoorColor(Level_OpenDoor):
             seed=seed
         )
 
+
 class Level_OpenDoorColorDebug(Level_OpenDoorColor, Level_OpenDoorDebug):
     """
     Same as OpenDoorColor but the level stops when any door is opened
     """
 
     pass
+
 
 class Level_OpenDoorLoc(Level_OpenDoor):
     """
@@ -196,12 +203,14 @@ class Level_OpenDoorLoc(Level_OpenDoor):
             seed=seed
         )
 
+
 class Level_OpenDoorLocDebug(Level_OpenDoorLoc, Level_OpenDoorDebug):
     """
     Same as OpenDoorLoc but the level stops when any door is opened
     """
 
     pass
+
 
 class Level_GoToObjDoor(RoomGridLevel):
     """
@@ -225,6 +234,7 @@ class Level_GoToObjDoor(RoomGridLevel):
 
         type, color = self._rand_elem(objs)
         self.instrs = [Instr(action="goto", object=Object(type, color))]
+
 
 class Level_ActionObjDoor(RoomGridLevel):
     """
@@ -256,6 +266,7 @@ class Level_ActionObjDoor(RoomGridLevel):
             action = self._rand_elem(['goto', 'pickup'])
         self.instrs = [Instr(action=action, object=Object(type, color))]
 
+
 class Level_Unlock(RoomGridLevel):
     """
     Fetch a key and unlock a door
@@ -278,6 +289,7 @@ class Level_Unlock(RoomGridLevel):
 
         self.instrs = [Instr(action="open", object=Object(door.type))]
 
+
 class Level_UnlockDist(Level_Unlock):
     """
     Fetch a key and unlock a door
@@ -286,6 +298,7 @@ class Level_UnlockDist(Level_Unlock):
 
     def __init__(self, seed=None):
         super().__init__(distractors=True, seed=seed)
+
 
 class Level_KeyInBox(RoomGridLevel):
     """
@@ -308,6 +321,7 @@ class Level_KeyInBox(RoomGridLevel):
         self.place_agent(1, 1)
 
         self.instrs = [Instr(action="open", object=Object(door.type))]
+
 
 class Level_UnlockPickup(RoomGridLevel):
     """
@@ -340,6 +354,7 @@ class Level_UnlockPickup(RoomGridLevel):
 
         self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
 
+
 class Level_UnlockPickupDist(Level_UnlockPickup):
     """
     Unlock a door, then pick up an object in another room
@@ -348,6 +363,7 @@ class Level_UnlockPickupDist(Level_UnlockPickup):
 
     def __init__(self, seed=None):
         super().__init__(distractors=True, seed=seed)
+
 
 class Level_BlockedUnlockPickup(RoomGridLevel):
     """
@@ -379,6 +395,7 @@ class Level_BlockedUnlockPickup(RoomGridLevel):
         self.place_agent(0, 0)
 
         self.instrs = [Instr(action="pickup", object=Object(obj.type))]
+
 
 class Level_UnlockToUnlock(RoomGridLevel):
     """
@@ -416,6 +433,7 @@ class Level_UnlockToUnlock(RoomGridLevel):
 
         self.instrs = [Instr(action="pickup", object=Object(obj.type))]
 
+
 class Level_PickupDist(RoomGridLevel):
     """
     Pick up an object
@@ -447,6 +465,7 @@ class Level_PickupDist(RoomGridLevel):
 
         self.instrs = [Instr(action="pickup", object=Object(type, color))]
 
+
 class Level_PickupDistDebug(Level_PickupDist):
     """
     Same as PickupDist but the level stops when any object is picked
@@ -475,6 +494,7 @@ class Level_PickupDistDebug(Level_PickupDist):
 
         return obs, reward, done, info
 
+
 class Level_PickupAbove(RoomGridLevel):
     """
     Pick up an object (in the room above)
@@ -499,6 +519,7 @@ class Level_PickupAbove(RoomGridLevel):
         self.connect_all()
 
         self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
+
 
 class Level_OpenTwoDoors(RoomGridLevel):
     """
@@ -540,6 +561,7 @@ class Level_OpenTwoDoors(RoomGridLevel):
             Instr(action="open", object=Object(door2.type, door2.color))
         ]
 
+
 class Level_OpenTwoDoorsDebug(Level_OpenTwoDoors):
     """
     Same as OpenTwoDoors but the level stops when the second door is opened
@@ -569,6 +591,7 @@ class Level_OpenTwoDoorsDebug(Level_OpenTwoDoors):
 
         return obs, reward, done, info
 
+
 class Level_OpenRedBlueDoors(Level_OpenTwoDoors):
     """
     Open red door, then open blue door
@@ -584,6 +607,7 @@ class Level_OpenRedBlueDoors(Level_OpenTwoDoors):
             seed=seed
         )
 
+
 class Level_OpenRedBlueDoorsDebug(Level_OpenTwoDoorsDebug):
     """
     Same as OpenRedBlueDoors but the level stops when the blue door is opened
@@ -595,6 +619,7 @@ class Level_OpenRedBlueDoorsDebug(Level_OpenTwoDoorsDebug):
             second_color="blue",
             seed=seed
         )
+
 
 class Level_FindObjS5(RoomGridLevel):
     """
@@ -620,6 +645,7 @@ class Level_FindObjS5(RoomGridLevel):
 
         self.instrs = [Instr(action="pickup", object=Object(obj.type))]
 
+
 class Level_FindObjS6(Level_FindObjS5):
     """
     Same as the FindObjS5 level, but rooms have a size of 6
@@ -631,6 +657,7 @@ class Level_FindObjS6(Level_FindObjS5):
             seed=seed
         )
 
+
 class Level_FindObjS7(Level_FindObjS5):
     """
     Same as the FindObjS5 level, but rooms have a size of 7
@@ -641,6 +668,7 @@ class Level_FindObjS7(Level_FindObjS5):
             room_size=7,
             seed=seed
         )
+
 
 class Level_FourObjsS5(RoomGridLevel):
     """
@@ -676,6 +704,7 @@ class Level_FourObjsS5(RoomGridLevel):
         rand_obj = Object(obj.type, obj.color, loc)
         self.instrs = [Instr(action="pickup", object=rand_obj)]
 
+
 class Level_FourObjsS6(Level_FourObjsS5):
     """
     Same as the FindObjS5 level, but rooms have a size of 6
@@ -687,6 +716,7 @@ class Level_FourObjsS6(Level_FourObjsS5):
             seed=seed
         )
 
+
 class Level_FourObjsS7(Level_FourObjsS5):
     """
     Same as the FindObjS5 level, but rooms have a size of 7
@@ -697,6 +727,7 @@ class Level_FourObjsS7(Level_FourObjsS5):
             room_size=7,
             seed=seed
         )
+
 
 class KeyCorridor(RoomGridLevel):
     """
@@ -742,6 +773,7 @@ class KeyCorridor(RoomGridLevel):
         self.connect_all()
 
         self.instrs = [Instr(action="pickup", object=Object(obj.type))]
+
 
 class Level_KeyCorridorS3R1(KeyCorridor):
     def __init__(self, seed=None):
@@ -810,6 +842,7 @@ class Level_1RoomS8(RoomGridLevel):
         self.place_agent()
         self.instrs = [Instr(action="pickup", object=Object(obj.type))]
 
+
 class Level_1RoomS12(Level_1RoomS8):
     """
     Pick up the ball
@@ -821,6 +854,7 @@ class Level_1RoomS12(Level_1RoomS8):
             room_size=12,
             seed=seed
         )
+
 
 class Level_1RoomS16(Level_1RoomS8):
     """
@@ -834,6 +868,7 @@ class Level_1RoomS16(Level_1RoomS8):
             seed=seed
         )
 
+
 class Level_1RoomS20(Level_1RoomS8):
     """
     Pick up the ball
@@ -845,6 +880,7 @@ class Level_1RoomS20(Level_1RoomS8):
             room_size=20,
             seed=seed
         )
+
 
 # Dictionary of levels, indexed by name, lexically sorted
 level_dict = OrderedDict()
@@ -872,6 +908,7 @@ for global_name in sorted(list(globals().keys())):
     # Store the name and gym id on the level class
     level_class.level_name = level_name
     level_class.gym_id = gym_id
+
 
 def test():
     for idx, level_name in enumerate(level_dict.keys()):

@@ -7,12 +7,14 @@ TYPE_NAMES = ['door', 'locked_door', 'box', 'ball', 'key', 'wall']
 LOC_NAMES = ['left', 'right', 'front', 'behind']
 STATE_NAMES = ['locked']
 
+
 class Instr:
     def __init__(self, action, object):
         assert action in [*ACTION_NAMES]
 
         self.action = action
         self.object = object
+
 
 class Object:
     def __init__(self, type=None, color=None, loc=None, state=None):
