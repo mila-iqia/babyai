@@ -23,6 +23,8 @@ parser.add_argument("--batch-size", type=int, default=50,
                     help="batch size (In case of memory, the batch size is the number of demos, otherwise, it is the number of frames)(default: 50)")
 parser.add_argument("--no-instr", action="store_true", default=False,
                     help="don't use instructions in the model")
+parser.add_argument("--instr-arch", default="gru",
+                    help="arch to encode instructions, possible values: gru, conv, bow (default: gru)")
 parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='cnn1',
@@ -41,7 +43,7 @@ parser.add_argument("--val-seed", type=int, default=0,
                     help="seed for environment used for validation (default: 0)")
 parser.add_argument("--min-demo", type=int, default=50,
 					help="the minimum number of demonstrations to start searching (default: 50)")
-parser.add_argument("--max_demo", type=int, default=3000,
+parser.add_argument("--max-demo", type=int, default=3000,
 					help="the maximum number of demonstrations to start searching (default: 3000)")
 parser.add_argument("--epsilon", type=int, default=0.02,
 					help="tolerable difference between mean rewards")
