@@ -27,7 +27,7 @@ parser.add_argument("--frames", type=int, default=10**7,
                     help="number of frames of training (default: 10e7)")
 parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs (default: 1)")
-parser.add_argument("--save-interval", type=int, default=0,
+parser.add_argument("--save-interval", type=int, default=10,
                     help="number of updates between two saves (default: 0, 0 means no saving)")
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log into Tensorboard")
@@ -65,8 +65,6 @@ parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='cnn1',
                     help="image embedding architecture")
-parser.add_argument("--exp-name", default=None,
-                    help="name of the experiment to run")
 
 args = parser.parse_args()
 
@@ -85,7 +83,15 @@ for i in range(args.procs):
 # Define model name
 
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-default_model_name = "{}_{}_seed{}_{}".format(args.env, args.algo, args.seed, suffix)
+instr = args.isntr_model if args.instr_model else "noinstr"
+mem = "mem" if not args.no_mem else "nomem"
+default_model_name = "{}_{}_{}_{}_{}_seed{}_{}".format(args.env,
+                                                       args.algo,
+                                                       args.arch,
+                                                       instr,
+                                                       mem,
+                                                       args.seed,
+                                                       suffix)
 model_name = args.model or default_model_name
 
 # Define obss preprocessor

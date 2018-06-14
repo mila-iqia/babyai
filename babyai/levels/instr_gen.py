@@ -25,8 +25,9 @@ CONSTRAINTS = \
     {('wall', 'goto')} | \
     {('door', v) for v in {'goto', 'open', 'locked'}} | \
     {('ball', v) for v in {'goto', 'pickup', 'drop'}} | \
-    {('box', v) for v in  {'goto', 'pickup', 'drop', 'open', 'locked'}} | \
+    {('box', v) for v in {'goto', 'pickup', 'drop', 'open', 'locked'}} | \
     {('object', 'color'), ('object', 'loc')}
+
 
 def check_valid_concept(name):
     if name in CONCEPTS:
@@ -36,13 +37,15 @@ def check_valid_concept(name):
             return True
     raise ValueError("Incorrect concept name: {}".format(name))
 
+
 def parent_concepts(name):
     check_valid_concept(name)
     parents = set()
     for k in CONCEPTS:
         if name in CONCEPTS[k]:
-            parents = parents|{k}
+            parents = parents | {k}
     return parents
+
 
 def ancestor_concepts(name):
     parent_c = parent_concepts(name)
@@ -52,14 +55,17 @@ def ancestor_concepts(name):
         ancestor_c = set()
         for pa in parent_c:
             ancestor_c |= ancestor_concepts(pa)
-        return parent_concepts(name)| ancestor_c
+        return parent_concepts(name) | ancestor_c
+
 
 def is_ancestor(x, y):
     return True if x in ancestor_concepts(y) else False
 
+
 def child_concepts(name):
     check_valid_concept(name)
     return CONCEPTS[name]
+
 
 def root_concepts(name):
     check_valid_concept(name)
@@ -71,13 +77,14 @@ def root_concepts(name):
             roots |= root_concepts(pa)
         return roots
 
+
 def is_consistent(m, n):
     check_valid_concept(m)
     check_valid_concept(n)
 
     # ancestor reduction rule
     def rule_anc_reduct(x, y):
-        prod_xy = itertools.product(ancestor_concepts(x)|{x}, ancestor_concepts(y)|{y})
+        prod_xy = itertools.product(ancestor_concepts(x) | {x}, ancestor_concepts(y) | {y})
         if any([(p_xy in CONSTRAINTS) or ((p_xy[1], p_xy[0]) in CONSTRAINTS) for p_xy in prod_xy]):
             return True
         else:
@@ -90,9 +97,9 @@ def is_consistent(m, n):
     def rule_act_obj_attr(x, y):
         for o in CONCEPTS['object']:
             if rule_anc_reduct(x, o) and rule_anc_reduct(y, o) and \
-                root_concepts(x) in [{'action'}, {'attr'}] and \
-                root_concepts(y) in [{'action'}, {'attr'}] and \
-                root_concepts(x) != root_concepts(y):
+                    root_concepts(x) in [{'action'}, {'attr'}] and \
+                    root_concepts(y) in [{'action'}, {'attr'}] and \
+                    root_concepts(x) != root_concepts(y):
                 return True
         return False
 
@@ -118,6 +125,7 @@ def is_consistent(m, n):
 
     return False
 
+
 def extract_cands_in_generate(type, constraints=set()):
     cands = []
     for t in CONCEPTS[type]:
@@ -125,22 +133,26 @@ def extract_cands_in_generate(type, constraints=set()):
             cands.append(t)
     return cands
 
+
 def gen_instr_seq(seed, constraintss=[set()]):
     random.seed(seed)
     return [gen_ainstr(constraints) for constraints in constraintss]
+
 
 def gen_ainstr(constraints=set()):
     act = gen_action(constraints)
     obj = gen_object(act, constraints)
     return Instr(action=act, object=obj)
 
+
 def gen_action(constraints=set()):
     action_cands = extract_cands_in_generate('action', constraints)
     action = random.choice(action_cands)
     return action
 
+
 def gen_object(act=None, constraints=set()):
-    o_cands = extract_cands_in_generate('object', constraints|(set() if not act else {act}))
+    o_cands = extract_cands_in_generate('object', constraints | (set() if not act else {act}))
     o = random.choice(o_cands)
 
     o_color = gen_color(constraints=constraints)
@@ -148,6 +160,7 @@ def gen_object(act=None, constraints=set()):
     o_state = gen_state(obj=o, constraints=constraints)
 
     return Object(type=o, color=o_color, loc=o_loc, state=o_state)
+
 
 def gen_subattr(type, constraints=set()):
     cands = extract_cands_in_generate(type, constraints)
@@ -162,29 +175,34 @@ def gen_subattr(type, constraints=set()):
         else:
             return None
 
+
 def gen_color(obj=None, constraints=set()):
     return gen_subattr('color', constraints)
+
 
 def gen_loc(obj=None, act=None, constraints=set()):
     subloc = gen_subattr('loc', constraints)
     if not subloc:
         return None
     if subloc == 'loc_abs':
-        return gen_locabs(obj=obj, act=act, constraints=constraints|{'loc_abs'})
+        return gen_locabs(obj=obj, act=act, constraints=constraints | {'loc_abs'})
     if subloc == 'loc_rel':
-        return gen_locrel(obj=obj, act=act, constraints=constraints|{'loc_rel'})
+        return gen_locrel(obj=obj, act=act, constraints=constraints | {'loc_rel'})
+
 
 def gen_locabs(obj=None, act=None, constraints=set()):
     return gen_subattr('loc_abs', constraints)
 
+
 def gen_locrel(obj=None, act=None, constraints=set()):
     return gen_subattr('loc_rel', constraints)
 
+
 def gen_state(obj=None, act=None, constraints=set()):
-    return gen_subattr('state', constraints|(set() if not obj else {obj}))
+    return gen_subattr('state', constraints | (set() if not obj else {obj}))
+
 
 def gen_surface(ntup, conditions={}, seed=0, lang_variation=None):
-
     # Create a private RNG to avoid interfering with the global Python RNG
     rng = random.Random(seed)
 
@@ -233,13 +251,14 @@ def gen_surface(ntup, conditions={}, seed=0, lang_variation=None):
                     if 'which is' in s_obj or 'that is' in s_obj:
                         s_obj = s_obj + ' and ' + gen(f, conditions={cond})
                     else:
-                        s_obj = s_obj + ' ' + 'which is ' + gen(f, conditions={cond}) if f in CONCEPTS['state'] else gen(f, conditions={cond})
+                        s_obj = s_obj + ' ' + 'which is ' + gen(f, conditions={cond}) if f in CONCEPTS[
+                            'state'] else gen(f, conditions={cond})
                 if cond in ['which is', 'that is']:
                     if 'which is' in s_obj or 'that is' in s_obj:
                         s_obj = s_obj + ' and ' + gen(f, conditions={cond})
                     else:
                         s_obj = s_obj + ' {} '.format(cond) + gen(f, conditions={cond})
-            return 'the '+ s_obj
+            return 'the ' + s_obj
 
         if ntup == 'goto':
             return choice(['go to', 'reach', 'find', 'walk to'], lang_variation)
@@ -282,22 +301,24 @@ def gen_surface(ntup, conditions={}, seed=0, lang_variation=None):
 
     return gen(ntup, lang_variation)
 
+
 def test():
     for i in range(10):
         seed = i
         instr = gen_instr_seq(seed)
-        #print(instr)
+        # print(instr)
         gen_surface(instr, seed)
 
     for i in range(10):
         instr = gen_instr_seq(i, constraintss=[{'pickup', 'key'}, {'drop'}])
-        #print(instr)
+        # print(instr)
         gen_surface(instr, seed)
 
     # Same seed must yield the same instructions and string
     str1 = gen_surface(gen_instr_seq(seed), seed=7)
     str2 = gen_surface(gen_instr_seq(seed), seed=7)
     assert str1 == str2
+
 
 if __name__ == "__main__":
     test()

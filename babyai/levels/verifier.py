@@ -3,12 +3,14 @@ from collections import namedtuple
 
 State = namedtuple("State", ["dir", "pos", "carry"])
 
+
 def dot_product(v1, v2):
     """
     Compute the dot product of the vectors v1 and v2.
     """
 
     return sum([i*j for i, j in zip(v1, v2)])
+
 
 class Verifier(ABC):
     def __init__(self, env):
@@ -92,6 +94,7 @@ class Verifier(ABC):
 
         return pos
 
+
 class InstrSeqVerifier(Verifier):
     def __init__(self, env, instr):
         super().__init__(env)
@@ -136,6 +139,7 @@ class InstrSeqVerifier(Verifier):
 
         self.verifier = None
 
+
 class InstrVerifier(Verifier):
     def __init__(self, env):
         super().__init__(env)
@@ -166,6 +170,7 @@ class InstrVerifier(Verifier):
 
         return
 
+
 class GotoVerifier(InstrVerifier):
     def __init__(self, env, obj):
         super().__init__(env)
@@ -186,6 +191,7 @@ class GotoVerifier(InstrVerifier):
 
         return check_goto_goal or check_goto_not_goal
 
+
 class PickupVerifier(InstrVerifier):
     def __init__(self, env, obj):
         super().__init__(env)
@@ -198,6 +204,7 @@ class PickupVerifier(InstrVerifier):
         check_carrying = self.state.carry in self.obj_cells
 
         return check_wasnt_carrying and check_carrying
+
 
 class OpenVerifier(InstrVerifier):
     def __init__(self, env, obj):
@@ -213,6 +220,7 @@ class OpenVerifier(InstrVerifier):
         check_opened = ifo_cell in self.obj_cells and ifo_cell.is_open
 
         return check_opened
+
 
 class DropVerifier(InstrVerifier):
     def __init__(self, env, obj_to_drop):
