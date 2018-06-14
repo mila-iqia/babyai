@@ -23,7 +23,6 @@ class ImitationLearning(object):
         self.env = gym.make(self.args.env)
 
         self.train_demos = utils.load_demos(self.args.env, self.args.demos_origin)[:self.args.episodes]
-        self.train_demos.sort(key=len,reverse=True)
 
         self.val_demos = utils.load_demos(self.args.env, self.args.demos_origin+"_valid")[:500]
 
@@ -47,93 +46,44 @@ class ImitationLearning(object):
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=100, gamma=0.9)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        # calculating values for train_demos and val_demos
-        self.train_demos,self.flat_train_demos = self.calculate_values(self.train_demos)
-        self.val_demos,self.flat_val_demos = self.calculate_values(self.val_demos)
-
-
-    def calculate_values(self, demos):
-        flat_demos = []
-        value_inds = [0]
-
-        for demo in demos:
-            flat_demos += demo
-            value_inds.append(value_inds[-1] + len(demo))
-
-        # Value inds are pointing at the last episode of each of the observation
-        flat_demos = np.array(flat_demos)
-        value_inds = value_inds[:-1]
-        value_inds = [index-1 for index in value_inds][1:] +[len(flat_demos)-1]
-
-        # Value array with the length of flat_demos
-        values = np.zeros([len(flat_demos)],dtype=np.float64)
-
-        reward, done = flat_demos[:,2], flat_demos[:,3]
-
-        # Reshaping the reward
-        reward = utils.reshape_reward(None,None,reward,None)
-
-        # Value for last episodes = reward at last episodes
-        values[value_inds]= reward[value_inds]
-        # last value keeps the values corresponding to last visited states
-        last_value = values[value_inds]
+        self.flat_train_demos, self.flat_val_demos = [], []
         
-        while True:
-            value_inds = [index-1 for index in value_inds]
-            if value_inds[0] == -1:
-                break
-            done_step = done[value_inds]
-            # Removing indices of finished episodes
-            value_inds = value_inds[:len(value_inds)-sum(done_step)]
-            last_value = last_value[:len(last_value)-sum(done_step)]
-            
-            # Calculating value of the states using value of previous states 
-            values[value_inds]= reward[value_inds] + self.args.discount*last_value
-            last_value = values[value_inds]
+        for demo in self.train_demos:
+            self.flat_train_demos.append(demo)
+        for demo in self.val_demos:
+            self.flat_val_demos.append(demo)
+        self.flat_train_demos = np.array(self.flat_train_demos)
+        self.flat_val_demos = np.array(self.flat_val_demos)
         
-        # Appending values to corresponding demos
-        flat_demos = [np.append(flat_demos[i],[values[i],]) for i in range(len(flat_demos))]
-        new_demos = []
-        offset = 0
 
-        # Reconstructing demos from flat_demos
-        for demo in demos:
-            new_demos.append(flat_demos[offset:offset+len(demo)])
-            offset += len(demo)
-
-        flat_demos = np.array(flat_demos)
-        return new_demos,flat_demos
 
     def run_epoch_norecur(self, flat_demos, is_training=False):
-        flat_demos = copy.deepcopy(flat_demos)
+        flat_demos_t = copy.deepcopy(flat_demos)
         if is_training:
-            np.random.shuffle(flat_demos)
+            np.random.shuffle(flat_demos_t)
         batch_size = self.args.batch_size
 
-        log = {"entropy": [],"value_loss": [],"policy_loss": [], "accuracy": []}
+        log = {"entropy": [],"policy_loss": [], "accuracy": []}
         offset = 0
-        for j in range(len(flat_demos)//batch_size):
-            flat_batch = flat_demos[offset:offset+batch_size,:]
-            obs, action_true, values, done = flat_batch[:,0], flat_batch[:,1], flat_batch[:,4], flat_batch[:,3]
+        for j in range(len(flat_demos_t)//batch_size):
+            flat_batch = flat_demos_t[offset:offset+batch_size,:]
+            obs, action_true, done = flat_batch[:,0], flat_batch[:,1], flat_batch[:,3]
             preprocessed_obs = self.obss_preprocessor(obs, device=self.device)
 
             action_true = torch.tensor([action for action in action_true],device=self.device,dtype=torch.long)
-            values = torch.tensor([value for value in values],device=self.device,dtype=torch.float)
             memory = torch.zeros([batch_size,self.acmodel.memory_size], device=self.device)
             
             # Compute loss
-            dist, value, memory = self.acmodel(preprocessed_obs,memory)
+            dist, _, memory = self.acmodel(preprocessed_obs,memory)
 
             entropy = dist.entropy().mean()
 
             policy_loss = -dist.log_prob(action_true).mean()
 
-            value_loss = (value - values).pow(2).mean()
             action_pred = dist.probs.max(1, keepdim=True)[1]
             accuracy = float((action_pred == action_true.unsqueeze(1)).sum())/batch_size
 
-            loss = policy_loss - self.args.entropy_coef * entropy + self.args.value_loss_coef * value_loss
+            loss = policy_loss - self.args.entropy_coef * entropy
 
             # Update actor-critic
             if is_training:
@@ -143,7 +93,6 @@ class ImitationLearning(object):
 
             log["entropy"].append(float(entropy))
             log["policy_loss"].append(float(policy_loss))
-            log["value_loss"].append(float(value_loss))
             log["accuracy"].append(float(accuracy))
             offset += batch_size
 
@@ -156,17 +105,17 @@ class ImitationLearning(object):
             return np.arange(0, num_frames, self.args.recurrence)[:-1]
 
     def run_epoch_recurrence(self, demos, is_training=False):
-        demos = copy.deepcopy(demos)
+        demos_t = copy.deepcopy(demos)
         if is_training:
-            np.random.shuffle(demos)
+            np.random.shuffle(demos_t)
         batch_size = self.args.batch_size
         offset = 0
         
         # Log dictionary
-        log = {"entropy": [],"value_loss": [],"policy_loss": [],"accuracy" : []}
+        log = {"entropy": [],"policy_loss": [],"accuracy" : []}
 
-        for batch_index in range(len(demos)//batch_size):
-            batch = demos[offset:offset+batch_size]
+        for batch_index in range(len(demos_t)//batch_size):
+            batch = demos_t[offset:offset+batch_size]
             batch.sort(key=len,reverse=True)
 
             # Constructing flat batch and indices pointing to start of each demonstration
@@ -186,9 +135,8 @@ class ImitationLearning(object):
             mask = torch.tensor(mask,device=self.device,dtype=torch.float).unsqueeze(1)
 
             # Observations, true action, values and done for each of the stored demostration
-            obss, action_true, values, done = flat_batch[:,0], flat_batch[:,1], flat_batch[:,4], flat_batch[:,3]
+            obss, action_true, done = flat_batch[:,0], flat_batch[:,1], flat_batch[:,3]
             action_true = torch.tensor([action for action in action_true],device=self.device,dtype=torch.long)        
-            values = torch.tensor([value for value in values],device=self.device,dtype=torch.float)
 
             # Memory to be stored
             memories = torch.zeros([len(flat_batch),self.acmodel.memory_size], device=self.device)
@@ -233,20 +181,17 @@ class ImitationLearning(object):
                 dist, value, memory = self.acmodel(preprocessed_obs, memory*mask_step)
                 entropy = dist.entropy().mean()
                 policy_loss = -dist.log_prob(action_step).mean()
-                value_loss = (value - values[indexes]).pow(2).mean()
-                loss = policy_loss - self.args.entropy_coef * entropy + self.args.value_loss_coef * value_loss
+                loss = policy_loss - self.args.entropy_coef * entropy
                 action_pred = dist.probs.max(1, keepdim=True)[1]
                 accuracy += float((action_pred == action_step.unsqueeze(1)).sum())/len(flat_batch)
                 final_loss += loss
                 final_entropy += entropy
                 final_policy_loss += policy_loss
-                final_value_loss += value_loss
                 indexes += 1
 
             final_loss /= self.args.recurrence
             log["entropy"].append(float(final_entropy/self.args.recurrence))
             log["policy_loss"].append(float(final_policy_loss/self.args.recurrence))
-            log["value_loss"].append(float(final_value_loss/self.args.recurrence))
             log["accuracy"].append(float(accuracy))
             
             if is_training:
@@ -309,9 +254,9 @@ class ImitationLearning(object):
                 log[key] = np.mean(log[key])
 
             logger.info(
-                "U {} | FPS {:04.0f} | D {} | H {:.3f} | pL {: .3f} | vL {: .3f} | A {: .3f}"
+                "U {} | FPS {:04.0f} | D {} | H {:.3f} | pL {: .3f} | A {: .3f}"
                     .format(i, fps, duration,
-                            log["entropy"], log["policy_loss"],log["value_loss"], log["accuracy"]))
+                            log["entropy"], log["policy_loss"], log["accuracy"]))
 
             if not(self.args.no_mem):
                 val_log = self.run_epoch_recurrence(self.val_demos)
