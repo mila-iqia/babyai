@@ -107,12 +107,3 @@ while True:
 		return_max = return_mid
 
 	max_performance_bar = max(max_performance_bar, return_max)
-
-
-
-
-
-
-
-
-

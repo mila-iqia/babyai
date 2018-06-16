@@ -8,7 +8,7 @@ class Agent(ABC):
     @abstractmethod
     def get_action(self, obs):
         pass
-    
+
     @abstractmethod
     def analyze_feedback(self, reward, done):
         pass
@@ -22,7 +22,7 @@ class ModelAgent(Agent):
 
         if self.model.recurrent:
             self._initialize_memory()
-    
+
     def _initialize_memory(self):
         self.memory = torch.zeros(1, self.model.memory_size)
 
@@ -34,14 +34,14 @@ class ModelAgent(Agent):
                 dist, _, self.memory = self.model(preprocessed_obs, self.memory)
             else:
                 dist, _ = self.model(preprocessed_obs)
-        
+
         if self.deterministic:
             action = dist.probs.max(1, keepdim=True)[1]
         else:
             action = dist.sample()
-        
+
         return action.item()
-    
+
     def analyze_feedback(self, reward, done):
         if done and self.model.recurrent:
             self._initialize_memory()
@@ -74,7 +74,7 @@ class DemoAgent(Agent):
         assert DemoAgent.check_obss_equality(obs, expected_obs), "The observations do not match"
 
         return self.demos[self.demo_id][self.step_id][1]
-    
+
     def analyze_feedback(self, reward, done):
         self.step_id += 1
 

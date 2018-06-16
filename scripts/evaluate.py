@@ -6,7 +6,7 @@ import time
 import datetime
 
 import babyai.utils as utils
-
+from babyai.scripts.evaluate import evaluate
 # Parse arguments
 
 parser = argparse.ArgumentParser()
@@ -22,32 +22,6 @@ parser.add_argument("--seed", type=int, default=None,
                     help="random seed (default: 0 if model agent, 1 if demo agent)")
 parser.add_argument("--deterministic", action="store_true", default=False,
                     help="action with highest probability is selected for model agent")
-
-
-def evaluate(agent, env, episodes):
-    # Initialize logs
-    logs = {"num_frames_per_episode": [], "return_per_episode": [], "observations_per_episode": []}
-
-    for _ in range(episodes):
-        obs = env.reset()
-        done = False
-
-        num_frames = 0
-        returnn = 0
-        obss = []
-        while not(done):
-            action = agent.get_action(obs)
-            obss.append(obs)
-            obs, reward, done, _ = env.step(action)
-            agent.analyze_feedback(reward, done)
-            num_frames += 1
-            returnn += reward
-
-        logs["observations_per_episode"].append(obss)
-        logs["num_frames_per_episode"].append(num_frames)
-        logs["return_per_episode"].append(returnn)
-    
-    return logs
 
 def main(args, seed, episodes):
     # Set seed for all randomness sources
@@ -84,7 +58,7 @@ if __name__ == "__main__":
     logs = main(args, args.seed, args.episodes)
     end_time = time.time()
 
-    
+
     # Print logs
     num_frames = sum(logs["num_frames_per_episode"])
     fps = num_frames/(end_time - start_time)
