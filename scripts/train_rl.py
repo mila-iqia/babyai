@@ -83,7 +83,7 @@ for i in range(args.procs):
 # Define model name
 
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-instr = args.isntr_model if args.instr_model else "noinstr"
+instr = args.instr_arch if args.instr_arch else "noinstr"
 mem = "mem" if not args.no_mem else "nomem"
 default_model_name = "{}_{}_{}_{}_{}_seed{}_{}".format(args.env,
                                                        args.algo,
@@ -146,7 +146,7 @@ while num_frames < args.frames:
     update_start_time = time.time()
     logs = algo.update_parameters()
     update_end_time = time.time()
-    
+
     num_frames += logs["num_frames"]
     i += 1
 
