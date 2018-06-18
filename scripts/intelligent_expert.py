@@ -61,7 +61,7 @@ parser.add_argument("--expert-model", default=None,
                     help="model to be used for Dagger sataset generation")
 parser.add_argument("--max-demo", default=5000,
                     help="the maximum number of demonstrations allowed (default: 5000)")
-parser.add_argument("--dagger", default=False,
+parser.add_argument("--dagger", action="store_true", default=False,
                     help="add new demos through dagger method (default: False")
 
 # Add new demonstrations based on mean reward of the baby agent
@@ -90,14 +90,20 @@ def add_new_demos(args,il_learn):
    expert_agent = utils.load_agent(args, env)
 
    for index in new_inds:
+
     demo = []
-    for i in range(min(30,len(observations[index]))):
-     obs = observations[index][i]
-     action = expert_agent.get_action(obs)
-     if i != len(observations[index]) -1:
-        demo.append((obs, action, 0, False))
-     else:
-        demo.append((obs, action, 0, True))
+    if len(observations[index]) > 2 * optimal_steps:
+        demo = il_learn.train_demos[index]
+    else:
+        for i in range(min(optimal_steps,len(observations[index]))):
+         obs = observations[index][i]
+         action = expert_agent.get_action(obs)
+         if i != len(observations[index]) -1:
+            demo.append((obs, action, 0, False))
+         else:
+            demo.append((obs, action, 0, True))
+        expert_agent._initialize_memory()
+
     new_demos.append(demo)
 
    return new_demos
@@ -122,6 +128,16 @@ def flatten(demos):
    for demo in demos:
      flat_demos.extend(demo)
    return np.array(flat_demos)
+
+def find_optimal_steps():
+    args.model = args.expert_model
+    env = gym.make(args.env)
+    args.deterministic = True
+    expert_agent = utils.load_agent(args, env)
+    env.seed(args.seed)
+    utils.seed(args.seed)
+    logs = evaluate(expert_agent, env, 1000)
+    return np.mean(logs["num_frames_per_episode"])
 
 
 def main(args):
@@ -185,6 +201,8 @@ if __name__ == "__main__":
 
   if args.dagger:
     assert args.expert_model is not None, "--expert-model not specified"
+    optimal_steps = find_optimal_steps()
+    print("Optimal number of steps %d" % optimal_steps)
 
   start_demo = args.start_demo
   batch_size = args.batch_size
