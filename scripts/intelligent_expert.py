@@ -95,7 +95,7 @@ def add_new_demos(args,il_learn):
     if len(observations[index]) > 2 * optimal_steps:
         demo = il_learn.train_demos[index]
     else:
-        for i in range(min(optimal_steps,len(observations[index]))):
+        for i in range(min(int(optimal_steps),len(observations[index]))):
          obs = observations[index][i]
          action = expert_agent.get_action(obs)
          if i != len(observations[index]) -1:
@@ -130,6 +130,7 @@ def flatten(demos):
    return np.array(flat_demos)
 
 def find_optimal_steps():
+    model = args.model
     args.model = args.expert_model
     env = gym.make(args.env)
     args.deterministic = True
@@ -137,6 +138,7 @@ def find_optimal_steps():
     env.seed(args.seed)
     utils.seed(args.seed)
     logs = evaluate(expert_agent, env, 1000)
+    args.model = model
     return np.mean(logs["num_frames_per_episode"])
 
 
