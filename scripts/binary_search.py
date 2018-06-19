@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 
+"""
+Script to search the minimum number of demonstrations required to achieve a particular level of maximum performance bar (within a given range)
+in a binary search manner.
+"""
+
+
 import numpy as np
 import argparse
 import csv
-import scripts.train_il as train_il 
+import scripts.train_il as train_il
 import scripts.evaluate as evaluate
 
 parser = argparse.ArgumentParser()
@@ -87,7 +93,7 @@ while True:
 	if (max_performance_bar-return_min) <= args.epsilon:
 		print("Minimum No. of Samples Required = %d" % min_demo)
 		break
-	
+
 	if np.log2(max_demo/min_demo) <= 0.5:
 		print("Minimum No. of Samples Required = %d" % max_demo)
 		print("Ratio : %.3f" % np.log2(max_demo/min_demo))

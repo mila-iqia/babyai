@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Script to train agent through imitation learning using demonstrations.
+"""
+
 import argparse
 import copy
 import gym
@@ -61,7 +65,7 @@ parser.add_argument("--val-seed", type=int, default=0,
 
 def main(args):
     il_learn = ImitationLearning(args)
-    
+
     # Define logger and Tensorboard writer
     logger = utils.get_logger(il_learn.model_name)
     writer = None
@@ -69,12 +73,12 @@ def main(args):
         from tensorboardX import SummaryWriter
         writer = SummaryWriter(utils.get_log_dir(il_learn.model_name))
 
-    
+
     # Log command, availability of CUDA, and model
     logger.info(args)
     logger.info("CUDA available: {}".format(torch.cuda.is_available()))
     logger.info(il_learn.acmodel)
-    
+
 
     if not args.no_mem:
         il_learn.train(il_learn.train_demos, logger, writer)
@@ -86,7 +90,7 @@ def main(args):
 if __name__ == "__main__":
     args = parser.parse_args()
     main(args)
-    
+
 
 
 

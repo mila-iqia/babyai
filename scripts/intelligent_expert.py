@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+"""
+Intelligent Expert for imitation learning. Starts with some training demonstrations, and incrementally adds demonstrations to training set
+based on the current performance of the agent. The new demonstrations can be expert action annotated (DAGGER) agent's trajectory or just expert's trajectory. 
+"""
+
+
 import numpy as np
 import argparse
 import csv

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Script to train the agent through reinforcment learning.
+"""
+
 import argparse
 import gym
 import time
