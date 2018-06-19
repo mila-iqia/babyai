@@ -8,7 +8,7 @@ import torch
 import torch.nn.functional as F
 import torch_rl
 from torch_rl.utils import DictList
-from babyai.scripts.evaluate import evaluate
+from babyai.evaluate import evaluate
 import babyai.utils as utils
 from babyai.model import ACModel
 
@@ -24,7 +24,7 @@ class ImitationLearning(object):
             self.train_demos = [utils.load_demos(env, demos_origin)[:episodes]
                                 for env, demos_origin, episodes in self.args.env]
 
-            self.val_demos = [utils.load_demos(env, demos_origin+"_valid")[:500]
+            self.val_demos = [utils.load_demos(env, demos_origin+"_valid")[:1]
                               for env, demos_origin, _ in self.args.env]
 
             observation_space = self.env[0].observation_space
@@ -268,7 +268,7 @@ class ImitationLearning(object):
         agent = utils.load_agent(self.args, envs[0])
         # Setting the agent model to the current model
         agent.model = self.acmodel
-        
+
         logs = []
         for env in envs:
 

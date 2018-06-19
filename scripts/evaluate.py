@@ -6,7 +6,7 @@ import time
 import datetime
 
 import babyai.utils as utils
-from babyai.scripts.evaluate import evaluate
+from babyai.evaluate import evaluate
 # Parse arguments
 
 parser = argparse.ArgumentParser()
