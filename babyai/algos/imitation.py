@@ -268,14 +268,7 @@ class ImitationLearning(object):
         agent = utils.load_agent(self.args, envs[0])
         # Setting the agent model to the current model
         agent.model = self.acmodel
-
-        returnn = 0
-
-        logs = evaluate(agent,self.env,self.args.val_episodes)
-
-        return np.mean(logs["return_per_episode"])
-
-
+        
         logs = []
         for env in envs:
 
