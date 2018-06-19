@@ -1,6 +1,6 @@
 # Baby AI Game
 
-[![Build Status](https://circleci.com/gh/maximecb/baby-ai-game/tree/master.svg?style=svg)](https://circleci.com/gh/maximecb/baby-ai-game/tree/master)
+[![CircleCI](https://circleci.com/gh/maximecb/baby-ai-game.svg?style=svg&circle-token=ed2191e1bb0206a2f3f2e22f45f1369f7b8115a9)](https://circleci.com/gh/maximecb/baby-ai-game)
 
 Prototype of a game where a reinforcement learning agent is trained through natural language instructions. This is a research project based at [MILA](https://mila.quebec/en/).
 
