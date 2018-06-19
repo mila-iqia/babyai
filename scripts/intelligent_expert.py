@@ -2,7 +2,8 @@
 
 """
 Intelligent Expert for imitation learning. Starts with some training demonstrations, and incrementally adds demonstrations to training set
-based on the current performance of the agent. The new demonstrations can be expert action annotated (DAGGER) agent's trajectory or just expert's trajectory. 
+based on the current performance of the agent. The new demonstrations can be expert action annotated (DAGGER) agent's trajectory or just expert's trajectory.
+python -m scripts.intelligent_expert --env <> --model <> --demos-origin <> --start-demo <> --episodes-to-add <> --dagger(If you want to train using dagger) --expert-model(required when dagger is True)
 """
 
 
@@ -38,11 +39,9 @@ parser.add_argument("--no-instr", action="store_true", default=False,
 parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='cnn1',
-                    help="image embedding architecture")
+                    help="image embedding architecture, possible values: cnn1, cnn2, filmcnn (default: cnn1)")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
-parser.add_argument("--value-loss-coef", type=float, default=0,
-                    help="value loss term coefficient (default: 0)")
 parser.add_argument("--validation-interval", type=int, default=20,
                     help="number of epochs between two validation checks (default: 20)")
 parser.add_argument("--episodes-to-add", type=int, default=100,
