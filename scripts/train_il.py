@@ -49,11 +49,9 @@ parser.add_argument("--instr-arch", default="gru",
 parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='cnn1',
-                    help="image embedding architecture")
+                    help="image embedding architecture, possible values: cnn1, cnn2, filmcnn (default: cnn1)")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
-parser.add_argument("--value-loss-coef", type=float, default=0.5,
-                    help="value loss term coefficient (default: 0.5)")
 parser.add_argument("--validation-interval", type=int, default=10,
                     help="number of epochs between two validation checks (default: 10)")
 parser.add_argument("--val-episodes", type=int, default=100,

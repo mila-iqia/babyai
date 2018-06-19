@@ -3,14 +3,17 @@
 """
 Script to search the minimum number of demonstrations required to achieve a particular level of maximum performance bar (within a given range)
 in a binary search manner.
+python -m scripts.binary_search --env <> --demos-origin <> --val-episodes <> --arch <> --min-demo <> --max-demo <> --batch-size <must be smaller than the min-demo>
 """
 
 
 import numpy as np
 import argparse
 import csv
+import os
 import scripts.train_il as train_il
 import scripts.evaluate as evaluate
+import babyai.utils as utils
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
@@ -34,11 +37,9 @@ parser.add_argument("--instr-arch", default="gru",
 parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='cnn1',
-                    help="image embedding architecture")
+                    help="image embedding architecture, possible values: cnn1, cnn2, filmcnn (default: cnn1)")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
-parser.add_argument("--value-loss-coef", type=float, default=0,
-                    help="value loss term coefficient (default: 0)")
 parser.add_argument("--validation-interval", type=int, default=20,
                     help="number of epochs between two validation checks (default: 20)")
 parser.add_argument("--val-episodes", type=int, default=1000,
@@ -62,7 +63,11 @@ args = parser.parse_args()
 args.tb = True
 seeds = [1, 2, 3, 4, 5]
 
-file = open("{}_binary_search.csv".format(args.env),"a")
+result_dir = os.path.join(utils.storage_dir(), "binary_search_results")
+if not(os.path.isdir(result_dir)):
+    os.makedirs(result_dir)
+
+file = open(os.path.join(result_dir, "{}_binary_search.csv").format(args.env),"a")
 writer = csv.writer(file, delimiter=" ")
 
 def run(num_demos):
