@@ -1,0 +1,16 @@
+version: 2
+jobs:
+  test:
+    docker:
+      - image: circleci/python:3.5
+    steps:
+      - checkout
+      #- pip3 install git+https://github.com/maximecb/gym-minigrid
+      - run: pip3 install --user -e .
+      #- run: pip3 install --user flake8
+      - run: ./run_tests.py
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - test
