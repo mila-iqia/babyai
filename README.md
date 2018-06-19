@@ -1,6 +1,6 @@
 # Baby AI Game
 
-[![Build Status](https://travis-ci.org/maximecb/baby-ai-game.svg?branch=master)](https://travis-ci.org/maximecb/baby-ai-game)
+[![Build Status](https://circleci.com/gh/maximecb/baby-ai-game/tree/master.svg?style=svg)](https://circleci.com/gh/maximecb/baby-ai-game/tree/master)
 
 Prototype of a game where a reinforcement learning agent is trained through natural language instructions. This is a research project based at [MILA](https://mila.quebec/en/).
 
@@ -41,7 +41,7 @@ Having done that, you can either add `baby-ai-game` and `gym-minigrid` in your `
 In `babyai`:
 - The `levels` directory contains all the code relevant to the generation of levels and missions. Essentially, this implements the test task for the Baby AI Game. This is an importable module which people can use on its own to perform experiments.
 - The `agents` directory will contain a default implementation of one or more agents to be evaluated on the baby AI game. This should also be importable as an independent module. Each agent will need to support methods to be provided teaching inputs using pointing and naming, as well as demonstrations.
-- The `utils` directory contains a bunch of useful functions that can be used when training Reinforcement Learning or Imitation Learning agents. 
+- The `utils` directory contains a bunch of useful functions that can be used when training Reinforcement Learning or Imitation Learning agents.
 - `model.py` is a script containing the network architectures used when training any type of agent.
 
 In `scripts`:

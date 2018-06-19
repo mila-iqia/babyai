@@ -5,8 +5,6 @@ jobs:
       - image: circleci/python:3.5
     steps:
       - checkout
-      #- run: pip3 install git+https://github.com/maximecb/gym-minigrid.git#egg=gym_minigrid-0
-      - run: pip3 install git+https://github.com/lcswillems/pytorch-a2c-ppo.git#egg=torch_rl-0&subdirectory=torch_rl
       - run: pip3 install --user --process-dependency-links --editable .
       - run: ./run_tests.py
 workflows:
