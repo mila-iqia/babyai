@@ -6,7 +6,7 @@ jobs:
     steps:
       - checkout
       #- pip3 install git+https://github.com/maximecb/gym-minigrid
-      - run: pip3 install --user --process-dependency-links --editable .
+      - run: pip3 install --process-dependency-links --editable .
       #- run: pip3 install --user flake8
       - run: ./run_tests.py
 workflows:
