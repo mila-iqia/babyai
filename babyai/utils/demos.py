@@ -10,9 +10,7 @@ def get_demos_path(env_name, origin):
 
 def load_demos(env_name, origin):
     path = get_demos_path(env_name, origin)
-    if os.path.exists(path):
-        return pickle.load(open(path, "rb"))
-    return []
+    return pickle.load(open(path, "rb"))
 
 
 def save_demos(demos, env_name, origin):

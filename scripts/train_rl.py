@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Script to train the agent through reinforcment learning.
+"""
+
 import argparse
 import gym
 import time
@@ -57,8 +61,10 @@ parser.add_argument("--epochs", type=int, default=4,
                     help="number of epochs for PPO (default: 4)")
 parser.add_argument("--batch-size", type=int, default=256,
                     help="batch size for PPO (default: 256)")
-parser.add_argument("--instr-model", default=None,
-                    help="model to encode instructions, None if not using instructions, possible values: gru, conv, bow")
+parser.add_argument("--no-instr", action="store_true", default=False,
+                    help="don't use instructions in the model")
+parser.add_argument("--instr-arch", default="gru",
+                    help="arch to encode instructions, possible values: gru, conv, bow (default: gru)")
 parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='cnn1',
@@ -81,7 +87,7 @@ for i in range(args.procs):
 # Define model name
 
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-instr = args.isntr_model if args.instr_model else "noinstr"
+instr = args.instr_arch if args.instr_arch else "noinstr"
 mem = "mem" if not args.no_mem else "nomem"
 default_model_name = "{}_{}_{}_{}_{}_seed{}_{}".format(args.env,
                                                        args.algo,
@@ -101,7 +107,7 @@ obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space
 acmodel = utils.load_model(model_name, raise_not_found=False)
 if acmodel is None:
     acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
-                      args.instr_model, not args.no_mem, args.arch)
+                      not args.no_instr, args.instr_arch, not args.no_mem, args.arch)
 if torch.cuda.is_available():
     acmodel.cuda()
 
@@ -144,7 +150,7 @@ while num_frames < args.frames:
     update_start_time = time.time()
     logs = algo.update_parameters()
     update_end_time = time.time()
-    
+
     num_frames += logs["num_frames"]
     i += 1
 
