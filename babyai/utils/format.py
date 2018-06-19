@@ -3,13 +3,7 @@ import json
 import numpy
 import re
 import torch
-
-# maximecb: try block to temporarily circumvent issue with CircleCI
-# see: https://github.com/lcswillems/pytorch-a2c-ppo/issues/9
-try:
-    import torch_rl
-except:
-    pass
+import torch_rl
 
 from .. import utils
 

@@ -919,8 +919,10 @@ def test():
         # Run the mission for a few episodes
         rng = random.Random(0)
         num_episodes = 0
-        for i in range(0, 20):
+        for i in range(0, 15):
             mission = level(seed=i)
+            # Reduce max_steps because otherwise tests take too long
+            mission.max_steps = 200
             assert isinstance(mission.surface, str)
             assert len(mission.surface) > 0
 
