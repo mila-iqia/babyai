@@ -49,6 +49,7 @@ class ModelAgent(Agent):
         return action.item()
 
     def analyze_feedback(self, reward, done):
+        done = [x for x in done]
         if self.model.recurrent:
             ids = np.where(done)[0]
             self.memory[ids] = torch.zeros(sum(done), self.model.memory_size)
