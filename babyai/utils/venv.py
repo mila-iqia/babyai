@@ -10,7 +10,7 @@ def worker(conn, env):
                 obs = env.reset()
             conn.send((obs, reward, done, info))
         elif cmd == "reset":
-            obs = env.reset()
+            obs = env.reset(data)
             conn.send(obs)
         else:
             raise NotImplementedError
