@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import torch
-
+import numpy as np
 from .. import utils
 
 
@@ -15,20 +15,25 @@ class Agent(ABC):
 
 
 class ModelAgent(Agent):
-    def __init__(self, model_name, observation_space, deterministic):
+    def __init__(self, model_name, observation_space, deterministic, num_procs=1):
         self.obss_preprocessor = utils.ObssPreprocessor(model_name, observation_space)
         self.model = utils.load_model(model_name)
         self.deterministic = deterministic
 
         if self.model.recurrent:
-            self._initialize_memory()
+            self._initialize_memory(num_procs)
 
-    def _initialize_memory(self):
-        self.memory = torch.zeros(1, self.model.memory_size)
+    def _initialize_memory(self, num_procs=1):
+        self.memory = torch.zeros(num_procs, self.model.memory_size)
+    
+    def _intialize_memory_i(self, id):
+        self.memory[id] = torch.zeros(1, self.model.memory_size)
 
     def get_action(self, obs):
-        if obs is None: return None
-        preprocessed_obs = self.obss_preprocessor([obs])
+        
+        if type(obs) != list:
+            obs = [obs]
+        preprocessed_obs = self.obss_preprocessor(obs)
 
         with torch.no_grad():
             if self.model.recurrent:
@@ -44,8 +49,9 @@ class ModelAgent(Agent):
         return action.item()
 
     def analyze_feedback(self, reward, done):
-        if done and self.model.recurrent:
-            self._initialize_memory()
+        if self.model.recurrent:
+            ids = np.where(done)[0]
+            self.memory[ids] = torch.zeros(sum(done), self.model.memory_size)
 
 
 class DemoAgent(Agent):
