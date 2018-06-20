@@ -322,7 +322,7 @@ class ImitationLearning(object):
             else:
                 adding = 0
             env_epochs = np.array(env_epochs, dtype='int32')
-            num_running = len(env_epochs) / self.args.num_proc_val_return
+            num_running = len(env_epochs) // self.args.num_proc_val_return
             
             logs = {tid : [] for tid in range(self.env.num_envs)}
             
