@@ -34,7 +34,9 @@ class ImitationLearning(object):
             else:
                 pevns = []
                 for proc_id in range(self.args.num_proc_val_return):
-                    ienv = [gym.make(item[0]).seed(self.args.val_seed+proc_id*1000) for item in self.args.env]
+                    ienv = [gym.make(item[0]) for item in self.args.env]
+                    for env in ievn:
+                        evn.seed(self.args.val_seed+proc_id*1000)
                     pevns.append(venv.MultiEnv(ienv))
                 self.env = venv.ParallelEnv(pevns)
                 observation_space = self.env.observation_space
@@ -51,7 +53,9 @@ class ImitationLearning(object):
             else:
                 pevns = []
                 for proc_id in range(self.args.num_proc_val_return):
-                    ienv = [gym.make(self.args.env).seed(self.args.val_seed+proc_id*1000)]
+                    ienv = [gym.make(self.args.env)]
+                    for env in ievn:
+                        evn.seed(self.args.val_seed+proc_id*1000)
                     pevns.append(venv.MultiEnv(ienv))
                 self.env = venv.ParallelEnv(pevns)
                 observation_space = self.env.observation_space
