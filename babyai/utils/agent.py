@@ -27,6 +27,7 @@ class ModelAgent(Agent):
         self.memory = torch.zeros(1, self.model.memory_size)
 
     def get_action(self, obs):
+        if obs is None: return None
         preprocessed_obs = self.obss_preprocessor([obs])
 
         with torch.no_grad():

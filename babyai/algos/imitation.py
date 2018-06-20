@@ -4,13 +4,15 @@ import time
 import datetime
 import numpy as np
 import sys
+import itertools
 import torch
 import torch.nn.functional as F
 import torch_rl
 from torch_rl.utils import DictList
 from babyai.evaluate import evaluate
 import babyai.utils as utils
-from babyai.model import ACModel
+import babyai.venv as venv
+from babyai.model import ACMode
 
 class ImitationLearning(object):
     def __init__(self, args):
@@ -19,25 +21,41 @@ class ImitationLearning(object):
         utils.seed(self.args.seed)
 
         if type(self.args.env) == list:
-            self.env = [gym.make(item[0]) for item in self.args.env]
-
             self.train_demos = [utils.load_demos(env, demos_origin)[:episodes]
                                 for env, demos_origin, episodes in self.args.env]
 
             self.val_demos = [utils.load_demos(env, demos_origin+"_valid")[:1]
                               for env, demos_origin, _ in self.args.env]
-
-            observation_space = self.env[0].observation_space
-            action_space = self.env[0].action_space
+            
+            if 'num_proc_val_return' not in self.args:
+                self.env = [gym.make(item[0]) for item in self.args.env]
+                observation_space = self.env[0].observation_space
+                action_space = self.env[0].action_space
+            else:
+                pevns = []
+                for proc_id in range(self.args.num_proc_val_return):
+                    ienv = [gym.make(item[0]).seed(self.args.val_seed+proc_id*1000) for item in self.args.env]
+                    pevns.append(venv.MultiEnv(ienv))
+                self.env = venv.ParallelEnv(pevns)
+                observation_space = self.env.observation_space
+                action_space = self.env.action_space
         else:
-            self.env = gym.make(self.args.env)
-
             self.train_demos = utils.load_demos(self.args.env, self.args.demos_origin)[:self.args.episodes]
 
             self.val_demos = utils.load_demos(self.args.env, self.args.demos_origin+"_valid")[:500]
-
-            observation_space = self.env.observation_space
-            action_space = self.env.action_space
+            
+            if 'num_proc_val_return' not in self.args:
+                self.env = gym.make(self.args.env)
+                observation_space = self.env.observation_space
+                action_space = self.env.action_space
+            else:
+                pevns = []
+                for proc_id in range(self.args.num_proc_val_return):
+                    ienv = [gym.make(self.args.env).seed(self.args.val_seed+proc_id*1000)]
+                    pevns.append(venv.MultiEnv(ienv))
+                self.env = venv.ParallelEnv(pevns)
+                observation_space = self.env.observation_space
+                action_space = self.env.action_space
 
         if type(self.args.env) == list:
             named_envs = '_'.join([item[0] for item in self.args.env])
@@ -257,35 +275,58 @@ class ImitationLearning(object):
 
         return log
 
-    def validate(self, verbose=True):
+    def validate(self, verbose=True, use_procs=False):
         # Seed needs to be reset for each validation, to ensure consistency
         utils.seed(self.args.val_seed)
         self.args.deterministic = False
         if verbose:
             print("Validating the model")
+        
+        if not use_procs:
+            envs = self.env if type(self.env) == list else [self.env]
+            agent = utils.load_agent(self.args, envs[0])
+            # Setting the agent model to the current model
+            agent.model = self.acmodel
 
-        envs = self.env if type(self.env) == list else [self.env]
-        agent = utils.load_agent(self.args, envs[0])
-        # Setting the agent model to the current model
-        agent.model = self.acmodel
+            logs = []
+            for env in envs:
 
-        logs = []
-        for env in envs:
+                env.seed(self.args.val_seed)
 
-            env.seed(self.args.val_seed)
+                logs += [evaluate(agent,env,self.args.val_episodes)]
 
-            logs += [evaluate(agent,env,self.args.val_episodes)]
+            if type(self.env) != list:
+                assert len(logs) == 1
+                return np.mean(logs[0]["return_per_episode"])
 
-        if type(self.env) != list:
-            assert len(logs) == 1
-            return np.mean(logs[0]["return_per_episode"])
-
-        return {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
+            return {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
+        else:
+            agent = utils.load_agent(self.args, self.env.envs[0].envs[0])
+            # Setting the agent model to the current model
+            agent.model = self.acmodel
+            
+            logs = []
+            
+            env_epochs = list(itertools.product(range(self.env.num_envs), range(self.args.val_episodes)))
+            env_epoch_len = len(env_epochs)
+            if env_epoch_len%self.args.num_proc_val_return > 0:
+                adding = self.args.num_proc_val_return - env_epoch_len%self.args.num_proc_val_return
+                for _ in range(adding):
+                    env_epochs.append((0,0))
+            else:
+                adding = 0
+            env_epochs = np.array(env_epochs, dtype='int32')
+            num_running = len(env_epochs) / self.args.num_proc_val_return
+            
+            for nid in range(num_running):
+                env_ids = env_epochs[nid*self.args.num_proc_val_return:(nid+1)*self.args.num_proc_val_return][:,0]
+                self.env.reset(env_ids)
+                
 
     def collect_returns(self):
         if torch.cuda.is_available():
             self.acmodel.cpu()
-        mean_return = self.validate(False)
+        mean_return = self.validate(verbose=False, use_procs='num_proc_val_return' in self.args)
         if torch.cuda.is_available():
             self.acmodel.cuda()
         return mean_return
