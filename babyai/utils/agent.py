@@ -45,8 +45,10 @@ class ModelAgent(Agent):
             action = dist.probs.max(1, keepdim=True)[1]
         else:
             action = dist.sample()
-
-        return action.item()
+        
+        if type(obs) != list:
+            return action.item()
+        return action
 
     def analyze_feedback(self, reward, done):
         if type(done) != list:
