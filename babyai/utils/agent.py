@@ -49,10 +49,12 @@ class ModelAgent(Agent):
         return action.item()
 
     def analyze_feedback(self, reward, done):
-        done = [x for x in done]
+        if type(done) != list:
+            done = [done]
         if self.model.recurrent:
             ids = np.where(done)[0]
-            self.memory[ids] = torch.zeros(sum(done), self.model.memory_size)
+            if len(ids) > 0:
+                self.memory[ids] = torch.zeros(sum(done), self.model.memory_size)
 
 
 class DemoAgent(Agent):
