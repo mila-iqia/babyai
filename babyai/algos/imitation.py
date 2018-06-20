@@ -27,7 +27,7 @@ class ImitationLearning(object):
             self.val_demos = [utils.load_demos(env, demos_origin+"_valid")[:1]
                               for env, demos_origin, _ in self.args.env]
             
-            if 'num_proc_val_return' not in self.args:
+            if 'num_proc_val_return' not in self.args or self.args.num_proc_val_return is None:
                 self.env = [gym.make(item[0]) for item in self.args.env]
                 observation_space = self.env[0].observation_space
                 action_space = self.env[0].action_space
@@ -44,7 +44,7 @@ class ImitationLearning(object):
 
             self.val_demos = utils.load_demos(self.args.env, self.args.demos_origin+"_valid")[:500]
             
-            if 'num_proc_val_return' not in self.args:
+            if 'num_proc_val_return' not in self.args or self.args.num_proc_val_return is None:
                 self.env = gym.make(self.args.env)
                 observation_space = self.env.observation_space
                 action_space = self.env.action_space
@@ -339,7 +339,7 @@ class ImitationLearning(object):
     def collect_returns(self):
         if torch.cuda.is_available():
             self.acmodel.cpu()
-        mean_return = self.validate(verbose=False, use_procs='num_proc_val_return' in self.args)
+        mean_return = self.validate(verbose=False, use_procs='num_proc_val_return' in self.args and self.args.num_proc_val_return is not None)
         if torch.cuda.is_available():
             self.acmodel.cuda()
         return mean_return
