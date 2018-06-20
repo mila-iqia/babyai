@@ -83,6 +83,8 @@ parser.add_argument("--batchSampler-seed", type=int, default=0,
                     help="seed for batchSampler used for sampling batches (default: 10)")
 parser.add_argument("--return-interval", type=int, default=10,
                     help="number of batches to collect the returns to update the task distribution (default: 10)")
+parser.add_argument("--num-proc-val-return", type=int, default=None,
+                    help="number of batches to collect the returns to update the task distribution (default: None)")
 
 args = parser.parse_args()
 batch_size = args.batch_size
