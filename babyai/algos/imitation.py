@@ -305,11 +305,8 @@ class ImitationLearning(object):
 
             return {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
         else:
-            agent = []
-            for _ in range(self.env.num_procs):
-                ag = utils.load_agent(self.args, self.env.envs[0].envs[0])
-                ag.model = self.acmodel
-                agent.append(ag)
+            agent = utils.load_agent(self.args, self.env.envs[0].envs[0])
+            agent.model = self.acmodel
             
             logs = []
             
@@ -329,6 +326,9 @@ class ImitationLearning(object):
             for nid in range(num_running):
                 env_ids = env_epochs[nid*self.args.num_proc_val_return:(nid+1)*self.args.num_proc_val_return][:,0]
                 _, returnn, _ = evaluateProc(agent, self.env, env_ids)
+                if nid == num_running-1 and adding > 0:
+                    env_ids = env_ids[:-adding]
+                    returnn = returnn[:-adding]
                 for tid, ret in zip(env_ids, returnn):
                     logs[tid].append(ret)
             

@@ -30,19 +30,24 @@ def evaluateProc(agent, env, env_ids):
     
     obs = env.reset(env_ids)
     done = [False] * env.num_procs
+    stopUpdating = [False] * env.num_procs
     
     num_frames = [0] * env.num_procs
     returnn = [0] * env.num_procs
     obss = [[]] * env.num_procs
     
     while not all(done):
-        action = [a.get_action(o) for a, o in zip(agent, obs)]
+        action = agent.get_action(obs)
         obs, reward, done, _ = env.step(action)
-        for a, r, d in zip(agent, reward, done):
-            a.analyze_feedback(r, d)
+        agent.analyze_feedback(reward, done)
         for id in range(env.num_procs):
-            num_frames[id] += 1
-            returnn[id] += reward[id]
-            obss[id].append(obs[id])
+            
+            if not stopUpdating[id]:
+                num_frames[id] += 1
+                returnn[id] += reward[id]
+                obss[id].append(obs[id])
+            
+            if done[id] and not stopUpdating[id]:
+                stopUpdating[id] = True
     
     return num_frames, returnn, obss

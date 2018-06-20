@@ -5,18 +5,12 @@ def worker(conn, env):
     while True:
         cmd, data = conn.recv()
         if cmd == "step":
-            if data is not None:
-                obs, reward, done, info = env.step(data)
-                if done:
-                    obs = None
-            else:
-                obs = None
-                reward = 0
-                done = True
-                info = None
+            obs, reward, done, info = env.step(data)
+            if done:
+                obs = env.reset()
             conn.send((obs, reward, done, info))
         elif cmd == "reset":
-            obs = env.reset(data)
+            obs = env.reset()
             conn.send(obs)
         else:
             raise NotImplementedError
