@@ -59,7 +59,7 @@ class ParallelEnv(gym.Env):
 
 class MultiEnv:
     def __init__(self, envs):
-        assert len(envs) > 0 and iid >= 0 and iid < len(envs)
+        assert len(envs) > 0
         self.envs = envs
         self.env = None
         self.env_id = 0
