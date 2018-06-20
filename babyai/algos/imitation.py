@@ -9,7 +9,7 @@ import torch
 import torch.nn.functional as F
 import torch_rl
 from torch_rl.utils import DictList
-from babyai.evaluate import evaluate
+from babyai.evaluate import evaluate, evaluateProc
 import babyai.utils as utils
 import babyai.venv as venv
 from babyai.model import ACMode
@@ -301,9 +301,11 @@ class ImitationLearning(object):
 
             return {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
         else:
-            agent = utils.load_agent(self.args, self.env.envs[0].envs[0])
-            # Setting the agent model to the current model
-            agent.model = self.acmodel
+            agent = []
+            for _ in range(self.env.num_procs):
+                ag = utils.load_agent(self.args, self.env.envs[0].envs[0])
+                ag.model = self.acmodel
+                agent.append(ag)
             
             logs = []
             
@@ -318,9 +320,20 @@ class ImitationLearning(object):
             env_epochs = np.array(env_epochs, dtype='int32')
             num_running = len(env_epochs) / self.args.num_proc_val_return
             
+            logs = {tid : [] for tid in range(self.env.num_envs)}
+            
             for nid in range(num_running):
                 env_ids = env_epochs[nid*self.args.num_proc_val_return:(nid+1)*self.args.num_proc_val_return][:,0]
-                self.env.reset(env_ids)
+                _, returnn, _ = evaluateProc(agent, self.env, env_ids)
+                for tid, ret in zip(env_ids, returnn):
+                    logs[tid].append(ret)
+            
+            for tid in logs:
+                logs[tid] = np.mean(logs[tid])
+            
+            if len(logs) == 1:
+                return logs[0]
+            return logs
                 
 
     def collect_returns(self):

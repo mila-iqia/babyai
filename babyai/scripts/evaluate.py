@@ -25,14 +25,24 @@ def evaluate(agent, env, episodes):
     return logs
 
 def evaluateProc(agent, env, env_ids):
+    
+    assert len(env_ids) == env.num_procs
+    
     obs = env.reset(env_ids)
     done = [False] * env.num_procs
     
-    num_frams = [0] * env.num_procs
+    num_frames = [0] * env.num_procs
     returnn = [0] * env.num_procs
     obss = [[]] * env.num_procs
     
     while not all(done):
-        action = [agent.get_action(o) for o in obs]
+        action = [a.get_action(o) for a, o in zip(agent, obs)]
         obs, reward, done, _ = env.step(action)
-        
+        for a, r, d in zip(agent, reward, done):
+            a.analyze_feedback(r, d)
+        for id in range(env.num_procs):
+            num_frames[id] += 1
+            returnn[id] += reward[id]
+            obss[id].append(obs[id])
+    
+    return num_frames, returnn, obss
