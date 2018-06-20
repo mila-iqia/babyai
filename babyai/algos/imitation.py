@@ -12,7 +12,7 @@ from torch_rl.utils import DictList
 from babyai.evaluate import evaluate, evaluateProc
 import babyai.utils as utils
 import babyai.utils.venv as venv
-from babyai.model import ACMode
+from babyai.model import ACModel
 
 class ImitationLearning(object):
     def __init__(self, args):
