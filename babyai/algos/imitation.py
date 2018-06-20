@@ -9,8 +9,7 @@ import torch
 import torch.nn.functional as F
 import torch_rl
 from torch_rl.utils import DictList
-from babyai.evaluate import evaluate
-from babyai.evaluateProc import evaluateProc
+from babyai.evaluate import evaluate, evaluateProc
 import babyai.utils as utils
 import babyai.venv as venv
 from babyai.model import ACMode
