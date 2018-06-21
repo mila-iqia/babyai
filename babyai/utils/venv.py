@@ -11,7 +11,7 @@ def worker(conn, env):
             if done:
                 obs = env.reset(env_id, epoch_id)
             
-            conn.send((obs, env.env_id, env.epoch_id, reward, done, info))
+            conn.send((obs, env_id, epoch_id, env.env_id, env.epoch_id, reward, done, info))
         elif cmd == "reset":
             env_id, epoch_id = data
             obs = env.reset(env_id, epoch_id)
@@ -75,12 +75,12 @@ class ParallelEnv(gym.Env):
         
         obss, env_ids, epoch_ids, rewards, dones, infos = [], [], [], [], [], []
         for local in self.locals:
-            obs, env_id, epoch_id, reward, done, info = local.recv()
+            obs, env_id, epoch_id, env_env_id, env_epoch_id, reward, done, info = local.recv()
             if not done and epoch_id >= 0:
-                self.tasks.insert(0, (env_id, epoch_id))
+                self.tasks += [(env_id, epoch_id)] #.insert(0, (env_id, epoch_id))
             obss.append(obs)
-            env_ids.append(env_id)
-            epoch_ids.append(epoch_id)
+            env_ids.append(env_env_id)
+            epoch_ids.append(env_epoch_id)
             rewards.append(reward)
             dones.append(done)
             infos.append(info)
