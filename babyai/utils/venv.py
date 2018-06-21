@@ -40,7 +40,7 @@ class ParallelEnv(gym.Env):
             p.start()
             remote.close()
     
-    def register(tasks):
+    def register(self, tasks):
         self.tasks = tasks
         self.len_tasks = len(tasks)
     
