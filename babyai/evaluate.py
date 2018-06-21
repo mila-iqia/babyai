@@ -36,7 +36,7 @@ def evaluateProc(agent, env, env_ids):
     returnn = [0] * env.num_procs
     obss = [[]] * env.num_procs
     
-    while not all(done):
+    while not all(stopUpdating):
         action = agent.get_action(obs)
         obs, reward, done, _ = env.step(action)
         agent.analyze_feedback(reward, done, with_procs=True)
