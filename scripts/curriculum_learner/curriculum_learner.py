@@ -90,9 +90,9 @@ args = parser.parse_args()
 batch_size = args.batch_size
 
 graphs = [
-    ("BabyAI-PickupAbove-v0", 'agent', 2000),
-    ("BabyAI-OpenDoorColorDebug-v0", 'agent', 2000),
-    ("BabyAI-OpenRedBlueDoors-v0", 'agent', 2000)
+    ("BabyAI-OpenTwoDoorsDebug-v0", 'agent', 500),
+    ("BabyAI-OpenDoorColorDebug-v0", 'agent', 500),
+    ("BabyAI-OpenRedBlueDoorsDebug-v0", 'agent', 500)
 ]
 
 num_envs = len(graphs)
