@@ -44,6 +44,10 @@ class ParallelEnv(gym.Env):
         self.tasks = tasks
         self.len_tasks = len(tasks)
     
+    def seed(self, seed):
+        for proc_id in range(self.envs):
+            self.envs[proc_id].seed(seed+proc_id*1000)
+    
     def start(self):
         for local in self.locals:
             if len(self.tasks) > 0:
@@ -103,6 +107,10 @@ class MultiEnv:
     
     def __getattr__(self, key):
         return getattr(self.env, key)
+    
+    def seed(self, seed):
+        for env in self.envs:
+            env.seed(seed)
     
     def _set_evn(self, iid):
         assert iid >= 0 and iid < self.num_envs
