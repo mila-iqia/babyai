@@ -30,9 +30,6 @@ class ModelAgent(Agent):
         self.memory[id] = torch.zeros(1, self.model.memory_size)
 
     def get_action(self, obs):
-        
-        if type(obs) != list:
-            obs = [obs]
         preprocessed_obs = self.obss_preprocessor(obs)
 
         with torch.no_grad():
@@ -46,7 +43,7 @@ class ModelAgent(Agent):
         else:
             action = dist.sample()
         
-        if type(obs) != list:
+        if len(action) == 1:
             return action.item()
         return action
 

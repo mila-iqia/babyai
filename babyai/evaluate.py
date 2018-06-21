@@ -11,7 +11,7 @@ def evaluate(agent, env, episodes):
         returnn = 0
         obss = []
         while not(done):
-            action = agent.get_action(obs)
+            action = agent.get_action([obs])
             obss.append(obs)
             obs, reward, done, _ = env.step(action)
             agent.analyze_feedback(reward, done)
