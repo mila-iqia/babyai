@@ -260,7 +260,7 @@ class ImitationLearning(object):
     def validate(self, verbose=True):
         # Seed needs to be reset for each validation, to ensure consistency
         utils.seed(self.args.val_seed)
-        self.args.deterministic = False
+        self.args.argmax = False
         if verbose:
             print("Validating the model")
 

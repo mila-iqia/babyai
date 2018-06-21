@@ -21,10 +21,10 @@ class Agent(ABC):
 class ModelAgent(Agent):
     """A model-based agent. This agent behaves using a model."""
 
-    def __init__(self, model_name, observation_space, deterministic):
+    def __init__(self, model_name, observation_space, argmax):
         self.obss_preprocessor = utils.ObssPreprocessor(model_name, observation_space)
         self.model = utils.load_model(model_name)
-        self.deterministic = deterministic
+        self.argmax = argmax
 
         if self.model.recurrent:
             self._initialize_memory()
@@ -41,7 +41,7 @@ class ModelAgent(Agent):
             else:
                 dist, _ = self.model(preprocessed_obs)
 
-        if self.deterministic:
+        if self.argmax:
             action = dist.probs.max(1, keepdim=True)[1]
         else:
             action = dist.sample()
@@ -93,6 +93,6 @@ class DemoAgent(Agent):
 
 def load_agent(args, env):
     if args.model is not None:
-        return ModelAgent(args.model, env.observation_space, args.deterministic)
+        return ModelAgent(args.model, env.observation_space, args.argmax)
     elif args.demos_origin is not None:
         return DemoAgent(args.env, args.demos_origin)
