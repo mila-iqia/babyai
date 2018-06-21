@@ -281,7 +281,7 @@ def main():
             if current_num_evaluate % args.validation_interval == 0:
                 if torch.cuda.is_available():
                     il_learn.acmodel.cpu()
-                mean_return = il_learn.validate()
+                mean_return = il_learn.validate(use_procs='num_proc_val_return' in args and args.num_proc_val_return is not None)
                 mean_return = np.mean(list(mean_return.values()))
                 print("Mean Validation Return %.3f" % mean_return)
 

@@ -39,9 +39,7 @@ class ModelAgent(Agent):
             action = dist.probs.max(1, keepdim=True)[1]
         else:
             action = dist.sample()
-        
-        if len(action) == 1:
-            return action.item()
+
         return action
 
     def analyze_feedback(self, reward, done, with_procs=False):
