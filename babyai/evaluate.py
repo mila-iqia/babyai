@@ -60,7 +60,6 @@ def evaluateProc(agent, env, env_ids):
 def evaluateProc(agent, env, num_epochs):
     
     obs, pre_env_id, pre_epoch_id = env.start()
-    totalEpochDone = 0
     num_frames = np.zeros((env.num_envs, num_epochs), dtype='float32')
     returnn = np.zeros((env.num_envs, num_epochs), dtype='float32')
     finished = np.zeros((env.num_envs, num_epochs), dtype='bool')
@@ -76,7 +75,7 @@ def evaluateProc(agent, env, num_epochs):
             if epid >= 0:
                 num_frames[enid, epid] += 1.
                 returnn[enid, epid] += reward[id]
-            if done[id]:
+            if done[id] and epid >= 0:
                 finished[enid, epid] = True
         pre_env_id = env_id
         pre_epoch_id = epoch_id
