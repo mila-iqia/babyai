@@ -5,13 +5,17 @@ def worker(conn, env):
     while True:
         cmd, data = conn.recv()
         if cmd == "step":
-            obs, reward, done, info = env.step(data)
+            action, task = data
+            env_id, epoch_id = task
+            obs, reward, done, info = env.step(action)
             if done:
-                obs = env.reset(0)
-            conn.send((obs, reward, done, info))
+                obs = env.reset(env_id, epoch_id)
+            
+            conn.send((obs, env.env_id, env.epoch_id, reward, done, info))
         elif cmd == "reset":
-            obs = env.reset(data)
-            conn.send(obs)
+            env_id, epoch_id = data
+            obs = env.reset(env_id, epoch_id)
+            conn.send((obs, env_id, epoch_id))
         else:
             raise NotImplementedError
 
@@ -35,18 +39,54 @@ class ParallelEnv(gym.Env):
             p.daemon = True
             p.start()
             remote.close()
-
-    def reset(self, env_ids):
-        for local, env_id in zip(self.locals, env_ids):
-            local.send(("reset", env_id))
-        results = [local.recv() for local in self.locals]
-        return results
+    
+    def register(tasks):
+        self.tasks = tasks
+        self.len_tasks = len(tasks)
+    
+    def start(self):
+        for local in self.locals:
+            if len(self.tasks) > 0:
+                local.send(("reset", self.tasks.pop()))
+            else:
+                local.send(("reset", (0,-1)))
+        
+        obss, env_ids, epoch_ids = [], [], []
+        for local in self.locals:
+            obs, env_id, epoch_id = local.recv()
+            obss.append(obs)
+            env_ids.append(env_id)
+            epoch_ids.append(epoch_id)
+        return obss, env_ids, epoch_ids
+        
+        #for local, env_id in zip(self.locals, env_ids):
+        #    local.send(("reset", env_id))
+        #results = [local.recv() for local in self.locals]
+        #return results
 
     def step(self, actions):
         for local, action in zip(self.locals, actions):
-            local.send(("step", action))
-        results = zip(*[local.recv() for local in self.locals])
-        return results
+            if len(self.tasks) > 0:
+                local.send(("step", (action, self.tasks.pop())))
+            else:
+                local.send(("step", (action, (0,-1))))
+                
+            #local.send(("step", (action, self.tasks)))
+        
+        obss, env_ids, epoch_ids, rewards, dones, infos = [], [], [], [], [], []
+        for local in self.locals:
+            obs, env_id, epoch_id, reward, done, info = local.recv()
+            if not done and epoch_id >= 0:
+                self.tasks.insert(0, (env_id, epoch_id))
+            obss.append(obs)
+            env_ids.append(env_id)
+            epoch_ids.append(epoch_id)
+            rewards.append(reward)
+            dones.append(done)
+            infos.append(info)
+        #results = zip(*[local.recv() for local in self.locals])
+        #return results
+        return obss, env_ids, epoch_ids, rewards, dones, infos
 
     def render(self):
         raise NotImplementedError
@@ -57,6 +97,7 @@ class MultiEnv:
         self.envs = envs
         self.env = None
         self.env_id = 0
+        self.epoch_id = -1
         self.num_envs = len(envs)
         #self.reset()
     
@@ -72,6 +113,7 @@ class MultiEnv:
         obs, reward, done, info = self.env.step(action)
         return obs, reward, done, info
 
-    def reset(self, id):
-        self._set_evn(id)
+    def reset(self, env_id, epoch_id):
+        self._set_evn(env_id)
+        self.epoch_id = epoch_id
         return self.env.reset()

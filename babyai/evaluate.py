@@ -1,3 +1,5 @@
+import numpy as np
+
 # Returns the performance of the agent on the environment for a particular number of episodes.
 def evaluate(agent, env, episodes):
     # Initialize logs
@@ -25,6 +27,7 @@ def evaluate(agent, env, episodes):
 
     return logs
 
+'''
 def evaluateProc(agent, env, env_ids):
     
     assert len(env_ids) == env.num_procs
@@ -52,3 +55,30 @@ def evaluateProc(agent, env, env_ids):
                 stopUpdating[id] = True
     
     return num_frames, returnn, obss
+'''
+
+def evaluateProc(agent, env, num_epochs):
+    
+    obs, pre_env_id, pre_epoch_id = env.start()
+    totalEpochDone = 0
+    num_frames = np.zeros((env.num_envs, num_epochs), dtype='float32')
+    returnn = np.zeros((env.num_envs, num_epochs), dtype='float32')
+    finished = np.zeros((env.num_envs, num_epochs), dtype='bool')
+    
+    while not finished.all():
+        action = agent.get_action(obs)
+        obs, env_id, epoch_id, reward, done, _ = env.step(action)
+        agent.analyze_feedback(reward, done, with_procs=True)
+        
+        for id in range(env.num_procs):
+            enid = pre_env_id[id]
+            epid = pre_epoch_id[id]
+            if epid >= 0:
+                num_frames[enid, epid] += 1.
+                returnn[enid, epid] += reward[id]
+            if done[id]:
+                finished[enid, epid] = True
+        pre_env_id = env_id
+        pre_epoch_id = epoch_id
+    
+    return num_frames.mean(1), returnn.mean(1)

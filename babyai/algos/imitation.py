@@ -308,37 +308,39 @@ class ImitationLearning(object):
             agent = utils.load_agent(self.args, self.env.envs[0].envs[0])
             agent.model = self.acmodel
             
-            logs = []
+            #logs = []
             
             env_epochs = list(itertools.product(range(self.env.num_envs), range(self.args.val_episodes)))
-            env_epoch_len = len(env_epochs)
-            if env_epoch_len%self.args.num_proc_val_return > 0:
-                adding = self.args.num_proc_val_return - env_epoch_len%self.args.num_proc_val_return
-                for _ in range(adding):
-                    env_epochs.append((0,0))
-            else:
-                adding = 0
-            env_epochs = np.array(env_epochs, dtype='int32')
-            num_running = len(env_epochs) // self.args.num_proc_val_return
+            #env_epoch_len = len(env_epochs)
+            #if env_epoch_len%self.args.num_proc_val_return > 0:
+            #    adding = self.args.num_proc_val_return - env_epoch_len%self.args.num_proc_val_return
+            #    for _ in range(adding):
+            #        env_epochs.append((0,0))
+            #else:
+            #    adding = 0
+            #env_epochs = np.array(env_epochs, dtype='int32')
+            #num_running = len(env_epochs) // self.args.num_proc_val_return
             
-            logs = {tid : [] for tid in range(self.env.num_envs)}
+            self.env.register(env_epochs)
+            _, returnn = evaluateProc(agent, self.env, self.args.val_episodes)
             
-            for nid in range(num_running):
-                env_ids = env_epochs[nid*self.args.num_proc_val_return:(nid+1)*self.args.num_proc_val_return][:,0]
-                _, returnn, _ = evaluateProc(agent, self.env, env_ids)
-                if nid == num_running-1 and adding > 0:
-                    env_ids = env_ids[:-adding]
-                    returnn = returnn[:-adding]
-                for tid, ret in zip(env_ids, returnn):
-                    logs[tid].append(ret)
+            logs = {tid : returnn[tid] for tid in range(self.env.num_envs)}
             
-            for tid in logs:
-                logs[tid] = np.mean(logs[tid])
+            #for nid in range(num_running):
+            #    env_ids = env_epochs[nid*self.args.num_proc_val_return:(nid+1)*self.args.num_proc_val_return][:,0]
+            #    _, returnn, _ = evaluateProc(agent, self.env, env_ids)
+            #    if nid == num_running-1 and adding > 0:
+            #        env_ids = env_ids[:-adding]
+            #        returnn = returnn[:-adding]
+            #    for tid, ret in zip(env_ids, returnn):
+            #        logs[tid].append(ret)
+            
+            #for tid in logs:
+            #    logs[tid] = np.mean(logs[tid])
             
             if len(logs) == 1:
                 return logs[0]
             return logs
-                
 
     def collect_returns(self):
         if torch.cuda.is_available():
