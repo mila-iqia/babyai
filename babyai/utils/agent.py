@@ -91,6 +91,9 @@ class DemoAgent(Agent):
 
 def load_agent(args, env):
     if args.model is not None:
-        return ModelAgent(args.model, env.observation_space, args.deterministic)
+        num_procs = 1
+        if 'num_proc_val_return' in self.args and self.args.num_proc_val_return is not None:
+            num_procs = self.args.num_proc_val_return
+        return ModelAgent(args.model, env.observation_space, args.deterministic, num_procs=num_procs)
     elif args.demos_origin is not None:
         return DemoAgent(args.env, args.demos_origin)
