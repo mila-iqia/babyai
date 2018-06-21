@@ -25,9 +25,6 @@ class ModelAgent(Agent):
 
     def _initialize_memory(self, num_procs=1):
         self.memory = torch.zeros(num_procs, self.model.memory_size)
-    
-    def _intialize_memory_i(self, id):
-        self.memory[id] = torch.zeros(1, self.model.memory_size)
 
     def get_action(self, obs):
         preprocessed_obs = self.obss_preprocessor(obs)
