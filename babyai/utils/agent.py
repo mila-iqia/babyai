@@ -47,8 +47,8 @@ class ModelAgent(Agent):
             return action.item()
         return action
 
-    def analyze_feedback(self, reward, done):
-        if type(done) != list:
+    def analyze_feedback(self, reward, done, with_procs=False):
+        if not with_procs:
             done = [done]
         if self.model.recurrent:
             ids = np.where(done)[0]

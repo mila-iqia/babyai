@@ -39,7 +39,7 @@ def evaluateProc(agent, env, env_ids):
     while not all(done):
         action = agent.get_action(obs)
         obs, reward, done, _ = env.step(action)
-        agent.analyze_feedback(reward, done)
+        agent.analyze_feedback(reward, done, with_procs=True)
         for id in range(env.num_procs):
             
             if not stopUpdating[id]:
