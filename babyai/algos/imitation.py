@@ -26,7 +26,7 @@ class ImitationLearning(object):
 
             self.val_demos = [utils.load_demos(env, demos_origin+"_valid")[:1]
                               for env, demos_origin, _ in self.args.env]
-            
+
             if 'num_proc_val_return' not in self.args or self.args.num_proc_val_return is None:
                 self.env = [gym.make(item[0]) for item in self.args.env]
                 observation_space = self.env[0].observation_space
@@ -45,7 +45,7 @@ class ImitationLearning(object):
             self.train_demos = utils.load_demos(self.args.env, self.args.demos_origin)[:self.args.episodes]
 
             self.val_demos = utils.load_demos(self.args.env, self.args.demos_origin+"_valid")[:500]
-            
+
             if 'num_proc_val_return' not in self.args or self.args.num_proc_val_return is None:
                 self.env = gym.make(self.args.env)
                 observation_space = self.env.observation_space
@@ -285,7 +285,7 @@ class ImitationLearning(object):
         self.args.deterministic = False
         if verbose:
             print("Validating the model")
-        
+
         if not use_procs:
             envs = self.env if type(self.env) == list else [self.env]
             agent = utils.load_agent(self.args, envs[0])
@@ -307,37 +307,14 @@ class ImitationLearning(object):
         else:
             agent = utils.load_agent(self.args, self.env.envs[0].envs[0])
             agent.model = self.acmodel
-            
-            #logs = []
-            
+
             env_epochs = list(itertools.product(range(self.env.num_envs), range(self.args.val_episodes)))
-            #env_epoch_len = len(env_epochs)
-            #if env_epoch_len%self.args.num_proc_val_return > 0:
-            #    adding = self.args.num_proc_val_return - env_epoch_len%self.args.num_proc_val_return
-            #    for _ in range(adding):
-            #        env_epochs.append((0,0))
-            #else:
-            #    adding = 0
-            #env_epochs = np.array(env_epochs, dtype='int32')
-            #num_running = len(env_epochs) // self.args.num_proc_val_return
-            
+
             self.env.register(env_epochs)
             _, returnn = evaluateProc(agent, self.env, self.args.val_episodes)
-            
+
             logs = {tid : returnn[tid] for tid in range(self.env.num_envs)}
-            
-            #for nid in range(num_running):
-            #    env_ids = env_epochs[nid*self.args.num_proc_val_return:(nid+1)*self.args.num_proc_val_return][:,0]
-            #    _, returnn, _ = evaluateProc(agent, self.env, env_ids)
-            #    if nid == num_running-1 and adding > 0:
-            #        env_ids = env_ids[:-adding]
-            #        returnn = returnn[:-adding]
-            #    for tid, ret in zip(env_ids, returnn):
-            #        logs[tid].append(ret)
-            
-            #for tid in logs:
-            #    logs[tid] = np.mean(logs[tid])
-            
+
             if len(logs) == 1:
                 return logs[0]
             return logs
