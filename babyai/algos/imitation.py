@@ -24,7 +24,7 @@ class ImitationLearning(object):
             self.train_demos = [utils.load_demos(env, demos_origin)[:episodes]
                                 for env, demos_origin, episodes in self.args.env]
 
-            self.val_demos = [utils.load_demos(env, demos_origin+"_valid")[:1]
+            self.val_demos = [utils.load_demos(env, demos_origin+"_valid")[:500]
                               for env, demos_origin, _ in self.args.env]
 
             if 'num_proc_val_return' not in self.args or self.args.num_proc_val_return is None:
@@ -294,7 +294,7 @@ class ImitationLearning(object):
 
             logs = []
             for env in envs:
-
+                utils.seed(self.args.val_seed)
                 env.seed(self.args.val_seed)
 
                 logs += [evaluate(agent,env,self.args.val_episodes)]
@@ -304,6 +304,7 @@ class ImitationLearning(object):
                 return np.mean(logs[0]["return_per_episode"])
 
             return {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
+
         else:
             agent = utils.load_agent(self.args, self.env.envs[0].envs[0])
             agent.model = self.acmodel

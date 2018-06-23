@@ -44,8 +44,8 @@ parser.add_argument("--val-seed", type=int, default=0,
                     help="seed for environment used for validation (default: 0)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ORIGIN_il)")
-parser.add_argument("--seed", type=int, default=0,
-                    help="random seed (default: 0)")
+parser.add_argument("--seed", type=int, default=1,
+                    help="random seed (default: 1)")
 parser.add_argument("--val-episodes", type=int, default=1000,
                     help="number of episodes used for validation (default: 1000)")
 parser.add_argument("--tb", action="store_true", default=False,
@@ -285,12 +285,18 @@ def main():
                 if torch.cuda.is_available():
                     il_learn.acmodel.cpu()
                 mean_return = il_learn.validate(use_procs='num_proc_val_return' in args and args.num_proc_val_return is not None)
+
+                if args.tb:
+                    for item in range(num_envs):
+                        writer.add_scalar("{}_{}".format(graphs[item][0],"return"), mean_return[item], current_num_evaluate)
+
                 mean_return = np.mean(list(mean_return.values()))
                 print("Mean Validation Return %.3f" % mean_return)
 
                 if mean_return > best_mean_return:
                     best_mean_return = mean_return
                     patience = 0
+
                     # Saving the model
                     print("Saving best model")
                     il_learn.obss_preprocessor.vocab.save()
