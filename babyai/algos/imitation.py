@@ -57,6 +57,7 @@ class ImitationLearning(object):
                         env.seed(self.args.val_seed+proc_id*1000)
                     self.penvs.append(envs)
                 observation_space, action_space = self.penvs[0][0].observation_space, self.penvs[0][0].action_space
+                self.env = self.penvs[0]
 
         if type(self.args.env) == list:
             named_envs = '_'.join([item[0] for item in self.args.env])
@@ -285,8 +286,7 @@ class ImitationLearning(object):
             print("Validating the model")
 
         if not use_procs:
-            # envs = self.env if type(self.env) == list else [self.env]
-            envs = [gym.make(item[0]) for item in self.args.env]
+            envs = self.env if type(self.env) == list else [self.env]
             agent = utils.load_agent(self.args, envs[0])
             # Setting the agent model to the current model
             agent.model = self.acmodel
