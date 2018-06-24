@@ -39,8 +39,9 @@ Having done that, you can either add `baby-ai-game` and `gym-minigrid` in your `
 ## Structure of the Codebase
 
 In `babyai`:
-- The `levels` directory contains all the code relevant to the generation of levels and missions. Essentially, this implements the test task for the Baby AI Game. This is an importable module which people can use on its own to perform experiments.
-- The `agents` directory will contain a default implementation of one or more agents to be evaluated on the baby AI game. This should also be importable as an independent module. Each agent will need to support methods to be provided teaching inputs using pointing and naming, as well as demonstrations.
+- The `levels` directory contains all the code relevant to the generation of levels and curriculums. Essentially, this implements the test task for the Baby AI Game. This is an importable module which people can use on its own to perform experiments.
+- The `agents` directory contains a default implementation of one or more agents to be evaluated on the baby AI game. This should also be importable as an independent module. Each agent will need to support methods to be provided teaching inputs using pointing and naming, as well as demonstrations.
+- The `multienv` directory contains an implementation of the algorithms described in [Matiisen et al., 2017](https://arxiv.org/abs/1707.00183) for automatic execution of curriculums.
 - The `utils` directory contains a bunch of useful functions that can be used when training Reinforcement Learning or Imitation Learning agents.
 - `model.py` is a script containing the network architectures used when training any type of agent.
 

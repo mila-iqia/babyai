@@ -60,7 +60,7 @@ parser.add_argument("--test-seed", type=int, default=6,
                     help="seed used for testing a model (default: 6)")
 parser.add_argument("--test-episodes", type=int, default=1000,
                     help="number of episodes used for testing (default: 1000)")
-parser.add_argument("--deterministic", action="store_true", default=False,
+parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected for model agent while evaluating" )
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log into Tensorboard")

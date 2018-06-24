@@ -5,7 +5,7 @@ setup(
     version='0.0.2',
     license='BSD 3-clause',
     keywords='memory, environment, agent, rl, openaigym, openai-gym, gym',
-    packages=['babyai', 'babyai.levels', 'babyai.agents', 'babyai.utils'],
+    packages=['babyai', 'babyai.levels', 'babyai.agents', 'babyai.utils', 'babyai.multienv'],
     install_requires=[
         'gym>=0.9.6',
         'numpy>=1.10.0',

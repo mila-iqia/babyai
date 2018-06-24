@@ -13,14 +13,17 @@ import torch_rl
 
 import babyai.utils as utils
 from babyai.model import ACModel
+from babyai.levels import curriculums, create_menvs
 
 # Parse arguments
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--algo", required=True,
                     help="algorithm to use: a2c | ppo (REQUIRED)")
-parser.add_argument("--env", required=True,
-                    help="name of the environment to train on (REQUIRED)")
+parser.add_argument("--env", default=None,
+                    help="name of the environment to train on (REQUIRED or --curriculum REQUIRED)")
+parser.add_argument("--curriculum", default=None,
+                    help="name of the curriculum to train on (REQUIRED or --env REQUIRED)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
 parser.add_argument("--seed", type=int, default=1,
@@ -69,8 +72,9 @@ parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='cnn1',
                     help="image embedding architecture")
-
 args = parser.parse_args()
+
+assert args.env is not None or args.curriculum is not None, "--env or --curriculum must be specified."
 
 # Set seed for all randomness sources
 
@@ -78,11 +82,15 @@ utils.seed(args.seed)
 
 # Generate environments
 
-envs = []
-for i in range(args.procs):
-    env = gym.make(args.env)
-    env.seed(args.seed + i)
-    envs.append(env)
+if args.env is not None:
+    envs = []
+    for i in range(args.procs):
+        env = gym.make(args.env)
+        env.seed(args.seed + i)
+        envs.append(env)
+else:
+    curriculum = curriculums[args.curriculum]
+    menv_head, envs = create_menvs(curriculum, args.procs, args.seed)
 
 # Define model name
 
@@ -184,6 +192,14 @@ while num_frames < args.frames:
             writer.add_scalar("value", logs["value"], i)
             writer.add_scalar("policy_loss", logs["policy_loss"], i)
             writer.add_scalar("value_loss", logs["value_loss"], i)
+
+            if args.curriculum is not None:
+                for env_id, env_key in enumerate(curriculum):
+                    writer.add_scalar("proba/{}".format(env_key),
+                                      menv_head.dist[env_id], num_frames)
+                    if env_id in menv_head.synthesized_returns.keys():
+                        writer.add_scalar("return/{}".format(env_key),
+                                          menv_head.synthesized_returns[env_id], num_frames)
 
     # Save obss preprocessor vocabulary and model
 

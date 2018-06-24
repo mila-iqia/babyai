@@ -16,7 +16,7 @@ parser.add_argument("--episodes", type=int, default=1000,
                     help="number of episodes to generate demonstrations for (default: 1000)")
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
-parser.add_argument("--deterministic", action="store_true", default=False,
+parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected")
 parser.add_argument("--save-interval", type=int, default=0,
                     help="interval between demonstrations saving (default: 0, 0 means only at the end)")

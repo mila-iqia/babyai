@@ -75,7 +75,7 @@ def add_new_demos(args,il_learn):
    env = gym.make(args.env)
    env.seed(args.seed)
    utils.seed(args.seed)
-   args.deterministic = True
+   args.argmax = True
 
    agent = utils.load_agent(args, env)
    logs = evaluate(agent, env, len(il_learn.train_demos))
@@ -103,7 +103,7 @@ def add_new_demos(args,il_learn):
         for i in range(min(int(optimal_steps),len(observations[index]))):
          obs = observations[index][i]
          action = expert_agent.get_action(obs)
-         if i != len(observations[index]) -1:
+         if i != min(int(optimal_steps),len(observations[index])) -1:
             demo.append((obs, action, 0, False))
          else:
             demo.append((obs, action, 0, True))
@@ -138,7 +138,7 @@ def find_optimal_steps():
     model = args.model
     args.model = args.expert_model
     env = gym.make(args.env)
-    args.deterministic = True
+    args.argmax = True
     expert_agent = utils.load_agent(args, env)
     env.seed(args.seed)
     utils.seed(args.seed)
