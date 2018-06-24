@@ -13,6 +13,7 @@ from babyai.evaluate import evaluate, evaluateProc
 import babyai.utils as utils
 import babyai.utils.venv as venv
 from babyai.model import ACModel
+import multiprocessing
 
 class ImitationLearning(object):
     def __init__(self, args):
@@ -32,15 +33,14 @@ class ImitationLearning(object):
                 observation_space = self.env[0].observation_space
                 action_space = self.env[0].action_space
             else:
-                pevns = []
+                self.penvs = []
                 for proc_id in range(self.args.num_proc_val_return):
-                    ienv = [gym.make(item[0]) for item in self.args.env]
-                    for env in ienv:
+                    envs = [gym.make(env_name[0]) for env_name in args.env]
+                    for env in envs:
                         env.seed(self.args.val_seed+proc_id*1000)
-                    pevns.append(venv.MultiEnv(ienv))
-                self.env = venv.ParallelEnv(pevns)
-                observation_space = self.env.observation_space
-                action_space = self.env.action_space
+                    self.penvs.append(envs)
+                observation_space, action_space = self.penvs[0][0].observation_space, self.penvs[0][0].action_space
+
         else:
             self.train_demos = utils.load_demos(self.args.env, self.args.demos_origin)[:self.args.episodes]
 
@@ -51,15 +51,13 @@ class ImitationLearning(object):
                 observation_space = self.env.observation_space
                 action_space = self.env.action_space
             else:
-                pevns = []
+                self.penvs = []
                 for proc_id in range(self.args.num_proc_val_return):
-                    ienv = [gym.make(self.args.env)]
-                    for env in ienv:
+                    envs = [gym.make(env_name[0]) for env_name in args.env]
+                    for env in envs:
                         env.seed(self.args.val_seed+proc_id*1000)
-                    pevns.append(venv.MultiEnv(ienv))
-                self.env = venv.ParallelEnv(pevns)
-                observation_space = self.env.observation_space
-                action_space = self.env.action_space
+                    self.penvs.append(envs)
+                observation_space, action_space = self.penvs[0][0].observation_space, self.penvs[0][0].action_space
 
         if type(self.args.env) == list:
             named_envs = '_'.join([item[0] for item in self.args.env])
@@ -67,6 +65,7 @@ class ImitationLearning(object):
         else:
             named_envs = self.args.env
             named_demos_origin = self.args.demos_origin
+
         default_model_name = "{}_{}_il".format(named_envs, named_demos_origin)
         self.model_name = self.args.model or default_model_name
         print("The model is saved in {}".format(self.model_name))
@@ -282,7 +281,7 @@ class ImitationLearning(object):
     def validate(self, verbose=True, use_procs=False):
         # Seed needs to be reset for each validation, to ensure consistency
         utils.seed(self.args.val_seed)
-        self.args.deterministic = False
+        self.args.deterministic = True
         if verbose:
             print("Validating the model")
 
@@ -297,7 +296,7 @@ class ImitationLearning(object):
                 utils.seed(self.args.val_seed)
                 env.seed(self.args.val_seed)
 
-                logs += [evaluate(agent,env,self.args.val_episodes)]
+                logs += [evaluate(agent,env,self.args.eval_episodes)]
 
             if type(self.env) != list:
                 assert len(logs) == 1
@@ -306,19 +305,27 @@ class ImitationLearning(object):
             return {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
 
         else:
-            agent = utils.load_agent(self.args, self.env.envs[0].envs[0])
+            episodes_per_proc = self.args.eval_episodes//self.args.num_proc_val_return
+            agent = utils.load_agent(self.args, self.penvs[0][0])
             agent.model = self.acmodel
+            agents = [copy.deepcopy(agent)]*self.args.num_proc_val_return
+            jobs = []
+            manager = multiprocessing.Manager()
+            return_dict = manager.dict()
+            for index in range(self.args.num_proc_val_return):
+                process = multiprocessing.Process(target=evaluateProc, args=(agents[index], self.penvs[index], episodes_per_proc, return_dict, self.args.env, index))
+                jobs.append(process)
+                process.start()
+            for job in jobs:
+                job.join()
+            rewards = {}
+            index = 0
+            for env_name in self.args.env:
+                rewards[index] = np.mean([item[env_name[0]]["return_per_episode"] for item in return_dict.values()])
+                index += 1
+            return rewards
 
-            env_epochs = list(itertools.product(range(self.env.num_envs), range(self.args.val_episodes)))
 
-            self.env.register(env_epochs)
-            _, returnn = evaluateProc(agent, self.env, self.args.val_episodes)
-
-            logs = {tid : returnn[tid] for tid in range(self.env.num_envs)}
-
-            if len(logs) == 1:
-                return logs[0]
-            return logs
 
     def collect_returns(self):
         if torch.cuda.is_available():

@@ -15,19 +15,19 @@ class Agent(ABC):
 
 
 class ModelAgent(Agent):
-    def __init__(self, model_name, observation_space, deterministic, num_procs=1):
+    def __init__(self, model_name, observation_space, deterministic):
         self.obss_preprocessor = utils.ObssPreprocessor(model_name, observation_space)
         self.model = utils.load_model(model_name)
         self.deterministic = deterministic
 
         if self.model.recurrent:
-            self._initialize_memory(num_procs)
+            self._initialize_memory()
 
-    def _initialize_memory(self, num_procs=1):
-        self.memory = torch.zeros(num_procs, self.model.memory_size)
+    def _initialize_memory(self):
+        self.memory = torch.zeros(1, self.model.memory_size)
 
     def get_action(self, obs):
-        preprocessed_obs = self.obss_preprocessor(obs)
+        preprocessed_obs = self.obss_preprocessor([obs])
 
         with torch.no_grad():
             if self.model.recurrent:
@@ -39,16 +39,11 @@ class ModelAgent(Agent):
             action = dist.probs.max(1, keepdim=True)[1]
         else:
             action = dist.sample()
-
         return action
 
-    def analyze_feedback(self, reward, done, with_procs=False):
-        if not with_procs:
-            done = [done]
-        if self.model.recurrent:
-            ids = np.where(done)[0]
-            if len(ids) > 0:
-                self.memory[ids] = torch.zeros(sum(done), self.model.memory_size)
+    def analyze_feedback(self, reward, done):
+        if done and self.model.recurrent:
+            self._initialize_memory()
 
 
 class DemoAgent(Agent):
@@ -89,9 +84,6 @@ class DemoAgent(Agent):
 
 def load_agent(args, env):
     if args.model is not None:
-        num_procs = 1
-        if 'num_proc_val_return' in args and args.num_proc_val_return is not None:
-            num_procs = args.num_proc_val_return
-        return ModelAgent(args.model, env.observation_space, args.deterministic, num_procs=num_procs)
+        return ModelAgent(args.model, env.observation_space, args.deterministic)
     elif args.demos_origin is not None:
         return DemoAgent(args.env, args.demos_origin)

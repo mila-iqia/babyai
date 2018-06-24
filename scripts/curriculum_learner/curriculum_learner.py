@@ -48,6 +48,8 @@ parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
 parser.add_argument("--val-episodes", type=int, default=1000,
                     help="number of episodes used for validation (default: 1000)")
+parser.add_argument("--eval-episodes", type=int, default=50,
+                    help="number of episodes used for evaluation for reassigning task distribution (default: 50)")
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log into Tensorboard")
 parser.add_argument("--instr-arch", default="gru",
@@ -81,9 +83,9 @@ args = parser.parse_args()
 batch_size = args.batch_size
 
 graphs = [
-    ("BabyAI-OpenTwoDoorsDebug-v0", 'agent_noseed', 500),
-    ("BabyAI-OpenDoorColorDebug-v0", 'agent_noseed', 500),
-    ("BabyAI-OpenRedBlueDoorsDebug-v0", 'agent', 500)
+    ("BabyAI-OpenTwoDoorsDebug-v0", 'agent_noseed', 100),
+    ("BabyAI-OpenDoorColorDebug-v0", 'agent_noseed', 100),
+    ("BabyAI-OpenRedBlueDoorsDebug-v0", 'agent', 100)
 ]
 
 num_envs = len(graphs)
@@ -272,7 +274,7 @@ def main():
                 val_log_all_task[key] = np.mean(val_log_all_task[key])
 
             if args.tb:
-                writer.add_scalar("FPS", fps, current_num_evaluate)
+                writer.add_scalar("FPS", np.mean(fps), current_num_evaluate)
                 writer.add_scalar("duration", total_ellapsed_time, current_num_evaluate)
                 writer.add_scalar("entropy", log["entropy"], current_num_evaluate)
                 writer.add_scalar("policy_loss", log["policy_loss"], current_num_evaluate)
@@ -285,7 +287,6 @@ def main():
                 if torch.cuda.is_available():
                     il_learn.acmodel.cpu()
                 mean_return = il_learn.validate(use_procs='num_proc_val_return' in args and args.num_proc_val_return is not None)
-
                 if args.tb:
                     for item in range(num_envs):
                         writer.add_scalar("{}_{}".format(graphs[item][0],"return"), mean_return[item], current_num_evaluate)

@@ -13,13 +13,15 @@ def evaluate(agent, env, episodes):
         returnn = 0
         obss = []
         while not(done):
-            action = agent.get_action([obs])
+            action = agent.get_action(obs)
             action = action.item()
             obss.append(obs)
             obs, reward, done, _ = env.step(action)
             agent.analyze_feedback(reward, done)
             num_frames += 1
             returnn += reward
+            if num_frames > 30:
+                break
 
         logs["observations_per_episode"].append(obss)
         logs["num_frames_per_episode"].append(num_frames)
@@ -27,57 +29,39 @@ def evaluate(agent, env, episodes):
 
     return logs
 
-'''
-def evaluateProc(agent, env, env_ids):
-    
-    assert len(env_ids) == env.num_procs
-    
-    obs = env.reset(env_ids)
-    done = [False] * env.num_procs
-    stopUpdating = [False] * env.num_procs
-    
-    num_frames = [0] * env.num_procs
-    returnn = [0] * env.num_procs
-    obss = [[]] * env.num_procs
-    
-    while not all(stopUpdating):
-        action = agent.get_action(obs)
-        obs, reward, done, _ = env.step(action)
-        agent.analyze_feedback(reward, done, with_procs=True)
-        for id in range(env.num_procs):
-            
-            if not stopUpdating[id]:
-                num_frames[id] += 1
-                returnn[id] += reward[id]
-                obss[id].append(obs[id])
-            
-            if done[id] and not stopUpdating[id]:
-                stopUpdating[id] = True
-    
-    return num_frames, returnn, obss
-'''
+def evaluateProc(agent, penv, episodes, log_dict, env_names, proc_id):
 
-def evaluateProc(agent, env, num_epochs):
-    
-    obs, pre_env_id, pre_epoch_id = env.start()
-    num_frames = np.zeros((env.num_envs, num_epochs), dtype='float32')
-    returnn = np.zeros((env.num_envs, num_epochs), dtype='float32')
-    finished = np.zeros((env.num_envs, num_epochs), dtype='bool')
-    
-    while not finished.all():
-        action = agent.get_action(obs)
-        obs, env_id, epoch_id, reward, done, _ = env.step(action)
-        agent.analyze_feedback(reward, done, with_procs=True)
-        
-        for id in range(env.num_procs):
-            enid = pre_env_id[id]
-            epid = pre_epoch_id[id]
-            if epid >= 0:
-                num_frames[enid, epid] += 1.
-                returnn[enid, epid] += reward[id]
-            if done[id] and epid >= 0:
-                finished[enid, epid] = True
-        pre_env_id = env_id
-        pre_epoch_id = epoch_id
-    
-    return num_frames.mean(1), returnn.mean(1)
+    # Initialize logs
+    logs = {}
+    for index in range(len(penv)):
+
+        log_env = {"num_frames_per_episode": [], "return_per_episode": []}
+
+        env = penv[index]
+        for _ in range(episodes):
+            obs = env.reset()
+            done = False
+
+            num_frames = 0
+            returnn = 0
+            obss = []
+            while not(done):
+                action = agent.get_action(obs)
+                action = action.item()
+                obss.append(obs)
+                obs, reward, done, _ = env.step(action)
+                agent.analyze_feedback(reward, done)
+                num_frames += 1
+                returnn += reward
+                if num_frames > 30:
+                    break
+
+            log_env["num_frames_per_episode"].append(num_frames)
+            log_env["return_per_episode"].append(returnn)
+
+        for key in log_env:
+            log_env[key] = np.mean(log_env[key])
+        logs[env_names[index][0]] = log_env
+
+    log_dict[proc_id] = logs
+
