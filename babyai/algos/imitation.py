@@ -278,7 +278,7 @@ class ImitationLearning(object):
 
         return log
 
-    def validate(self, verbose=True, use_procs=False, episodes):
+    def validate(self, episodes, verbose=True, use_procs=False):
         # Seed needs to be reset for each validation, to ensure consistency
         utils.seed(self.args.val_seed)
         self.args.deterministic = True
@@ -328,7 +328,7 @@ class ImitationLearning(object):
     def collect_returns(self):
         if torch.cuda.is_available():
             self.acmodel.cpu()
-        mean_return = self.validate(verbose=False, use_procs='num_proc_val_return' in self.args and self.args.num_proc_val_return is not None, episodes= self.args.eval_episodes)
+        mean_return = self.validate(episodes= self.args.eval_episodes, verbose=False, use_procs='num_proc_val_return' in self.args and self.args.num_proc_val_return is not None)
         if torch.cuda.is_available():
             self.acmodel.cuda()
         return mean_return
