@@ -8,14 +8,13 @@ import datetime
 import time
 from collections import defaultdict
 from babyai.algos.imitation import ImitationLearning
-import scripts.evaluate as evaluate
 import babyai.utils as utils
 import torch
 import torch.nn.functional as F
-from scripts.curriculum_learner.dist_cp import *
-from scripts.curriculum_learner.dist_cr import *
-from scripts.curriculum_learner.lp_cp import *
-from scripts.curriculum_learner.pot_cp import *
+from babyai.multienv.lp_computer import *
+from babyai.multienv.dist_creator import *
+from babyai.multienv.dist_computer import *
+from babyai.batchsampler import BatchSampler
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--lr", type=float, default=7e-4,
@@ -58,8 +57,6 @@ parser.add_argument("--dist-cp", default="LpPot",
                     help="name of the distribution computer (default: LpPot)")
 parser.add_argument("--lp-cp", default="Linreg",
                     help="name of the learning progress computer (default: Linreg), Window, AbsWindow, Online, AbsOnline")
-parser.add_argument("--pot-cp", default="Variable",
-                    help="name of the potential computer (default: Variable)")
 parser.add_argument("--dist-cr", default="GreedyProp",
                     help="name of the distribution creator (default: GreedyProp), ClippedProp, Boltzmann, GreedyAmax")
 parser.add_argument("--dist-alpha", type=float, default=0.1,
@@ -76,104 +73,41 @@ parser.add_argument("--batchSampler-seed", type=int, default=0,
                     help="seed for batchSampler used for sampling batches (default: 10)")
 parser.add_argument("--return-interval", type=int, default=10,
                     help="number of batches to collect the returns to update the task distribution (default: 10)")
-parser.add_argument("--num-proc-val-return", type=int, default=None,
-                    help="number of batches to collect the returns to update the task distribution (default: None)")
+parser.add_argument("--num-procs", type=int, default=None,
+                    help="number of processes to use to collect returns (default: None)")
 
-args = parser.parse_args()
-batch_size = args.batch_size
 
-graphs = [
-    ("BabyAI-OpenTwoDoorsDebug-v0", 'agent_noseed', 100),
-    ("BabyAI-OpenDoorColorDebug-v0", 'agent_noseed', 100),
-    ("BabyAI-OpenRedBlueDoorsDebug-v0", 'agent', 100)
-]
 
-num_envs = len(graphs)
+def main(args):
+    graphs = [
+        ("BabyAI-OpenTwoDoorsDebug-v0", 'agent_noseed', 100),
+        ("BabyAI-OpenDoorColorDebug-v0", 'agent_noseed', 100),
+        ("BabyAI-OpenRedBlueDoorsDebug-v0", 'agent', 100)
+    ]
 
-compute_lp = {
-    "Online": OnlineLpComputer(num_envs, args.dist_alpha),
-    "Window": WindowLpComputer(num_envs, args.dist_alpha, args.dist_K),
-    "Linreg": LinregLpComputer(num_envs, args.dist_K),
-    "None": None
-}[args.lp_cp]
+    num_envs = len(graphs)
 
-# Instantiate the potential computer
-returns = [0]*num_envs
-max_returns = [0.5]*num_envs
-compute_pot = {
-    "Variable": VariablePotComputer(num_envs, args.dist_K, returns, max_returns),
-    "None": None
-}[args.pot_cp]
+    compute_lp = {
+        "Online": OnlineLpComputer(num_envs, args.dist_alpha),
+        "Window": WindowLpComputer(num_envs, args.dist_alpha, args.dist_K),
+        "Linreg": LinregLpComputer(num_envs, args.dist_K),
+        "None": None
+    }[args.lp_cp]
 
-# Instantiate the distribution creator
-create_dist = {
-    "GreedyAmax": GreedyAmaxDistCreator(args.dist_eps),
-    "GreedyProp": GreedyPropDistCreator(args.dist_eps),
-    "ClippedProp": ClippedPropDistCreator(args.dist_eps),
-    "Boltzmann": BoltzmannDistCreator(args.dist_tau),
-    "None": None
-}[args.dist_cr]
+    # Instantiate the distribution creator
+    create_dist = {
+        "GreedyAmax": GreedyAmaxDistCreator(args.dist_eps),
+        "GreedyProp": GreedyPropDistCreator(args.dist_eps),
+        "ClippedProp": ClippedPropDistCreator(args.dist_eps),
+        "Boltzmann": BoltzmannDistCreator(args.dist_tau),
+        "None": None
+    }[args.dist_cr]
 
-# Instantiate the distribution computer
-compute_dist = {
-    "Lp": LpDistComputer(compute_lp, create_dist),
-    "LpPot": LpPotDistComputer(compute_lp, compute_pot, create_dist, args.pot_coeff),
-    #"ActiveGraph": ActiveGraphDistComputer(G_with_ids, compute_lp, create_dist),
-    "None": None
-}[args.dist_cp]
-
-class batchSampler(object):
-    def __init__(self, demos, batch_size, seed, no_mem=False):
-        self.num_task = len(demos)
-        self.dist_task = np.ones(self.num_task) / self.num_task * 1.0
-        self.demos = demos
-        self.batch_size = batch_size
-        self.no_mem = no_mem
-        self.rng = numpy.random.RandomState(seed)
-
-        self.total_demos = 0
-        self.num_used_demos = 0
-        self.current_demos = [None] * self.num_task
-        self.current_ids = [None] * self.num_task
-        for tid in range(self.num_task):
-            self.total_demos += self.reset(tid)
-
-        self.tracking_total_demos = self.total_demos
-
-    def setDist(self, dist_task):
-        self.dist_task = dist_task
-
-    def reset(self, tid):
-        demo = copy.deepcopy(self.demos[tid])
-        np.random.shuffle(demo)
-        self.current_demos[tid] = demo
-        self.current_ids[tid] = 0
-
-        return len(demo)
-
-    def sample(self):
-
-        batch = []
-        for i in range(self.batch_size):
-            tid = self.rng.choice(range(len(self.dist_task)), p=self.dist_task)
-            cid = self.current_ids[tid]
-            if cid >= len(self.current_demos[tid]):
-                self.reset(tid)
-                cid = self.current_ids[tid]
-
-            batch += [self.current_demos[tid][cid]]
-            self.current_ids[tid] += 1
-
-        if self.no_mem:
-            batch = np.array(batch)
-
-        self.num_used_demos += self.batch_size
-        should_evaluate = self.num_used_demos >= self.tracking_total_demos
-        if should_evaluate:
-            self.tracking_total_demos += self.total_demos
-        return batch, should_evaluate
-
-def main():
+    # Instantiate the distribution computer
+    compute_dist = {
+        "Lp": LpDistComputer(compute_lp, create_dist),
+        "None": None
+    }[args.dist_cp]
 
     args.env = graphs
 
@@ -189,9 +123,9 @@ def main():
     logger.info(il_learn.acmodel)
 
     if args.no_mem:
-        sampler = batchSampler(il_learn.flat_train_demos, args.batch_size, args.batchSampler_seed, no_mem=True)
+        sampler = BatchSampler(il_learn.flat_train_demos, args.batch_size, args.batchSampler_seed, no_mem=True)
     else:
-        sampler = batchSampler(il_learn.train_demos, args.batch_size, args.batchSampler_seed, no_mem=False)
+        sampler = BatchSampler(il_learn.train_demos, args.batch_size, args.batchSampler_seed, no_mem=False)
 
     total_start_time = time.time()
 
@@ -286,7 +220,7 @@ def main():
             if current_num_evaluate % args.validation_interval == 0:
                 if torch.cuda.is_available():
                     il_learn.acmodel.cpu()
-                mean_return = il_learn.validate(episodes = args.val_episodes)
+                mean_return = il_learn.validate(episodes = args.val_episodes, validating=True)
                 if args.tb:
                     for item in range(num_envs):
                         writer.add_scalar("{}_{}".format(graphs[item][0],"return"), mean_return[item], current_num_evaluate)
@@ -297,7 +231,6 @@ def main():
                 if mean_return > best_mean_return:
                     best_mean_return = mean_return
                     patience = 0
-
                     # Saving the model
                     print("Saving best model")
                     il_learn.obss_preprocessor.vocab.save()
@@ -320,4 +253,5 @@ def main():
             log = {"entropy": [],"value_loss": [],"policy_loss": [],"accuracy" : []}
 
 if __name__ == "__main__":
-    main()
+    args = parser.parse_args()
+    main(args)

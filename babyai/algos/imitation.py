@@ -20,47 +20,44 @@ class ImitationLearning(object):
 
         utils.seed(self.args.seed)
 
+        # args.env is a list in curriculum learning.
         if type(self.args.env) == list:
+            # Loading demos for training and validation for all the environments
             self.train_demos = [utils.load_demos(env, demos_origin)[:episodes]
                                 for env, demos_origin, episodes in self.args.env]
 
             self.val_demos = [utils.load_demos(env, demos_origin+"_valid")[:500]
                               for env, demos_origin, _ in self.args.env]
 
+            # If not using multiprocessing
             if 'num_proc_val_return' not in self.args or self.args.num_proc_val_return is None:
-                self.env = [gym.make(item[0]) for item in self.args.env]
-                observation_space = self.env[0].observation_space
-                action_space = self.env[0].action_space
+                self.eval_env = [gym.make(item[0]) for item in self.args.env]
+                for env in self.eval_env:
+                    env.seed(self.args.val_seed)
+
             else:
-                self.penvs = []
+                self.eval_env = []
                 for proc_id in range(self.args.num_proc_val_return):
                     envs = [gym.make(env_name[0]) for env_name in args.env]
                     for env in envs:
                         env.seed(self.args.val_seed+proc_id*1000)
-                    self.penvs.append(envs)
-                observation_space, action_space = self.penvs[0][0].observation_space, self.penvs[0][0].action_space
+                    self.eval_env.append(envs)
+
+            # Environment created for calculating the mean reward during validation
+            self.env = [gym.make(item[0]) for item in self.args.env]
+            observation_space = self.env[0].observation_space
+            action_space = self.env[0].action_space
+
 
         else:
             self.train_demos = utils.load_demos(self.args.env, self.args.demos_origin)[:self.args.episodes]
-
             self.val_demos = utils.load_demos(self.args.env, self.args.demos_origin+"_valid")[:500]
-
-            if 'num_proc_val_return' not in self.args or self.args.num_proc_val_return is None:
-                self.env = gym.make(self.args.env)
-                observation_space = self.env.observation_space
-                action_space = self.env.action_space
-            else:
-                self.penvs = []
-                for proc_id in range(self.args.num_proc_val_return):
-                    envs = [gym.make(env_name[0]) for env_name in args.env]
-                    for env in envs:
-                        env.seed(self.args.val_seed+proc_id*1000)
-                    self.penvs.append(envs)
-                observation_space, action_space = self.penvs[0][0].observation_space, self.penvs[0][0].action_space
-                self.env = self.penvs[0]
+            self.env = gym.make(self.args.env)
+            observation_space = self.env.observation_space
+            action_space = self.env.action_space
 
         if type(self.args.env) == list:
-            named_envs = '_'.join([item[0] for item in self.args.env])
+            named_envs = '_'.join(["{}-{}".format(item[0], item[2]) for item in self.args.env])
             named_demos_origin = '_'.join([item[1] for item in self.args.env])
         else:
             named_envs = self.args.env
@@ -78,6 +75,7 @@ class ImitationLearning(object):
         if self.acmodel is None:
             self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space,
                                 not self.args.no_instr, self.args.instr_arch, not self.args.no_mem, self.args.arch)
+
         self.acmodel.train()
         if torch.cuda.is_available():
             self.acmodel.cuda()
@@ -278,15 +276,20 @@ class ImitationLearning(object):
 
         return log
 
-    def validate(self, episodes, verbose=True, use_procs=False):
+    def validate(self, episodes, verbose=True, use_procs=False, validating=False):
         # Seed needs to be reset for each validation, to ensure consistency
-        utils.seed(self.args.val_seed)
+
         self.args.argmax = True
+
         if verbose:
             print("Validating the model")
 
-        if not use_procs:
-            envs = self.env if type(self.env) == list else [self.env]
+        if validating or not use_procs:
+            if validating:
+                envs = self.env if type(self.env) == list else [self.env]
+            else:
+                envs = self.eval_env
+
             agent = utils.load_agent(self.args, envs[0])
             # Setting the agent model to the current model
             agent.model = self.acmodel
@@ -298,31 +301,38 @@ class ImitationLearning(object):
 
                 logs += [evaluate(agent,env,episodes)]
 
-            if type(self.env) != list:
+            if len(envs) == 1:
                 assert len(logs) == 1
                 return np.mean(logs[0]["return_per_episode"])
 
             return {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
 
-        else:
+        elif use_procs:
+
             episodes_per_proc = episodes//self.args.num_proc_val_return
-            agent = utils.load_agent(self.args, self.penvs[0][0])
+
+            agent = utils.load_agent(self.args, self.eval_env[0][0])
             agent.model = self.acmodel
             agents = [copy.deepcopy(agent)]*self.args.num_proc_val_return
             jobs = []
+
             manager = multiprocessing.Manager()
             return_dict = manager.dict()
+
             for index in range(self.args.num_proc_val_return):
                 process = multiprocessing.Process(target=evaluateProc, args=(agents[index], self.penvs[index], episodes_per_proc, return_dict, self.args.env, index))
                 jobs.append(process)
                 process.start()
+
             for job in jobs:
                 job.join()
             rewards = {}
             index = 0
+
             for env_name in self.args.env:
                 rewards[index] = np.mean([item[env_name[0]]["return_per_episode"] for item in return_dict.values()])
                 index += 1
+
             return rewards
 
     def collect_returns(self):
@@ -332,6 +342,7 @@ class ImitationLearning(object):
         if torch.cuda.is_available():
             self.acmodel.cuda()
         return mean_return
+
 
     def train(self, train_demos, logger, writer):
         # Model saved initially to avoid "Model not found Exception" during first validation step
@@ -391,7 +402,7 @@ class ImitationLearning(object):
             if i % self.args.validation_interval == 0:
                 if torch.cuda.is_available():
                     self.acmodel.cpu()
-                mean_return = self.validate()
+                mean_return = self.validate(episodes= self.args.val_episodes, validating= True)
                 print("Mean Validation Return %.3f" % mean_return)
 
                 if mean_return > best_mean_return:

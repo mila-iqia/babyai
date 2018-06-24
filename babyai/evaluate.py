@@ -29,6 +29,7 @@ def evaluate(agent, env, episodes):
 
     return logs
 
+# Function used for evaluation when using multiple processors
 def evaluateProc(agent, penv, episodes, log_dict, env_names, proc_id):
 
     # Initialize logs
