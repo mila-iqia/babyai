@@ -11,7 +11,6 @@ import torch_rl
 from torch_rl.utils import DictList
 from babyai.evaluate import evaluate, evaluateProc
 import babyai.utils as utils
-import babyai.utils.venv as venv
 from babyai.model import ACModel
 import multiprocessing
 
