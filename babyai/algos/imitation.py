@@ -286,7 +286,7 @@ class ImitationLearning(object):
 
         if not use_procs:
             # envs = self.env if type(self.env) == list else [self.env]
-            envs = [gym.make[item[0]] for item in self.args.env]
+            envs = [gym.make(item[0]) for item in self.args.env]
             agent = utils.load_agent(self.args, envs[0])
             # Setting the agent model to the current model
             agent.model = self.acmodel
