@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+"""
+Uses Teacher Student Curriculum for imitation learning of multiple environments
+([Matiisen et al., 2017](https://arxiv.org/abs/1707.00183))
+"""
+
 import numpy as np
 import argparse
 import csv
@@ -14,6 +19,7 @@ import torch.nn.functional as F
 from babyai.multienv.lp_computer import *
 from babyai.multienv.dist_creator import *
 from babyai.multienv.dist_computer import *
+from babyai.multienv.return_history import *
 from babyai.batchsampler import BatchSampler
 
 parser = argparse.ArgumentParser()
@@ -53,8 +59,8 @@ parser.add_argument("--tb", action="store_true", default=False,
                     help="log into Tensorboard")
 parser.add_argument("--instr-arch", default="gru",
                     help="arch to encode instructions, possible values: gru, conv, bow (default: gru)")
-parser.add_argument("--dist-cp", default="LpPot",
-                    help="name of the distribution computer (default: LpPot)")
+parser.add_argument("--dist-cp", default="Lp",
+                    help="name of the distribution computer (default: Lp)")
 parser.add_argument("--lp-cp", default="Linreg",
                     help="name of the learning progress computer (default: Linreg), Window, AbsWindow, Online, AbsOnline")
 parser.add_argument("--dist-cr", default="GreedyProp",
@@ -78,19 +84,14 @@ parser.add_argument("--num-procs", type=int, default=None,
 
 
 
-def main(args):
-    graphs = [
-        ("BabyAI-OpenTwoDoorsDebug-v0", 'agent_noseed', 100),
-        ("BabyAI-OpenDoorColorDebug-v0", 'agent_noseed', 100),
-        ("BabyAI-OpenRedBlueDoorsDebug-v0", 'agent', 100)
-    ]
-
+def main(args, graphs):
     num_envs = len(graphs)
 
+    return_hists = [ReturnHistory() for _ in range(num_envs)]
     compute_lp = {
-        "Online": OnlineLpComputer(num_envs, args.dist_alpha),
-        "Window": WindowLpComputer(num_envs, args.dist_alpha, args.dist_K),
-        "Linreg": LinregLpComputer(num_envs, args.dist_K),
+        "Online": OnlineLpComputer(return_hists, args.dist_alpha),
+        "Window": WindowLpComputer(return_hists, args.dist_alpha, args.dist_K),
+        "Linreg": LinregLpComputer(return_hists, args.dist_K),
         "None": None
     }[args.lp_cp]
 
@@ -98,14 +99,13 @@ def main(args):
     create_dist = {
         "GreedyAmax": GreedyAmaxDistCreator(args.dist_eps),
         "GreedyProp": GreedyPropDistCreator(args.dist_eps),
-        "ClippedProp": ClippedPropDistCreator(args.dist_eps),
         "Boltzmann": BoltzmannDistCreator(args.dist_tau),
         "None": None
     }[args.dist_cr]
 
     # Instantiate the distribution computer
     compute_dist = {
-        "Lp": LpDistComputer(compute_lp, create_dist),
+        "Lp": LpDistComputer(return_hists, compute_lp, create_dist),
         "None": None
     }[args.dist_cp]
 
@@ -254,4 +254,9 @@ def main(args):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    main(args)
+    graphs = [
+        ("BabyAI-OpenTwoDoorsDebug-v0", 'agent_noseed', 100),
+        ("BabyAI-OpenDoorColorDebug-v0", 'agent_noseed', 100),
+        ("BabyAI-OpenRedBlueDoorsDebug-v0", 'agent', 100)
+    ]
+    main(args, graphs)
