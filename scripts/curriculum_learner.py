@@ -61,10 +61,10 @@ parser.add_argument("--instr-arch", default="gru",
                     help="arch to encode instructions, possible values: gru, conv, bow (default: gru)")
 parser.add_argument("--dist-cp", default="Lp",
                     help="name of the distribution computer (default: Lp)")
-parser.add_argument("--lp-cp", default="Linreg",
-                    help="name of the learning progress computer (default: Linreg), Window, AbsWindow, Online, AbsOnline")
-parser.add_argument("--dist-cr", default="GreedyProp",
-                    help="name of the distribution creator (default: GreedyProp), ClippedProp, Boltzmann, GreedyAmax")
+parser.add_argument("--lp-cp", default="Online",
+                    help="name of the learning progress computer (default: Online), Window, AbsWindow, Online, AbsOnline")
+parser.add_argument("--dist-cr", default="GreedyAmax",
+                    help="name of the distribution creator (default: GreedyAmax), ClippedProp, Boltzmann, GreedyAmax")
 parser.add_argument("--dist-alpha", type=float, default=0.1,
                     help="learning rate for TS learning progress computers (default: 0.2)")
 parser.add_argument("--dist-K", type=int, default=10,

@@ -104,7 +104,7 @@ while True:
         if done:
             print("Reward:", reward)
             obs = env.reset()
-        print("Mission: {}".format(obs["mission"]))
+            print("Mission: {}".format(obs["mission"]))
 
     if renderer.window is None:
         break
