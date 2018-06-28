@@ -45,7 +45,6 @@ def test():
         mission = level(seed=seed)
 
         print('seed=%d' % seed)
-        print(mission.instrs)
         print(mission.surface)
 
         pixmap = mission.render('pixmap')
