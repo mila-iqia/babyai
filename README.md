@@ -292,7 +292,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
     <img src="media/FourObjsS7.png" width="250">
 </p>
 
-### HiddenKeyCorridor
+### KeyCorridor
 
 - Environment: The agent is placed in the middle of the corridor. One of the rooms is locked and contains a ball. Another room contains a key for opening the previous one. The level is split into a curriculum starting with one row of 3x3 rooms, going up to 3 rows of 6x6 rooms.
 - Instruction: Pick up an object of a given type
