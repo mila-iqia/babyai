@@ -20,6 +20,11 @@ parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected")
 parser.add_argument("--save-interval", type=int, default=0,
                     help="interval between demonstrations saving (default: 0, 0 means only at the end)")
+parser.add_argument("--filter-steps", type=int, default=0,
+                    help="filter out demos with number of steps more than filter-steps (default: 0, No filtering)")
+parser.add_argument("--valid", action="store_true", default=False,
+                    help="generating demonstrations for validation set")
+
 args = parser.parse_args()
 
 # Set seed for all randomness sources
@@ -27,20 +32,22 @@ args = parser.parse_args()
 utils.seed(args.seed)
 
 # Generate environment
-
 env = gym.make(args.env)
 env.seed(args.seed)
+
+# Select Origin
+origin = "agent" if not args.valid else "agent_valid"
+assert not(args.valid) or args.seed == 0
 
 # Define agent
 
 agent = utils.load_agent(args, env)
 
 # Load demonstrations
-
-demos = utils.load_demos(args.env, "agent")
+demos = utils.load_demos(args.env, origin)
 utils.synthesize_demos(demos)
 
-for i in range(1, args.episodes+1):
+while True:
     # Run the expert for one episode
 
     done = False
@@ -54,16 +61,18 @@ for i in range(1, args.episodes+1):
 
         demo.append((obs, action, reward, done))
         obs = new_obs
-
-    demos.append(demo)
+    if args.filter_steps is not 0:
+        if len(demo) <= args.filter_steps and reward != 0:
+            demos.append(demo)
+    if len(demos) == args.episodes:
+        break
 
     # Save demonstrations
 
     if args.save_interval > 0 and i < args.episodes and i % args.save_interval == 0:
-        utils.save_demos(demos, args.env, "agent")
+        utils.save_demos(demos, args.env, origin)
         utils.synthesize_demos(demos)
 
 # Save demonstrations
-
-utils.save_demos(demos, args.env, "agent")
+utils.save_demos(demos, args.env, origin)
 utils.synthesize_demos(demos)

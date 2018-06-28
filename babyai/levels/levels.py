@@ -83,6 +83,68 @@ class RoomGridLevel(RoomGrid):
         return self.__class__.gym_id
 
 
+class RoomGridLevelHC(RoomGrid):
+    """
+    Base for levels based on RoomGrid
+    A level, given a random seed, generates missions generated from
+    one or more patterns. Levels should produce a family of missions
+    of approximately similar difficulty.
+    """
+
+    def __init__(
+        self,
+        room_size=6,
+        max_steps=None,
+        **kwargs
+    ):
+        # Default max steps computation
+        if max_steps is None:
+            max_steps = 4 * (room_size ** 2)
+
+        super().__init__(
+            room_size=room_size,
+            max_steps=max_steps,
+            **kwargs
+        )
+
+    def reset(self, **kwargs):
+        obs = super().reset(**kwargs)
+        return obs
+
+    def step(self, action):
+        obs, reward, done, info = super().step(action)
+
+        # If we've successfully completed the mission
+        if self.verifier(self, action):
+            done = True
+            reward = self._reward()
+
+        return obs, reward, done, info
+
+    def _gen_grid(self, width, height):
+        super()._gen_grid(width, height)
+
+        # Generate the mission
+        self.gen_mission()
+
+        self.mission = self.surface
+
+    def gen_mission(self):
+        """
+        Generate a mission (instructions and matching environment)
+        Derived level classes should implement this method
+        """
+        raise NotImplementedError
+
+    @property
+    def level_name(self):
+        return self.__class__.level_name
+
+    @property
+    def gym_id(self):
+        return self.__class__.gym_id
+
+
 class Level_OpenRedDoor(RoomGridLevel):
     """
     Go to the red door
@@ -879,6 +941,134 @@ class Level_1RoomS20(Level_1RoomS8):
         super().__init__(
             room_size=20,
             seed=seed
+        )
+
+
+def pos_next_to(a, b):
+    x0, y0 = a
+    x1, y1 = b
+    return abs(x0 - x1) < 2 and abs(y0 - y1) < 2
+
+
+def verify_put_next(obj_x, obj_y):
+    def verifier(env, action):
+        return pos_next_to(obj_x.cur_pos, obj_y.init_pos)
+    return verifier
+
+
+def verify_both(verify_a, verify_b):
+    def verifier(env, action):
+        return verify_a(env, action) and verify_b(env, action)
+    return verifier
+
+
+class Level_PutNext(RoomGridLevelHC):
+    """
+    Put an object next to another object
+    There are many objects inside a room, so that the number of possible
+    instructions is potentially large.
+    """
+
+    def __init__(
+        self,
+        room_size=8,
+        num_objs=8,
+        seed=None
+    ):
+        assert num_objs >= 5, "no guarantee that non-adjacent objects exist with N < 5"
+        self.num_objs = num_objs
+
+        super().__init__(
+            num_rows=1,
+            num_cols=1,
+            room_size=room_size,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.place_agent(0, 0)
+
+        self.add_distractors(self.num_objs)
+        objs = self.get_room(0, 0).objs
+
+        # Select two objects that are not already adjacent
+        while True:
+            x, y = self._rand_subset(objs, 2)
+            if not pos_next_to(x.init_pos, y.init_pos):
+                break
+
+        self.surface = "put the %s %s next to the %s %s" % (
+            x.color, x.type,
+            y.color, y.type
+        )
+
+        self.verifier = verify_put_next(x, y)
+
+
+class Level_PutNextS6N5(Level_PutNext):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=6,
+            num_objs=5,
+            seed=seed
+        )
+
+
+class Level_PutNextS7N5(Level_PutNext):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=7,
+            num_objs=5,
+            seed=seed
+        )
+
+
+class Level_PutNextS8N6(Level_PutNext):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=8,
+            num_objs=6,
+            seed=seed
+        )
+
+
+class Level_PutTwoNext(RoomGridLevelHC):
+    """
+    Put two objects next to a third object
+    There are many objects inside a room, so that the number of possible
+    instructions is potentially large.
+    """
+
+    def __init__(
+        self,
+        room_size=8,
+        num_objs=8,
+        seed=None
+    ):
+        self.num_objs = num_objs
+        super().__init__(
+            num_rows=1,
+            num_cols=1,
+            room_size=room_size,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.place_agent(0, 0)
+        self.add_distractors(self.num_objs)
+        objs = self.get_room(0, 0).objs
+
+        x, y, z = self._rand_subset(objs, 3)
+
+        self.surface = "put the %s %s and the %s %s next to the %s %s" % (
+            x.color, x.type,
+            y.color, y.type,
+            z.color, z.type
+        )
+
+        self.verifier = verify_both(
+            verify_put_next(x, z),
+            verify_put_next(y, z)
         )
 
 
