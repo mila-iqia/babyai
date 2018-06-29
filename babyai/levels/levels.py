@@ -291,11 +291,11 @@ class Level_GoToObjDoor(RoomGridLevel):
         objs = self.add_distractors(num_distractors=5, room_i=1, room_j=1)
         for _ in range(4):
             door, _ = self.add_door(1, 1)
-            objs.append((door.type, door.color))
+            objs.append(door)
         self.place_agent(1, 1)
 
-        type, color = self._rand_elem(objs)
-        self.instrs = [Instr(action="goto", object=Object(type, color))]
+        obj = self._rand_elem(objs)
+        self.instrs = [Instr(action="goto", object=Object(obj.type, obj.color))]
 
 
 class Level_ActionObjDoor(RoomGridLevel):
@@ -317,16 +317,17 @@ class Level_ActionObjDoor(RoomGridLevel):
         objs = self.add_distractors(num_distractors=5, room_i=1, room_j=1)
         for _ in range(4):
             door, _ = self.add_door(1, 1, locked=False)
-            objs.append((door.type, door.color))
+            objs.append(door)
 
         self.place_agent(1, 1)
 
-        type, color = self._rand_elem(objs)
+        obj = self._rand_elem(objs)
+
         if type == door.type:
             action = self._rand_elem(['goto', 'open'])
         else:
             action = self._rand_elem(['goto', 'pickup'])
-        self.instrs = [Instr(action=action, object=Object(type, color))]
+        self.instrs = [Instr(action=action, object=Object(obj.type, obj.color))]
 
 
 class Level_Unlock(RoomGridLevel):
@@ -517,7 +518,9 @@ class Level_PickupDist(RoomGridLevel):
         # Add 5 random objects in the room
         objs = self.add_distractors(5)
         self.place_agent(0, 0)
-        type, color = self._rand_elem(objs)
+        obj = self._rand_elem(objs)
+        type = obj.type
+        color = obj.color
 
         select_by = self._rand_elem(["type", "color", "both"])
         if select_by == "color":
@@ -1101,12 +1104,73 @@ class Level_PutTwoNext(RoomGridLevelHC):
         )
 
 
+class Level_MoveTwoAcross(RoomGridLevelHC):
+    """
+    Task of the form: move the A next to the B and the C next to the D.
+    This task is structured to have a very large number of possible
+    instructions.
+    """
+
+    def __init__(
+        self,
+        room_size=8,
+        objs_per_room=9,
+        seed=None
+    ):
+        assert objs_per_room <= 9
+        self.objs_per_room = objs_per_room
+
+        super().__init__(
+            num_rows=1,
+            num_cols=2,
+            room_size=room_size,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.place_agent(0, 0)
+
+        # Add objects to both the left and right rooms
+        # so that we know that we have two non-adjacent set of objects
+        objs_l = self.add_distractors(self.objs_per_room, 0, 0)
+        objs_r = self.add_distractors(self.objs_per_room, 1, 0)
+
+        # Remove the wall between the two rooms
+        self.remove_wall(0, 0, 0)
+
+        # Select objects from both subsets
+        objs_l = self._rand_subset(objs_l, 2)
+        objs_r = self._rand_subset(objs_r, 2)
+        a = objs_l[0]
+        b = objs_r[0]
+        c = objs_r[1]
+        d = objs_l[1]
+
+        self.surface = "put the %s %s next to the %s %s and the %s %s next to the %s %s" % (
+            a.color, a.type,
+            b.color, b.type,
+            c.color, c.type,
+            d.color, d.type,
+        )
+
+        self.verifier = verify_both(
+            verify_put_next(a, b),
+            verify_put_next(c, d)
+        )
+
+
+class Level_MoveTwoAcrossS5N2(Level_MoveTwoAcross):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=5,
+            objs_per_room=2,
+            seed=seed
+        )
+
+
 class Level_OpenDoorsOrder(RoomGridLevelHC):
     """
-    Open door X, then open door Y
-    The two doors are facing opposite directions, so that the agent
-    Can't see whether the door behind him is open.
-    This task requires memory (recurrent policy) to be solved effectively.
+    Open one or two doors in the order specified.
     """
 
     def __init__(self, first_color=None, second_color=None, seed=None):

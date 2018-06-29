@@ -352,8 +352,10 @@ class RoomGrid(MiniGridEnv):
                 for obj in room.objs:
                     objs.append((obj.type, obj.color))
 
-        num_added = 0
-        while num_added < num_distractors:
+        # List of distractors added
+        dists = []
+
+        while len(dists) < num_distractors:
             color = self._rand_elem(COLOR_NAMES)
             type = self._rand_elem(['key', 'ball', 'box'])
             obj = (type, color)
@@ -370,9 +372,10 @@ class RoomGrid(MiniGridEnv):
                 j = self._rand_int(0, self.num_rows)
             else:
                 j = room_j
-            self.add_object(i, j, *obj)
+
+            dist, pos = self.add_object(i, j, *obj)
 
             objs.append(obj)
-            num_added += 1
+            dists.append(dist)
 
-        return objs
+        return dists
