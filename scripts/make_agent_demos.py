@@ -44,8 +44,11 @@ assert not(args.valid) or args.seed == 0
 agent = utils.load_agent(args, env)
 
 # Load demonstrations
-demos = utils.load_demos(args.env, origin)
-utils.synthesize_demos(demos)
+demos = utils.load_demos(args.env, origin, raise_not_found=False)
+if demos is not None:
+    utils.synthesize_demos(demos)
+else:
+    demos = []
 
 while True:
     # Run the expert for one episode
@@ -54,7 +57,7 @@ while True:
     obs = env.reset()
     demo = []
 
-    while not(done):
+    while not done:
         action = agent.get_action(obs)
         new_obs, reward, done, _ = env.step(action)
         agent.analyze_feedback(reward, done)
@@ -64,12 +67,12 @@ while True:
     if args.filter_steps is not 0:
         if len(demo) <= args.filter_steps and reward != 0:
             demos.append(demo)
-    if len(demos) == args.episodes:
+    if len(demos) >= args.episodes:
         break
 
     # Save demonstrations
 
-    if args.save_interval > 0 and i < args.episodes and i % args.save_interval == 0:
+    if args.save_interval > 0 and len(demos) < args.episodes and len(demos) % args.save_interval == 0:
         utils.save_demos(demos, args.env, origin)
         utils.synthesize_demos(demos)
 
