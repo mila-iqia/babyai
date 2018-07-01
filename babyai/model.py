@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import torch_rl
 
 
@@ -94,12 +95,15 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
 
         # Define instruction embedding
         if self.use_instr:
-            if self.lang_model == 'gru' or self.lang_model == 'conv':
+            if self.lang_model == 'gru' or self.lang_model == 'conv' or self.lang_model == 'bigru':
                 self.word_embedding_size = 32
                 self.word_embedding = nn.Embedding(obs_space["instr"], self.word_embedding_size)
-                if self.lang_model == 'gru':
+                if self.lang_model == 'gru' or self.lang_model == 'bigru':
                     self.instr_embedding_size = 128
-                    self.instr_rnn = nn.GRU(self.word_embedding_size, self.instr_embedding_size, batch_first=True)
+                    instr_embedding_size = self.instr_embedding_size
+                    if self.lang_model == 'bigru':
+                        instr_embedding_size = instr_embedding_size // 2
+                    self.instr_rnn = nn.GRU(self.word_embedding_size, instr_embedding_size, batch_first=True, bidirectional=(self.lang_model == 'bigru'))
                 else:
                     kernel_dim = 64
                     kernel_sizes = [3,4]
@@ -192,6 +196,37 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
             self.instr_rnn.flatten_parameters()
             _, hidden = self.instr_rnn(self.word_embedding(instr))
             return hidden[-1]
+        
+        elif self.lang_model == 'bigru':
+            self.instr_rnn.flatten_parameters()
+
+            lengths = (instr != 0).sum(1).long()
+
+            if lengths.shape[0] > 1:
+                seq_lengths, perm_idx = lengths.sort(0, descending=True)
+                iperm_idx = torch.LongTensor(perm_idx.shape).fill_(0)
+                if instr.is_cuda: iperm_idx = iperm_idx.cuda()
+                for i, v in enumerate(perm_idx):
+                    iperm_idx[v.data] = i
+
+                inputs = self.word_embedding(instr)
+                inputs = inputs[perm_idx]
+
+                inputs = pack_padded_sequence(inputs, seq_lengths.data.cpu().numpy(), batch_first=True)
+
+                outputs, h_n = self.instr_rnn(inputs)
+            else:
+                instr = instr[:, 0:lengths[0]]
+                _, h_n = self.instr_rnn(self.word_embedding(instr))
+                iperm_idx = None
+            h_n = h_n.transpose(0,1).contiguous()
+            h_n = h_n.view(h_n.shape[0], -1)
+            if iperm_idx is not None:
+                hidden = h_n[iperm_idx]
+            else:
+                hidden = h_n
+
+            return hidden
 
         elif self.lang_model == 'conv':
             inputs = self.word_embedding(instr).unsqueeze(1) # (B,1,T,D)

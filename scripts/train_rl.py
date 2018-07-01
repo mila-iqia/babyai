@@ -67,7 +67,7 @@ parser.add_argument("--batch-size", type=int, default=256,
 parser.add_argument("--no-instr", action="store_true", default=False,
                     help="don't use instructions in the model")
 parser.add_argument("--instr-arch", default="gru",
-                    help="arch to encode instructions, possible values: gru, conv, bow (default: gru)")
+                    help="arch to encode instructions, possible values: gru, bigru, conv, bow (default: gru)")
 parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='cnn1',
