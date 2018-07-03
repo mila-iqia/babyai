@@ -994,7 +994,7 @@ def verify_sequence(verify_a, verify_b):
     return verifier
 
 
-class Level_PutNext(RoomGridLevelHC):
+class PutNext(RoomGridLevelHC):
     """
     Put an object next to another object
     There are many objects inside a room, so that the number of possible
@@ -1003,8 +1003,8 @@ class Level_PutNext(RoomGridLevelHC):
 
     def __init__(
         self,
-        room_size=8,
-        num_objs=8,
+        room_size,
+        num_objs,
         seed=None
     ):
         assert num_objs >= 5, "no guarantee that non-adjacent objects exist with N < 5"
@@ -1037,7 +1037,7 @@ class Level_PutNext(RoomGridLevelHC):
         self.verifier = verify_put_next(x, y)
 
 
-class Level_PutNextS6N5(Level_PutNext):
+class Level_PutNextS6N5(PutNext):
     def __init__(self, seed=None):
         super().__init__(
             room_size=6,
@@ -1046,7 +1046,7 @@ class Level_PutNextS6N5(Level_PutNext):
         )
 
 
-class Level_PutNextS7N5(Level_PutNext):
+class Level_PutNextS7N5(PutNext):
     def __init__(self, seed=None):
         super().__init__(
             room_size=7,
@@ -1055,11 +1055,20 @@ class Level_PutNextS7N5(Level_PutNext):
         )
 
 
-class Level_PutNextS8N6(Level_PutNext):
+class Level_PutNextS8N6(PutNext):
     def __init__(self, seed=None):
         super().__init__(
             room_size=8,
             num_objs=6,
+            seed=seed
+        )
+
+
+class Level_PutNextS8N8(PutNext):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=8,
+            num_objs=8,
             seed=seed
         )
 
@@ -1104,7 +1113,7 @@ class Level_PutTwoNext(RoomGridLevelHC):
         )
 
 
-class Level_MoveTwoAcross(RoomGridLevelHC):
+class MoveTwoAcross(RoomGridLevelHC):
     """
     Task of the form: move the A next to the B and the C next to the D.
     This task is structured to have a very large number of possible
@@ -1113,8 +1122,8 @@ class Level_MoveTwoAcross(RoomGridLevelHC):
 
     def __init__(
         self,
-        room_size=8,
-        objs_per_room=9,
+        room_size,
+        objs_per_room,
         seed=None
     ):
         assert objs_per_room <= 9
@@ -1159,11 +1168,20 @@ class Level_MoveTwoAcross(RoomGridLevelHC):
         )
 
 
-class Level_MoveTwoAcrossS5N2(Level_MoveTwoAcross):
+class Level_MoveTwoAcrossS5N2(MoveTwoAcross):
     def __init__(self, seed=None):
         super().__init__(
             room_size=5,
             objs_per_room=2,
+            seed=seed
+        )
+
+
+class Level_MoveTwoAcrossS8N9(MoveTwoAcross):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=8,
+            objs_per_room=9,
             seed=seed
         )
 

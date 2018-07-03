@@ -340,7 +340,7 @@ A work-in-progress review of related work can be found [here](https://www.overle
   - `BabyAI-PutNextS6N5-v0`
   - `BabyAI-PutNextS7N5-v0`
   - `BabyAI-PutNextS8N6-v0`
-  - `BabyAI-PutNext-v0`
+  - `BabyAI-PutNextS8N8-v0`
 
 ### PutTwoNext
 
@@ -355,4 +355,4 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Instruction: Put the A next to the B and the C next to the D
 - Level ids:
   - `BabyAI-MoveTwoAcrossS5N2-v0`
-  - `BabyAI-MoveTwoAcross-v0`
+  - `BabyAI-MoveTwoAcrossS8N9-v0`
