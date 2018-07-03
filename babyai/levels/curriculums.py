@@ -30,6 +30,12 @@ curriculums = {
         "BabyAI-UnlockPickup-v0",
         "BabyAI-UnlockPickupDist-v0"
     ],
+
+    "OpenDoor": [
+        "BabyAI-OpenDoorColor-v0",
+        "BabyAI-OpenTwoDoors-v0",
+        "BabyAI-OpenDoorsOrder-v0"
+    ],
     "1Room": [
         "BabyAI-1RoomS8-v0",
         "BabyAI-1RoomS12-v0",

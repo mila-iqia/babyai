@@ -50,31 +50,35 @@ if demos is not None:
 else:
     demos = []
 
+offset = 0
+
 while True:
-    # Run the expert for one episode
+  # Run the expert for one episode
 
-    done = False
-    obs = env.reset()
-    demo = []
+  done = False
+  obs = env.reset()
+  demo = []
 
-    while not done:
-        action = agent.get_action(obs)
-        new_obs, reward, done, _ = env.step(action)
-        agent.analyze_feedback(reward, done)
+  while not(done):
+    action = agent.get_action(obs)
+    new_obs, reward, done, _ = env.step(action)
+    agent.analyze_feedback(reward, done)
 
-        demo.append((obs, action, reward, done))
-        obs = new_obs
-    if args.filter_steps is not 0:
-        if len(demo) <= args.filter_steps and reward != 0:
-            demos.append(demo)
-    if len(demos) >= args.episodes:
-        break
+    demo.append((obs, action, reward, done))
+    obs = new_obs
+  if args.filter_steps is not 0:
+    if len(demo) <= args.filter_steps and reward != 0:
+      demos.append((demo,offset))
+  if len(demos) == args.episodes:
+    break
 
-    # Save demonstrations
+  # Save demonstrations
 
-    if args.save_interval > 0 and len(demos) < args.episodes and len(demos) % args.save_interval == 0:
-        utils.save_demos(demos, args.env, origin)
-        utils.synthesize_demos(demos)
+  if args.save_interval > 0 and i < args.episodes and i % args.save_interval == 0:
+    utils.save_demos(demos, args.env, origin)
+    utils.synthesize_demos(demos)
+  offset += 1
+
 
 # Save demonstrations
 utils.save_demos(demos, args.env, origin)
