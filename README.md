@@ -331,3 +331,28 @@ A work-in-progress review of related work can be found [here](https://www.overle
     <img src="media/1RoomS16.png" width="250">
     <img src="media/1RoomS20.png" width="250">
 </p>
+
+### PutNext
+
+- Environment: Single room with multiple objects. One of the objects must be moved next to another specific object.
+- Instruction: Put the X next to the Y
+- Level ids:
+  - `BabyAI-PutNextS6N5-v0`
+  - `BabyAI-PutNextS7N5-v0`
+  - `BabyAI-PutNextS8N6-v0`
+  - `BabyAI-PutNext-v0`
+
+### PutTwoNext
+
+- Environment: Two objects must be moved next to a third.
+- Instruction: Put the A and the B next to the C
+- Level ids:
+  - `BabyAI-PutTwoNext-v0`
+
+### MoveTwoAcross
+
+- Environment: Two objects must be moved so that they are next to two other objects. This task is structured to have a very large number of possible instructions.
+- Instruction: Put the A next to the B and the C next to the D
+- Level ids:
+  - `BabyAI-MoveTwoAcrossS5N2-v0`
+  - `BabyAI-MoveTwoAcross-v0`
