@@ -15,10 +15,40 @@ curriculums = {
         "BabyAI-UnlockPickup-v0",
         "BabyAI-BlockedUnlockPickup-v0"
     ],
+    "FindObj": [
+        "BabyAI-FindObjS5-v0",
+        "BabyAI-FindObjS6-v0",
+        "BabyAI-FindObjS7-v0"
+    ],
+    "FourObjs": [
+        "BabyAI-FourObjsS5-v0",
+        "BabyAI-FourObjsS6-v0",
+        "BabyAI-FourObjsS7-v0"
+    ],
     "UnlockPickupDist": [
         "BabyAI-Unlock-v0",
         "BabyAI-UnlockPickup-v0",
         "BabyAI-UnlockPickupDist-v0"
+    ],
+    "1Room": [
+        "BabyAI-1RoomS8-v0",
+        "BabyAI-1RoomS12-v0",
+        "BabyAI-1RoomS16-v0",
+        "BabyAI-1RoomS20-v0"
+    ],
+    "OpenDoorDebug": [
+        "BabyAI-OpenDoorColorDebug-v0",
+        "BabyAI-OpenDoorLocDebug-v0",
+        "BabyAI-OpenDoorDebug-v0"
+    ],
+    "OpenTwoDoorsDebug": [
+        "BabyAI-OpenRedBlueDoorsDebug-v0",
+        "BabyAI-OpenTwoDoorsDebug-v0"
+    ],
+    "UnlockToUnlock": [
+        "BabyAI-Unlock-v0",
+        "BabyAI-UnlockPickup-v0",
+        "BabyAI-UnlockToUnlock-v0"
     ]
 }
 

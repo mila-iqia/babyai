@@ -71,4 +71,4 @@ class ObssPreprocessor:
 
 
 def reshape_reward(obs, action, reward, done):
-    return 5 * reward
+    return 20 * reward
