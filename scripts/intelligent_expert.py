@@ -134,11 +134,11 @@ def add_new_demos(args,il_learn):
 
       new_demos.append(demo)
 
-    agent._initialize_memory()
-    env.seed(args.test_seed)
-    logs = evaluate(agent, env, args.test_episodes)
-    # Writing to the csv file
-    writer.writerow([model, str(np.mean(logs["return_per_episode"]))])
+  agent._initialize_memory()
+  env.seed(args.test_seed)
+  logs = evaluate(agent, env, args.test_episodes)
+  # Writing to the csv file
+  writer.writerow([model, str(np.mean(logs["return_per_episode"]))])
 
   return new_demos
 
@@ -244,8 +244,6 @@ def evaluate_child(agent, env, episodes, offsets):
       agent.analyze_feedback(reward, done)
       num_frames += 1
       returnn += reward
-      if num_frames > 4*optimal_steps:
-        break
 
     logs["observations_per_episode"].append(obss)
     logs["num_frames_per_episode"].append(num_frames)
