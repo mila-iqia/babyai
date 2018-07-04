@@ -157,6 +157,8 @@ while num_frames < args.frames:
 
     update_start_time = time.time()
     logs = algo.update_parameters()
+    if args.curriculum is not None:
+        menv_head.update_dist()
     update_end_time = time.time()
 
     num_frames += logs["num_frames"]
