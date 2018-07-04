@@ -337,10 +337,11 @@ A work-in-progress review of related work can be found [here](https://www.overle
 - Environment: Single room with multiple objects. One of the objects must be moved next to another specific object.
 - Instruction: Put the X next to the Y
 - Level ids:
-  - `BabyAI-PutNextS6N5-v0`
-  - `BabyAI-PutNextS7N5-v0`
-  - `BabyAI-PutNextS8N6-v0`
-  - `BabyAI-PutNextS8N8-v0`
+  - `BabyAI-PutNextS4N1-v0`
+  - `BabyAI-PutNextS5N1-v0`
+  - `BabyAI-PutNextS6N2-v0`
+  - `BabyAI-PutNextS6N3-v0`
+  - `BabyAI-PutNextS7N4-v0`
 
 ### PutTwoNext
 

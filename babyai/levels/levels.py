@@ -996,23 +996,24 @@ def verify_sequence(verify_a, verify_b):
 
 class PutNext(RoomGridLevelHC):
     """
-    Put an object next to another object
-    There are many objects inside a room, so that the number of possible
-    instructions is potentially large.
+    Task of the form: move the A next to the B and the C next to the D.
+    This task is structured to have a very large number of possible
+    instructions.
     """
 
     def __init__(
         self,
         room_size,
-        num_objs,
+        objs_per_room,
         seed=None
     ):
-        assert num_objs >= 5, "no guarantee that non-adjacent objects exist with N < 5"
-        self.num_objs = num_objs
+        assert room_size >= 4
+        assert objs_per_room <= 9
+        self.objs_per_room = objs_per_room
 
         super().__init__(
             num_rows=1,
-            num_cols=1,
+            num_cols=2,
             room_size=room_size,
             seed=seed
         )
@@ -1020,55 +1021,73 @@ class PutNext(RoomGridLevelHC):
     def gen_mission(self):
         self.place_agent(0, 0)
 
-        self.add_distractors(self.num_objs)
-        objs = self.get_room(0, 0).objs
+        # Add objects to both the left and right rooms
+        # so that we know that we have two non-adjacent set of objects
+        objs_l = self.add_distractors(self.objs_per_room, 0, 0)
+        objs_r = self.add_distractors(self.objs_per_room, 1, 0)
 
-        # Select two objects that are not already adjacent
-        while True:
-            x, y = self._rand_subset(objs, 2)
-            if not pos_next_to(x.init_pos, y.init_pos):
-                break
+        # Remove the wall between the two rooms
+        self.remove_wall(0, 0, 0)
+
+        # Select objects from both subsets
+        a = self._rand_elem(objs_l)
+        b = self._rand_elem(objs_r)
+
+        # Randomly flip the object to be moved
+        if self._rand_bool():
+            t = a
+            a = b
+            b = t
 
         self.surface = "put the %s %s next to the %s %s" % (
-            x.color, x.type,
-            y.color, y.type
+            a.color, a.type,
+            b.color, b.type
         )
 
-        self.verifier = verify_put_next(x, y)
+        self.verifier = verify_put_next(a, b)
 
 
-class Level_PutNextS6N5(PutNext):
+class Level_PutNextS4N1(PutNext):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=4,
+            objs_per_room=1,
+            seed=seed
+        )
+
+
+class Level_PutNextS5N1(PutNext):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=5,
+            objs_per_room=1,
+            seed=seed
+        )
+
+
+class Level_PutNextS5N2(PutNext):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=5,
+            objs_per_room=2,
+            seed=seed
+        )
+
+
+class Level_PutNextS6N3(PutNext):
     def __init__(self, seed=None):
         super().__init__(
             room_size=6,
-            num_objs=5,
+            objs_per_room=3,
             seed=seed
         )
 
 
-class Level_PutNextS7N5(PutNext):
+class Level_PutNextS7N4(PutNext):
     def __init__(self, seed=None):
         super().__init__(
             room_size=7,
-            num_objs=5,
-            seed=seed
-        )
-
-
-class Level_PutNextS8N6(PutNext):
-    def __init__(self, seed=None):
-        super().__init__(
-            room_size=8,
-            num_objs=6,
-            seed=seed
-        )
-
-
-class Level_PutNextS8N8(PutNext):
-    def __init__(self, seed=None):
-        super().__init__(
-            room_size=8,
-            num_objs=8,
+            objs_per_room=4,
             seed=seed
         )
 
