@@ -141,7 +141,7 @@ for command in commands:
     for seed in command["seeds"]:
         model = "baselines/{}/seed{}".format(command["model"], seed)
         subprocess.Popen(
-            "{} scripts/run_slurm.sh python -m scripts.train_rl {} --frames 2048 --algo ppo --model {} --seed {} --save-interval 10"
+            "{} scripts/run_slurm.sh python -m scripts.train_rl {} --frames 50000000 --algo ppo --model {} --seed {} --save-interval 10 --tb"
             .format(slurm_cmd if not args.no_slurm else "",
                     command["arguments"], model, seed),
             shell=True)

@@ -97,8 +97,7 @@ else:
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
 instr = args.instr_arch if args.instr_arch else "noinstr"
 mem = "mem" if not args.no_mem else "nomem"
-env = args.env or args.curriculum
-default_model_name = "{}_{}_{}_{}_{}_seed{}_{}".format(env,
+default_model_name = "{}_{}_{}_{}_{}_seed{}_{}".format(args.env or args.curriculum,
                                                        args.algo,
                                                        args.arch,
                                                        instr,
