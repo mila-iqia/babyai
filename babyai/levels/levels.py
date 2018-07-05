@@ -323,7 +323,7 @@ class Level_ActionObjDoor(RoomGridLevel):
 
         obj = self._rand_elem(objs)
 
-        if type == door.type:
+        if obj.type == 'door':
             action = self._rand_elem(['goto', 'open'])
         else:
             action = self._rand_elem(['goto', 'pickup'])
@@ -1302,13 +1302,19 @@ def test():
         num_episodes = 0
         for i in range(0, 15):
             mission = level(seed=i)
+
             # Reduce max_steps because otherwise tests take too long
             mission.max_steps = 200
+
+            # Check that the surface form was generated
             assert isinstance(mission.surface, str)
             assert len(mission.surface) > 0
-
             obs = mission.reset()
             assert obs['mission'] == mission.surface
+
+            # Check for some known invalid patterns in the surface form
+            import re
+            assert not re.match(r".*pick up the.*door.*", mission.surface)
 
             while True:
                 action = rng.randint(0, mission.action_space.n - 1)
