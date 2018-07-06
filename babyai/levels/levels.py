@@ -1040,6 +1040,7 @@ class PutNext(RoomGridLevelHC):
             num_rows=1,
             num_cols=2,
             room_size=room_size,
+            max_steps=8*room_size**2,
             seed=seed
         )
 
@@ -1135,6 +1136,7 @@ class Level_PutTwoNext(RoomGridLevelHC):
             num_rows=1,
             num_cols=1,
             room_size=room_size,
+            max_steps=8*room_size**2,
             seed=seed
         )
 
@@ -1177,6 +1179,7 @@ class MoveTwoAcross(RoomGridLevelHC):
             num_rows=1,
             num_cols=2,
             room_size=room_size,
+            max_steps=16*room_size**2,
             seed=seed
         )
 
