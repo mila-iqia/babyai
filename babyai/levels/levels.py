@@ -274,6 +274,31 @@ class Level_OpenDoorLocDebug(Level_OpenDoorLoc, Level_OpenDoorDebug):
     pass
 
 
+class Level_GoToDoor(RoomGridLevel):
+    """
+    Go to a door
+    (of a given color, in the current room)
+    No distractors, no language variation
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=7,
+            lang_variation=1,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        objs = []
+        for _ in range(4):
+            door, _ = self.add_door(1, 1)
+            objs.append(door)
+        self.place_agent(1, 1)
+
+        obj = self._rand_elem(objs)
+        self.instrs = [Instr(action="goto", object=Object(obj.type, obj.color))]
+
+
 class Level_GoToObjDoor(RoomGridLevel):
     """
     Go to an object or door

@@ -147,6 +147,13 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 <p align="center"><img src="media/OpenDoor.png" width="250"></p>
 
+### GoToDoor
+
+- Environment: The agent is placed in a room with 4 different doors.
+- Instruction: Go to a door of a given of a given color.
+- Evaluate: image & text understanding
+- Level id: `BabyAI-GoToDoor-v0`
+
 ### GoToObjDoor
 
 - Environment: The agent is placed in a room with 4 different doors and 5 different objects.
