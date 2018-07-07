@@ -10,10 +10,13 @@ import time
 import datetime
 import torch
 import torch_rl
+import numpy as np
 
 import babyai.utils as utils
 from babyai.model import ACModel
 from babyai.levels import curriculums, create_menvs
+from babyai.evaluate import evaluate
+from babyai.utils.agent import ModelAgent
 
 # Parse arguments
 
@@ -72,6 +75,11 @@ parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='cnn1',
                     help="image embedding architecture")
+parser.add_argument("--test-seed", type=int, default=0,
+                    help="random seed for testing (default: 0)")
+parser.add_argument("--test-episodes", type=int, default=200,
+                    help="Number of episodes to use for testing (default: 200)")
+
 args = parser.parse_args()
 
 assert args.env is not None or args.curriculum is not None, "--env or --curriculum must be specified."
@@ -152,6 +160,8 @@ num_frames = 0
 total_start_time = time.time()
 i = 0
 best_mean_return = 0
+test_env_name = args.env if args.env is not None else curriculum[-1]
+test_env = gym.make(test_env_name)
 while num_frames < args.frames:
     # Update parameters
 
@@ -210,9 +220,17 @@ while num_frames < args.frames:
         if torch.cuda.is_available():
             acmodel.cpu()
 
-        if return_per_episode["mean"] > best_mean_return:
-            best_mean_return = return_per_episode["mean"]
+        # Testing the model before saving
+        test_env.seed(args.test_seed)
+        agent = ModelAgent(model_name, test_env.observation_space, argmax=True)
+        agent.model = acmodel
+        logs = evaluate(agent, test_env, args.test_episodes)
+        mean_return = np.mean(logs["return_per_episode"])
+        if mean_return > best_mean_return:
+            best_mean_return = mean_return
             utils.save_model(acmodel, model_name)
+
+
 
         logger.info("Model is saved.")
         if torch.cuda.is_available():
