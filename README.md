@@ -349,6 +349,9 @@ A work-in-progress review of related work can be found [here](https://www.overle
   - `BabyAI-PutNextS6N2-v0`
   - `BabyAI-PutNextS6N3-v0`
   - `BabyAI-PutNextS7N4-v0`
+  - `BabyAI-PutNextS6N2Carrying-v0`
+  - `BabyAI-PutNextS6N3Carrying-v0`
+  - `BabyAI-PutNextS7N4Carrying-v0`
 
 ### PutTwoNext
 

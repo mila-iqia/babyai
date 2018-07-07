@@ -1030,11 +1030,13 @@ class PutNext(RoomGridLevelHC):
         self,
         room_size,
         objs_per_room,
+        start_carrying=False,
         seed=None
     ):
         assert room_size >= 4
         assert objs_per_room <= 9
         self.objs_per_room = objs_per_room
+        self.start_carrying = start_carrying
 
         super().__init__(
             num_rows=1,
@@ -1065,12 +1067,24 @@ class PutNext(RoomGridLevelHC):
             a = b
             b = t
 
+        self.obj_a = a
+
         self.surface = "put the %s %s next to the %s %s" % (
             a.color, a.type,
             b.color, b.type
         )
 
         self.verifier = verify_put_next(a, b)
+
+    def reset(self, **kwargs):
+        obs = super().reset(**kwargs)
+
+        # If the agent starts off carrying the object
+        if self.start_carrying:
+            self.grid.set(*self.obj_a.init_pos, None)
+            self.carrying = self.obj_a
+
+        return obs
 
 
 class Level_PutNextS4N1(PutNext):
@@ -1114,6 +1128,36 @@ class Level_PutNextS7N4(PutNext):
         super().__init__(
             room_size=7,
             objs_per_room=4,
+            seed=seed
+        )
+
+
+class Level_PutNextS5N2Carrying(PutNext):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=5,
+            objs_per_room=2,
+            start_carrying=True,
+            seed=seed
+        )
+
+
+class Level_PutNextS6N3Carrying(PutNext):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=6,
+            objs_per_room=3,
+            start_carrying=True,
+            seed=seed
+        )
+
+
+class Level_PutNextS7N4Carrying(PutNext):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=7,
+            objs_per_room=4,
+            start_carrying=True,
             seed=seed
         )
 
