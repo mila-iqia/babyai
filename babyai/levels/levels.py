@@ -274,6 +274,31 @@ class Level_OpenDoorLocDebug(Level_OpenDoorLoc, Level_OpenDoorDebug):
     pass
 
 
+class Level_GoToDoor(RoomGridLevel):
+    """
+    Go to a door
+    (of a given color, in the current room)
+    No distractors, no language variation
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=7,
+            lang_variation=1,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        objs = []
+        for _ in range(4):
+            door, _ = self.add_door(1, 1)
+            objs.append(door)
+        self.place_agent(1, 1)
+
+        obj = self._rand_elem(objs)
+        self.instrs = [Instr(action="goto", object=Object(obj.type, obj.color))]
+
+
 class Level_GoToObjDoor(RoomGridLevel):
     """
     Go to an object or door
@@ -323,7 +348,7 @@ class Level_ActionObjDoor(RoomGridLevel):
 
         obj = self._rand_elem(objs)
 
-        if type == door.type:
+        if obj.type == 'door':
             action = self._rand_elem(['goto', 'open'])
         else:
             action = self._rand_elem(['goto', 'pickup'])
@@ -1015,6 +1040,7 @@ class PutNext(RoomGridLevelHC):
             num_rows=1,
             num_cols=2,
             room_size=room_size,
+            max_steps=8*room_size**2,
             seed=seed
         )
 
@@ -1110,6 +1136,7 @@ class Level_PutTwoNext(RoomGridLevelHC):
             num_rows=1,
             num_cols=1,
             room_size=room_size,
+            max_steps=8*room_size**2,
             seed=seed
         )
 
@@ -1152,6 +1179,7 @@ class MoveTwoAcross(RoomGridLevelHC):
             num_rows=1,
             num_cols=2,
             room_size=room_size,
+            max_steps=16*room_size**2,
             seed=seed
         )
 
@@ -1302,13 +1330,19 @@ def test():
         num_episodes = 0
         for i in range(0, 15):
             mission = level(seed=i)
+
             # Reduce max_steps because otherwise tests take too long
             mission.max_steps = 200
+
+            # Check that the surface form was generated
             assert isinstance(mission.surface, str)
             assert len(mission.surface) > 0
-
             obs = mission.reset()
             assert obs['mission'] == mission.surface
+
+            # Check for some known invalid patterns in the surface form
+            import re
+            assert not re.match(r".*pick up the.*door.*", mission.surface)
 
             while True:
                 action = rng.randint(0, mission.action_space.n - 1)
