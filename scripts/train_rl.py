@@ -124,8 +124,10 @@ acmodel = utils.load_model(model_name, raise_not_found=False)
 if acmodel is None:
     acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
                       not args.no_instr, args.instr_arch, not args.no_mem, args.arch)
+    utils.save_model(acmodel, model_name)
 if torch.cuda.is_available():
     acmodel.cuda()
+
 
 # Define actor-critic algo
 
