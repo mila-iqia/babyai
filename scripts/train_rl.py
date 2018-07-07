@@ -151,7 +151,7 @@ logger.info(acmodel)
 num_frames = 0
 total_start_time = time.time()
 i = 0
-
+best_mean_return = 0
 while num_frames < args.frames:
     # Update parameters
 
@@ -207,10 +207,13 @@ while num_frames < args.frames:
 
     if args.save_interval > 0 and i % args.save_interval == 0:
         obss_preprocessor.vocab.save()
-
         if torch.cuda.is_available():
             acmodel.cpu()
-        utils.save_model(acmodel, model_name)
+
+        if return_per_episode["mean"] > best_mean_return:
+            best_mean_return = return_per_episode["mean"]
+            utils.save_model(acmodel, model_name)
+
         logger.info("Model is saved.")
         if torch.cuda.is_available():
             acmodel.cuda()
