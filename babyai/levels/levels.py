@@ -1277,14 +1277,18 @@ class Level_MoveTwoAcrossS8N9(MoveTwoAcross):
         )
 
 
-class Level_OpenDoorsOrder(RoomGridLevelHC):
+class OpenDoorsOrder(RoomGridLevelHC):
     """
     Open one or two doors in the order specified.
     """
 
-    def __init__(self, first_color=None, second_color=None, seed=None):
-        self.first_color = first_color
-        self.second_color = second_color
+    def __init__(
+        self,
+        num_doors,
+        seed=None
+    ):
+        assert num_doors >= 2
+        self.num_doors = num_doors
 
         room_size = 6
         super().__init__(
@@ -1294,19 +1298,16 @@ class Level_OpenDoorsOrder(RoomGridLevelHC):
         )
 
     def gen_mission(self):
-        colors = self._rand_subset(COLOR_NAMES, 2)
-
-        first_color = self.first_color
-        if first_color is None:
-            first_color = colors[0]
-        second_color = self.second_color
-        if second_color is None:
-            second_color = colors[1]
-
+        colors = self._rand_subset(COLOR_NAMES, self.num_doors)
+        objs = []
+        for i in range(self.num_doors):
+            door, _ = self.add_door(1, 1, color=colors[i], locked=False)
+            objs.append(door)
         self.place_agent(1, 1)
 
-        door1, _ = self.add_door(1, 1, 2, color=first_color, locked=False)
-        door2, _ = self.add_door(1, 1, 0, color=second_color, locked=False)
+        doors = self._rand_subset(objs, 2)
+        door1 = doors[0]
+        door2 = doors[1]
 
         mode = self._rand_int(0, 3)
 
@@ -1333,6 +1334,22 @@ class Level_OpenDoorsOrder(RoomGridLevelHC):
             )
         else:
             assert False
+
+
+class Level_OpenDoorsOrderN2(OpenDoorsOrder):
+    def __init__(self, seed=None):
+        super().__init__(
+            num_doors=2,
+            seed=seed
+        )
+
+
+class Level_OpenDoorsOrderN4(OpenDoorsOrder):
+    def __init__(self, seed=None):
+        super().__init__(
+            num_doors=4,
+            seed=seed
+        )
 
 
 # Dictionary of levels, indexed by name, lexically sorted
