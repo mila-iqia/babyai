@@ -339,6 +339,20 @@ A work-in-progress review of related work can be found [here](https://www.overle
     <img src="media/1RoomS20.png" width="250">
 </p>
 
+### OpenDoorsOrder
+
+- Environment: There are two or four doors in a room. The agent has to open
+ one or two of the doors in a given order.
+- Instruction:
+  - open the X door
+  - open the X door and then open the Y door
+  - open the X door after you open the Y door
+- Level ids:
+  - `BabyAI-OpenDoorsOrderN2-v0`
+  - `BabyAI-OpenDoorsOrderN4-v0`
+  - `BabyAI-OpenDoorsOrderN2Debug-v0`
+  - `BabyAI-OpenDoorsOrderN4Debug-v0`
+
 ### PutNext
 
 - Environment: Single room with multiple objects. One of the objects must be moved next to another specific object.

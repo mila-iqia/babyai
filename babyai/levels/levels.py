@@ -101,6 +101,9 @@ class RoomGridLevelHC(RoomGrid):
         if max_steps is None:
             max_steps = 4 * (room_size ** 2)
 
+        self.verifier = None
+        self.fail_verifier = None
+
         super().__init__(
             room_size=room_size,
             max_steps=max_steps,
@@ -118,6 +121,11 @@ class RoomGridLevelHC(RoomGrid):
         if self.verifier(self, action):
             done = True
             reward = self._reward()
+
+        # If we've failed
+        elif self.fail_verifier and self.fail_verifier(self, action):
+            done = True
+            reward = 0
 
         return obs, reward, done, info
 
@@ -996,6 +1004,15 @@ def verify_both(verify_a, verify_b):
     return verifier
 
 
+def verify_any(*verifiers):
+    def verifier(env, action):
+            for verify in verifiers:
+                if verify(env, action):
+                    return True
+            return False
+    return verifier
+
+
 def verify_sequence(verify_a, verify_b):
     a_done = False
     b_done = False
@@ -1285,10 +1302,12 @@ class OpenDoorsOrder(RoomGridLevelHC):
     def __init__(
         self,
         num_doors,
+        debug=False,
         seed=None
     ):
         assert num_doors >= 2
         self.num_doors = num_doors
+        self.debug = debug
 
         room_size = 6
         super().__init__(
@@ -1299,18 +1318,15 @@ class OpenDoorsOrder(RoomGridLevelHC):
 
     def gen_mission(self):
         colors = self._rand_subset(COLOR_NAMES, self.num_doors)
-        objs = []
+        doors = []
         for i in range(self.num_doors):
             door, _ = self.add_door(1, 1, color=colors[i], locked=False)
-            objs.append(door)
+            doors.append(door)
         self.place_agent(1, 1)
 
-        doors = self._rand_subset(objs, 2)
-        door1 = doors[0]
-        door2 = doors[1]
+        door1, door2 = self._rand_subset(doors, 2)
 
         mode = self._rand_int(0, 3)
-
         if mode == 0:
             self.surface = "open the %s door" % (door1.color)
             self.verifier = verify_open(door1)
@@ -1325,15 +1341,24 @@ class OpenDoorsOrder(RoomGridLevelHC):
             )
         elif mode == 2:
             self.surface = "open the %s door after you open the %s door" % (
-                door1.color,
-                door2.color
+                door2.color,
+                door1.color
             )
             self.verifier = verify_sequence(
-                verify_open(door2),
-                verify_open(door1)
+                verify_open(door1),
+                verify_open(door2)
             )
         else:
             assert False
+
+        doors.remove(door1)
+        if self.debug:
+            self.fail_verifier = verify_open(doors[0])
+            for door in doors[1:]:
+                self.fail_verifier = verify_any(
+                    self.fail_verifier,
+                    verify_open(door)
+                )
 
 
 class Level_OpenDoorsOrderN2(OpenDoorsOrder):
@@ -1348,6 +1373,24 @@ class Level_OpenDoorsOrderN4(OpenDoorsOrder):
     def __init__(self, seed=None):
         super().__init__(
             num_doors=4,
+            seed=seed
+        )
+
+
+class Level_OpenDoorsOrderN2Debug(OpenDoorsOrder):
+    def __init__(self, seed=None):
+        super().__init__(
+            num_doors=2,
+            debug=True,
+            seed=seed
+        )
+
+
+class Level_OpenDoorsOrderN4Debug(OpenDoorsOrder):
+    def __init__(self, seed=None):
+        super().__init__(
+            num_doors=4,
+            debug=True,
             seed=seed
         )
 

@@ -80,6 +80,10 @@ def test():
         print("is done:", done)
 
         if done == True:
+            if reward > 0:
+                print('success')
+            else:
+                print('failure')
             reset()
 
     reset()
