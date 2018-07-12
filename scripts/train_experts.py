@@ -140,9 +140,14 @@ for command in commands:
     slurm_cmd = "sbatch --account=def-bengioy --time={} --ntasks=1".format(command["time"])
     for seed in command["seeds"]:
         model = "baselines/{}/seed{}".format(command["model"], seed)
-        subprocess.Popen(
-            "{} scripts/run_slurm.sh python -m scripts.train_rl {} --frames 50000000 --algo ppo --model {} --seed {} --save-interval 10 --tb"
-            .format(slurm_cmd if not args.no_slurm else "",
-                    command["arguments"], model, seed),
-            shell=True)
+
+        shell_cmd = "{} scripts/run_slurm.sh python -m scripts.train_rl {} --frames 50000000 --algo ppo --model {} --seed {} --save-interval 10".format(
+            slurm_cmd if not args.no_slurm else "",
+            command["arguments"],
+            model,
+            seed
+        )
+        print(shell_cmd)
+
+        subprocess.Popen(shell_cmd, shell=True)
         time.sleep(1)
