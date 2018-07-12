@@ -1,6 +1,7 @@
 # Returns the performance of the agent on the environment for a particular number of episodes.
 def evaluate(agent, env, episodes):
     # Initialize logs
+    agent.model.eval()
     logs = {"num_frames_per_episode": [], "return_per_episode": [], "observations_per_episode": []}
 
     for _ in range(episodes):
@@ -21,5 +22,5 @@ def evaluate(agent, env, episodes):
         logs["observations_per_episode"].append(obss)
         logs["num_frames_per_episode"].append(num_frames)
         logs["return_per_episode"].append(returnn)
-
+    agent.model.train()
     return logs

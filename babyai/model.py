@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
 from torch.distributions.categorical import Categorical
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import torch_rl
-
 
 # Function from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/model.py
 def initialize_parameters(m):
@@ -13,11 +13,11 @@ def initialize_parameters(m):
         m.weight.data.normal_(0, 1)
         m.weight.data *= 1 / torch.sqrt(m.weight.data.pow(2).sum(1, keepdim=True))
         if m.bias is not None:
-
             m.bias.data.fill_(0)
 
 # Inspired by FiLMedBlock from https://arxiv.org/abs/1709.07871
-class Controller(nn.Module):
+
+class AgentControllerFiLM(nn.Module):
     def __init__(self, in_features, out_features, in_channels, imm_channels):
         super().__init__()
         self.conv = nn.Sequential(
@@ -34,6 +34,26 @@ class Controller(nn.Module):
     def forward(self, x, y):
         return self.conv(x) * self.weight(y).unsqueeze(2).unsqueeze(3) + self.bias(y).unsqueeze(2).unsqueeze(3)
 
+class ExpertControllerFiLM(nn.Module):
+    def __init__(self, in_features, out_features, in_channels, imm_channels):
+        super().__init__()
+        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=imm_channels, kernel_size=(3,3), padding=1)
+        self.bn1 = nn.BatchNorm2d(imm_channels)
+        self.conv2 = nn.Conv2d(in_channels=imm_channels, out_channels=out_features, kernel_size=(3,3), padding=1)
+        self.bn2 = nn.BatchNorm2d(out_features)
+
+        self.weight = nn.Linear(in_features, out_features)
+        self.bias = nn.Linear(in_features, out_features)
+
+        self.apply(initialize_parameters)
+
+    def forward(self, x, y):
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = self.conv2(x)
+        out = x * self.weight(y).unsqueeze(2).unsqueeze(3) + self.bias(y).unsqueeze(2).unsqueeze(3)
+        out = self.bn2(out)
+        out = F.relu(out)
+        return out
 
 
 class ACModel(nn.Module, torch_rl.RecurrentACModel):
@@ -50,7 +70,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
         self.obs_space = obs_space
 
         # Define image embedding
-        self.image_embedding_size = 64
+        self.image_embedding_size = 128
 
         if arch == "cnn1":
             self.image_conv = nn.Sequential(
@@ -85,18 +105,28 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
                 nn.Conv2d(in_channels=32, out_channels=self.image_embedding_size, kernel_size=(2, 2)),
                 nn.ReLU()
             )
-
+        elif arch.startswith("expert_filmcnn"):
+            if not self.use_instr:
+                raise ValueError("FiLM architecture can be used when instructions are enabled")
+            
+            self.image_conv = nn.Sequential(
+                nn.Conv2d(in_channels=3, out_channels=128, kernel_size=(2, 2), padding=1),
+                nn.BatchNorm2d(128),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=(2,2), stride=2),
+                nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), padding=1),
+                nn.BatchNorm2d(128),
+                nn.ReLU(),
+                nn.MaxPool2d(kernel_size=(2,2), stride=2)
+            )
+            self.film_pool = nn.MaxPool2d(kernel_size=(2,2), stride=2)
         else:
             raise ValueError("Incorrect architecture name: {}".format(arch))
-
-        # Define memory
-        if self.use_memory:
-            self.memory_rnn = nn.LSTMCell(self.image_embedding_size, self.semi_memory_size)
-
+        
         # Define instruction embedding
         if self.use_instr:
             if self.lang_model == 'gru' or self.lang_model == 'conv' or self.lang_model == 'bigru':
-                self.word_embedding_size = 32
+                self.word_embedding_size = 128
                 self.word_embedding = nn.Embedding(obs_space["instr"], self.word_embedding_size)
                 if self.lang_model == 'gru' or self.lang_model == 'bigru':
                     self.instr_embedding_size = 128
@@ -112,24 +142,39 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
                     
             elif self.lang_model == 'bow':
                 self.instr_embedding_size = 128
-                hidden_units = [obs_space["instr"], 64, self.instr_embedding_size]
+                hidden_units = [obs_space["instr"], 128, self.instr_embedding_size]
                 layers = []
                 for n_in, n_out in zip(hidden_units, hidden_units[1:]):
                     layers.append(nn.Linear(n_in, n_out))
                     layers.append(nn.ReLU())
                 self.instr_bow = nn.Sequential(*layers)
 
-
+        # Define memory
+        if self.use_memory:
+            self.memory_rnn = nn.LSTMCell(self.image_embedding_size, self.semi_memory_size)
 
         # Resize image embedding
         self.embedding_size = self.semi_memory_size
-        if self.use_instr and arch != "filmcnn":
+        if self.use_instr and arch != "filmcnn" and not arch.startswith("expert_filmcnn"):
             self.embedding_size += self.instr_embedding_size
-
-    
+        
         if arch == "filmcnn":
-            self.controller_1 = Controller(in_features= self.instr_embedding_size, out_features= 64, in_channels = 3, imm_channels = 16)
-            self.controller_2 = Controller(in_features = self.instr_embedding_size, out_features= 64, in_channels = 32, imm_channels = 32)
+            self.controller_1 = AgentControllerFiLM(in_features= self.instr_embedding_size, out_features= 64, in_channels = 3, imm_channels = 16)
+            self.controller_2 = AgentControllerFiLM(in_features = self.instr_embedding_size, out_features= 64, in_channels = 32, imm_channels = 32)
+    
+        if arch.startswith("expert_filmcnn"):
+            if arch == "expert_filmcnn":
+                num_module = 2
+            else:
+                num_module = int(arch[(arch.rfind('_')+1):])
+            self.controllers = []
+            for ni in range(num_module):
+                if ni < num_module-1:
+                    mod = ExpertControllerFiLM(in_features= self.instr_embedding_size, out_features= 128, in_channels = 128, imm_channels = 128)
+                else:
+                    mod = ExpertControllerFiLM(in_features = self.instr_embedding_size, out_features= self.image_embedding_size, in_channels = 128, imm_channels = 128)
+                self.controllers.append(mod)
+                self.add_module('FiLM_Controler_' + str(ni), mod)
 
         # Define actor's model
         self.actor = nn.Sequential(
@@ -159,6 +204,8 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
     def forward(self, obs, memory):
         if self.use_instr:
             embed_instr = self._get_embed_instr(obs.instr)
+            if type(embed_instr) == tuple:
+                whole_context, embed_instr, mask_context = embed_instr
 
         x = torch.transpose(torch.transpose(obs.image, 1, 3), 2, 3)
         
@@ -167,6 +214,11 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
             x = self.image_conv_1(x)
             x = self.controller_2(x, embed_instr)
             x = self.image_conv_2(x)
+        elif self.arch.startswith("expert_filmcnn"):
+            x = self.image_conv(x)
+            for controler in self.controllers:
+                x = controler(x, embed_instr)
+            x = F.relu(self.film_pool(x))
         else:
             x = self.image_conv(x)
 
@@ -180,7 +232,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
         else:
             embedding = x
 
-        if self.use_instr and self.arch != "filmcnn":
+        if self.use_instr and self.arch != "filmcnn" and not self.arch.startswith("expert_filmcnn"):
             embedding = torch.cat((embedding, embed_instr), dim=1)
 
         x = self.actor(embedding)
@@ -201,6 +253,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
             self.instr_rnn.flatten_parameters()
 
             lengths = (instr != 0).sum(1).long()
+            masks = (instr != 0).float()
 
             if lengths.shape[0] > 1:
                 seq_lengths, perm_idx = lengths.sort(0, descending=True)
@@ -217,16 +270,21 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
                 outputs, h_n = self.instr_rnn(inputs)
             else:
                 instr = instr[:, 0:lengths[0]]
-                _, h_n = self.instr_rnn(self.word_embedding(instr))
+                outputs, h_n = self.instr_rnn(self.word_embedding(instr))
                 iperm_idx = None
             h_n = h_n.transpose(0,1).contiguous()
             h_n = h_n.view(h_n.shape[0], -1)
             if iperm_idx is not None:
+                outputs, _ = pad_packed_sequence(outputs, batch_first=True)
+                outputs = outputs[iperm_idx]
                 hidden = h_n[iperm_idx]
             else:
                 hidden = h_n
+            
+            if outputs.shape[1] < masks.shape[1]:
+                masks = masks[:, :(outputs.shape[1]-masks.shape[1])] #The packing truncate the original length so we need to change mask to fit it
 
-            return hidden
+            return outputs, hidden, masks
 
         elif self.lang_model == 'conv':
             inputs = self.word_embedding(instr).unsqueeze(1) # (B,1,T,D)

@@ -57,14 +57,15 @@ curriculums = {
         "BabyAI-UnlockToUnlock-v0"
     ],
     "PutNext": [
-        "BabyAI-PutNextS6N5-v0",
-        "BabyAI-PutNextS7N5-v0",
-        "BabyAI-PutNextS8N6-v0"
+        "BabyAI-PutNextS4N1-v0",
+        "BabyAI-PutNextS5N1-v0",
+        "BabyAI-PutNextS5N2-v0"
     ],
     "DoorObj": [
         "BabyAI-OpenDoorColor-v0",
         "BabyAI-GoToObjDoor-v0",
-        "BabyAI-ActionObjDoor-v0"
+        "BabyAI-ActionObjDoor-v0",
+        "BabyAI-GoToDoor-v0"
     ]
 }
 
