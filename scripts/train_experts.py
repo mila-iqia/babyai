@@ -17,9 +17,8 @@ parser.add_argument("--no-slurm", action="store_true", default=False,
                     help="don't use slurm")
 args = parser.parse_args()
 
-# Define commands for training the agents
-
-commands = [
+# Define parameters for training the agents
+params = [
     {"tags": ["1RoomS8", "all"],
      "time": "1:0:0",
      "seeds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -122,32 +121,40 @@ commands = [
      "arguments": "--curriculum UnlockToUnlock --no-instr"},
 ]
 
-# Filter the commands given tags
-
+# Filter the params given tags
 def have_something_in_common(l1, l2):
     return bool(set(l1).intersection(l2))
 
+# Select based on tags passed on the command line
 tags = args.tags.split(",")
-
-commands = [
-    command for command in commands
-    if have_something_in_common(command["tags"], tags)
+params = [
+    paramSet for paramSet in params
+    if have_something_in_common(paramSet["tags"], tags)
 ]
 
-# Execute the filtered commands
+# Assemble the shell commands to launch all jobs
+shell_cmds = []
 
-for command in commands:
-    slurm_cmd = "sbatch --account=def-bengioy --time={} --ntasks=1".format(command["time"])
-    for seed in command["seeds"]:
-        model = "baselines/{}/seed{}".format(command["model"], seed)
+# Execute the filtered params
+for paramSet in params:
+    slurm_cmd = "sbatch --account=def-bengioy --time={} --ntasks=1 --mem=8G".format(paramSet["time"])
+    for seed in paramSet["seeds"]:
+        model = "baselines/{}/seed{}".format(paramSet["model"], seed)
 
         shell_cmd = "{} scripts/run_slurm.sh python -m scripts.train_rl {} --frames 50000000 --algo ppo --model {} --seed {} --save-interval 10".format(
             slurm_cmd if not args.no_slurm else "",
-            command["arguments"],
+            paramSet["arguments"],
             model,
             seed
         )
-        print(shell_cmd)
+        shell_cmds.append(shell_cmd)
 
-        subprocess.Popen(shell_cmd, shell=True)
-        time.sleep(1)
+# Launch all the jobs one by one
+# Note: we avoid launch these all at once because this can overload the scheduler
+for idx, shell_cmd in enumerate(shell_cmds):
+
+    print('Launching job {}/{}'.format(idx+1, len(shell_cmds)))
+    print(shell_cmd)
+
+    subprocess.check_call(shell_cmd, shell=True)
+    time.sleep(1)
