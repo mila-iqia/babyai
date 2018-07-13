@@ -197,15 +197,15 @@ while num_frames < args.frames:
             writer.add_scalar("FPS", fps, i)
             writer.add_scalar("duration", total_ellapsed_time, i)
             for key, value in return_per_episode.items():
-                writer.add_scalar("return_" + key, value, i)
+                writer.add_scalar("return_" + key, value, num_frames)
             for key, value in rreturn_per_episode.items():
-                writer.add_scalar("rreturn_" + key, value, i)
+                writer.add_scalar("rreturn_" + key, value, num_frames)
             for key, value in num_frames_per_episode.items():
                 writer.add_scalar("num_frames_" + key, value, i)
-            writer.add_scalar("entropy", logs["entropy"], i)
-            writer.add_scalar("value", logs["value"], i)
-            writer.add_scalar("policy_loss", logs["policy_loss"], i)
-            writer.add_scalar("value_loss", logs["value_loss"], i)
+            writer.add_scalar("entropy", logs["entropy"], num_frames)
+            writer.add_scalar("value", logs["value"], num_frames)
+            writer.add_scalar("policy_loss", logs["policy_loss"], num_frames)
+            writer.add_scalar("value_loss", logs["value_loss"], num_frames)
 
             if args.curriculum is not None:
                 for env_id, env_key in enumerate(curriculum):
