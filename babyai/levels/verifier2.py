@@ -224,7 +224,7 @@ class PutNext(Action):
         self.desc_fixed = obj_fixed
 
 
-class Then(Instr):
+class Before(Instr):
     """
     Sequence two instructions in order:
     eg: go to the red door then pick up the blue ball
@@ -243,11 +243,21 @@ class Then(Instr):
         super().reset_verifier(env)
         self.instr_a.reset_verifier(env)
         self.instr_b.reset_verifier(env)
+        self.a_done = False
+        self.b_done = False
 
     def verify(self, action):
-        # TODO: abort early if incorrect sequence
+        if self.a_done is 'success':
+            self.b_done = self.instr_b.verify(action)
+            if self.b_done is 'success':
+                return 'success'
+        else:
+            self.b_done = self.instr_b.verify(action)
 
-        # TODO
+            # Completing b first means failure
+            if self.b_done is 'success':
+                return 'failure'
+
         return 'continue'
 
 

@@ -699,7 +699,7 @@ class Level_PickupAbove(RoomGridLevel):
         self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
 
 
-class Level_OpenTwoDoors(RoomGridLevel):
+class Level_OpenTwoDoors(RoomGridLevelV2):
     """
     Open door X, then open door Y
     The two doors are facing opposite directions, so that the agent
@@ -734,10 +734,10 @@ class Level_OpenTwoDoors(RoomGridLevel):
 
         self.place_agent(1, 1)
 
-        self.instrs = [
-            Instr(action="open", object=Object(door1.type, door1.color)),
-            Instr(action="open", object=Object(door2.type, door2.color))
-        ]
+        self.instrs = verifier2.Before(
+            verifier2.Open(verifier2.ObjDesc(door1.type, door1.color)),
+            verifier2.Open(verifier2.ObjDesc(door2.type, door2.color))
+        )
 
 
 class Level_OpenTwoDoorsDebug(Level_OpenTwoDoors):
