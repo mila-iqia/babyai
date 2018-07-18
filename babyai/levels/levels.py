@@ -11,6 +11,7 @@ from .instrs import *
 from .instr_gen import gen_instr_seq, gen_object, gen_surface
 from .verifier import InstrSeqVerifier, OpenVerifier, PickupVerifier
 
+from babyai.levels import verifier2
 
 class RoomGridLevel(RoomGrid):
     """
@@ -65,6 +66,82 @@ class RoomGridLevel(RoomGrid):
         # Generate the surface form for the instructions
         seed = self._rand_int(0, 0xFFFFFFFF)
         self.surface = gen_surface(self.instrs, seed, lang_variation=self.lang_variation)
+        self.mission = self.surface
+
+    def gen_mission(self):
+        """
+        Generate a mission (instructions and matching environment)
+        Derived level classes should implement this method
+        """
+        raise NotImplementedError
+
+    @property
+    def level_name(self):
+        return self.__class__.level_name
+
+    @property
+    def gym_id(self):
+        return self.__class__.gym_id
+
+
+class RoomGridLevelV2(RoomGrid):
+    """
+    Base for levels based on RoomGrid
+    A level, given a random seed, generates missions generated from
+    one or more patterns. Levels should produce a family of missions
+    of approximately similar difficulty.
+    """
+
+    def __init__(
+        self,
+        lang_variation=1,
+        room_size=6,
+        max_steps=None,
+        **kwargs
+    ):
+        # Default max steps computation
+        if max_steps is None:
+            max_steps = 4 * (room_size ** 2)
+
+        self.lang_variation = lang_variation
+        super().__init__(
+            room_size=room_size,
+            max_steps=max_steps,
+            **kwargs
+        )
+
+    def reset(self, **kwargs):
+        obs = super().reset(**kwargs)
+
+        # Recreate the verifier
+        self.instrs.reset_verifier(self)
+
+        return obs
+
+    def step(self, action):
+        obs, reward, done, info = super().step(action)
+
+        # If we've successfully completed the mission
+        status = self.instrs.verify(action)
+
+        if status is 'success':
+            done = True
+            reward = self._reward()
+        elif status is 'failure':
+            done = True
+            reward = 0
+
+        return obs, reward, done, info
+
+    def _gen_grid(self, width, height):
+        super()._gen_grid(width, height)
+
+        # Generate the mission
+        self.gen_mission()
+
+        # Generate the surface form for the instructions
+        #seed = self._rand_int(0, 0xFFFFFFFF)
+        self.surface = self.instrs.surface(self)
         self.mission = self.surface
 
     def gen_mission(self):
@@ -153,7 +230,7 @@ class RoomGridLevelHC(RoomGrid):
         return self.__class__.gym_id
 
 
-class Level_OpenRedDoor(RoomGridLevel):
+class Level_OpenRedDoor(RoomGridLevelV2):
     """
     Go to the red door
     (always unlocked, in the current room)
@@ -172,10 +249,10 @@ class Level_OpenRedDoor(RoomGridLevel):
     def gen_mission(self):
         obj, _ = self.add_door(0, 0, 0, 'red', locked=False)
         self.place_agent(0, 0)
-        self.instrs = [Instr(action="open", object=Object(obj.type, obj.color))]
+        self.instrs = verifier2.Open(verifier2.ObjDesc('door', 'red'))
 
 
-class Level_OpenDoor(RoomGridLevel):
+class Level_OpenDoor(RoomGridLevelV2):
     """
     Go to the door
     The door to open is given by its color or by its location.
@@ -201,18 +278,17 @@ class Level_OpenDoor(RoomGridLevel):
         if select_by is None:
             select_by = self._rand_elem(["color", "loc"])
         if select_by == "color":
-            object = Object(objs[0].type, color=objs[0].color)
+            object = verifier2.ObjDesc(objs[0].type, color=objs[0].color)
         elif select_by == "loc":
-            object = Object(objs[0].type, loc=self._rand_elem(LOC_NAMES))
+            object = verifier2.ObjDesc(objs[0].type, loc=self._rand_elem(LOC_NAMES))
 
         self.place_agent(1, 1)
-        self.instrs = [Instr(action="open", object=object)]
+        self.instrs = verifier2.Open(object)
 
 
+"""
 class Level_OpenDoorDebug(Level_OpenDoor):
-    """
-    Same as OpenDoor but the level stops when any door is opened
-    """
+    #Same as OpenDoor but the level stops when any door is opened
 
     def reset(self, **kwargs):
         obs = super().reset(**kwargs)
@@ -236,7 +312,7 @@ class Level_OpenDoorDebug(Level_OpenDoor):
             done = True
 
         return obs, reward, done, info
-
+"""
 
 class Level_OpenDoorColor(Level_OpenDoor):
     """
@@ -252,12 +328,11 @@ class Level_OpenDoorColor(Level_OpenDoor):
         )
 
 
-class Level_OpenDoorColorDebug(Level_OpenDoorColor, Level_OpenDoorDebug):
+#class Level_OpenDoorColorDebug(Level_OpenDoorColor, Level_OpenDoorDebug):
     """
     Same as OpenDoorColor but the level stops when any door is opened
     """
-
-    pass
+#    pass
 
 
 class Level_OpenDoorLoc(Level_OpenDoor):
@@ -274,15 +349,14 @@ class Level_OpenDoorLoc(Level_OpenDoor):
         )
 
 
-class Level_OpenDoorLocDebug(Level_OpenDoorLoc, Level_OpenDoorDebug):
+#class Level_OpenDoorLocDebug(Level_OpenDoorLoc, Level_OpenDoorDebug):
     """
     Same as OpenDoorLoc but the level stops when any door is opened
     """
+    #pass
 
-    pass
 
-
-class Level_GoToDoor(RoomGridLevel):
+class Level_GoToDoor(RoomGridLevelV2):
     """
     Go to a door
     (of a given color, in the current room)
@@ -304,10 +378,10 @@ class Level_GoToDoor(RoomGridLevel):
         self.place_agent(1, 1)
 
         obj = self._rand_elem(objs)
-        self.instrs = [Instr(action="goto", object=Object(obj.type, obj.color))]
+        self.instrs = verifier2.GoTo(verifier2.ObjDesc('door', obj.color))
 
 
-class Level_GoToObjDoor(RoomGridLevel):
+class Level_GoToObjDoor(RoomGridLevelV2):
     """
     Go to an object or door
     (of a given type and color, in the current room)
@@ -328,10 +402,10 @@ class Level_GoToObjDoor(RoomGridLevel):
         self.place_agent(1, 1)
 
         obj = self._rand_elem(objs)
-        self.instrs = [Instr(action="goto", object=Object(obj.type, obj.color))]
+        self.instrs = verifier2.GoTo(verifier2.ObjDesc(obj.type, obj.color))
 
 
-class Level_ActionObjDoor(RoomGridLevel):
+class Level_ActionObjDoor(RoomGridLevelV2):
     """
     [pick up an object] or
     [go to an object or door] or
@@ -355,12 +429,18 @@ class Level_ActionObjDoor(RoomGridLevel):
         self.place_agent(1, 1)
 
         obj = self._rand_elem(objs)
+        desc = verifier2.ObjDesc(obj.type, obj.color)
 
         if obj.type == 'door':
-            action = self._rand_elem(['goto', 'open'])
+            if self._rand_bool():
+                self.instrs = verifier2.GoTo(desc)
+            else:
+                self.instrs = verifier2.Open(desc)
         else:
-            action = self._rand_elem(['goto', 'pickup'])
-        self.instrs = [Instr(action=action, object=Object(obj.type, obj.color))]
+            if self._rand_bool():
+                self.instrs = verifier2.GoTo(desc)
+            else:
+                self.instrs = verifier2.Pickup(desc)
 
 
 class Level_Unlock(RoomGridLevel):
@@ -1176,47 +1256,6 @@ class Level_PutNextS7N4Carrying(PutNext):
             objs_per_room=4,
             start_carrying=True,
             seed=seed
-        )
-
-
-class Level_PutTwoNext(RoomGridLevelHC):
-    """
-    Put two objects next to a third object
-    There are many objects inside a room, so that the number of possible
-    instructions is potentially large.
-    """
-
-    def __init__(
-        self,
-        room_size=8,
-        num_objs=8,
-        seed=None
-    ):
-        self.num_objs = num_objs
-        super().__init__(
-            num_rows=1,
-            num_cols=1,
-            room_size=room_size,
-            max_steps=8*room_size**2,
-            seed=seed
-        )
-
-    def gen_mission(self):
-        self.place_agent(0, 0)
-        self.add_distractors(self.num_objs)
-        objs = self.get_room(0, 0).objs
-
-        x, y, z = self._rand_subset(objs, 3)
-
-        self.surface = "put the %s %s and the %s %s next to the %s %s" % (
-            x.color, x.type,
-            y.color, y.type,
-            z.color, z.type
-        )
-
-        self.verifier = verify_both(
-            verify_put_next(x, z),
-            verify_put_next(y, z)
         )
 
 

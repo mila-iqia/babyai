@@ -367,13 +367,6 @@ A work-in-progress review of related work can be found [here](https://www.overle
   - `BabyAI-PutNextS6N3Carrying-v0`
   - `BabyAI-PutNextS7N4Carrying-v0`
 
-### PutTwoNext
-
-- Environment: Two objects must be moved next to a third.
-- Instruction: Put the A and the B next to the C
-- Level ids:
-  - `BabyAI-PutTwoNext-v0`
-
 ### MoveTwoAcross
 
 - Environment: Two objects must be moved so that they are next to two other objects. This task is structured to have a very large number of possible instructions.
