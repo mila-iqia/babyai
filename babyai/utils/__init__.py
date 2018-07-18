@@ -4,7 +4,7 @@ import numpy
 import torch
 from babyai.utils.agent import load_agent
 from babyai.utils.demos import load_demos, save_demos, synthesize_demos
-from babyai.utils.format import ObssPreprocessor, reshape_reward
+from babyai.utils.format import ObssPreprocessor, IntObssPreprocessor, reshape_reward
 from babyai.utils.log import get_log_dir, synthesize, get_logger
 from babyai.utils.model import get_model_dir, load_model, save_model
 
