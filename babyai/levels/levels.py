@@ -1307,7 +1307,7 @@ class Level_MoveTwoAcrossS8N9(MoveTwoAcross):
         )
 
 
-class OpenDoorsOrder(RoomGridLevelHC):
+class OpenDoorsOrder(RoomGridLevelV2):
     """
     Open one or two doors in the order specified.
     """
@@ -1338,41 +1338,18 @@ class OpenDoorsOrder(RoomGridLevelHC):
         self.place_agent(1, 1)
 
         door1, door2 = self._rand_subset(doors, 2)
+        desc1 = verifier2.ObjDesc(door1.type, door1.color)
+        desc2 = verifier2.ObjDesc(door2.type, door2.color)
 
         mode = self._rand_int(0, 3)
         if mode == 0:
-            self.surface = "open the %s door" % (door1.color)
-            self.verifier = verify_open(door1)
+            self.instrs = verifier2.Open(desc1, strict=self.debug)
         elif mode == 1:
-            self.surface = "open the %s door and then open the %s door" % (
-                door1.color,
-                door2.color
-            )
-            self.verifier = verify_sequence(
-                verify_open(door1),
-                verify_open(door2)
-            )
+            self.instrs = verifier2.Before(verifier2.Open(desc1, strict=self.debug), verifier2.Open(desc2, strict=self.debug))
         elif mode == 2:
-            self.surface = "open the %s door after you open the %s door" % (
-                door2.color,
-                door1.color
-            )
-            self.verifier = verify_sequence(
-                verify_open(door1),
-                verify_open(door2)
-            )
+            self.instrs = verifier2.After(verifier2.Open(desc1, strict=self.debug), verifier2.Open(desc2, strict=self.debug))
         else:
             assert False
-
-        doors.remove(door1)
-        if self.debug:
-            self.fail_verifier = verify_open(doors[0])
-            for door in doors[1:]:
-                self.fail_verifier = verify_any(
-                    self.fail_verifier,
-                    verify_open(door)
-                )
-
 
 class Level_OpenDoorsOrderN2(OpenDoorsOrder):
     def __init__(self, seed=None):

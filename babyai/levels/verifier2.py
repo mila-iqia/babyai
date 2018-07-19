@@ -1,17 +1,3 @@
-"""
-Baby language grammar:
-Sent -> Sent1 | Sent1 then Sent1 | Sent1 after you Sent1
-Sent1 -> Clause | Clause and Clause
-Clause -> go to Descr | open DescrDoor | put DescrNotDoor next to Descr
-DescrDoor -> the Color door LocSpec
-DescrBall -> the Color ball LocSpec
-DescrBox -> the Color box LocSpec
-DescrKey -> the Color key LocSpec
-DescrNotDoor -> DescrBall | DescrBox | DescrKey
-LocSpec -> “” | on your left | on your right | in front of you | behind you
-Color -> red | purple | green | blue | yellow | orange
-"""
-
 import numpy as np
 from enum import Enum
 from gym_minigrid.minigrid import COLOR_NAMES, DIR_TO_VEC
@@ -229,10 +215,11 @@ class Pickup(Action):
 
 
 class PutNext(Action):
-    def __init__(self, obj_move, obj_fixed):
+    def __init__(self, obj_move, obj_fixed, strict=False):
         assert obj_move.type is not 'door'
         self.desc_move = obj_move
         self.desc_fixed = obj_fixed
+        self.strict = strict
 
     def surface(self, env):
         return 'put ' + self.desc_move.surface(env) + ' next to ' + self.desc_fixed.surface(env)
@@ -312,7 +299,29 @@ class After(Instr):
         self.instr_b = instr_b
 
     def surface(self, env):
-        return self.instr_a.surface(env) + ' then ' + self.instr_b.surface(env)
+        return self.instr_a.surface(env) + ' after you ' + self.instr_b.surface(env)
+
+    def reset_verifier(self, env):
+        super().reset_verifier(env)
+        self.instr_a.reset_verifier(env)
+        self.instr_b.reset_verifier(env)
+        self.a_done = False
+        self.b_done = False
+
+    def verify(self, action):
+        if self.b_done is 'success':
+            self.a_done = self.instr_a.verify(action)
+            if self.a_done is 'success':
+                return 'success'
+        else:
+            self.a_done = self.instr_a.verify(action)
+            self.b_done = self.instr_b.verify(action)
+
+            # Completing a first means failure
+            if self.a_done is 'success':
+                return 'failure'
+
+        return 'continue'
 
 
 class Both(Instr):
