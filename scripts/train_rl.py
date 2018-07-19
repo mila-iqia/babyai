@@ -115,8 +115,10 @@ default_model_name = "{}_{}_{}_{}_{}_seed{}_{}".format(args.env or args.curricul
 model_name = args.model or default_model_name
 
 # Define obss preprocessor
-
-obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space)
+if 'emb' in args.arch:
+    obss_preprocessor = utils.IntObssPreprocessor(model_name, envs[0].observation_space)
+else:
+    obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space)
 
 # Define actor-critic model
 
@@ -224,7 +226,7 @@ while num_frames < args.frames:
 
         # Testing the model before saving
         test_env.seed(args.test_seed)
-        agent = ModelAgent(model_name, test_env.observation_space, argmax=True)
+        agent = ModelAgent(model_name, obss_preprocessor, argmax=True)
         agent.model = acmodel
         logs = evaluate(agent, test_env, args.test_episodes)
         mean_return = np.mean(logs["return_per_episode"])

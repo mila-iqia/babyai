@@ -120,6 +120,15 @@ A work-in-progress review of related work can be found [here](https://www.overle
 
 ## The levels
 
+In naming the levels we adhere to the following convention:
+- `N2`, `N3`, `N4` refers to the number of objects in the room/environment
+- `S2`, `S3`, `S4` refers to the size of the room/environment
+- in `Debug` levels the episode is terminated once the agent does something unnecessary or fatally bad, for example
+    - picks up an object which it is not supposed to pick up (unnecessary)
+    - open the door that it is supposed to open _after_ another one (fatal)
+- in `Carrying` levels the agent starts carrying the object of interest
+- in `Dist` levels distractor objects are placed to confuse the agent
+
 ### OpenRedDoor
 
 - Environment: The agent is placed in a room with a door.

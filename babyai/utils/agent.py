@@ -21,8 +21,8 @@ class Agent(ABC):
 class ModelAgent(Agent):
     """A model-based agent. This agent behaves using a model."""
 
-    def __init__(self, model_name, observation_space, argmax):
-        self.obss_preprocessor = utils.ObssPreprocessor(model_name, observation_space)
+    def __init__(self, model_name, obss_preprocessor, argmax):
+        self.obss_preprocessor = obss_preprocessor
         self.model = utils.load_model(model_name)
         self.argmax = argmax
 
@@ -93,6 +93,7 @@ class DemoAgent(Agent):
 
 def load_agent(args, env):
     if args.model is not None:
-        return ModelAgent(args.model, env.observation_space, args.argmax)
+        obss_preprocessor = utils.ObssPreprocessor(args.model, env.observation_space)
+        return ModelAgent(args.model, obss_preprocessor, args.argmax)
     elif args.demos_origin is not None:
         return DemoAgent(args.env, args.demos_origin)

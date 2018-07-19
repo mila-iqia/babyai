@@ -55,6 +55,20 @@ class ExpertControllerFiLM(nn.Module):
         out = F.relu(out)
         return out
 
+class ImageBOWEmbedding(nn.Module):
+    def __init__(self, num_embeddings, embedding_dim, padding_idx=None, reduce_fn=torch.mean):
+        super(ImageBOWEmbedding, self).__init__()
+        self.num_embeddings = num_embeddings
+        self.embedding_dim = embedding_dim
+        self.padding_idx = padding_idx
+        self.reduce_fn = reduce_fn
+        self.embedding = nn.Embedding(num_embeddings, embedding_dim, padding_idx=padding_idx)
+
+    def forward(self, inputs):
+        embeddings = self.embedding(inputs)
+        embeddings = reduce_fn(embeddings, dim=1)
+        embeddings = torch.transpose(torch.transpose(embeddings, 1, 3), 2, 3)
+        return embeddings
 
 class ACModel(nn.Module, torch_rl.RecurrentACModel):
     def __init__(self, obs_space, action_space, use_instr=False, lang_model="gru", use_memory=False, arch="cnn1"):
@@ -120,6 +134,17 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
                 nn.MaxPool2d(kernel_size=(2,2), stride=2)
             )
             self.film_pool = nn.MaxPool2d(kernel_size=(2,2), stride=2)
+        elif arch == 'embcnn1':
+            self.image_conv = nn.Sequential(
+                ImageBOWEmbedding(obs_space["image"], embedding_dim=16, padding_idx=0, reduce_fn=torch.mean),
+                nn.ReLU(),
+                nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(3, 3)),
+                nn.ReLU(),
+                nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(3, 3)),
+                nn.ReLU(),
+                nn.Conv2d(in_channels=32, out_channels=self.image_embedding_size, kernel_size=(3, 3)),
+                nn.ReLU()
+            )
         else:
             raise ValueError("Incorrect architecture name: {}".format(arch))
         
