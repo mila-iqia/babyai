@@ -23,7 +23,6 @@ class RoomGridLevel(RoomGrid):
 
     def __init__(
         self,
-        lang_variation=1,
         room_size=6,
         max_steps=None,
         **kwargs
@@ -32,7 +31,7 @@ class RoomGridLevel(RoomGrid):
         if max_steps is None:
             max_steps = 4 * (room_size ** 2)
 
-        self.lang_variation = lang_variation
+        self.lang_variation = 1
         super().__init__(
             room_size=room_size,
             max_steps=max_steps,
@@ -94,7 +93,6 @@ class RoomGridLevelV2(RoomGrid):
 
     def __init__(
         self,
-        lang_variation=1,
         room_size=6,
         max_steps=None,
         **kwargs
@@ -103,7 +101,6 @@ class RoomGridLevelV2(RoomGrid):
         if max_steps is None:
             max_steps = 4 * (room_size ** 2)
 
-        self.lang_variation = lang_variation
         super().__init__(
             room_size=room_size,
             max_steps=max_steps,
@@ -366,7 +363,6 @@ class Level_GoToDoor(RoomGridLevelV2):
     def __init__(self, seed=None):
         super().__init__(
             room_size=7,
-            lang_variation=1,
             seed=seed
         )
 
@@ -390,7 +386,6 @@ class Level_GoToObjDoor(RoomGridLevelV2):
     def __init__(self, seed=None):
         super().__init__(
             room_size=7,
-            lang_variation=2,
             seed=seed
         )
 
@@ -416,7 +411,6 @@ class Level_ActionObjDoor(RoomGridLevelV2):
     def __init__(self, seed=None):
         super().__init__(
             room_size=7,
-            lang_variation=2,
             seed=seed
         )
 
@@ -623,7 +617,6 @@ class Level_PickupDist(RoomGridLevel):
             num_rows = 1,
             num_cols = 1,
             room_size=7,
-            lang_variation=2,
             seed=seed
         )
 
@@ -684,7 +677,6 @@ class Level_PickupAbove(RoomGridLevel):
         super().__init__(
             room_size=room_size,
             max_steps=8*room_size**2,
-            lang_variation=2,
             seed=seed
         )
 
@@ -721,7 +713,6 @@ class Level_OpenTwoDoors(RoomGridLevelV2):
         super().__init__(
             room_size=room_size,
             max_steps=20*room_size**2,
-            lang_variation=2,
             seed=seed
         )
 
@@ -854,7 +845,6 @@ class Level_FourObjsS5(RoomGridLevel):
         super().__init__(
             room_size=room_size,
             max_steps=20*room_size**2,
-            lang_variation=2,
             seed=seed
         )
 
@@ -920,7 +910,6 @@ class KeyCorridor(RoomGridLevel):
             room_size=room_size,
             num_rows=num_rows,
             max_steps=30*room_size**2,
-            lang_variation=3,
             seed=seed,
         )
 
@@ -1110,7 +1099,7 @@ def verify_sequence(verify_a, verify_b):
     return verifier
 
 
-class PutNext(RoomGridLevelHC):
+class PutNext(RoomGridLevelV2):
     """
     Task of the form: move the A next to the B and the C next to the D.
     This task is structured to have a very large number of possible
@@ -1160,12 +1149,10 @@ class PutNext(RoomGridLevelHC):
 
         self.obj_a = a
 
-        self.surface = "put the %s %s next to the %s %s" % (
-            a.color, a.type,
-            b.color, b.type
+        self.instrs = verifier2.PutNext(
+            verifier2.ObjDesc(a.type, a.color),
+            verifier2.ObjDesc(b.type, b.color)
         )
-
-        self.verifier = verify_put_next(a, b)
 
     def reset(self, **kwargs):
         obs = super().reset(**kwargs)
@@ -1253,7 +1240,7 @@ class Level_PutNextS7N4Carrying(PutNext):
         )
 
 
-class MoveTwoAcross(RoomGridLevelHC):
+class MoveTwoAcross(RoomGridLevelV2):
     """
     Task of the form: move the A next to the B and the C next to the D.
     This task is structured to have a very large number of possible
@@ -1296,16 +1283,9 @@ class MoveTwoAcross(RoomGridLevelHC):
         c = objs_r[1]
         d = objs_l[1]
 
-        self.surface = "put the %s %s next to the %s %s and the %s %s next to the %s %s" % (
-            a.color, a.type,
-            b.color, b.type,
-            c.color, c.type,
-            d.color, d.type,
-        )
-
-        self.verifier = verify_both(
-            verify_put_next(a, b),
-            verify_put_next(c, d)
+        self.instrs = verifier2.Before(
+            verifier2.PutNext(verifier2.ObjDesc(a.type, a.color), verifier2.ObjDesc(b.type, b.color)),
+            verifier2.PutNext(verifier2.ObjDesc(c.type, c.color), verifier2.ObjDesc(d.type, d.color))
         )
 
 

@@ -51,6 +51,9 @@ class ObjDesc:
         # Set of objects possibly matching the description
         self.obj_set = []
 
+        # Set of initial object positions
+        self.obj_poss = []
+
     def surface(self, env):
         self.find_matching_objs(env)
         assert len(self.obj_set) > 0
@@ -230,6 +233,32 @@ class PutNext(Action):
         assert obj_move.type is not 'door'
         self.desc_move = obj_move
         self.desc_fixed = obj_fixed
+
+    def surface(self, env):
+        return 'put ' + self.desc_move.surface(env) + ' next to ' + self.desc_fixed.surface(env)
+
+    def reset_verifier(self, env):
+        super().reset_verifier(env)
+
+        # Identify set of possible matching objects in the environment
+        self.desc_move.find_matching_objs(env)
+        self.desc_fixed.find_matching_objs(env)
+
+    def verify(self, action):
+        for obj_a in self.desc_move.obj_set:
+            pos_a = obj_a.cur_pos
+
+            for pos_b in self.desc_fixed.obj_poss:
+                xa, ya = pos_a
+                xb, yb = pos_b
+                d = abs(xa - xb) + abs(ya - yb)
+
+                if d < 2:
+                    return 'success'
+
+        # TODO: strict mode, picked up the wrong object
+
+        return 'continue'
 
 
 class Before(Instr):
