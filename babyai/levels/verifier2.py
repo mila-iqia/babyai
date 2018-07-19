@@ -26,9 +26,9 @@ class ObjDesc:
         if type is 'locked_door':
             type = 'door'
 
-        assert type in OBJ_TYPES
-        assert color in [None, *COLOR_NAMES]
-        assert loc in [None, *LOC_NAMES]
+        assert type in [None, *OBJ_TYPES], type
+        assert color in [None, *COLOR_NAMES], color
+        assert loc in [None, *LOC_NAMES], loc
 
         self.color = color
         self.type = type
@@ -44,7 +44,10 @@ class ObjDesc:
         self.find_matching_objs(env)
         assert len(self.obj_set) > 0
 
-        s = str(self.type)
+        if self.type:
+            s = str(self.type)
+        else:
+            s = 'object'
 
         if self.color:
             s = self.color + ' ' + s
@@ -193,9 +196,10 @@ class GoTo(Action):
 
 
 class Pickup(Action):
-    def __init__(self, obj_desc):
+    def __init__(self, obj_desc, strict=False):
         assert obj_desc.type is not 'door'
         self.desc = obj_desc
+        self.strict = strict
 
     def surface(self, env):
         return 'pick up ' + self.desc.surface(env)

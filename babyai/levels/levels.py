@@ -367,7 +367,7 @@ class Level_ActionObjDoor(RoomGridLevelV2):
                 self.instrs = verifier2.Pickup(desc)
 
 
-class Level_Unlock(RoomGridLevel):
+class Level_Unlock(RoomGridLevelV2):
     """
     Fetch a key and unlock a door
     (in the current room)
@@ -375,10 +375,7 @@ class Level_Unlock(RoomGridLevel):
 
     def __init__(self, distractors=False, seed=None):
         self.distractors = distractors
-
-        super().__init__(
-            seed=seed
-        )
+        super().__init__(seed=seed)
 
     def gen_mission(self):
         door, _ = self.add_door(1, 1, locked=True)
@@ -387,7 +384,7 @@ class Level_Unlock(RoomGridLevel):
             self.add_distractors(num_distractors=3, room_i=1, room_j=1)
         self.place_agent(1, 1)
 
-        self.instrs = [Instr(action="open", object=Object(door.type))]
+        self.instrs = verifier2.Open(verifier2.ObjDesc(door.type))
 
 
 class Level_UnlockDist(Level_Unlock):
@@ -400,7 +397,7 @@ class Level_UnlockDist(Level_Unlock):
         super().__init__(distractors=True, seed=seed)
 
 
-class Level_KeyInBox(RoomGridLevel):
+class Level_KeyInBox(RoomGridLevelV2):
     """
     Unlock a door. Key is in a box (in the current room).
     """
@@ -420,10 +417,10 @@ class Level_KeyInBox(RoomGridLevel):
 
         self.place_agent(1, 1)
 
-        self.instrs = [Instr(action="open", object=Object(door.type))]
+        self.instrs = verifier2.Open(verifier2.ObjDesc(door.type))
 
 
-class Level_UnlockPickup(RoomGridLevel):
+class Level_UnlockPickup(RoomGridLevelV2):
     """
     Unlock a door, then pick up a box in another room
     """
@@ -452,7 +449,7 @@ class Level_UnlockPickup(RoomGridLevel):
 
         self.place_agent(0, 0)
 
-        self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
+        self.instrs = verifier2.Pickup(verifier2.ObjDesc(obj.type, obj.color))
 
 
 class Level_UnlockPickupDist(Level_UnlockPickup):
@@ -465,7 +462,7 @@ class Level_UnlockPickupDist(Level_UnlockPickup):
         super().__init__(distractors=True, seed=seed)
 
 
-class Level_BlockedUnlockPickup(RoomGridLevel):
+class Level_BlockedUnlockPickup(RoomGridLevelV2):
     """
     Unlock a door blocked by a ball, then pick up a box
     in another room
@@ -494,10 +491,10 @@ class Level_BlockedUnlockPickup(RoomGridLevel):
 
         self.place_agent(0, 0)
 
-        self.instrs = [Instr(action="pickup", object=Object(obj.type))]
+        self.instrs = verifier2.Pickup(verifier2.ObjDesc(obj.type))
 
 
-class Level_UnlockToUnlock(RoomGridLevel):
+class Level_UnlockToUnlock(RoomGridLevelV2):
     """
     Unlock a door A that requires to unlock a door B before
     """
@@ -531,10 +528,10 @@ class Level_UnlockToUnlock(RoomGridLevel):
 
         self.place_agent(1, 0)
 
-        self.instrs = [Instr(action="pickup", object=Object(obj.type))]
+        self.instrs = verifier2.Pickup(verifier2.ObjDesc(obj.type))
 
 
-class Level_PickupDist(RoomGridLevel):
+class Level_PickupDist(RoomGridLevelV2):
     """
     Pick up an object
     The object to pick up is given by its type only, or
@@ -542,7 +539,8 @@ class Level_PickupDist(RoomGridLevel):
     (in the current room, with distractors)
     """
 
-    def __init__(self, seed=None):
+    def __init__(self, debug=False, seed=None):
+        self.debug = debug
         super().__init__(
             num_rows = 1,
             num_cols = 1,
@@ -564,7 +562,7 @@ class Level_PickupDist(RoomGridLevel):
         elif select_by == "type":
             color = None
 
-        self.instrs = [Instr(action="pickup", object=Object(type, color))]
+        self.instrs = verifier2.Pickup(verifier2.ObjDesc(type, color), strict=self.debug)
 
 
 class Level_PickupDistDebug(Level_PickupDist):
@@ -572,31 +570,14 @@ class Level_PickupDistDebug(Level_PickupDist):
     Same as PickupDist but the level stops when any object is picked
     """
 
-    def reset(self, **kwargs):
-        obs = super().reset(**kwargs)
-
-        # Recreate the verifier
-        self.verifier = InstrSeqVerifier(self, self.instrs)
-        # Recreate the pickup verifier
-        self.pickup_verifier = PickupVerifier(self, Object())
-
-        return obs
-
-    def step(self, action):
-        obs, reward, done, info = super().step(action)
-
-        # If we've successfully completed the mission
-        if self.verifier.step() is True:
-            done = True
-            reward = self._reward()
-        # If we've picked up the wrong object
-        elif self.pickup_verifier.step() is True:
-            done = True
-
-        return obs, reward, done, info
+    def __init__(self, seed=None):
+        super().__init__(
+            debug=True,
+            seed=seed
+        )
 
 
-class Level_PickupAbove(RoomGridLevel):
+class Level_PickupAbove(RoomGridLevelV2):
     """
     Pick up an object (in the room above)
     This task requires to use the compass to be solved effectively.
@@ -618,7 +599,7 @@ class Level_PickupAbove(RoomGridLevel):
         self.place_agent(1, 1)
         self.connect_all()
 
-        self.instrs = [Instr(action="pickup", object=Object(obj.type, obj.color))]
+        self.instrs = verifier2.Pickup(verifier2.ObjDesc(obj.type, obj.color))
 
 
 class Level_OpenTwoDoors(RoomGridLevelV2):
@@ -714,7 +695,7 @@ class Level_OpenRedBlueDoorsDebug(Level_OpenTwoDoorsDebug):
         )
 
 
-class Level_FindObjS5(RoomGridLevel):
+class Level_FindObjS5(RoomGridLevelV2):
     """
     Pick up an object (in a random room)
     Rooms have a size of 5
@@ -736,7 +717,7 @@ class Level_FindObjS5(RoomGridLevel):
         self.place_agent(1, 1)
         self.connect_all()
 
-        self.instrs = [Instr(action="pickup", object=Object(obj.type))]
+        self.instrs = verifier2.Pickup(verifier2.ObjDesc(obj.type))
 
 
 class Level_FindObjS6(Level_FindObjS5):
@@ -821,7 +802,7 @@ class Level_FourObjsS7(Level_FourObjsS5):
         )
 
 
-class KeyCorridor(RoomGridLevel):
+class KeyCorridor(RoomGridLevelV2):
     """
     A ball is behind a locked door, the key is placed in a
     random room.
@@ -863,7 +844,7 @@ class KeyCorridor(RoomGridLevel):
         # Make sure all rooms are accessible
         self.connect_all()
 
-        self.instrs = [Instr(action="pickup", object=Object(obj.type))]
+        self.instrs = verifier2.Pickup(verifier2.ObjDesc(obj.type))
 
 
 class Level_KeyCorridorS3R1(KeyCorridor):
@@ -914,7 +895,7 @@ class Level_KeyCorridorS6R3(KeyCorridor):
             seed=seed
         )
 
-class Level_1RoomS8(RoomGridLevel):
+class Level_1RoomS8(RoomGridLevelV2):
     """
     Pick up the ball
     Rooms have a size of 8
@@ -931,7 +912,7 @@ class Level_1RoomS8(RoomGridLevel):
     def gen_mission(self):
         obj, _ = self.add_object(0, 0, kind="ball")
         self.place_agent()
-        self.instrs = [Instr(action="pickup", object=Object(obj.type))]
+        self.instrs = verifier2.Pickup(verifier2.ObjDesc(obj.type))
 
 
 class Level_1RoomS12(Level_1RoomS8):
