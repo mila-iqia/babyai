@@ -151,9 +151,10 @@ class Action(Instr):
 
 
 class Open(Action):
-    def __init__(self, obj_desc):
+    def __init__(self, obj_desc, strict=False):
         assert obj_desc.type is 'door'
         self.desc = obj_desc
+        self.strict = strict
 
     def surface(self, env):
         return 'open ' + self.desc.surface(env)
@@ -168,6 +169,13 @@ class Open(Action):
         for door in self.desc.obj_set:
             if door.is_open:
                 return 'success'
+
+        # If in strict mode and the wrong door is opened
+        if self.strict:
+            if action == self.env.actions.toggle:
+                front_cell = self.env.grid.get(*self.env.front_pos)
+                if front_cell and front_cell.type is 'door':
+                    return 'failure'
 
         return 'continue'
 
@@ -252,6 +260,7 @@ class Before(Instr):
             if self.b_done is 'success':
                 return 'success'
         else:
+            self.a_done = self.instr_a.verify(action)
             self.b_done = self.instr_b.verify(action)
 
             # Completing b first means failure

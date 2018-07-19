@@ -707,9 +707,15 @@ class Level_OpenTwoDoors(RoomGridLevelV2):
     This task requires memory (recurrent policy) to be solved effectively.
     """
 
-    def __init__(self, first_color=None, second_color=None, seed=None):
+    def __init__(self,
+        first_color=None,
+        second_color=None,
+        strict=False,
+        seed=None
+    ):
         self.first_color = first_color
         self.second_color = second_color
+        self.strict = strict
 
         room_size = 6
         super().__init__(
@@ -735,7 +741,7 @@ class Level_OpenTwoDoors(RoomGridLevelV2):
         self.place_agent(1, 1)
 
         self.instrs = verifier2.Before(
-            verifier2.Open(verifier2.ObjDesc(door1.type, door1.color)),
+            verifier2.Open(verifier2.ObjDesc(door1.type, door1.color), strict=self.strict),
             verifier2.Open(verifier2.ObjDesc(door2.type, door2.color))
         )
 
@@ -745,29 +751,17 @@ class Level_OpenTwoDoorsDebug(Level_OpenTwoDoors):
     Same as OpenTwoDoors but the level stops when the second door is opened
     """
 
-    def reset(self, **kwargs):
-        obs = super().reset(**kwargs)
-
-        # Recreate the verifier
-        self.verifier = InstrSeqVerifier(self, self.instrs)
-        # Recreate the open second verifier
-        second_color = self.instrs[1].object.color
-        self.open_second_verifier = OpenVerifier(self, Object("door", second_color))
-
-        return obs
-
-    def step(self, action):
-        obs, reward, done, info = super().step(action)
-
-        # If we've successfully completed the mission
-        if self.verifier.step() is True:
-            done = True
-            reward = self._reward()
-        # If we've opened the wrong door
-        elif self.open_second_verifier.step() is True:
-            done = True
-
-        return obs, reward, done, info
+    def __init__(self,
+        first_color=None,
+        second_color=None,
+        seed=None
+    ):
+        super().__init__(
+            first_color,
+            second_color,
+            strict=True,
+            seed=seed
+        )
 
 
 class Level_OpenRedBlueDoors(Level_OpenTwoDoors):
