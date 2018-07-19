@@ -157,76 +157,6 @@ class RoomGridLevelV2(RoomGrid):
         return self.__class__.gym_id
 
 
-class RoomGridLevelHC(RoomGrid):
-    """
-    Base for levels based on RoomGrid
-    A level, given a random seed, generates missions generated from
-    one or more patterns. Levels should produce a family of missions
-    of approximately similar difficulty.
-    """
-
-    def __init__(
-        self,
-        room_size=6,
-        max_steps=None,
-        **kwargs
-    ):
-        # Default max steps computation
-        if max_steps is None:
-            max_steps = 4 * (room_size ** 2)
-
-        self.verifier = None
-        self.fail_verifier = None
-
-        super().__init__(
-            room_size=room_size,
-            max_steps=max_steps,
-            **kwargs
-        )
-
-    def reset(self, **kwargs):
-        obs = super().reset(**kwargs)
-        return obs
-
-    def step(self, action):
-        obs, reward, done, info = super().step(action)
-
-        # If we've successfully completed the mission
-        if self.verifier(self, action):
-            done = True
-            reward = self._reward()
-
-        # If we've failed
-        elif self.fail_verifier and self.fail_verifier(self, action):
-            done = True
-            reward = 0
-
-        return obs, reward, done, info
-
-    def _gen_grid(self, width, height):
-        super()._gen_grid(width, height)
-
-        # Generate the mission
-        self.gen_mission()
-
-        self.mission = self.surface
-
-    def gen_mission(self):
-        """
-        Generate a mission (instructions and matching environment)
-        Derived level classes should implement this method
-        """
-        raise NotImplementedError
-
-    @property
-    def level_name(self):
-        return self.__class__.level_name
-
-    @property
-    def gym_id(self):
-        return self.__class__.gym_id
-
-
 class Level_OpenRedDoor(RoomGridLevelV2):
     """
     Go to the red door
@@ -1041,62 +971,6 @@ class Level_1RoomS20(Level_1RoomS8):
             room_size=20,
             seed=seed
         )
-
-
-def pos_next_to(a, b):
-    x0, y0 = a
-    x1, y1 = b
-    return abs(x0 - x1) < 2 and abs(y0 - y1) < 2
-
-
-def verify_put_next(obj_x, obj_y):
-    def verifier(env, action):
-        return pos_next_to(obj_x.cur_pos, obj_y.init_pos)
-    return verifier
-
-
-def verify_open(door):
-    def verifier(env, action):
-        return door.is_open
-    return verifier
-
-
-def verify_both(verify_a, verify_b):
-    def verifier(env, action):
-        return verify_a(env, action) and verify_b(env, action)
-    return verifier
-
-
-def verify_any(*verifiers):
-    def verifier(env, action):
-            for verify in verifiers:
-                if verify(env, action):
-                    return True
-            return False
-    return verifier
-
-
-def verify_sequence(verify_a, verify_b):
-    a_done = False
-    b_done = False
-
-    def verifier(env, action):
-        nonlocal a_done
-        nonlocal b_done
-
-        # Completing b first means failure
-        if b_done:
-            return False
-
-        if a_done and verify_b(env, action):
-            return True
-
-        a_done = verify_a(env, action)
-        b_done = verify_b(env, action)
-
-        return False
-
-    return verifier
 
 
 class PutNext(RoomGridLevelV2):
