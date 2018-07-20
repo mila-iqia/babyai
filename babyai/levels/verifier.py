@@ -19,7 +19,7 @@ def dot_product(v1, v2):
 
 class ObjDesc:
     """
-    Description of an object
+    Description of a set of objects in an environment
     """
 
     def __init__(self, type, color=None, loc=None):
@@ -41,6 +41,10 @@ class ObjDesc:
         self.obj_poss = []
 
     def surface(self, env):
+        """
+        Generate a natural language representation of the object description
+        """
+
         self.find_matching_objs(env)
         assert len(self.obj_set) > 0
 
@@ -60,6 +64,7 @@ class ObjDesc:
             else:
                 s = s + ' on your ' + self.loc
 
+        # Singular vs plural
         if len(self.obj_set) > 1:
             s = 'a ' + s
         else:
@@ -69,7 +74,7 @@ class ObjDesc:
 
     def find_matching_objs(self, env):
         """
-        Find the set of objects matching the description
+        Find the set of objects matching the description and their positions
         """
 
         self.obj_set = []
@@ -129,16 +134,33 @@ class Instr:
         self.env = None
 
     def surface(self, env):
+        """
+        Produce a natural language representation of the instruction
+        """
+
         raise NotImplementedError
 
     def reset_verifier(self, env):
+        """
+        Must be called at the beginning of the episode
+        """
+
         self.env = env
 
     def verify(self, action):
+        """
+        Verify if the task described by the instruction is incomplete,
+        complete with success or failed
+        """
+
         raise NotImplementedError
 
 
 class ActionInstr(Instr):
+    """
+    Base class for all action instructions (clauses)
+    """
+
     pass
 
 
@@ -162,7 +184,7 @@ class OpenInstr(ActionInstr):
             if door.is_open:
                 return 'success'
 
-        # If in strict mode and the wrong door is opened
+        # If in strict mode and the wrong door is opened, failure
         if self.strict:
             if action == self.env.actions.toggle:
                 front_cell = self.env.grid.get(*self.env.front_pos)
@@ -215,10 +237,20 @@ class PickupInstr(ActionInstr):
             if self.env.carrying is obj:
                 return 'success'
 
+        # If in strict mode and the wrong door object is picked up, failure
+        if self.strict:
+            if action == self.env.actions.pickup and self.env.carrying:
+                return 'failure'
+
         return 'continue'
 
 
 class PutNextInstr(ActionInstr):
+    """
+    Put an object next to another object
+    eg: put the red ball next to the blue key
+    """
+
     def __init__(self, obj_move, obj_fixed, strict=False):
         assert obj_move.type is not 'door'
         self.desc_move = obj_move

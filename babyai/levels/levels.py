@@ -111,12 +111,15 @@ class Level_OpenDoor(RoomGridLevel):
     (always unlocked, in the current room)
     """
 
-    def __init__(self, select_by=None, seed=None):
+    def __init__(
+        self,
+        debug=False,
+        select_by=None,
+        seed=None
+    ):
         self.select_by = select_by
-
-        super().__init__(
-            seed=seed
-        )
+        self.debug = debug
+        super().__init__(seed=seed)
 
     def gen_mission(self):
         door_colors = self._rand_subset(COLOR_NAMES, 4)
@@ -135,36 +138,21 @@ class Level_OpenDoor(RoomGridLevel):
             object = ObjDesc(objs[0].type, loc=self._rand_elem(LOC_NAMES))
 
         self.place_agent(1, 1)
-        self.instrs = OpenInstr(object)
+        self.instrs = OpenInstr(object, strict=self.debug)
 
 
-"""
 class Level_OpenDoorDebug(Level_OpenDoor):
-    #Same as OpenDoor but the level stops when any door is opened
+    """
+    Same as OpenDoor but the level stops when any door is opened
+    """
 
-    def reset(self, **kwargs):
-        obs = super().reset(**kwargs)
+    def __init__(
+        self,
+        select_by=None,
+        seed=None
+    ):
+        super().__init__(select_by=select_by, debug=True, seed=seed)
 
-        # Recreate the verifier
-        self.verifier = InstrSeqVerifier(self, self.instrs)
-        # Recreate the open verifier
-        self.open_verifier = OpenVerifier(self, Object("door"))
-
-        return obs
-
-    def step(self, action):
-        obs, reward, done, info = super().step(action)
-
-        # If we've successfully completed the mission
-        if self.verifier.step() is True:
-            done = True
-            reward = self._reward()
-        # If we've opened the wrong door
-        elif self.open_verifier.step() is True:
-            done = True
-
-        return obs, reward, done, info
-"""
 
 class Level_OpenDoorColor(Level_OpenDoor):
     """
