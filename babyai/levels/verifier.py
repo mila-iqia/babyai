@@ -150,7 +150,8 @@ class Instr:
     def verify(self, action):
         """
         Verify if the task described by the instruction is incomplete,
-        complete with success or failed
+        complete with success or failed. The return value is a string,
+        one of: 'success', 'failure' or 'continue'.
         """
 
         raise NotImplementedError
@@ -304,8 +305,8 @@ class BeforeInstr(Instr):
     """
 
     def __init__(self, instr_a, instr_b):
-        assert isinstance(instr_a, ActionInstr) or isinstance(instr_a, Both)
-        assert isinstance(instr_b, ActionInstr) or isinstance(instr_b, Both)
+        assert isinstance(instr_a, ActionInstr) or isinstance(instr_a, AndInstr)
+        assert isinstance(instr_b, ActionInstr) or isinstance(instr_b, AndInstr)
         self.instr_a = instr_a
         self.instr_b = instr_b
 
@@ -322,11 +323,18 @@ class BeforeInstr(Instr):
     def verify(self, action):
         if self.a_done is 'success':
             self.b_done = self.instr_b.verify(action)
+
+            if self.b_done is 'failure':
+                return 'failure'
+
             if self.b_done is 'success':
                 return 'success'
         else:
             self.a_done = self.instr_a.verify(action)
             self.b_done = self.instr_b.verify(action)
+
+            if self.a_done is 'failure':
+                return 'failure'
 
             # Completing b first means failure
             if self.b_done is 'success':
@@ -342,8 +350,8 @@ class AfterInstr(Instr):
     """
 
     def __init__(self, instr_a, instr_b):
-        assert isinstance(instr_a, ActionInstr) or isinstance(instr_a, Both)
-        assert isinstance(instr_b, ActionInstr) or isinstance(instr_b, Both)
+        assert isinstance(instr_a, ActionInstr) or isinstance(instr_a, AndInstr)
+        assert isinstance(instr_b, ActionInstr) or isinstance(instr_b, AndInstr)
         self.instr_a = instr_a
         self.instr_b = instr_b
 
@@ -360,11 +368,18 @@ class AfterInstr(Instr):
     def verify(self, action):
         if self.b_done is 'success':
             self.a_done = self.instr_a.verify(action)
+
             if self.a_done is 'success':
                 return 'success'
+
+            if self.a_done is 'failure':
+                return 'failure'
         else:
             self.a_done = self.instr_a.verify(action)
             self.b_done = self.instr_b.verify(action)
+
+            if self.b_done is 'failure':
+                return 'failure'
 
             # Completing a first means failure
             if self.a_done is 'success':
@@ -379,5 +394,30 @@ class AndInstr(Instr):
     eg: go to the red door and pick up the blue ball
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, instr_a, instr_b):
+        assert isinstance(instr_a, ActionInstr)
+        assert isinstance(instr_b, ActionInstr)
+        self.instr_a = instr_a
+        self.instr_b = instr_b
+
+    def surface(self, env):
+        return self.instr_a.surface(env) + ' and ' + self.instr_b.surface(env)
+
+    def reset_verifier(self, env):
+        super().reset_verifier(env)
+        self.instr_a.reset_verifier(env)
+        self.instr_b.reset_verifier(env)
+        self.a_done = False
+        self.b_done = False
+
+    def verify(self, action):
+        if self.a_done is not 'success':
+            self.a_done = self.instr_a.verify(action)
+
+        if self.b_done is not 'success':
+            self.b_done = self.instr_b.verify(action)
+
+        if self.a_done is 'success' and self.b_done is 'success':
+            return 'success'
+
+        return 'continue'
