@@ -5,85 +5,10 @@ from copy import deepcopy
 import gym
 
 from gym_minigrid.envs import Key, Ball, Box
-
 from .roomgrid import RoomGrid
-from .instrs import *
-from .instr_gen import gen_instr_seq, gen_object, gen_surface
-from .verifier import InstrSeqVerifier, OpenVerifier, PickupVerifier
-
-from babyai.levels import verifier2
+from .verifier import *
 
 class RoomGridLevel(RoomGrid):
-    """
-    Base for levels based on RoomGrid
-    A level, given a random seed, generates missions generated from
-    one or more patterns. Levels should produce a family of missions
-    of approximately similar difficulty.
-    """
-
-    def __init__(
-        self,
-        room_size=6,
-        max_steps=None,
-        **kwargs
-    ):
-        # Default max steps computation
-        if max_steps is None:
-            max_steps = 4 * (room_size ** 2)
-
-        self.lang_variation = 1
-        super().__init__(
-            room_size=room_size,
-            max_steps=max_steps,
-            **kwargs
-        )
-
-    def reset(self, **kwargs):
-        obs = super().reset(**kwargs)
-
-        # Recreate the verifier
-        self.verifier = InstrSeqVerifier(self, self.instrs)
-
-        return obs
-
-    def step(self, action):
-        obs, reward, done, info = super().step(action)
-
-        # If we've successfully completed the mission
-        if self.verifier.step() is True:
-            done = True
-            reward = self._reward()
-
-        return obs, reward, done, info
-
-    def _gen_grid(self, width, height):
-        super()._gen_grid(width, height)
-
-        # Generate the mission
-        self.gen_mission()
-
-        # Generate the surface form for the instructions
-        seed = self._rand_int(0, 0xFFFFFFFF)
-        self.surface = gen_surface(self.instrs, seed, lang_variation=self.lang_variation)
-        self.mission = self.surface
-
-    def gen_mission(self):
-        """
-        Generate a mission (instructions and matching environment)
-        Derived level classes should implement this method
-        """
-        raise NotImplementedError
-
-    @property
-    def level_name(self):
-        return self.__class__.level_name
-
-    @property
-    def gym_id(self):
-        return self.__class__.gym_id
-
-
-class RoomGridLevelV2(RoomGrid):
     """
     Base for levels based on RoomGrid
     A level, given a random seed, generates missions generated from
@@ -157,7 +82,7 @@ class RoomGridLevelV2(RoomGrid):
         return self.__class__.gym_id
 
 
-class Level_OpenRedDoor(RoomGridLevelV2):
+class Level_OpenRedDoor(RoomGridLevel):
     """
     Go to the red door
     (always unlocked, in the current room)
@@ -176,10 +101,10 @@ class Level_OpenRedDoor(RoomGridLevelV2):
     def gen_mission(self):
         obj, _ = self.add_door(0, 0, 0, 'red', locked=False)
         self.place_agent(0, 0)
-        self.instrs = verifier2.Open(verifier2.ObjDesc('door', 'red'))
+        self.instrs = OpenInstr(ObjDesc('door', 'red'))
 
 
-class Level_OpenDoor(RoomGridLevelV2):
+class Level_OpenDoor(RoomGridLevel):
     """
     Go to the door
     The door to open is given by its color or by its location.
@@ -205,12 +130,12 @@ class Level_OpenDoor(RoomGridLevelV2):
         if select_by is None:
             select_by = self._rand_elem(["color", "loc"])
         if select_by == "color":
-            object = verifier2.ObjDesc(objs[0].type, color=objs[0].color)
+            object = ObjDesc(objs[0].type, color=objs[0].color)
         elif select_by == "loc":
-            object = verifier2.ObjDesc(objs[0].type, loc=self._rand_elem(LOC_NAMES))
+            object = ObjDesc(objs[0].type, loc=self._rand_elem(LOC_NAMES))
 
         self.place_agent(1, 1)
-        self.instrs = verifier2.Open(object)
+        self.instrs = OpenInstr(object)
 
 
 """
@@ -283,7 +208,7 @@ class Level_OpenDoorLoc(Level_OpenDoor):
     #pass
 
 
-class Level_GoToDoor(RoomGridLevelV2):
+class Level_GoToDoor(RoomGridLevel):
     """
     Go to a door
     (of a given color, in the current room)
@@ -304,10 +229,10 @@ class Level_GoToDoor(RoomGridLevelV2):
         self.place_agent(1, 1)
 
         obj = self._rand_elem(objs)
-        self.instrs = verifier2.GoTo(verifier2.ObjDesc('door', obj.color))
+        self.instrs = GoToInstr(ObjDesc('door', obj.color))
 
 
-class Level_GoToObjDoor(RoomGridLevelV2):
+class Level_GoToObjDoor(RoomGridLevel):
     """
     Go to an object or door
     (of a given type and color, in the current room)
@@ -327,10 +252,10 @@ class Level_GoToObjDoor(RoomGridLevelV2):
         self.place_agent(1, 1)
 
         obj = self._rand_elem(objs)
-        self.instrs = verifier2.GoTo(verifier2.ObjDesc(obj.type, obj.color))
+        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
 
-class Level_ActionObjDoor(RoomGridLevelV2):
+class Level_ActionObjDoor(RoomGridLevel):
     """
     [pick up an object] or
     [go to an object or door] or
@@ -353,21 +278,21 @@ class Level_ActionObjDoor(RoomGridLevelV2):
         self.place_agent(1, 1)
 
         obj = self._rand_elem(objs)
-        desc = verifier2.ObjDesc(obj.type, obj.color)
+        desc = ObjDesc(obj.type, obj.color)
 
         if obj.type == 'door':
             if self._rand_bool():
-                self.instrs = verifier2.GoTo(desc)
+                self.instrs = GoToInstr(desc)
             else:
-                self.instrs = verifier2.Open(desc)
+                self.instrs = OpenInstr(desc)
         else:
             if self._rand_bool():
-                self.instrs = verifier2.GoTo(desc)
+                self.instrs = GoToInstr(desc)
             else:
-                self.instrs = verifier2.Pickup(desc)
+                self.instrs = PickupInstr(desc)
 
 
-class Level_Unlock(RoomGridLevelV2):
+class Level_Unlock(RoomGridLevel):
     """
     Fetch a key and unlock a door
     (in the current room)
@@ -384,7 +309,7 @@ class Level_Unlock(RoomGridLevelV2):
             self.add_distractors(num_distractors=3, room_i=1, room_j=1)
         self.place_agent(1, 1)
 
-        self.instrs = verifier2.Open(verifier2.ObjDesc(door.type))
+        self.instrs = OpenInstr(ObjDesc(door.type))
 
 
 class Level_UnlockDist(Level_Unlock):
@@ -397,7 +322,7 @@ class Level_UnlockDist(Level_Unlock):
         super().__init__(distractors=True, seed=seed)
 
 
-class Level_KeyInBox(RoomGridLevelV2):
+class Level_KeyInBox(RoomGridLevel):
     """
     Unlock a door. Key is in a box (in the current room).
     """
@@ -417,10 +342,10 @@ class Level_KeyInBox(RoomGridLevelV2):
 
         self.place_agent(1, 1)
 
-        self.instrs = verifier2.Open(verifier2.ObjDesc(door.type))
+        self.instrs = OpenInstr(ObjDesc(door.type))
 
 
-class Level_UnlockPickup(RoomGridLevelV2):
+class Level_UnlockPickup(RoomGridLevel):
     """
     Unlock a door, then pick up a box in another room
     """
@@ -449,7 +374,7 @@ class Level_UnlockPickup(RoomGridLevelV2):
 
         self.place_agent(0, 0)
 
-        self.instrs = verifier2.Pickup(verifier2.ObjDesc(obj.type, obj.color))
+        self.instrs = PickupInstr(ObjDesc(obj.type, obj.color))
 
 
 class Level_UnlockPickupDist(Level_UnlockPickup):
@@ -462,7 +387,7 @@ class Level_UnlockPickupDist(Level_UnlockPickup):
         super().__init__(distractors=True, seed=seed)
 
 
-class Level_BlockedUnlockPickup(RoomGridLevelV2):
+class Level_BlockedUnlockPickup(RoomGridLevel):
     """
     Unlock a door blocked by a ball, then pick up a box
     in another room
@@ -491,10 +416,10 @@ class Level_BlockedUnlockPickup(RoomGridLevelV2):
 
         self.place_agent(0, 0)
 
-        self.instrs = verifier2.Pickup(verifier2.ObjDesc(obj.type))
+        self.instrs = PickupInstr(ObjDesc(obj.type))
 
 
-class Level_UnlockToUnlock(RoomGridLevelV2):
+class Level_UnlockToUnlock(RoomGridLevel):
     """
     Unlock a door A that requires to unlock a door B before
     """
@@ -528,10 +453,10 @@ class Level_UnlockToUnlock(RoomGridLevelV2):
 
         self.place_agent(1, 0)
 
-        self.instrs = verifier2.Pickup(verifier2.ObjDesc(obj.type))
+        self.instrs = PickupInstr(ObjDesc(obj.type))
 
 
-class Level_PickupDist(RoomGridLevelV2):
+class Level_PickupDist(RoomGridLevel):
     """
     Pick up an object
     The object to pick up is given by its type only, or
@@ -562,7 +487,7 @@ class Level_PickupDist(RoomGridLevelV2):
         elif select_by == "type":
             color = None
 
-        self.instrs = verifier2.Pickup(verifier2.ObjDesc(type, color), strict=self.debug)
+        self.instrs = PickupInstr(ObjDesc(type, color), strict=self.debug)
 
 
 class Level_PickupDistDebug(Level_PickupDist):
@@ -577,7 +502,7 @@ class Level_PickupDistDebug(Level_PickupDist):
         )
 
 
-class Level_PickupAbove(RoomGridLevelV2):
+class Level_PickupAbove(RoomGridLevel):
     """
     Pick up an object (in the room above)
     This task requires to use the compass to be solved effectively.
@@ -599,10 +524,10 @@ class Level_PickupAbove(RoomGridLevelV2):
         self.place_agent(1, 1)
         self.connect_all()
 
-        self.instrs = verifier2.Pickup(verifier2.ObjDesc(obj.type, obj.color))
+        self.instrs = PickupInstr(ObjDesc(obj.type, obj.color))
 
 
-class Level_OpenTwoDoors(RoomGridLevelV2):
+class Level_OpenTwoDoors(RoomGridLevel):
     """
     Open door X, then open door Y
     The two doors are facing opposite directions, so that the agent
@@ -642,9 +567,9 @@ class Level_OpenTwoDoors(RoomGridLevelV2):
 
         self.place_agent(1, 1)
 
-        self.instrs = verifier2.Before(
-            verifier2.Open(verifier2.ObjDesc(door1.type, door1.color), strict=self.strict),
-            verifier2.Open(verifier2.ObjDesc(door2.type, door2.color))
+        self.instrs = BeforeInstr(
+            OpenInstr(ObjDesc(door1.type, door1.color), strict=self.strict),
+            OpenInstr(ObjDesc(door2.type, door2.color))
         )
 
 
@@ -695,7 +620,7 @@ class Level_OpenRedBlueDoorsDebug(Level_OpenTwoDoorsDebug):
         )
 
 
-class Level_FindObjS5(RoomGridLevelV2):
+class Level_FindObjS5(RoomGridLevel):
     """
     Pick up an object (in a random room)
     Rooms have a size of 5
@@ -717,7 +642,7 @@ class Level_FindObjS5(RoomGridLevelV2):
         self.place_agent(1, 1)
         self.connect_all()
 
-        self.instrs = verifier2.Pickup(verifier2.ObjDesc(obj.type))
+        self.instrs = PickupInstr(ObjDesc(obj.type))
 
 
 class Level_FindObjS6(Level_FindObjS5):
@@ -774,8 +699,8 @@ class Level_FourObjsS5(RoomGridLevel):
 
         # Choose a random object to pick up
         loc = self._rand_elem(LOC_NAMES)
-        rand_obj = Object(obj.type, obj.color, loc)
-        self.instrs = [Instr(action="pickup", object=rand_obj)]
+        rand_obj = ObjDesc(obj.type, obj.color, loc)
+        self.instrs = PickupInstr(rand_obj)
 
 
 class Level_FourObjsS6(Level_FourObjsS5):
@@ -802,7 +727,7 @@ class Level_FourObjsS7(Level_FourObjsS5):
         )
 
 
-class KeyCorridor(RoomGridLevelV2):
+class KeyCorridor(RoomGridLevel):
     """
     A ball is behind a locked door, the key is placed in a
     random room.
@@ -844,7 +769,7 @@ class KeyCorridor(RoomGridLevelV2):
         # Make sure all rooms are accessible
         self.connect_all()
 
-        self.instrs = verifier2.Pickup(verifier2.ObjDesc(obj.type))
+        self.instrs = PickupInstr(ObjDesc(obj.type))
 
 
 class Level_KeyCorridorS3R1(KeyCorridor):
@@ -895,7 +820,7 @@ class Level_KeyCorridorS6R3(KeyCorridor):
             seed=seed
         )
 
-class Level_1RoomS8(RoomGridLevelV2):
+class Level_1RoomS8(RoomGridLevel):
     """
     Pick up the ball
     Rooms have a size of 8
@@ -912,7 +837,7 @@ class Level_1RoomS8(RoomGridLevelV2):
     def gen_mission(self):
         obj, _ = self.add_object(0, 0, kind="ball")
         self.place_agent()
-        self.instrs = verifier2.Pickup(verifier2.ObjDesc(obj.type))
+        self.instrs = PickupInstr(ObjDesc(obj.type))
 
 
 class Level_1RoomS12(Level_1RoomS8):
@@ -954,7 +879,7 @@ class Level_1RoomS20(Level_1RoomS8):
         )
 
 
-class PutNext(RoomGridLevelV2):
+class PutNext(RoomGridLevel):
     """
     Task of the form: move the A next to the B and the C next to the D.
     This task is structured to have a very large number of possible
@@ -1004,9 +929,9 @@ class PutNext(RoomGridLevelV2):
 
         self.obj_a = a
 
-        self.instrs = verifier2.PutNext(
-            verifier2.ObjDesc(a.type, a.color),
-            verifier2.ObjDesc(b.type, b.color)
+        self.instrs = PutNextInstr(
+            ObjDesc(a.type, a.color),
+            ObjDesc(b.type, b.color)
         )
 
     def reset(self, **kwargs):
@@ -1095,7 +1020,7 @@ class Level_PutNextS7N4Carrying(PutNext):
         )
 
 
-class MoveTwoAcross(RoomGridLevelV2):
+class MoveTwoAcross(RoomGridLevel):
     """
     Task of the form: move the A next to the B and the C next to the D.
     This task is structured to have a very large number of possible
@@ -1138,9 +1063,9 @@ class MoveTwoAcross(RoomGridLevelV2):
         c = objs_r[1]
         d = objs_l[1]
 
-        self.instrs = verifier2.Before(
-            verifier2.PutNext(verifier2.ObjDesc(a.type, a.color), verifier2.ObjDesc(b.type, b.color)),
-            verifier2.PutNext(verifier2.ObjDesc(c.type, c.color), verifier2.ObjDesc(d.type, d.color))
+        self.instrs = BeforeInstr(
+            PutNextInstr(ObjDesc(a.type, a.color), ObjDesc(b.type, b.color)),
+            PutNextInstr(ObjDesc(c.type, c.color), ObjDesc(d.type, d.color))
         )
 
 
@@ -1162,7 +1087,7 @@ class Level_MoveTwoAcrossS8N9(MoveTwoAcross):
         )
 
 
-class OpenDoorsOrder(RoomGridLevelV2):
+class OpenDoorsOrder(RoomGridLevel):
     """
     Open one or two doors in the order specified.
     """
@@ -1193,16 +1118,16 @@ class OpenDoorsOrder(RoomGridLevelV2):
         self.place_agent(1, 1)
 
         door1, door2 = self._rand_subset(doors, 2)
-        desc1 = verifier2.ObjDesc(door1.type, door1.color)
-        desc2 = verifier2.ObjDesc(door2.type, door2.color)
+        desc1 = ObjDesc(door1.type, door1.color)
+        desc2 = ObjDesc(door2.type, door2.color)
 
         mode = self._rand_int(0, 3)
         if mode == 0:
-            self.instrs = verifier2.Open(desc1, strict=self.debug)
+            self.instrs = OpenInstr(desc1, strict=self.debug)
         elif mode == 1:
-            self.instrs = verifier2.Before(verifier2.Open(desc1, strict=self.debug), verifier2.Open(desc2, strict=self.debug))
+            self.instrs = BeforeInstr(OpenInstr(desc1, strict=self.debug), OpenInstr(desc2, strict=self.debug))
         elif mode == 2:
-            self.instrs = verifier2.After(verifier2.Open(desc1, strict=self.debug), verifier2.Open(desc2, strict=self.debug))
+            self.instrs = AfterInstr(OpenInstr(desc1, strict=self.debug), OpenInstr(desc2, strict=self.debug))
         else:
             assert False
 
