@@ -4,6 +4,7 @@
 Script to train the agent through reinforcment learning.
 """
 
+import os
 import argparse
 import gym
 import time
@@ -11,7 +12,9 @@ import datetime
 import torch
 import torch_rl
 import numpy as np
+import subprocess
 
+import babyai
 import babyai.utils as utils
 from babyai.model import ACModel
 from babyai.levels import curriculums, create_menvs
@@ -152,8 +155,25 @@ if args.tb:
     from tensorboardX import SummaryWriter
     writer = SummaryWriter(utils.get_log_dir(model_name))
 
-# Log command, availability of CUDA and model
+# Log code state, command, availability of CUDA and model
 
+babyai_code = list(babyai.__path__)[0]
+try:
+    last_commit = subprocess.check_output(
+        'cd {}; git log -n1'.format(babyai_code), shell=True).decode('utf-8')
+    logger.info('LAST COMMIT INFO:')
+    logger.info(last_commit)
+except subprocess.CalledProcessError:
+    logger.info('Could not figure out the last commit')
+try:
+    diff = subprocess.check_output(
+        'cd {}; git diff'.format(babyai_code), shell=True).decode('utf-8')
+    if diff:
+        logger.info('GIT DIFF:')
+        logger.info(diff)
+except subprocess.CalledProcessError:
+    logger.info('Could not figure out the last commit')
+logger.info('COMMAND LINE ARGS:')
 logger.info(args)
 logger.info("CUDA available: {}".format(torch.cuda.is_available()))
 logger.info(acmodel)
