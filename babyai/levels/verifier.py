@@ -195,6 +195,11 @@ class OpenInstr(ActionInstr):
 
 
 class GoToInstr(ActionInstr):
+    """
+    Go next to (and look towards) an object matching a given description
+    eg: go to the door
+    """
+
     def __init__(self, obj_desc):
         self.desc = obj_desc
 
@@ -218,6 +223,11 @@ class GoToInstr(ActionInstr):
 
 
 class PickupInstr(ActionInstr):
+    """
+    Pick up an object matching a given description
+    eg: pick up the grey ball
+    """
+
     def __init__(self, obj_desc, strict=False):
         assert obj_desc.type is not 'door'
         self.desc = obj_desc
@@ -279,7 +289,10 @@ class PutNextInstr(ActionInstr):
                 if d < 2:
                     return 'success'
 
-        # TODO: strict mode, picked up the wrong object
+        # In strict mode, picking up the wrong object fails
+        if self.strict:
+            if action == self.env.actions.pickup and self.env.carrying:
+                return 'failure'
 
         return 'continue'
 
