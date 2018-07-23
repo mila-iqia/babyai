@@ -5,6 +5,9 @@ from gym_minigrid.minigrid import COLOR_NAMES, DIR_TO_VEC
 # Object types we are allowed to describe in language
 OBJ_TYPES = ['box', 'ball', 'key', 'door']
 
+# Object types we are allowed to describe in language
+OBJ_TYPES_NOT_DOOR = list(filter(lambda t: t is not 'door', OBJ_TYPES))
+
 # Locations are all relative to the agent's starting position
 LOC_NAMES = ['left', 'right', 'front', 'behind']
 

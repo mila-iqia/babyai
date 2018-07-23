@@ -1153,6 +1153,124 @@ class Level_OpenDoorsOrderN4Debug(OpenDoorsOrder):
         )
 
 
+class LevelGen(RoomGridLevel):
+    """
+    Generator which attempts to generate every possible sentence in the baby
+    language as an instruction.
+    """
+
+    def __init__(
+        self,
+        room_size=6,
+        num_rows=3,
+        num_cols=3,
+        num_dists=14,
+        debug=False,
+        seed=None
+    ):
+        self.num_dists = num_dists
+        self.debug = debug
+
+        super().__init__(
+            room_size=room_size,
+            num_rows=num_rows,
+            num_cols=num_cols,
+            max_steps=20*room_size**2,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.add_distractors(self.num_dists)
+        self.place_agent()
+        self.connect_all()
+
+        # Generate random instructions
+        self.instrs = self.rand_instr()
+
+    def rand_obj(self, types = OBJ_TYPES, colors = COLOR_NAMES):
+        """
+        Generate a random object descriptor
+        """
+
+        # Keep trying until we find a matching object
+        while True:
+            color = self._rand_elem([None, *colors])
+            type = self._rand_elem(types)
+
+            loc = None
+            if self._rand_bool():
+                loc = self._rand_elem(LOC_NAMES)
+
+            desc = ObjDesc(type, color, loc)
+
+            objs, poss = desc.find_matching_objs(self)
+
+            if len(objs) > 0:
+                break
+
+        return desc
+
+    def rand_instr(self, depth=0, kinds=['action', 'and', 'seq']):
+        """
+        Generate random instructions
+        """
+
+        kind = self._rand_elem(kinds)
+
+        if kind is 'action':
+            action = self._rand_elem(['goto', 'pickup', 'open', 'putnext'])
+
+            if action is 'goto':
+                return GoToInstr(self.rand_obj())
+            elif action is 'pickup':
+                return PickupInstr(self.rand_obj(types=OBJ_TYPES_NOT_DOOR))
+            elif action is 'open':
+                return OpenInstr(self.rand_obj(types=['door']))
+            elif action is 'putnext':
+                return PutNextInstr(
+                    self.rand_obj(types=OBJ_TYPES_NOT_DOOR),
+                    self.rand_obj()
+                )
+
+            assert False
+
+        elif kind is 'and':
+            instr_a = self.rand_instr(depth+1, kinds=['action'])
+            instr_b = self.rand_instr(depth+1, kinds=['action'])
+            return AndInstr(instr_a, instr_b)
+
+        elif kind is 'seq':
+            instr_a = self.rand_instr(depth+1, kinds=['action', 'and'])
+            instr_b = self.rand_instr(depth+1, kinds=['action', 'and'])
+
+            kind = self._rand_elem(['before', 'after'])
+
+            if kind is 'before':
+                return BeforeInstr(instr_a, instr_b)
+            elif kind is 'after':
+                return AfterInstr(instr_a, instr_b)
+
+            assert False
+
+        assert False
+
+
+class Level_BossLevel(LevelGen):
+    def __init__(self, seed=None):
+        super().__init__(seed=seed)
+
+
+class Level_MiniBossLevel(LevelGen):
+    def __init__(self, seed=None):
+        super().__init__(
+            seed=seed,
+            num_cols=2,
+            num_rows=2,
+            num_dists=7,
+            room_size=5
+        )
+
+
 # Dictionary of levels, indexed by name, lexically sorted
 level_dict = OrderedDict()
 
@@ -1204,7 +1322,8 @@ def test():
 
             # Check for some known invalid patterns in the surface form
             import re
-            assert not re.match(r".*pick up the.*door.*", mission.surface)
+            surface = mission.surface
+            assert not re.match(r".*pick up the [^ ]*door.*", surface), surface
 
             while True:
                 action = rng.randint(0, mission.action_space.n - 1)
