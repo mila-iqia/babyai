@@ -314,7 +314,7 @@ class BeforeInstr(Instr):
         self.instr_b = instr_b
 
     def surface(self, env):
-        return self.instr_a.surface(env) + ' then ' + self.instr_b.surface(env)
+        return self.instr_a.surface(env) + ', then ' + self.instr_b.surface(env)
 
     def reset_verifier(self, env):
         super().reset_verifier(env)
