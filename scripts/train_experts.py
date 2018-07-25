@@ -137,7 +137,9 @@ shell_cmds = []
 
 # Execute the filtered params
 for paramSet in params:
-    slurm_cmd = "sbatch --account=def-bengioy --time={} --ntasks=1 --mem=8G".format(paramSet["time"])
+    # Compute Canada recommends requesting memory in megabytes
+    # https://docs.computecanada.ca/wiki/Running_jobs
+    slurm_cmd = "sbatch --account=def-bengioy --time={} --ntasks=1 --mem=6000M".format(paramSet["time"])
     for seed in paramSet["seeds"]:
         model = "baselines/{}/seed{}".format(paramSet["model"], seed)
 
