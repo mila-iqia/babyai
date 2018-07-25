@@ -292,6 +292,8 @@ class RoomGrid(MiniGridEnv):
             if front_cell is None or front_cell.type is 'wall':
                 break
 
+        return self.start_pos
+
     def connect_all(self):
         """
         Make sure that all rooms are reachable by the agent from its

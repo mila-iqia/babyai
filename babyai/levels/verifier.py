@@ -307,11 +307,12 @@ class BeforeInstr(Instr):
     eg: go to the red door then pick up the blue ball
     """
 
-    def __init__(self, instr_a, instr_b):
+    def __init__(self, instr_a, instr_b, strict=False):
         assert isinstance(instr_a, ActionInstr) or isinstance(instr_a, AndInstr)
         assert isinstance(instr_b, ActionInstr) or isinstance(instr_b, AndInstr)
         self.instr_a = instr_a
         self.instr_b = instr_b
+        self.strict = strict
 
     def surface(self, env):
         return self.instr_a.surface(env) + ', then ' + self.instr_b.surface(env)
@@ -339,8 +340,8 @@ class BeforeInstr(Instr):
             if self.a_done is 'failure':
                 return 'failure'
 
-            # Completing b first means failure
-            if self.b_done is 'success':
+            # In strict mode, completing b first means failure
+            if self.strict and self.b_done is 'success':
                 return 'failure'
 
         return 'continue'
@@ -352,11 +353,12 @@ class AfterInstr(Instr):
     eg: go to the red door after you pick up the blue ball
     """
 
-    def __init__(self, instr_a, instr_b):
+    def __init__(self, instr_a, instr_b, strict=False):
         assert isinstance(instr_a, ActionInstr) or isinstance(instr_a, AndInstr)
         assert isinstance(instr_b, ActionInstr) or isinstance(instr_b, AndInstr)
         self.instr_a = instr_a
         self.instr_b = instr_b
+        self.strict = strict
 
     def surface(self, env):
         return self.instr_a.surface(env) + ' after you ' + self.instr_b.surface(env)
@@ -384,8 +386,8 @@ class AfterInstr(Instr):
             if self.b_done is 'failure':
                 return 'failure'
 
-            # Completing a first means failure
-            if self.a_done is 'success':
+            # In strict mode, completing a first means failure
+            if self.strict and self.a_done is 'success':
                 return 'failure'
 
         return 'continue'
