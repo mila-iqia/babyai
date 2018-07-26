@@ -1165,10 +1165,12 @@ class LevelGen(RoomGridLevel):
         num_rows=3,
         num_cols=3,
         num_dists=14,
+        locked_room_prob=0.5,
         debug=False,
         seed=None
     ):
         self.num_dists = num_dists
+        self.locked_room_prob = locked_room_prob
         self.debug = debug
 
         super().__init__(
@@ -1182,10 +1184,53 @@ class LevelGen(RoomGridLevel):
     def gen_mission(self):
         self.add_distractors(self.num_dists)
         self.place_agent()
+
+        if self._rand_float(0, 1) < self.locked_room_prob:
+            self.add_locked_room()
+
         self.connect_all()
 
         # Generate random instructions
         self.instrs = self.rand_instr()
+
+    def add_locked_room(self):
+        start_room = self.room_from_pos(*self.start_pos)
+
+        # Until we've successfully added a locked room
+        while True:
+            i = self._rand_int(0, self.num_cols)
+            j = self._rand_int(0, self.num_rows)
+            door_idx = self._rand_int(0, 4)
+            locked_room = self.get_room(i, j)
+
+            # Don't lock the room the agent starts in
+            if locked_room is start_room:
+                continue
+
+            # Don't add a locked door in an external wall
+            if locked_room.neighbors[door_idx] is None:
+                continue
+
+            door, _ = self.add_door(
+                i, j,
+                door_idx,
+                locked=True
+            )
+
+            # Done adding locked room
+            break
+
+        # Until we find a room to put the key
+        while True:
+            i = self._rand_int(0, self.num_cols)
+            j = self._rand_int(0, self.num_rows)
+            key_room = self.get_room(i, j)
+
+            if key_room is locked_room:
+                continue
+
+            self.add_object(i, j, 'key', door.color)
+            break
 
     def rand_obj(self, types = OBJ_TYPES, colors = COLOR_NAMES):
         """
@@ -1259,17 +1304,18 @@ class Level_BossLevel(LevelGen):
     def __init__(self, seed=None):
         super().__init__(seed=seed)
 
-
+"""
 class Level_MiniBossLevel(LevelGen):
     def __init__(self, seed=None):
         super().__init__(
             seed=seed,
             num_cols=2,
             num_rows=2,
+            room_size=5,
             num_dists=7,
-            room_size=5
+            locked_room_prob=0.25
         )
-
+"""
 
 # Dictionary of levels, indexed by name, lexically sorted
 level_dict = OrderedDict()

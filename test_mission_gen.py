@@ -77,7 +77,6 @@ def test():
             return
 
         obs, reward, done, info = mission.step(action)
-        print("is done:", done)
 
         if done == True:
             if reward > 0:
