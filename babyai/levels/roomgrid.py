@@ -167,7 +167,8 @@ class RoomGrid(MiniGridEnv):
             obj,
             room.top,
             room.size,
-            reject_fn=reject_next_to
+            reject_fn=reject_next_to,
+            max_tries=1000
         )
 
         room.objs.append(obj)
@@ -284,7 +285,7 @@ class RoomGrid(MiniGridEnv):
 
         # Find a position that is not right in front of an object
         while True:
-            super().place_agent(room.top, room.size, rand_dir)
+            super().place_agent(room.top, room.size, rand_dir, max_tries=1000)
             pos = self.start_pos
             dir = DIR_TO_VEC[self.start_dir]
             front_pos = pos + dir
@@ -294,7 +295,7 @@ class RoomGrid(MiniGridEnv):
 
         return self.start_pos
 
-    def connect_all(self):
+    def connect_all(self, max_itrs=5000):
         """
         Make sure that all rooms are reachable by the agent from its
         starting position
@@ -317,7 +318,15 @@ class RoomGrid(MiniGridEnv):
                         stack.append(room.neighbors[i])
             return reach
 
+        num_itrs = 0
+
         while True:
+            # This is to handle rare situations where random sampling produces
+            # a level that cannot be connected, producing in an infinite loop
+            if num_itrs > max_itrs:
+                raise RecursionError('connect_all failed')
+            num_itrs += 1
+
             # If all rooms are reachable, stop
             reach = find_reach()
             if len(reach) == self.num_rows * self.num_cols:

@@ -56,10 +56,20 @@ class RoomGridLevel(RoomGrid):
         return obs, reward, done, info
 
     def _gen_grid(self, width, height):
-        super()._gen_grid(width, height)
+        # We catch RecursionError to deal with rare cases where
+        # rejection sampling gets stuck in an infinite loop
+        while True:
+            try:
+                super()._gen_grid(width, height)
 
-        # Generate the mission
-        self.gen_mission()
+                # Generate the mission
+                self.gen_mission()
+
+            except RecursionError as error:
+                print('Timeout during mission generation:', error)
+                continue
+
+            break
 
         # Generate the surface form for the instructions
         #seed = self._rand_int(0, 0xFFFFFFFF)
@@ -1304,7 +1314,7 @@ class Level_BossLevel(LevelGen):
     def __init__(self, seed=None):
         super().__init__(seed=seed)
 
-"""
+
 class Level_MiniBossLevel(LevelGen):
     def __init__(self, seed=None):
         super().__init__(
@@ -1315,7 +1325,7 @@ class Level_MiniBossLevel(LevelGen):
             num_dists=7,
             locked_room_prob=0.25
         )
-"""
+
 
 # Dictionary of levels, indexed by name, lexically sorted
 level_dict = OrderedDict()
