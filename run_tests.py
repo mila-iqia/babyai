@@ -7,4 +7,4 @@ from babyai import agents
 # NOTE: please make sure that tests are always deterministic
 
 print('Testing levels, mission generation')
-levels.levels.test()
+levels.test()
