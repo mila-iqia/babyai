@@ -241,7 +241,7 @@ class LevelGen(RoomGridLevel):
 level_dict = OrderedDict()
 
 
-def register_levels(globals):
+def register_levels(module_name, globals):
     """
     Register OpenAI gym environments for all levels in a file
     """
@@ -251,7 +251,6 @@ def register_levels(globals):
         if not global_name.startswith('Level_'):
             continue
 
-        module_name = __name__
         level_name = global_name.split('Level_')[-1]
         level_class = globals[global_name]
 
@@ -313,3 +312,7 @@ def test():
         grid2 = m1.unwrapped.grid
         assert grid1 == grid2
         assert m0.surface == m1.surface
+
+    # Check that gym environment names were registered correctly
+    gym.make('BabyAI-1RoomS8-v0')
+    gym.make('BabyAI-BossLevel-v0')

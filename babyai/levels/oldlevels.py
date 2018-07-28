@@ -1076,4 +1076,4 @@ class Level_OpenDoorsOrderN4Debug(OpenDoorsOrder):
 
 
 # Register the levels in this file
-register_levels(globals())
+register_levels(__name__, globals())
