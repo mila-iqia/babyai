@@ -16,7 +16,7 @@ class RoomGridLevel(RoomGrid):
 
     def __init__(
         self,
-        room_size=6,
+        room_size=8,
         max_steps=None,
         **kwargs
     ):
