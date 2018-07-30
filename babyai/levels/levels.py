@@ -39,7 +39,6 @@ class Level_GoToObj(RoomGridLevel):
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
 
-# FIXME: needs object reachability DFS so that no unblocking is necessary
 class Level_GoToLocal(RoomGridLevel):
     """
     Go to an object, inside a single room with no doors, no distractors
@@ -55,11 +54,11 @@ class Level_GoToLocal(RoomGridLevel):
     def gen_mission(self):
         self.place_agent()
         objs = self.add_distractors(num_distractors=8)
+        self.check_objs_reachable()
         obj = self._rand_elem(objs)
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
 
-# FIXME: needs object reachability DFS so that no unblocking is necessary
 class Level_PutNextLocal(RoomGridLevel):
     """
     Put an object next to another object, inside a single room
@@ -76,6 +75,7 @@ class Level_PutNextLocal(RoomGridLevel):
     def gen_mission(self):
         self.place_agent()
         objs = self.add_distractors(num_distractors=8)
+        self.check_objs_reachable()
         o1, o2 = self._rand_subset(objs, 2)
 
         if pos_next_to(o1.init_pos, o2.init_pos):
@@ -87,7 +87,6 @@ class Level_PutNextLocal(RoomGridLevel):
         )
 
 
-# FIXME: needs object reachability DFS so that no unblocking is necessary
 class Level_GoTo(RoomGridLevel):
     """
     Go to an object, the object may be in another room.
@@ -102,14 +101,34 @@ class Level_GoTo(RoomGridLevel):
         self.place_agent()
         self.connect_all()
         objs = self.add_distractors(num_distractors=18)
+        self.check_objs_reachable()
         obj = self._rand_elem(objs)
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
 
-# FIXME: needs object reachability DFS so that no unblocking is necessary
 class Level_Pickup(RoomGridLevel):
     """
     Pick up an object, the object may be in another room.
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.place_agent()
+        self.connect_all()
+        objs = self.add_distractors(num_distractors=18)
+        self.check_objs_reachable()
+        obj = self._rand_elem(objs)
+        self.instrs = PickupInstr(ObjDesc(obj.type, obj.color))
+
+
+class Level_UnblockPickup(RoomGridLevel):
+    """
+    Pick up an object, the object may be in another room. The path may
+    be blocked by one or more obstructors.
     """
 
     def __init__(self, seed=None):
@@ -125,7 +144,6 @@ class Level_Pickup(RoomGridLevel):
         self.instrs = PickupInstr(ObjDesc(obj.type, obj.color))
 
 
-# FIXME: needs object reachability DFS so that no unblocking is necessary
 class Level_Open(RoomGridLevel):
     """
     Open a door, which may be in another room
@@ -140,6 +158,7 @@ class Level_Open(RoomGridLevel):
         self.place_agent()
         self.connect_all()
         self.add_distractors(num_distractors=18)
+        self.check_objs_reachable()
 
         # Collect a list of all the doors in the environment
         doors = []
@@ -154,7 +173,6 @@ class Level_Open(RoomGridLevel):
         self.instrs = OpenInstr(ObjDesc(door.type, door.color))
 
 
-# FIXME: needs object reachability DFS so that no unblocking is necessary
 class Level_PutNext(RoomGridLevel):
     """
     Put an object next to another object. Either of these may be in another room.
@@ -169,6 +187,7 @@ class Level_PutNext(RoomGridLevel):
         self.place_agent()
         self.connect_all()
         objs = self.add_distractors(num_distractors=18)
+        self.check_objs_reachable()
         o1, o2 = self._rand_subset(objs, 2)
 
         if pos_next_to(o1.init_pos, o2.init_pos):

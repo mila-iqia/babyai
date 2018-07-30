@@ -76,7 +76,7 @@ class RoomGridLevel(RoomGrid):
                 continue
 
             except RejectSampling as error:
-                print('Sampling rejected:', error)
+                #print('Sampling rejected:', error)
                 continue
 
             break
@@ -100,6 +100,55 @@ class RoomGridLevel(RoomGrid):
     @property
     def gym_id(self):
         return self.__class__.gym_id
+
+    def check_objs_reachable(self):
+        """
+        Check that all objects are reachable from the agent's starting
+        position without requiring any other object to be moved
+        (without unblocking)
+        """
+
+        # Reachable positions
+        reachable = set()
+
+        # Work list
+        stack = [self.start_pos]
+
+        while len(stack) > 0:
+            i, j = stack.pop()
+
+            if i < 0 or i >= self.grid.width or j < 0 or j >= self.grid.height:
+                continue
+
+            if (i, j) in reachable:
+                continue
+
+            # This position is reachable
+            reachable.add((i, j))
+
+            cell = self.grid.get(i, j)
+
+            # If there is something other than a door in this cell, it
+            # blocks reachability
+            if cell and cell.type is not 'door':
+                continue
+
+            # Visit the horizontal and vertical neighbors
+            stack.append((i+1, j))
+            stack.append((i-1, j))
+            stack.append((i, j+1))
+            stack.append((i, j-1))
+
+        # Check that all objects are reachable
+        for i in range(self.grid.width):
+            for j in range(self.grid.height):
+                cell = self.grid.get(i, j)
+
+                if not cell or cell.type is 'wall':
+                    continue
+
+                if (i, j) not in reachable:
+                    raise RejectSampling('unreachable object at ' + str((i, j)))
 
 
 class LevelGen(RoomGridLevel):
