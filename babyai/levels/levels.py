@@ -53,7 +53,7 @@ class Level_GoToLocal(RoomGridLevel):
 
     def gen_mission(self):
         self.place_agent()
-        objs = self.add_distractors(num_distractors=8)
+        objs = self.add_distractors(num_distractors=8, all_unique=False)
         self.check_objs_reachable()
         obj = self._rand_elem(objs)
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
@@ -74,7 +74,7 @@ class Level_PutNextLocal(RoomGridLevel):
 
     def gen_mission(self):
         self.place_agent()
-        objs = self.add_distractors(num_distractors=8)
+        objs = self.add_distractors(num_distractors=8, all_unique=True)
         self.check_objs_reachable()
         o1, o2 = self._rand_subset(objs, 2)
 
@@ -100,7 +100,7 @@ class Level_GoTo(RoomGridLevel):
     def gen_mission(self):
         self.place_agent()
         self.connect_all()
-        objs = self.add_distractors(num_distractors=18)
+        objs = self.add_distractors(num_distractors=18, all_unique=False)
         self.check_objs_reachable()
         obj = self._rand_elem(objs)
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
@@ -119,7 +119,7 @@ class Level_Pickup(RoomGridLevel):
     def gen_mission(self):
         self.place_agent()
         self.connect_all()
-        objs = self.add_distractors(num_distractors=18)
+        objs = self.add_distractors(num_distractors=18, all_unique=False)
         self.check_objs_reachable()
         obj = self._rand_elem(objs)
         self.instrs = PickupInstr(ObjDesc(obj.type, obj.color))
@@ -139,7 +139,7 @@ class Level_UnblockPickup(RoomGridLevel):
     def gen_mission(self):
         self.place_agent()
         self.connect_all()
-        objs = self.add_distractors(num_distractors=18)
+        objs = self.add_distractors(num_distractors=20, all_unique=False)
         obj = self._rand_elem(objs)
         self.instrs = PickupInstr(ObjDesc(obj.type, obj.color))
 
@@ -157,7 +157,7 @@ class Level_Open(RoomGridLevel):
     def gen_mission(self):
         self.place_agent()
         self.connect_all()
-        self.add_distractors(num_distractors=18)
+        self.add_distractors(num_distractors=18, all_unique=False)
         self.check_objs_reachable()
 
         # Collect a list of all the doors in the environment
@@ -186,7 +186,7 @@ class Level_PutNext(RoomGridLevel):
     def gen_mission(self):
         self.place_agent()
         self.connect_all()
-        objs = self.add_distractors(num_distractors=18)
+        objs = self.add_distractors(num_distractors=18, all_unique=True)
         self.check_objs_reachable()
         o1, o2 = self._rand_subset(objs, 2)
 
