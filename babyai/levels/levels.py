@@ -78,13 +78,14 @@ class Level_PutNextLocal(RoomGridLevel):
         self.check_objs_reachable()
         o1, o2 = self._rand_subset(objs, 2)
 
-        if pos_next_to(o1.init_pos, o2.init_pos):
-            raise RejectSampling('objects already next to each other')
-
         self.instrs = PutNextInstr(
             ObjDesc(o1.type, o1.color),
             ObjDesc(o2.type, o2.color)
         )
+
+        self.instrs.reset_verifier(self)
+        if self.instrs.verify(None) is 'success':
+            raise RejectSampling('objs already next to each other')
 
 
 class Level_GoTo(RoomGridLevel):
@@ -190,13 +191,14 @@ class Level_PutNext(RoomGridLevel):
         self.check_objs_reachable()
         o1, o2 = self._rand_subset(objs, 2)
 
-        if pos_next_to(o1.init_pos, o2.init_pos):
-            raise RejectSampling('objects already next to each other')
-
         self.instrs = PutNextInstr(
             ObjDesc(o1.type, o1.color),
             ObjDesc(o2.type, o2.color)
         )
+
+        self.instrs.reset_verifier(self)
+        if self.instrs.verify(None) is 'success':
+            raise RejectSampling('objs already next to each other')
 
 
 # Register the levels in this file
