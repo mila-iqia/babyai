@@ -6,6 +6,14 @@ from .roomgrid import RoomGrid
 from .verifier import *
 
 
+class RejectSampling(Exception):
+    """
+    Exception used for rejection sampling
+    """
+
+    pass
+
+
 class RoomGridLevel(RoomGrid):
     """
     Base for levels based on RoomGrid
@@ -65,6 +73,10 @@ class RoomGridLevel(RoomGrid):
 
             except RecursionError as error:
                 print('Timeout during mission generation:', error)
+                continue
+
+            except RejectSampling as error:
+                print('Sampling rejected:', error)
                 continue
 
             break

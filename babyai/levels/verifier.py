@@ -20,6 +20,19 @@ def dot_product(v1, v2):
     return sum([i*j for i, j in zip(v1, v2)])
 
 
+def pos_next_to(pos_a, pos_b):
+    """
+    Test if two positions are next to each other.
+    The positions have to line up either horizontally or vertically,
+    but positions that are diagonally adjacent are not counted.
+    """
+
+    xa, ya = pos_a
+    xb, yb = pos_b
+    d = abs(xa - xb) + abs(ya - yb)
+    return d < 2
+
+
 class ObjDesc:
     """
     Description of a set of objects in an environment
@@ -286,11 +299,7 @@ class PutNextInstr(ActionInstr):
             pos_a = obj_a.cur_pos
 
             for pos_b in self.desc_fixed.obj_poss:
-                xa, ya = pos_a
-                xb, yb = pos_b
-                d = abs(xa - xb) + abs(ya - yb)
-
-                if d < 2:
+                if pos_next_to(pos_a, pos_b):
                     return 'success'
 
         # In strict mode, picking up the wrong object fails
