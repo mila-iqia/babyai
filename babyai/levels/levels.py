@@ -90,7 +90,7 @@ class Level_PutNextLocal(RoomGridLevel):
 
 class Level_GoTo(RoomGridLevel):
     """
-    Go to an object, the object may be in another room.
+    Go to an object, the object may be in another room. Many distractors.
     """
 
     def __init__(self, seed=None):
@@ -104,6 +104,25 @@ class Level_GoTo(RoomGridLevel):
         objs = self.add_distractors(num_distractors=18, all_unique=False)
         self.check_objs_reachable()
         obj = self._rand_elem(objs)
+        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
+
+
+class Level_GoToObjMaze(RoomGridLevel):
+    """
+    Go to an object, the object may be in another room. No distractors.
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.place_agent()
+        self.connect_all()
+        objs = self.add_distractors(num_distractors=1, all_unique=False)
+        self.check_objs_reachable()
+        obj = objs[0]
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
 
@@ -187,7 +206,7 @@ class Level_PutNext(RoomGridLevel):
     def gen_mission(self):
         self.place_agent()
         self.connect_all()
-        objs = self.add_distractors(num_distractors=18, all_unique=True)
+        objs = self.add_distractors(num_distractors=18, all_unique=False)
         self.check_objs_reachable()
         o1, o2 = self._rand_subset(objs, 2)
 
