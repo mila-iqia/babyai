@@ -3,23 +3,6 @@ from .verifier import *
 from .levelgen import *
 
 
-class Level_BossLevel(LevelGen):
-    def __init__(self, seed=None):
-        super().__init__(seed=seed)
-
-
-class Level_MiniBossLevel(LevelGen):
-    def __init__(self, seed=None):
-        super().__init__(
-            seed=seed,
-            num_cols=2,
-            num_rows=2,
-            room_size=5,
-            num_dists=7,
-            locked_room_prob=0.25
-        )
-
-
 class Level_GoToObj(RoomGridLevel):
     """
     Go to an object, inside a single room with no doors, no distractors
@@ -224,6 +207,41 @@ class Level_PutNext(RoomGridLevel):
         self.instrs.reset_verifier(self)
         if self.instrs.verify(None) is 'success':
             raise RejectSampling('objs already next to each other')
+
+
+class Level_GoToSeq(LevelGen):
+    """
+    Competencies: Maze, GoTo, Seq
+    No locked room.
+    No locations.
+    No unblocking.
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            seed=seed,
+            action_kinds=['goto'],
+            locked_room_prob=0,
+            locations=False,
+            unblocking=False
+        )
+
+
+class Level_MiniBossLevel(LevelGen):
+    def __init__(self, seed=None):
+        super().__init__(
+            seed=seed,
+            num_cols=2,
+            num_rows=2,
+            room_size=5,
+            num_dists=7,
+            locked_room_prob=0.25
+        )
+
+
+class Level_BossLevel(LevelGen):
+    def __init__(self, seed=None):
+        super().__init__(seed=seed)
 
 
 # Register the levels in this file

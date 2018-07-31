@@ -158,8 +158,8 @@ class RoomGridLevel(RoomGrid):
 
 class LevelGen(RoomGridLevel):
     """
-    Generator which attempts to generate every possible sentence in the baby
-    language as an instruction.
+    Level generator which attempts to produce every possible sentence in
+    the baby language as an instruction.
     """
 
     def __init__(
@@ -169,11 +169,19 @@ class LevelGen(RoomGridLevel):
         num_cols=3,
         num_dists=18,
         locked_room_prob=0.5,
+        locations=True,
+        unblocking=True,
+        action_kinds=['goto', 'pickup', 'open', 'putnext'],
+        instr_kinds=['action', 'and', 'seq'],
         debug=False,
         seed=None
     ):
         self.num_dists = num_dists
         self.locked_room_prob = locked_room_prob
+        self.locations=locations
+        self.unblocking=unblocking
+        self.action_kinds = action_kinds
+        self.instr_kinds = instr_kinds
         self.debug = debug
 
         super().__init__(
@@ -193,8 +201,14 @@ class LevelGen(RoomGridLevel):
 
         self.connect_all()
 
+        if not self.unblocking:
+            self.check_objs_reachable()
+
         # Generate random instructions
-        self.instrs = self.rand_instr()
+        self.instrs = self.rand_instr(
+            action_kinds=self.action_kinds,
+            instr_kinds=self.instr_kinds
+        )
 
     def add_locked_room(self):
         start_room = self.room_from_pos(*self.start_pos)
@@ -235,7 +249,7 @@ class LevelGen(RoomGridLevel):
             self.add_object(i, j, 'key', door.color)
             break
 
-    def rand_obj(self, types = OBJ_TYPES, colors = COLOR_NAMES):
+    def rand_obj(self, types=OBJ_TYPES, colors=COLOR_NAMES):
         """
         Generate a random object descriptor
         """
@@ -246,7 +260,7 @@ class LevelGen(RoomGridLevel):
             type = self._rand_elem(types)
 
             loc = None
-            if self._rand_bool():
+            if self.locations and self._rand_bool():
                 loc = self._rand_elem(LOC_NAMES)
 
             desc = ObjDesc(type, color, loc)
@@ -258,15 +272,20 @@ class LevelGen(RoomGridLevel):
 
         return desc
 
-    def rand_instr(self, depth=0, kinds=['action', 'and', 'seq']):
+    def rand_instr(
+        self,
+        action_kinds,
+        instr_kinds,
+        depth=0
+    ):
         """
         Generate random instructions
         """
 
-        kind = self._rand_elem(kinds)
+        kind = self._rand_elem(instr_kinds)
 
         if kind is 'action':
-            action = self._rand_elem(['goto', 'pickup', 'open', 'putnext'])
+            action = self._rand_elem(action_kinds)
 
             if action is 'goto':
                 return GoToInstr(self.rand_obj())
@@ -283,13 +302,29 @@ class LevelGen(RoomGridLevel):
             assert False
 
         elif kind is 'and':
-            instr_a = self.rand_instr(depth+1, kinds=['action'])
-            instr_b = self.rand_instr(depth+1, kinds=['action'])
+            instr_a = self.rand_instr(
+                action_kinds=action_kinds,
+                instr_kinds=['action'],
+                depth=depth+1
+            )
+            instr_b = self.rand_instr(
+                action_kinds=action_kinds,
+                instr_kinds=['action'],
+                depth=depth+1
+            )
             return AndInstr(instr_a, instr_b)
 
         elif kind is 'seq':
-            instr_a = self.rand_instr(depth+1, kinds=['action', 'and'])
-            instr_b = self.rand_instr(depth+1, kinds=['action', 'and'])
+            instr_a = self.rand_instr(
+                action_kinds=action_kinds,
+                instr_kinds=['action', 'and'],
+                depth=depth+1
+            )
+            instr_b = self.rand_instr(
+                action_kinds=action_kinds,
+                instr_kinds=['action', 'and'],
+                depth=depth+1
+            )
 
             kind = self._rand_elem(['before', 'after'])
 
