@@ -101,7 +101,7 @@ class RoomGridLevel(RoomGrid):
     def gym_id(self):
         return self.__class__.gym_id
 
-    def check_objs_reachable(self):
+    def check_objs_reachable(self, raise_exc=True):
         """
         Check that all objects are reachable from the agent's starting
         position without requiring any other object to be moved
@@ -148,7 +148,12 @@ class RoomGridLevel(RoomGrid):
                     continue
 
                 if (i, j) not in reachable:
+                    if not raise_exc:
+                        return False
                     raise RejectSampling('unreachable object at ' + str((i, j)))
+
+        # All objects reachable
+        return True
 
 
 class LevelGen(RoomGridLevel):

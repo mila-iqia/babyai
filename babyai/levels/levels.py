@@ -160,6 +160,12 @@ class Level_UnblockPickup(RoomGridLevel):
         self.place_agent()
         self.connect_all()
         objs = self.add_distractors(num_distractors=20, all_unique=False)
+
+        # Ensure that at least one object is not reachable without unblocking
+        # Note: the selected object will still be reachable most of the time
+        if self.check_objs_reachable(raise_exc=False):
+            raise RejectSampling('all objects reachable')
+
         obj = self._rand_elem(objs)
         self.instrs = PickupInstr(ObjDesc(obj.type, obj.color))
 
