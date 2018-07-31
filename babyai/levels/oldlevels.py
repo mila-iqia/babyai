@@ -202,7 +202,7 @@ class Level_ActionObjDoor(RoomGridLevel):
                 self.instrs = PickupInstr(desc)
 
 
-class Level_Unlock(RoomGridLevel):
+class Level_UnlockLocal(RoomGridLevel):
     """
     Fetch a key and unlock a door
     (in the current room)
@@ -222,7 +222,7 @@ class Level_Unlock(RoomGridLevel):
         self.instrs = OpenInstr(ObjDesc(door.type))
 
 
-class Level_UnlockDist(Level_Unlock):
+class Level_UnlockLocalDist(Level_UnlockLocal):
     """
     Fetch a key and unlock a door
     (in the current room, with distractors)

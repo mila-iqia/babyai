@@ -182,6 +182,43 @@ class Level_Open(RoomGridLevel):
         self.instrs = OpenInstr(ObjDesc(door.type, door.color))
 
 
+class Level_Unlock(RoomGridLevel):
+    """
+    Unlock a door.
+    Competencies: Maze, Open, Unlock
+    No unblocking.
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.place_agent()
+
+        # Add a locked door to a random room
+        id = self._rand_int(0, self.num_rows)
+        jd = self._rand_int(0, self.num_cols)
+        door, pos = self.add_door(id, jd, locked=True)
+        locked_room = self.get_room(id, jd)
+
+        # Add the key to a different room
+        while True:
+            ik = self._rand_int(0, self.num_rows)
+            jk = self._rand_int(0, self.num_cols)
+            if ik is id and jk is jd:
+                continue
+            self.add_object(ik, jk, 'key', door.color)
+            break
+
+        self.connect_all()
+        self.add_distractors(num_distractors=18, all_unique=False)
+        self.check_objs_reachable()
+
+        self.instrs = OpenInstr(ObjDesc(door.type, door.color))
+
+
 class Level_PutNext(RoomGridLevel):
     """
     Put an object next to another object. Either of these may be in another room.
