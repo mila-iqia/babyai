@@ -62,7 +62,7 @@ class ObjDesc:
         """
 
         self.find_matching_objs(env)
-        assert len(self.obj_set) > 0
+        assert len(self.obj_set) > 0, "no object matching description"
 
         if self.type:
             s = str(self.type)
@@ -96,6 +96,8 @@ class ObjDesc:
         self.obj_set = []
         self.obj_poss = []
 
+        agent_room = env.room_from_pos(*env.start_pos)
+
         for i in range(env.grid.width):
             for j in range(env.grid.height):
                 cell = env.grid.get(i, j)
@@ -117,6 +119,11 @@ class ObjDesc:
 
                 # Check if object's position matches description
                 if self.loc in ["left", "right", "front", "behind"]:
+                    # Locations apply only to objects in the same room
+                    # the agent starts in
+                    if not agent_room.pos_inside(i, j):
+                        continue
+
                     # Direction from the agent to the object
                     v = (i-env.start_pos[0], j-env.start_pos[1])
 

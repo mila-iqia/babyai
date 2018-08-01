@@ -193,7 +193,7 @@ class LevelGen(RoomGridLevel):
         )
 
     def gen_mission(self):
-        self.add_distractors(self.num_dists)
+        self.add_distractors(self.num_dists, all_unique=False)
         self.place_agent()
 
         if self._rand_float(0, 1) < self.locked_room_prob:

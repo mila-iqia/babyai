@@ -579,64 +579,6 @@ class Level_FindObjS7(Level_FindObjS5):
         )
 
 
-class Level_FourObjsS5(RoomGridLevel):
-    """
-    Four identical objects in four different rooms. The task is
-    to pick up the correct one.
-    The object to pick up is given by its location.
-    Rooms have a size of 5.
-    """
-
-    def __init__(self, room_size=5, seed=None):
-        super().__init__(
-            room_size=room_size,
-            max_steps=20*room_size**2,
-            seed=seed
-        )
-
-    def gen_mission(self):
-        obj, _ = self.add_object(1, 0)
-        self.add_object(1, 2, obj.type, obj.color)
-        self.add_object(0, 1, obj.type, obj.color)
-        self.add_object(2, 1, obj.type, obj.color)
-
-        # Make sure the start room is directly connected to the
-        # four adjacent rooms
-        for i in range(0, 4):
-            _, _ = self.add_door(1, 1, i, locked=False)
-
-        self.place_agent(1, 1)
-
-        # Choose a random object to pick up
-        loc = self._rand_elem(LOC_NAMES)
-        rand_obj = ObjDesc(obj.type, obj.color, loc)
-        self.instrs = PickupInstr(rand_obj)
-
-
-class Level_FourObjsS6(Level_FourObjsS5):
-    """
-    Same as the FindObjS5 level, but rooms have a size of 6
-    """
-
-    def __init__(self, seed=None):
-        super().__init__(
-            room_size=6,
-            seed=seed
-        )
-
-
-class Level_FourObjsS7(Level_FourObjsS5):
-    """
-    Same as the FindObjS5 level, but rooms have a size of 7
-    """
-
-    def __init__(self, seed=None):
-        super().__init__(
-            room_size=7,
-            seed=seed
-        )
-
-
 class KeyCorridor(RoomGridLevel):
     """
     A ball is behind a locked door, the key is placed in a

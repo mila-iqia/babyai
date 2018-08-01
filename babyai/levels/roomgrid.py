@@ -47,6 +47,22 @@ class Room:
             topY + 1, topY + sizeY - 1
         )
 
+    def pos_inside(self, x, y):
+        """
+        Check if a position is within the bounds of this room
+        """
+
+        topX, topY = self.top
+        sizeX, sizeY = self.size
+
+        if x < topX or y < topY:
+            return False
+
+        if x >= topX + sizeX or y >= topY + sizeY:
+            return False
+
+        return True
+
 
 class RoomGrid(MiniGridEnv):
     """

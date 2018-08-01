@@ -246,6 +246,29 @@ class Level_PutNext(RoomGridLevel):
             raise RejectSampling('objs already next to each other')
 
 
+class Level_PickupLoc(LevelGen):
+    """
+    Competencies: PickUp, Loc
+    One single room.
+    No unblocking.
+    """
+
+    def __init__(self, seed=None):
+        # We add many distractors to increase the probability
+        # of ambiguous locations within the same room
+        super().__init__(
+            seed=seed,
+            action_kinds=['pickup'],
+            instr_kinds=['action'],
+            num_rows=1,
+            num_cols=1,
+            num_dists=12,
+            locked_room_prob=0,
+            locations=True,
+            unblocking=False
+        )
+
+
 class Level_GoToSeq(LevelGen):
     """
     Competencies: Maze, GoTo, Seq
