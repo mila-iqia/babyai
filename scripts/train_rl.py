@@ -34,6 +34,8 @@ parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
+parser.add_argument("--task-id-seed", action='store_true',
+                    help="use the task id within a Slurm job array as the seed")
 parser.add_argument("--procs", type=int, default=16,
                     help="number of processes (default: 16)")
 parser.add_argument("--frames", type=int, default=10**7,
@@ -89,6 +91,10 @@ assert args.env is not None or args.curriculum is not None, "--env or --curricul
 
 # Set seed for all randomness sources
 
+if args.task_id_seed:
+    args.seed = int(os.environ['SLURM_ARRAY_TASK_ID'])
+    print('set seed to {}'.format(args.seed))
+
 utils.seed(args.seed)
 
 # Generate environments
@@ -97,7 +103,7 @@ if args.env is not None:
     envs = []
     for i in range(args.procs):
         env = gym.make(args.env)
-        env.seed(args.seed + i)
+        env.seed(100 * args.seed + i)
         envs.append(env)
 else:
     curriculum = curriculums[args.curriculum]
@@ -108,14 +114,16 @@ else:
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
 instr = args.instr_arch if args.instr_arch else "noinstr"
 mem = "mem" if not args.no_mem else "nomem"
-default_model_name = "{}_{}_{}_{}_{}_seed{}_{}".format(args.env or args.curriculum,
-                                                       args.algo,
-                                                       args.arch,
-                                                       instr,
-                                                       mem,
-                                                       args.seed,
-                                                       suffix)
-model_name = args.model or default_model_name
+model_name_parts = {
+    'env': args.env or args.curriculum,
+    'algo': args.algo,
+    'arch': args.arch,
+    'instr': instr,
+    'mem': mem,
+    'seed': args.seed,
+    'suffix': suffix}
+default_model_name = "{env}_{algo}_{arch}_{instr}_{mem}_seed{seed}_{suffix}".format(**model_name_parts)
+model_name = args.model.format(**model_name_parts) if args.model else default_model_name
 
 # Define obss preprocessor
 if 'emb' in args.arch:
