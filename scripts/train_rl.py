@@ -136,15 +136,16 @@ if torch.cuda.is_available():
 
 # Define actor-critic algo
 
+reshape_reward = lambda _0, _1, reward, _2: 20 * reward
 if args.algo == "a2c":
     algo = torch_rl.A2CAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
                             args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
-                            args.optim_alpha, args.optim_eps, obss_preprocessor, utils.reshape_reward)
+                            args.optim_alpha, args.optim_eps, obss_preprocessor, reshape_reward)
 elif args.algo == "ppo":
     algo = torch_rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
                             args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                             args.optim_eps, args.clip_eps, args.epochs, args.batch_size, obss_preprocessor,
-                            utils.reshape_reward)
+                            reshape_reward)
 else:
     raise ValueError("Incorrect algorithm name: {}".format(args.algo))
 
@@ -209,9 +210,9 @@ while num_frames < args.frames:
         num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
         logger.info(
-            "U {} | F {:06} | FPS {:04.0f} | D {} | rR:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {: .3f} | vL {:.3f}"
+            "U {} | F {:06} | FPS {:04.0f} | D {} | R:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {: .3f} | vL {:.3f}"
             .format(i, num_frames, fps, duration,
-                    *rreturn_per_episode.values(),
+                    *return_per_episode.values(),
                     *num_frames_per_episode.values(),
                     logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"]))
         if args.tb:
