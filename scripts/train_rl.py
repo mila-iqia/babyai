@@ -5,6 +5,8 @@ Script to train the agent through reinforcment learning.
 """
 
 import os
+import csv
+import json
 import argparse
 import gym
 import time
@@ -44,6 +46,8 @@ parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs (default: 1)")
 parser.add_argument("--save-interval", type=int, default=10,
                     help="number of updates between two saves (default: 0, 0 means no saving)")
+parser.add_argument("--csv", action="store_true", default=False,
+                    help="log in a csv file")
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log into Tensorboard")
 parser.add_argument("--frames-per-proc", type=int, default=None,
@@ -157,12 +161,34 @@ elif args.algo == "ppo":
 else:
     raise ValueError("Incorrect algorithm name: {}".format(args.algo))
 
-# Define logger and Tensorboard writer
+# Restore training status
+
+status_path = os.path.join(utils.get_log_dir(model_name), 'status.json')
+status = {'i': 0,
+          'num_frames': 0}
+if os.path.exists(status_path):
+    with open(status_path, 'r') as src:
+        status = json.load(src)
+
+# Define logger and Tensorboard writer and CSV writer
 
 logger = utils.get_logger(model_name)
+header = (["frames", "FPS", "duration"]
+          + ["return_" + stat for stat in ['mean', 'std', 'min', 'max']]
+          + ["rreturn_" + stat for stat in ['mean', 'std', 'min', 'max']]
+          + ["num_frames_" + stat for stat in ['mean', 'std', 'min', 'max']]
+          + ["entropy", "value", "policy_loss", "value_loss"])
 if args.tb:
     from tensorboardX import SummaryWriter
     writer = SummaryWriter(utils.get_log_dir(model_name))
+if args.csv:
+    csv_path = os.path.join(utils.get_log_dir(model_name), 'log.csv')
+    first_created = not os.path.exists(csv_path)
+    # we don't buffer data going in the csv log, cause we assume
+    # that one update will take much longer that one write to the log
+    csv_writer = csv.writer(open(csv_path, 'a', 1))
+    if first_created:
+        csv_writer.writerow(header)
 
 # Log code state, command, availability of CUDA and model
 
@@ -189,13 +215,11 @@ logger.info(acmodel)
 
 # Train model
 
-num_frames = 0
 total_start_time = time.time()
-i = 0
 best_mean_return = 0
 test_env_name = args.env if args.env is not None else curriculum[-1]
 test_env = gym.make(test_env_name)
-while num_frames < args.frames:
+while status['num_frames'] < args.frames:
     # Update parameters
 
     update_start_time = time.time()
@@ -204,8 +228,8 @@ while num_frames < args.frames:
         menv_head.update_dist()
     update_end_time = time.time()
 
-    num_frames += logs["num_frames"]
-    i += 1
+    status['num_frames'] += logs["num_frames"]
+    status['i'] += 1
 
     # Print logs
 
@@ -217,27 +241,18 @@ while num_frames < args.frames:
         rreturn_per_episode = utils.synthesize(logs["reshaped_return_per_episode"])
         num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
+        data = [status['i'], status['num_frames'], fps, total_ellapsed_time,
+                *return_per_episode.values(),
+                *num_frames_per_episode.values(),
+                logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"]]
         logger.info(
             "U {} | F {:06} | FPS {:04.0f} | D {} | R:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {: .3f} | vL {:.3f}"
-            .format(i, num_frames, fps, duration,
-                    *return_per_episode.values(),
-                    *num_frames_per_episode.values(),
-                    logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"]))
+            .format(*data))
         if args.tb:
-            writer.add_scalar("frames", num_frames, i)
-            writer.add_scalar("FPS", fps, i)
-            writer.add_scalar("duration", total_ellapsed_time, i)
-            for key, value in return_per_episode.items():
-                writer.add_scalar("return_" + key, value, num_frames)
-            for key, value in rreturn_per_episode.items():
-                writer.add_scalar("rreturn_" + key, value, num_frames)
-            for key, value in num_frames_per_episode.items():
-                writer.add_scalar("num_frames_" + key, value, i)
-            writer.add_scalar("entropy", logs["entropy"], num_frames)
-            writer.add_scalar("value", logs["value"], num_frames)
-            writer.add_scalar("policy_loss", logs["policy_loss"], num_frames)
-            writer.add_scalar("value_loss", logs["value_loss"], num_frames)
+            for key, value in zip(header, data):
+                writer.add_scalar(key, float(value), status['num_frames'])
 
+            # TODO: CSV logging for curriculum
             if args.curriculum is not None:
                 for env_id, env_key in enumerate(curriculum):
                     writer.add_scalar("proba/{}".format(env_key),
@@ -245,10 +260,15 @@ while num_frames < args.frames:
                     if env_id in menv_head.synthesized_returns.keys():
                         writer.add_scalar("return/{}".format(env_key),
                                           menv_head.synthesized_returns[env_id], num_frames)
+        if args.csv:
+            csv_writer.writerow(data)
+
+        with open(status_path, 'w') as dst:
+            json.dump(status, dst)
 
     # Save obss preprocessor vocabulary and model
 
-    if args.save_interval > 0 and i % args.save_interval == 0:
+    if args.save_interval > 0 and status['i'] % args.save_interval == 0:
         obss_preprocessor.vocab.save()
         if torch.cuda.is_available():
             acmodel.cpu()
@@ -262,9 +282,9 @@ while num_frames < args.frames:
         if mean_return > best_mean_return:
             best_mean_return = mean_return
             utils.save_model(acmodel, model_name)
+            logger.info("Best model is saved.")
+        else:
+            logger.info("Not the best model; not saved")
 
-
-
-        logger.info("Model is saved.")
         if torch.cuda.is_available():
             acmodel.cuda()
