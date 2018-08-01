@@ -121,7 +121,3 @@ class IntObssPreprocessor(object):
             obs_.instr = self.instr_preproc(obss, device=device)
 
         return obs_
-
-
-def reshape_reward(obs, action, reward, done):
-    return 20 * reward
