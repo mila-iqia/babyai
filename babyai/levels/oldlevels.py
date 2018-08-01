@@ -155,7 +155,7 @@ class Level_GoToObjDoor(RoomGridLevel):
         )
 
     def gen_mission(self):
-        objs = self.add_distractors(num_distractors=5, room_i=1, room_j=1)
+        objs = self.add_distractors(1, 1, num_distractors=5)
         for _ in range(4):
             door, _ = self.add_door(1, 1)
             objs.append(door)
@@ -180,7 +180,7 @@ class Level_ActionObjDoor(RoomGridLevel):
         )
 
     def gen_mission(self):
-        objs = self.add_distractors(num_distractors=5, room_i=1, room_j=1)
+        objs = self.add_distractors(1, 1, num_distractors=5)
         for _ in range(4):
             door, _ = self.add_door(1, 1, locked=False)
             objs.append(door)
@@ -216,7 +216,7 @@ class Level_UnlockLocal(RoomGridLevel):
         door, _ = self.add_door(1, 1, locked=True)
         self.add_object(1, 1, 'key', door.color)
         if self.distractors:
-            self.add_distractors(num_distractors=3, room_i=1, room_j=1)
+            self.add_distractors(1, 1, num_distractors=3)
         self.place_agent(1, 1)
 
         self.instrs = OpenInstr(ObjDesc(door.type))
@@ -385,7 +385,7 @@ class Level_PickupDist(RoomGridLevel):
 
     def gen_mission(self):
         # Add 5 random objects in the room
-        objs = self.add_distractors(5)
+        objs = self.add_distractors(num_distractors=5)
         self.place_agent(0, 0)
         obj = self._rand_elem(objs)
         type = obj.type
@@ -763,8 +763,8 @@ class PutNext(RoomGridLevel):
 
         # Add objects to both the left and right rooms
         # so that we know that we have two non-adjacent set of objects
-        objs_l = self.add_distractors(self.objs_per_room, 0, 0)
-        objs_r = self.add_distractors(self.objs_per_room, 1, 0)
+        objs_l = self.add_distractors(0, 0, self.objs_per_room)
+        objs_r = self.add_distractors(1, 0, self.objs_per_room)
 
         # Remove the wall between the two rooms
         self.remove_wall(0, 0, 0)
@@ -901,8 +901,8 @@ class MoveTwoAcross(RoomGridLevel):
 
         # Add objects to both the left and right rooms
         # so that we know that we have two non-adjacent set of objects
-        objs_l = self.add_distractors(self.objs_per_room, 0, 0)
-        objs_r = self.add_distractors(self.objs_per_room, 1, 0)
+        objs_l = self.add_distractors(0, 0, self.objs_per_room)
+        objs_r = self.add_distractors(1, 0, self.objs_per_room)
 
         # Remove the wall between the two rooms
         self.remove_wall(0, 0, 0)

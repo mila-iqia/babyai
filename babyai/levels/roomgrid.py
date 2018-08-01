@@ -367,7 +367,7 @@ class RoomGrid(MiniGridEnv):
 
         return added_doors
 
-    def add_distractors(self, num_distractors=10, room_i=None, room_j=None, all_unique=True):
+    def add_distractors(self, i=None, j=None, num_distractors=10, all_unique=True):
         """
         Add random objects that can potentially distract/confuse the agent.
         """
@@ -391,16 +391,14 @@ class RoomGrid(MiniGridEnv):
                 continue
 
             # Add the object to a random room if no room specified
+            room_i = i
+            room_j = j
             if room_i == None:
-                i = self._rand_int(0, self.num_cols)
-            else:
-                i = room_i
+                room_i = self._rand_int(0, self.num_cols)
             if room_j == None:
-                j = self._rand_int(0, self.num_rows)
-            else:
-                j = room_j
+                room_j = self._rand_int(0, self.num_rows)
 
-            dist, pos = self.add_object(i, j, *obj)
+            dist, pos = self.add_object(room_i, room_j, *obj)
 
             objs.append(obj)
             dists.append(dist)

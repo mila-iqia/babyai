@@ -109,6 +109,59 @@ class Level_GoToObjMaze(RoomGridLevel):
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
 
+class Level_GoToImpUnlock(RoomGridLevel):
+    """
+    Go to an object, which may be in a locked room.
+    Competencies: Maze, GoTo, ImpUnlock
+    No unblocking.
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.place_agent()
+
+        # Add a locked door to a random room
+        id = self._rand_int(0, self.num_rows)
+        jd = self._rand_int(0, self.num_cols)
+        door, pos = self.add_door(id, jd, locked=True)
+        locked_room = self.get_room(id, jd)
+
+        # Add the key to a different room
+        while True:
+            ik = self._rand_int(0, self.num_rows)
+            jk = self._rand_int(0, self.num_cols)
+            if ik is id and jk is jd:
+                continue
+            self.add_object(ik, jk, 'key', door.color)
+            break
+
+        self.connect_all()
+
+        # Add distractors to all but the locked room.
+        # We do this to speed up the reachability test,
+        # which otherwise will reject all levels with
+        # objects in the locked room.
+        for i in range(self.num_rows):
+            for j in range(self.num_cols):
+                if i is not id or j is not jd:
+                    self.add_distractors(
+                        i,
+                        j,
+                        num_distractors=2,
+                        all_unique=False
+                    )
+        self.check_objs_reachable()
+
+        # Add a single object to the locked room
+        # The instruction requires going to an object matching that description
+        obj, = self.add_distractors(id, jd, num_distractors=1, all_unique=False)
+        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
+
+
 class Level_Pickup(RoomGridLevel):
     """
     Pick up an object, the object may be in another room.
@@ -228,8 +281,8 @@ class Level_Unlock(RoomGridLevel):
             for j in range(self.num_cols):
                 if i is not id or j is not jd:
                     self.add_distractors(
-                        room_i=i,
-                        room_j=j,
+                        i,
+                        j,
                         num_distractors=3,
                         all_unique=False
                     )
