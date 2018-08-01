@@ -212,8 +212,27 @@ class Level_Unlock(RoomGridLevel):
             self.add_object(ik, jk, 'key', door.color)
             break
 
-        self.connect_all()
-        self.add_distractors(num_distractors=18, all_unique=False)
+        # With 50% probability, ensure that the locked door is the only
+        # door of that color
+        if self._rand_bool():
+            colors = list(filter(lambda c: c is not door.color, COLOR_NAMES))
+            self.connect_all(door_colors=colors)
+        else:
+            self.connect_all()
+
+        # Add distractors to all but the locked room.
+        # We do this to speed up the reachability test,
+        # which otherwise will reject all levels with
+        # objects in the locked room.
+        for i in range(self.num_rows):
+            for j in range(self.num_cols):
+                if i is not id or j is not jd:
+                    self.add_distractors(
+                        room_i=i,
+                        room_j=j,
+                        num_distractors=3,
+                        all_unique=False
+                    )
         self.check_objs_reachable()
 
         self.instrs = OpenInstr(ObjDesc(door.type, door.color))

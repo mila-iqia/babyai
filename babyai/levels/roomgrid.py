@@ -311,7 +311,7 @@ class RoomGrid(MiniGridEnv):
 
         return self.start_pos
 
-    def connect_all(self, max_itrs=5000):
+    def connect_all(self, door_colors=COLOR_NAMES, max_itrs=5000):
         """
         Make sure that all rooms are reachable by the agent from its
         starting position
@@ -361,7 +361,7 @@ class RoomGrid(MiniGridEnv):
             if room.locked or room.neighbors[k].locked:
                 continue
 
-            color = self._rand_elem(COLOR_NAMES)
+            color = self._rand_elem(door_colors)
             door, _ = self.add_door(i, j, k, color, False)
             added_doors.append(door)
 
