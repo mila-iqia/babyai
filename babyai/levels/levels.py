@@ -359,6 +359,62 @@ class Level_GoToSeq(LevelGen):
         )
 
 
+class Level_Synth(LevelGen):
+    """
+    Competencies: Maze, Unblock, Unlock, GoTo, PickUp, PutNext, Open
+    Union of all instructions from PutNext, Open, Goto and PickUp. The agent may need to move objects around.
+    The agent may have to unlock the door, but only if it is explicitly referred by the instruction.
+    """
+
+    def __init__(self, seed=None):
+        # We add many distractors to increase the probability
+        # of ambiguous locations within the same room
+        super().__init__(
+            seed=seed,
+            instr_kinds=['action'],
+            locations=False,
+            unblocking=True,
+            implicit_unlock=False
+        )
+
+
+class Level_SynthLoc(LevelGen):
+    """
+    Competencies: Maze, Unblock, Unlock, GoTo, PickUp, PutNext, Open, Loc
+    Like Synth, but a significant share of object descriptions involves location language like in PickUpLoc.
+    No implicit unlocking.
+    """
+
+    def __init__(self, seed=None):
+        # We add many distractors to increase the probability
+        # of ambiguous locations within the same room
+        super().__init__(
+            seed=seed,
+            instr_kinds=['action'],
+            locations=True,
+            unblocking=True,
+            implicit_unlock=False
+        )
+
+
+class Level_SynthSeq(LevelGen):
+    """
+    Competencies: Maze, Unblock, Unlock, GoTo, PickUp, PutNext, Open, Loc, Seq
+    Like SynthLoc, but now with multiple commands, combined just like in GoToSeq.
+    No implicit unlocking.
+    """
+
+    def __init__(self, seed=None):
+        # We add many distractors to increase the probability
+        # of ambiguous locations within the same room
+        super().__init__(
+            seed=seed,
+            locations=True,
+            unblocking=True,
+            implicit_unlock=False
+        )
+
+
 class Level_MiniBossLevel(LevelGen):
     def __init__(self, seed=None):
         super().__init__(

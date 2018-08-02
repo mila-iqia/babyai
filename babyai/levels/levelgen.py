@@ -82,7 +82,6 @@ class RoomGridLevel(RoomGrid):
             break
 
         # Generate the surface form for the instructions
-        #seed = self._rand_int(0, 0xFFFFFFFF)
         self.surface = self.instrs.surface(self)
         self.mission = self.surface
 
@@ -171,18 +170,20 @@ class LevelGen(RoomGridLevel):
         locked_room_prob=0.5,
         locations=True,
         unblocking=True,
+        implicit_unlock=True,
         action_kinds=['goto', 'pickup', 'open', 'putnext'],
         instr_kinds=['action', 'and', 'seq'],
-        debug=False,
         seed=None
     ):
         self.num_dists = num_dists
         self.locked_room_prob = locked_room_prob
-        self.locations=locations
-        self.unblocking=unblocking
+        self.locations = locations
+        self.unblocking = unblocking
+        self.implicit_unlock = implicit_unlock
         self.action_kinds = action_kinds
         self.instr_kinds = instr_kinds
-        self.debug = debug
+
+        self.locked_room = None
 
         super().__init__(
             room_size=room_size,
@@ -193,7 +194,6 @@ class LevelGen(RoomGridLevel):
         )
 
     def gen_mission(self):
-        self.add_distractors(num_distractors=self.num_dists, all_unique=False)
         self.place_agent()
 
         if self._rand_float(0, 1) < self.locked_room_prob:
@@ -201,6 +201,10 @@ class LevelGen(RoomGridLevel):
 
         self.connect_all()
 
+        self.add_distractors(num_distractors=self.num_dists, all_unique=False)
+
+        # If no unblocking required, make sure all objects are
+        # reachable without unblocking
         if not self.unblocking:
             self.check_objs_reachable()
 
@@ -218,14 +222,14 @@ class LevelGen(RoomGridLevel):
             i = self._rand_int(0, self.num_cols)
             j = self._rand_int(0, self.num_rows)
             door_idx = self._rand_int(0, 4)
-            locked_room = self.get_room(i, j)
+            self.locked_room = self.get_room(i, j)
 
             # Don't lock the room the agent starts in
-            if locked_room is start_room:
+            if self.locked_room is start_room:
                 continue
 
             # Don't add a locked door in an external wall
-            if locked_room.neighbors[door_idx] is None:
+            if self.locked_room.neighbors[door_idx] is None:
                 continue
 
             door, _ = self.add_door(
@@ -243,7 +247,7 @@ class LevelGen(RoomGridLevel):
             j = self._rand_int(0, self.num_rows)
             key_room = self.get_room(i, j)
 
-            if key_room is locked_room:
+            if key_room is self.locked_room:
                 continue
 
             self.add_object(i, j, 'key', door.color)
@@ -265,12 +269,26 @@ class LevelGen(RoomGridLevel):
 
             desc = ObjDesc(type, color, loc)
 
+            # Find all objects matching the descriptor
             objs, poss = desc.find_matching_objs(self)
 
-            if len(objs) > 0:
-                break
+            # The description must match at least one object
+            if len(objs) == 0:
+                continue
 
-        return desc
+            # If no implicit unlocking is required
+            if not self.implicit_unlock and self.locked_room:
+                # Check that at least one object is not in the locked room
+                pos_not_locked = list(filter(
+                    lambda p: not self.locked_room.pos_inside(*p),
+                    poss
+                ))
+
+                if len(pos_not_locked) == 0:
+                    continue
+
+            # Found a valid object description
+            return desc
 
     def rand_instr(
         self,
