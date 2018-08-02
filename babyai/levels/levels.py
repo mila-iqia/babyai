@@ -66,20 +66,11 @@ class Level_PutNextLocal(RoomGridLevel):
             ObjDesc(o2.type, o2.color)
         )
 
-        self.instrs.reset_verifier(self)
-        if self.instrs.verify(None) is 'success':
-            raise RejectSampling('objs already next to each other')
-
 
 class Level_GoTo(RoomGridLevel):
     """
     Go to an object, the object may be in another room. Many distractors.
     """
-
-    def __init__(self, seed=None):
-        super().__init__(
-            seed=seed
-        )
 
     def gen_mission(self):
         self.place_agent()
@@ -94,11 +85,6 @@ class Level_GoToObjMaze(RoomGridLevel):
     """
     Go to an object, the object may be in another room. No distractors.
     """
-
-    def __init__(self, seed=None):
-        super().__init__(
-            seed=seed
-        )
 
     def gen_mission(self):
         self.place_agent()
@@ -115,11 +101,6 @@ class Level_GoToImpUnlock(RoomGridLevel):
     Competencies: Maze, GoTo, ImpUnlock
     No unblocking.
     """
-
-    def __init__(self, seed=None):
-        super().__init__(
-            seed=seed
-        )
 
     def gen_mission(self):
         self.place_agent()
@@ -167,11 +148,6 @@ class Level_Pickup(RoomGridLevel):
     Pick up an object, the object may be in another room.
     """
 
-    def __init__(self, seed=None):
-        super().__init__(
-            seed=seed
-        )
-
     def gen_mission(self):
         self.place_agent()
         self.connect_all()
@@ -186,11 +162,6 @@ class Level_UnblockPickup(RoomGridLevel):
     Pick up an object, the object may be in another room. The path may
     be blocked by one or more obstructors.
     """
-
-    def __init__(self, seed=None):
-        super().__init__(
-            seed=seed
-        )
 
     def gen_mission(self):
         self.place_agent()
@@ -210,11 +181,6 @@ class Level_Open(RoomGridLevel):
     """
     Open a door, which may be in another room
     """
-
-    def __init__(self, seed=None):
-        super().__init__(
-            seed=seed
-        )
 
     def gen_mission(self):
         self.place_agent()
@@ -241,11 +207,6 @@ class Level_Unlock(RoomGridLevel):
     Competencies: Maze, Open, Unlock
     No unblocking.
     """
-
-    def __init__(self, seed=None):
-        super().__init__(
-            seed=seed
-        )
 
     def gen_mission(self):
         self.place_agent()
@@ -296,26 +257,16 @@ class Level_PutNext(RoomGridLevel):
     Put an object next to another object. Either of these may be in another room.
     """
 
-    def __init__(self, seed=None):
-        super().__init__(
-            seed=seed
-        )
-
     def gen_mission(self):
         self.place_agent()
         self.connect_all()
         objs = self.add_distractors(num_distractors=18, all_unique=False)
         self.check_objs_reachable()
         o1, o2 = self._rand_subset(objs, 2)
-
         self.instrs = PutNextInstr(
             ObjDesc(o1.type, o1.color),
             ObjDesc(o2.type, o2.color)
         )
-
-        self.instrs.reset_verifier(self)
-        if self.instrs.verify(None) is 'success':
-            raise RejectSampling('objs already next to each other')
 
 
 class Level_PickupLoc(LevelGen):

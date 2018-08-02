@@ -71,6 +71,9 @@ class RoomGridLevel(RoomGrid):
                 # Generate the mission
                 self.gen_mission()
 
+                # Validate the instructions
+                self.validate_instrs(self.instrs)
+
             except RecursionError as error:
                 print('Timeout during mission generation:', error)
                 continue
@@ -84,6 +87,39 @@ class RoomGridLevel(RoomGrid):
         # Generate the surface form for the instructions
         self.surface = self.instrs.surface(self)
         self.mission = self.surface
+
+    def validate_instrs(self, instr):
+        """
+        Perform some validation on the generated instructions
+        """
+
+        if isinstance(instr, PutNextInstr):
+            # Resolve the objects referenced by the instruction
+            instr.reset_verifier(self)
+
+            # Check that the objects are not already next to each other
+            if instr.verify(None) is 'success':
+                raise RejectSampling('objs already next to each other')
+
+            # Check that we are not asking to move an object next to itself
+            move = instr.desc_move
+            fixed = instr.desc_fixed
+            if len(move.obj_set) == 1 and len(fixed.obj_set) == 1:
+                if move.obj_set[0] is fixed.obj_set[0]:
+                    raise RejectSampling('cannot move an object next to itself')
+
+            return
+
+        if isinstance(instr, ActionInstr):
+            # Nothing to do
+            return
+
+        if isinstance(instr, SeqInstr):
+            self.validate_instrs(instr.instr_a)
+            self.validate_instrs(instr.instr_b)
+            return
+
+        assert False, "unhandled instruction type"
 
     def gen_mission(self):
         """
