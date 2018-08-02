@@ -233,7 +233,7 @@ while status['num_frames'] < args.frames:
 
     # Print logs
 
-    if i % args.log_interval == 0:
+    if status['i'] % args.log_interval == 0:
         total_ellapsed_time = int(time.time() - total_start_time)
         fps = logs["num_frames"]/(update_end_time - update_start_time)
         duration = datetime.timedelta(seconds=total_ellapsed_time)
@@ -256,10 +256,10 @@ while status['num_frames'] < args.frames:
             if args.curriculum is not None:
                 for env_id, env_key in enumerate(curriculum):
                     writer.add_scalar("proba/{}".format(env_key),
-                                      menv_head.dist[env_id], num_frames)
+                                      menv_head.dist[env_id], status['num_frames'])
                     if env_id in menv_head.synthesized_returns.keys():
                         writer.add_scalar("return/{}".format(env_key),
-                                          menv_head.synthesized_returns[env_id], num_frames)
+                                          menv_head.synthesized_returns[env_id], status['num_frames'])
         if args.csv:
             csv_writer.writerow(data)
 
