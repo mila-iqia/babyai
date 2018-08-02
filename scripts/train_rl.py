@@ -173,9 +173,8 @@ if os.path.exists(status_path):
 # Define logger and Tensorboard writer and CSV writer
 
 logger = utils.get_logger(model_name)
-header = (["frames", "FPS", "duration"]
+header = (["update", "frames", "FPS", "duration"]
           + ["return_" + stat for stat in ['mean', 'std', 'min', 'max']]
-          + ["rreturn_" + stat for stat in ['mean', 'std', 'min', 'max']]
           + ["num_frames_" + stat for stat in ['mean', 'std', 'min', 'max']]
           + ["entropy", "value", "policy_loss", "value_loss"])
 if args.tb:
@@ -249,6 +248,7 @@ while status['num_frames'] < args.frames:
             "U {} | F {:06} | FPS {:04.0f} | D {} | R:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {: .3f} | vL {:.3f}"
             .format(*data))
         if args.tb:
+            assert len(header) == len(data)
             for key, value in zip(header, data):
                 writer.add_scalar(key, float(value), status['num_frames'])
 
