@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.distributions.categorical import Categorical
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-import torch_rl
+import babyai.rl
 
 # Function from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/model.py
 def initialize_parameters(m):
@@ -70,7 +70,7 @@ class ImageBOWEmbedding(nn.Module):
         embeddings = torch.transpose(torch.transpose(embeddings, 1, 3), 2, 3)
         return embeddings
 
-class ACModel(nn.Module, torch_rl.RecurrentACModel):
+class ACModel(nn.Module, babyai.rl.RecurrentACModel):
     def __init__(self, obs_space, action_space, use_instr=False, lang_model="gru", use_memory=False, arch="cnn1"):
         super().__init__()
 
@@ -80,7 +80,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
         self.arch = arch
         self.lang_model = lang_model
 
-        
+
         self.obs_space = obs_space
 
         # Define image embedding
@@ -107,7 +107,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
         elif arch == "filmcnn":
             if not self.use_instr:
                 raise ValueError("FiLM architecture can be used when instructions are enabled")
-            
+
             self.image_conv_1 = nn.Sequential(
                 nn.Conv2d(in_channels=64, out_channels=32, kernel_size=(2, 2)),
                 nn.ReLU(),
@@ -122,7 +122,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
         elif arch.startswith("expert_filmcnn"):
             if not self.use_instr:
                 raise ValueError("FiLM architecture can be used when instructions are enabled")
-            
+
             self.image_conv = nn.Sequential(
                 nn.Conv2d(in_channels=3, out_channels=128, kernel_size=(2, 2), padding=1),
                 nn.BatchNorm2d(128),
@@ -147,7 +147,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
             )
         else:
             raise ValueError("Incorrect architecture name: {}".format(arch))
-        
+
         # Define instruction embedding
         if self.use_instr:
             if self.lang_model == 'gru' or self.lang_model == 'conv' or self.lang_model == 'bigru':
@@ -164,7 +164,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
                     kernel_sizes = [3,4]
                     self.instr_convs = nn.ModuleList([nn.Conv2d(1, kernel_dim, (K, self.word_embedding_size)) for K in kernel_sizes])
                     self.instr_embedding_size = kernel_dim * len(kernel_sizes)
-                    
+
             elif self.lang_model == 'bow':
                 self.instr_embedding_size = 128
                 hidden_units = [obs_space["instr"], 128, self.instr_embedding_size]
@@ -182,11 +182,11 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
         self.embedding_size = self.semi_memory_size
         if self.use_instr and arch != "filmcnn" and not arch.startswith("expert_filmcnn"):
             self.embedding_size += self.instr_embedding_size
-        
+
         if arch == "filmcnn":
             self.controller_1 = AgentControllerFiLM(in_features= self.instr_embedding_size, out_features= 64, in_channels = 3, imm_channels = 16)
             self.controller_2 = AgentControllerFiLM(in_features = self.instr_embedding_size, out_features= 64, in_channels = 32, imm_channels = 32)
-    
+
         if arch.startswith("expert_filmcnn"):
             if arch == "expert_filmcnn":
                 num_module = 2
@@ -233,7 +233,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
                 whole_context, embed_instr, mask_context = embed_instr
 
         x = torch.transpose(torch.transpose(obs.image, 1, 3), 2, 3)
-        
+
         if self.arch == "filmcnn":
             x = self.controller_1(x, embed_instr)
             x = self.image_conv_1(x)
@@ -273,7 +273,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
             self.instr_rnn.flatten_parameters()
             _, hidden = self.instr_rnn(self.word_embedding(instr))
             return hidden[-1]
-        
+
         elif self.lang_model == 'bigru':
             self.instr_rnn.flatten_parameters()
 
@@ -305,7 +305,7 @@ class ACModel(nn.Module, torch_rl.RecurrentACModel):
                 hidden = h_n[iperm_idx]
             else:
                 hidden = h_n
-            
+
             if outputs.shape[1] < masks.shape[1]:
                 masks = masks[:, :(outputs.shape[1]-masks.shape[1])] #The packing truncate the original length so we need to change mask to fit it
 

@@ -6,10 +6,9 @@ import numpy as np
 import sys
 import torch
 import torch.nn.functional as F
-import torch_rl
-from torch_rl.utils import DictList
 from babyai.evaluate import evaluate
 import babyai.utils as utils
+from babyai.rl import DictList
 from babyai.model import ACModel
 
 class ImitationLearning(object):

@@ -11,12 +11,7 @@ from babyai.utils.model import get_model_dir, load_model, save_model
 
 def storage_dir():
     # defines the storage directory to be in the root (Same level as babyai folder)
-    if "BABYAI_STORAGE" in os.environ:
-        return os.environ["BABYAI_STORAGE"]
-    current_directory = os.path.dirname(os.path.realpath(__file__))
-    parent_directory = os.path.dirname(current_directory)
-    root_directory = os.path.dirname(parent_directory)
-    return os.path.join(root_directory, 'storage')
+    return os.environ.get("BABYAI_STORAGE", '.')
 
 
 def create_folders_if_necessary(path):

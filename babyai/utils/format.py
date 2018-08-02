@@ -3,7 +3,7 @@ import json
 import numpy
 import re
 import torch
-import torch_rl
+import babyai.rl
 
 from .. import utils
 
@@ -88,7 +88,7 @@ class ObssPreprocessor:
         }
 
     def __call__(self, obss, device=None):
-        obs_ = torch_rl.DictList()
+        obs_ = babyai.rl.DictList()
 
         if "image" in self.obs_space.keys():
             obs_.image = self.image_preproc(obss, device=device)
@@ -112,7 +112,7 @@ class IntObssPreprocessor(object):
         }
 
     def __call__(self, obss, device=None):
-        obs_ = torch_rl.DictList()
+        obs_ = babyai.rl.DictList()
 
         if "image" in self.obs_space.keys():
             obs_.image = self.image_preproc(obss, device=device)

@@ -12,12 +12,12 @@ import gym
 import time
 import datetime
 import torch
-import torch_rl
 import numpy as np
 import subprocess
 
 import babyai
 import babyai.utils as utils
+import babyai.rl
 from babyai.model import ACModel
 from babyai.levels import curriculums, create_menvs
 from babyai.evaluate import evaluate
@@ -150,11 +150,11 @@ if torch.cuda.is_available():
 
 reshape_reward = lambda _0, _1, reward, _2: 20 * reward
 if args.algo == "a2c":
-    algo = torch_rl.A2CAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
+    algo = babyai.rl.A2CAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
                             args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                             args.optim_alpha, args.optim_eps, obss_preprocessor, reshape_reward)
 elif args.algo == "ppo":
-    algo = torch_rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
+    algo = babyai.rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
                             args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                             args.optim_eps, args.clip_eps, args.epochs, args.batch_size, obss_preprocessor,
                             reshape_reward)
