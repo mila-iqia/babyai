@@ -38,9 +38,9 @@ parser.add_argument("--seed", type=int, default=1,
                     help="random seed; if 0, a random random seed will be used  (default: 1)")
 parser.add_argument("--task-id-seed", action='store_true',
                     help="use the task id within a Slurm job array as the seed")
-parser.add_argument("--procs", type=int, default=16,
-                    help="number of processes (default: 16)")
-parser.add_argument("--frames", type=int, default=10**7,
+parser.add_argument("--procs", type=int, default=64,
+                    help="number of processes (default: 64)")
+parser.add_argument("--frames", type=int, default=int(5e7),
                     help="number of frames of training (default: 10e7)")
 parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs (default: 1)")
@@ -50,12 +50,18 @@ parser.add_argument("--csv", action="store_true", default=False,
                     help="log in a csv file")
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log into Tensorboard")
-parser.add_argument("--frames-per-proc", type=int, default=None,
-                    help="number of frames per process before update (default: 5 for A2C and 128 for PPO)")
+parser.add_argument("--frames-per-proc", type=int, default=20,
+                    help="number of frames per process before update (default: 20)")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
 parser.add_argument("--lr", type=float, default=7e-4,
                     help="learning rate (default: 7e-4)")
+parser.add_argument("--beta1", type=float, default=0.9,
+                    help="beta1 for Adam (default: 0.9)")
+parser.add_argument("--beta2", type=float, default=0.999,
+                    help="beta2 for Adam (default: 0.999)")
+parser.add_argument("--reward-scale", type=float, default=20.,
+                    help="Reward scale multiplier")
 parser.add_argument("--gae-tau", type=float, default=0.95,
                     help="tau coefficient in GAE formula (default: 0.95, 1 means no gae)")
 parser.add_argument("--entropy-coef", type=float, default=0.01,
@@ -150,13 +156,13 @@ if torch.cuda.is_available():
 
 # Define actor-critic algo
 
-reshape_reward = lambda _0, _1, reward, _2: 20 * reward
+reshape_reward = lambda _0, _1, reward, _2: args.reward_scale * reward
 if args.algo == "a2c":
     algo = babyai.rl.A2CAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
                             args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                             args.optim_alpha, args.optim_eps, obss_preprocessor, reshape_reward)
 elif args.algo == "ppo":
-    algo = babyai.rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
+    algo = babyai.rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.beta1, args.beta2, args.gae_tau,
                             args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                             args.optim_eps, args.clip_eps, args.epochs, args.batch_size, obss_preprocessor,
                             reshape_reward)
