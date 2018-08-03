@@ -73,6 +73,8 @@ def test():
             action = mission.actions.pickup
         elif keyName == 'PAGE_DOWN':
             action = mission.actions.drop
+        elif keyName == 'RETURN':
+            action = mission.actions.done
         else:
             return
 
