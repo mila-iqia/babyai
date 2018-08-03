@@ -66,7 +66,7 @@ class ImageBOWEmbedding(nn.Module):
 
     def forward(self, inputs):
         embeddings = self.embedding(inputs)
-        embeddings = reduce_fn(embeddings, dim=1)
+        embeddings = self.reduce_fn(embeddings, dim=1)
         embeddings = torch.transpose(torch.transpose(embeddings, 1, 3), 2, 3)
         return embeddings
 
