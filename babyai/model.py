@@ -270,13 +270,10 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
     def _get_embed_instr(self, instr):
         if self.lang_model == 'gru':
-            self.instr_rnn.flatten_parameters()
             _, hidden = self.instr_rnn(self.word_embedding(instr))
             return hidden[-1]
 
         elif self.lang_model == 'bigru':
-            self.instr_rnn.flatten_parameters()
-
             lengths = (instr != 0).sum(1).long()
             masks = (instr != 0).float()
 
@@ -319,7 +316,6 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             return torch.cat(inputs, 1)
 
         elif self.lang_model == 'bow':
-            #self.instr_bow.flatten_parameters()
             device = torch.device("cuda" if instr.is_cuda else "cpu")
             input_dim = self.obs_space["instr"]
             input = torch.zeros((instr.size(0), input_dim), device=device)
