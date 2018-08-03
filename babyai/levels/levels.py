@@ -95,6 +95,26 @@ class Level_GoToObjMaze(RoomGridLevel):
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
 
+class Level_GoToObjMazeS4(Level_GoToObjMaze):
+    def __init__(self, seed=None):
+        super().__init__(room_size=4, seed=seed)
+
+
+class Level_GoToObjMazeS5(Level_GoToObjMaze):
+    def __init__(self, seed=None):
+        super().__init__(room_size=5, seed=seed)
+
+
+class Level_GoToObjMazeS6(Level_GoToObjMaze):
+    def __init__(self, seed=None):
+        super().__init__(room_size=6, seed=seed)
+
+
+class Level_GoToObjMazeS7(Level_GoToObjMaze):
+    def __init__(self, seed=None):
+        super().__init__(room_size=7, seed=seed)
+
+
 class Level_GoToImpUnlock(RoomGridLevel):
     """
     Go to an object, which may be in a locked room.
