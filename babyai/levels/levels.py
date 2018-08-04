@@ -95,6 +95,11 @@ class Level_GoToObjMaze(RoomGridLevel):
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
 
+class Level_GoToObjMazeS4R2(Level_GoToObjMaze):
+    def __init__(self, seed=None):
+        super().__init__(room_size=4, num_rows=2, num_cols=2, seed=seed)
+
+
 class Level_GoToObjMazeS4(Level_GoToObjMaze):
     def __init__(self, seed=None):
         super().__init__(room_size=4, seed=seed)
