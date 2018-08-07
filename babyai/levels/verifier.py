@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from enum import Enum
 from gym_minigrid.minigrid import COLOR_NAMES, DIR_TO_VEC
@@ -10,6 +11,10 @@ OBJ_TYPES_NOT_DOOR = list(filter(lambda t: t is not 'door', OBJ_TYPES))
 
 # Locations are all relative to the agent's starting position
 LOC_NAMES = ['left', 'right', 'front', 'behind']
+
+# Environment flag to indicate that done actions should be
+# used by the verifier
+use_done_actions = os.environ.get('BABYAI_DONE_ACTIONS', False)
 
 
 def dot_product(v1, v2):
@@ -185,11 +190,40 @@ class ActionInstr(Instr):
     Base class for all action instructions (clauses)
     """
 
-    pass
+    def __init__(self):
+        super().__init__()
+
+        # Indicates that the action was completed on the last step
+        self.lastStepMatch = False
+
+    def verify(self, action):
+        """
+        Verifies actions, with and without the done action.
+        """
+
+        if not use_done_actions:
+            return self.verify_action(action)
+
+        if action is self.env.actions.done:
+            if self.lastStepMatch:
+                return 'success'
+            return 'failure'
+
+        res = self.verify_action(action)
+        self.lastStepMatch = (res is 'success')
+
+    def verify_action(self):
+        """
+        Each action instruction class should implement this method
+        to verify the action.
+        """
+
+        raise NotImplementedError
 
 
 class OpenInstr(ActionInstr):
     def __init__(self, obj_desc, strict=False):
+        super().__init__()
         assert obj_desc.type is 'door'
         self.desc = obj_desc
         self.strict = strict
@@ -203,7 +237,7 @@ class OpenInstr(ActionInstr):
         # Identify set of possible matching objects in the environment
         self.desc.find_matching_objs(env)
 
-    def verify(self, action):
+    def verify_action(self, action):
         for door in self.desc.obj_set:
             if door.is_open:
                 return 'success'
@@ -225,6 +259,7 @@ class GoToInstr(ActionInstr):
     """
 
     def __init__(self, obj_desc):
+        super().__init__()
         self.desc = obj_desc
 
     def surface(self, env):
@@ -236,7 +271,7 @@ class GoToInstr(ActionInstr):
         # Identify set of possible matching objects in the environment
         self.desc.find_matching_objs(env)
 
-    def verify(self, action):
+    def verify_action(self, action):
         # For each object position
         for pos in self.desc.obj_poss:
             # If the agent is next to (and facing) the object
@@ -253,6 +288,7 @@ class PickupInstr(ActionInstr):
     """
 
     def __init__(self, obj_desc, strict=False):
+        super().__init__()
         assert obj_desc.type is not 'door'
         self.desc = obj_desc
         self.strict = strict
@@ -266,7 +302,7 @@ class PickupInstr(ActionInstr):
         # Identify set of possible matching objects in the environment
         self.desc.find_matching_objs(env)
 
-    def verify(self, action):
+    def verify_action(self, action):
         for obj in self.desc.obj_set:
             if self.env.carrying is obj:
                 return 'success'
@@ -286,6 +322,7 @@ class PutNextInstr(ActionInstr):
     """
 
     def __init__(self, obj_move, obj_fixed, strict=False):
+        super().__init__()
         assert obj_move.type is not 'door'
         self.desc_move = obj_move
         self.desc_fixed = obj_fixed
@@ -301,7 +338,7 @@ class PutNextInstr(ActionInstr):
         self.desc_move.find_matching_objs(env)
         self.desc_fixed.find_matching_objs(env)
 
-    def verify(self, action):
+    def verify_action(self, action):
         for obj_a in self.desc_move.obj_set:
             pos_a = obj_a.cur_pos
 
@@ -348,6 +385,8 @@ class BeforeInstr(SeqInstr):
 
     def verify(self, action):
         if self.a_done is 'success':
+            print('A DONE')
+
             self.b_done = self.instr_b.verify(action)
 
             if self.b_done is 'failure':
@@ -435,6 +474,10 @@ class AndInstr(SeqInstr):
 
         if self.b_done is not 'success':
             self.b_done = self.instr_b.verify(action)
+
+        if use_done_actions and action is self.env.actions.done:
+            if self.a_done is 'failure' and self.b_done is 'failure':
+                return 'failure'
 
         if self.a_done is 'success' and self.b_done is 'success':
             return 'success'
