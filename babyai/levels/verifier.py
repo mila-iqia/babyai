@@ -385,8 +385,6 @@ class BeforeInstr(SeqInstr):
 
     def verify(self, action):
         if self.a_done is 'success':
-            print('A DONE')
-
             self.b_done = self.instr_b.verify(action)
 
             if self.b_done is 'failure':
