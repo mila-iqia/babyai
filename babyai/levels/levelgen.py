@@ -225,7 +225,7 @@ class LevelGen(RoomGridLevel):
             room_size=room_size,
             num_rows=num_rows,
             num_cols=num_cols,
-            max_steps=20*room_size**2,
+            max_steps=2 * (room_size ** 2) * (num_rows * num_cols),
             seed=seed
         )
 
