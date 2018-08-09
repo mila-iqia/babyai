@@ -130,11 +130,6 @@ class PPOAlgo(BaseAlgo):
     def _get_batches_starting_indexes(self):
         """Gives, for each batch, the indexes of the observations given to
         the model and the experiences used to compute the loss at first.
-
-        First, the indexes are the integers from 0 to `self.num_frames` with a step of
-        `self.recurrence`, shifted by `self.recurrence//2` one time in two for having
-        more diverse batches. Then, the indexes are splited into the different batches.
-
         Returns
         -------
         batches_starting_indexes : list of list of int
@@ -144,12 +139,6 @@ class PPOAlgo(BaseAlgo):
 
         indexes = numpy.arange(0, self.num_frames, self.recurrence)
         indexes = numpy.random.permutation(indexes)
-
-        # Shift starting indexes by self.recurrence//2 half the time
-        if self.batch_num % 2 == 1:
-            indexes = indexes[(indexes + self.recurrence) % self.num_frames_per_proc != 0]
-            indexes += self.recurrence // 2
-        self.batch_num += 1
 
         num_indexes = self.batch_size // self.recurrence
         batches_starting_indexes = [indexes[i:i+num_indexes] for i in range(0, len(indexes), num_indexes)]
