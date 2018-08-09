@@ -25,16 +25,10 @@ class RoomGridLevel(RoomGrid):
     def __init__(
         self,
         room_size=8,
-        max_steps=None,
         **kwargs
     ):
-        # Default max steps computation
-        if max_steps is None:
-            max_steps = 4 * (room_size ** 2)
-
         super().__init__(
             room_size=room_size,
-            max_steps=max_steps,
             **kwargs
         )
 
@@ -43,6 +37,12 @@ class RoomGridLevel(RoomGrid):
 
         # Recreate the verifier
         self.instrs.reset_verifier(self)
+
+        # Compute the time step limit based on the maze size and instructions
+        nav_time_room = self.room_size ** 2
+        nav_time_maze = nav_time_room * self.num_rows * self.num_cols
+        num_navs = self.num_navs_needed(self.instrs)
+        self.max_steps = num_navs * nav_time_maze
 
         return obs
 
@@ -136,6 +136,23 @@ class RoomGridLevel(RoomGrid):
     def gym_id(self):
         return self.__class__.gym_id
 
+    def num_navs_needed(self, instr):
+        """
+        Compute the maximum number of navigations needed to perform
+        a simple or complex instruction
+        """
+
+        if isinstance(instr, PutNextInstr):
+            return 2
+
+        if isinstance(instr, ActionInstr):
+            return 1
+
+        if isinstance(instr, SeqInstr):
+            na = self.num_navs_needed(instr.instr_a)
+            nb = self.num_navs_needed(instr.instr_b)
+            return na + nb
+
     def check_objs_reachable(self, raise_exc=True):
         """
         Check that all objects are reachable from the agent's starting
@@ -225,7 +242,6 @@ class LevelGen(RoomGridLevel):
             room_size=room_size,
             num_rows=num_rows,
             num_cols=num_cols,
-            max_steps=2 * (room_size ** 2) * (num_rows * num_cols),
             seed=seed
         )
 
@@ -437,14 +453,14 @@ def test():
         for i in range(0, 15):
             mission = level(seed=i)
 
-            # Reduce max_steps because otherwise tests take too long
-            mission.max_steps = 200
-
             # Check that the surface form was generated
             assert isinstance(mission.surface, str)
             assert len(mission.surface) > 0
             obs = mission.reset()
             assert obs['mission'] == mission.surface
+
+            # Reduce max_steps because otherwise tests take too long
+            mission.max_steps = min(mission.max_steps, 200)
 
             # Check for some known invalid patterns in the surface form
             import re
