@@ -42,9 +42,9 @@ parser.add_argument("--procs", type=int, default=64,
                     help="number of processes (default: 64)")
 parser.add_argument("--frames", type=int, default=int(5e7),
                     help="number of frames of training (default: 10e7)")
-parser.add_argument("--log-interval", type=int, default=1,
+parser.add_argument("--log-interval", type=int, default=10,
                     help="number of updates between two logs (default: 1)")
-parser.add_argument("--save-interval", type=int, default=10,
+parser.add_argument("--save-interval", type=int, default=1000,
                     help="number of updates between two saves (default: 0, 0 means no saving)")
 parser.add_argument("--csv", action="store_true", default=False,
                     help="log in a csv file")
@@ -183,8 +183,9 @@ if os.path.exists(status_path):
 logger = utils.get_logger(model_name)
 header = (["update", "frames", "FPS", "duration"]
           + ["return_" + stat for stat in ['mean', 'std', 'min', 'max']]
+          + ["success_rate"]
           + ["num_frames_" + stat for stat in ['mean', 'std', 'min', 'max']]
-          + ["entropy", "value", "policy_loss", "value_loss"])
+          + ["entropy", "value", "policy_loss", "value_loss", "grad_norm"])
 if args.tb:
     from tensorboardX import SummaryWriter
     writer = SummaryWriter(utils.get_log_dir(model_name))
@@ -245,15 +246,18 @@ while status['num_frames'] < args.frames:
         fps = logs["num_frames"]/(update_end_time - update_start_time)
         duration = datetime.timedelta(seconds=total_ellapsed_time)
         return_per_episode = utils.synthesize(logs["return_per_episode"])
-        rreturn_per_episode = utils.synthesize(logs["reshaped_return_per_episode"])
+        success_per_episode = utils.synthesize(
+            [1 if r > 0 else 0 for r in logs["return_per_episode"]])
         num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
         data = [status['i'], status['num_frames'], fps, total_ellapsed_time,
                 *return_per_episode.values(),
+                success_per_episode['mean'],
                 *num_frames_per_episode.values(),
-                logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"]]
+                logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"],
+                logs["grad_norm"]]
         logger.info(
-            "U {} | F {:06} | FPS {:04.0f} | D {} | R:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {: .3f} | vL {:.3f}"
+                "U {} | F {:06} | FPS {:04.0f} | D {} | R:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | S {:.2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {: .3f} | vL {:.3f} | gN {:.3f}"
             .format(*data))
         if args.tb:
             assert len(header) == len(data)
