@@ -54,8 +54,8 @@ parser.add_argument("--frames-per-proc", type=int, default=20,
                     help="number of frames per process before update (default: 20)")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
-parser.add_argument("--lr", type=float, default=7e-4,
-                    help="learning rate (default: 7e-4)")
+parser.add_argument("--lr", type=float, default=1e-4,
+                    help="learning rate (default: 1e-4)")
 parser.add_argument("--beta1", type=float, default=0.9,
                     help="beta1 for Adam (default: 0.9)")
 parser.add_argument("--beta2", type=float, default=0.999,
@@ -70,8 +70,8 @@ parser.add_argument("--value-loss-coef", type=float, default=0.5,
                     help="value loss term coefficient (default: 0.5)")
 parser.add_argument("--max-grad-norm", type=float, default=0.5,
                     help="maximum norm of gradient (default: 0.5)")
-parser.add_argument("--recurrence", type=int, default=1,
-                    help="number of timesteps gradient is backpropagated (default: 1)")
+parser.add_argument("--recurrence", type=int, default=20,
+                    help="number of timesteps gradient is backpropagated (default: 20)")
 parser.add_argument("--optim-eps", type=float, default=1e-5,
                     help="Adam and RMSprop optimizer epsilon (default: 1e-5)")
 parser.add_argument("--optim-alpha", type=float, default=0.99,
@@ -80,8 +80,8 @@ parser.add_argument("--clip-eps", type=float, default=0.2,
                     help="clipping epsilon for PPO (default: 0.2)")
 parser.add_argument("--epochs", type=int, default=4,
                     help="number of epochs for PPO (default: 4)")
-parser.add_argument("--batch-size", type=int, default=256,
-                    help="batch size for PPO (default: 256)")
+parser.add_argument("--batch-size", type=int, default=1280,
+                    help="batch size for PPO (default: 1280)")
 parser.add_argument("--no-instr", action="store_true", default=False,
                     help="don't use instructions in the model")
 parser.add_argument("--instr-arch", default="gru",
