@@ -103,7 +103,7 @@ def create_menvs(curriculum, num_procs, seed):
         envs = []
         for j in range(num_envs):
             env = gym.make(curriculum[j])
-            env.seed(seed + j)
+            env.seed(seed + 100 * i + j)
             envs.append(env)
         menvs.append(menv.MultiEnv(envs, menv_head.remotes[i], seed))
     return menv_head, menvs
