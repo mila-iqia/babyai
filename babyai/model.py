@@ -71,7 +71,8 @@ class ImageBOWEmbedding(nn.Module):
         return embeddings
 
 class ACModel(nn.Module, babyai.rl.RecurrentACModel):
-    def __init__(self, obs_space, action_space, use_instr=False, lang_model="gru", use_memory=False, arch="cnn1"):
+    def __init__(self, obs_space, action_space,
+                 image_dim=128, memory_dim=128,  use_instr=False, lang_model="gru", use_memory=False, arch="cnn1"):
         super().__init__()
 
         # Decide which components are enabled
@@ -79,12 +80,11 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         self.use_memory = use_memory
         self.arch = arch
         self.lang_model = lang_model
+        self.image_dim = image_dim
+        self.memory_dim = memory_dim
 
 
         self.obs_space = obs_space
-
-        # Define image embedding
-        self.image_embedding_size = 128
 
         if arch == "cnn1":
             self.image_conv = nn.Sequential(
@@ -93,7 +93,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 nn.MaxPool2d(kernel_size=(2, 2), stride=2),
                 nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(2, 2)),
                 nn.ReLU(),
-                nn.Conv2d(in_channels=32, out_channels=self.image_embedding_size, kernel_size=(2, 2)),
+                nn.Conv2d(in_channels=32, out_channels=image_dim, kernel_size=(2, 2)),
                 nn.ReLU()
             )
         elif arch == "cnn2":
@@ -101,7 +101,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 nn.Conv2d(in_channels=3, out_channels=16, kernel_size=(3, 3)),
                 nn.ReLU(),
                 nn.MaxPool2d(kernel_size=(2, 2), stride=2, ceil_mode=True),
-                nn.Conv2d(in_channels=16, out_channels=self.image_embedding_size, kernel_size=(3, 3)),
+                nn.Conv2d(in_channels=16, out_channels=image_dim, kernel_size=(3, 3)),
                 nn.ReLU()
             )
         elif arch == "filmcnn":
@@ -116,7 +116,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             self.image_conv_2 = nn.Sequential(
                 nn.Conv2d(in_channels=64, out_channels=32, kernel_size=(2, 2)),
                 nn.ReLU(),
-                nn.Conv2d(in_channels=32, out_channels=self.image_embedding_size, kernel_size=(2, 2)),
+                nn.Conv2d(in_channels=32, out_channels=128, kernel_size=(2, 2)),
                 nn.ReLU()
             )
         elif arch.startswith("expert_filmcnn"):
@@ -142,7 +142,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 nn.ReLU(),
                 nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(3, 3)),
                 nn.ReLU(),
-                nn.Conv2d(in_channels=32, out_channels=self.image_embedding_size, kernel_size=(3, 3)),
+                nn.Conv2d(in_channels=32, out_channels=image_dim, kernel_size=(3, 3)),
                 nn.ReLU()
             )
         else:
@@ -176,7 +176,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
         # Define memory
         if self.use_memory:
-            self.memory_rnn = nn.LSTMCell(self.image_embedding_size, self.semi_memory_size)
+            self.memory_rnn = nn.LSTMCell(self.image_dim, self.memory_dim)
 
         # Resize image embedding
         self.embedding_size = self.semi_memory_size
@@ -184,8 +184,12 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             self.embedding_size += self.instr_embedding_size
 
         if arch == "filmcnn":
-            self.controller_1 = AgentControllerFiLM(in_features= self.instr_embedding_size, out_features= 64, in_channels = 3, imm_channels = 16)
-            self.controller_2 = AgentControllerFiLM(in_features = self.instr_embedding_size, out_features= 64, in_channels = 32, imm_channels = 32)
+            self.controller_1 = AgentControllerFiLM(
+                in_features=self.instr_embedding_size, out_features=64,
+                in_channels=3, imm_channels=16)
+            self.controller_2 = AgentControllerFiLM(
+                in_features=self.instr_embedding_size,
+                out_features=64, in_channels=32, imm_channels=32)
 
         if arch.startswith("expert_filmcnn"):
             if arch == "expert_filmcnn":
@@ -195,9 +199,13 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             self.controllers = []
             for ni in range(num_module):
                 if ni < num_module-1:
-                    mod = ExpertControllerFiLM(in_features= self.instr_embedding_size, out_features= 128, in_channels = 128, imm_channels = 128)
+                    mod = ExpertControllerFiLM(
+                        in_features=self.instr_embedding_size,
+                        out_features=128, in_channels=128, imm_channels=128)
                 else:
-                    mod = ExpertControllerFiLM(in_features = self.instr_embedding_size, out_features= self.image_embedding_size, in_channels = 128, imm_channels = 128)
+                    mod = ExpertControllerFiLM(
+                        in_features=self.instr_embedding_size, out_features=self.image_dim,
+                        in_channels=128, imm_channels=128)
                 self.controllers.append(mod)
                 self.add_module('FiLM_Controler_' + str(ni), mod)
 
@@ -224,7 +232,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
     @property
     def semi_memory_size(self):
-        return self.image_embedding_size
+        return self.memory_dim
 
     def forward(self, obs, memory):
         if self.use_instr:

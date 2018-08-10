@@ -91,6 +91,8 @@ def keyDownCb(keyName):
         print("Mission: {}".format(obs["mission"]))
 
 
+for i in range(3):
+    env.reset()
 
 while True:
     time.sleep(args.pause)

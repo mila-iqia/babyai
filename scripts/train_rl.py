@@ -82,6 +82,10 @@ parser.add_argument("--epochs", type=int, default=4,
                     help="number of epochs for PPO (default: 4)")
 parser.add_argument("--batch-size", type=int, default=1280,
                     help="batch size for PPO (default: 1280)")
+parser.add_argument("--image-dim", type=int, default=128,
+                    help="dimensionality of the image embedding")
+parser.add_argument("--memory-dim", type=int, default=128,
+                    help="dimensionality of the memory LSTM")
 parser.add_argument("--no-instr", action="store_true", default=False,
                     help="don't use instructions in the model")
 parser.add_argument("--instr-arch", default="gru",
@@ -148,6 +152,7 @@ else:
 acmodel = utils.load_model(model_name, raise_not_found=False)
 if acmodel is None:
     acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
+                      args.image_dim, args.memory_dim,
                       not args.no_instr, args.instr_arch, not args.no_mem, args.arch)
     utils.save_model(acmodel, model_name)
 if torch.cuda.is_available():
