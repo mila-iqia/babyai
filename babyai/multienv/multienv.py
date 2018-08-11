@@ -29,15 +29,16 @@ class MultiEnvHead:
         self.compute_dist = compute_dist
 
         self._init_connections()
-        self._reset_returns()
-        self.dist = numpy.ones((self.num_envs))/self.num_envs
+        self.returns = {env_id: [0] * num_menvs for env_id in range(self.num_envs)}
+        self.dist = numpy.ones((self.num_envs)) / self.num_envs
         self.update_dist()
 
     def _init_connections(self):
         self.locals, self.remotes = zip(*[mp.Pipe() for _ in range(self.num_menvs)])
 
-    def _reset_returns(self):
-        self.returns = {env_id: [] for env_id in range(self.num_envs)}
+    def _trim_returns(self):
+        for env_id in self.returns:
+            self.returns[env_id] = self.returns[env_id][-self.num_menvs:]
 
     def _recv_returns(self):
         data = recv_conns(self.locals)
@@ -57,7 +58,7 @@ class MultiEnvHead:
     def update_dist(self):
         self._recv_returns()
         self._synthesize_returns()
-        self._reset_returns()
+        self._trim_returns()
 
         if self.compute_dist is not None:
             self.dist = self.compute_dist(self.synthesized_returns)

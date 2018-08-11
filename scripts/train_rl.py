@@ -191,6 +191,10 @@ header = (["update", "frames", "FPS", "duration"]
           + ["success_rate"]
           + ["num_frames_" + stat for stat in ['mean', 'std', 'min', 'max']]
           + ["entropy", "value", "policy_loss", "value_loss", "grad_norm"])
+if args.curriculum is not None:
+    for env_key in curriculum:
+        header.append("proba/{}".format(env_key))
+        header.append("return/{}".format(env_key))
 if args.tb:
     from tensorboardX import SummaryWriter
     writer = SummaryWriter(utils.get_log_dir(model_name))
@@ -261,9 +265,16 @@ while status['num_frames'] < args.frames:
                 *num_frames_per_episode.values(),
                 logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"],
                 logs["grad_norm"]]
-        logger.info(
-                "U {} | F {:06} | FPS {:04.0f} | D {} | R:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | S {:.2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | pL {: .3f} | vL {:.3f} | gN {:.3f}"
-            .format(*data))
+        format_str = ("U {} | F {:06} | FPS {:04.0f} | D {} | R:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | "
+                      "S {:.2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | "
+                      "pL {: .3f} | vL {:.3f} | gN {:.3f} | ")
+        if args.curriculum is not None:
+            for env_id, _ in enumerate(curriculum):
+                data.append(menv_head.dist[env_id])
+                data.append(menv_head.synthesized_returns.get(env_id, np.NaN))
+                format_str += "pr{} {:.2f} | ".format(env_id, menv_head.dist[env_id])
+                format_str += "R{} {:.2f} | ".format(env_id, menv_head.synthesized_returns.get(env_id, np.NaN))
+        logger.info(format_str.format(*data))
         if args.tb:
             assert len(header) == len(data)
             for key, value in zip(header, data):
