@@ -15,14 +15,17 @@ def recv_conns(conns):
 class MultiEnvHead:
     """The head of several multi-environments.
 
-    It communicates with these multi-environments through pipes: it first
-    receives (env_id, return) tuples from them, updates the distribution
-    over their environments (with a DistComputer object) after some time
-    and sends them this distribution.
+    The head fascilitates communication between several multi-environments,
+    each of which combines several tasks (same tasks for each multi-environment).
+    In particular, the head maintains a distribution over tasks. It collect rewards
+    from all the multi-environments, uses `DistComputer`
+    object to recompute this distribution and then broadcasts it to all
+    the multi-environments. Since each multi-enviroment is typically
+    run in its ownprocess, the head communicates with multi-enviroments
+    using pipes. The main method is `update_dist` that should be called
+    regularly to keep the task distribution up-to-date.
 
-    This class enables to execute several multi-environments in different
-    processes."""
-
+    """
     def __init__(self, num_menvs, num_envs, compute_dist=None):
         self.num_menvs = num_menvs
         self.num_envs = num_envs
@@ -37,25 +40,30 @@ class MultiEnvHead:
         self.locals, self.remotes = zip(*[mp.Pipe() for _ in range(self.num_menvs)])
 
     def _trim_returns(self):
+        """Ditch old returns and keep only a few recent ones for each task."""
         for env_id in self.returns:
             self.returns[env_id] = self.returns[env_id][-self.num_menvs:]
 
     def _recv_returns(self):
+        """Collect returns from all multi-environments."""
         data = recv_conns(self.locals)
         for env_id, returnn in data:
             self.returns[env_id].append(returnn)
 
     def _synthesize_returns(self):
+        """Aggregate returns for each of the tasks."""
         self.synthesized_returns = {}
         for env_id, returnn in self.returns.items():
             if len(returnn) > 0:
                 self.synthesized_returns[env_id] = numpy.mean(returnn)
 
     def _send_dist(self):
+        """Broadcast the task distribution to all multi-environments."""
         for local in self.locals:
             local.send(self.dist)
 
     def update_dist(self):
+        """Collect returns and update the task distribution."""
         self._recv_returns()
         self._synthesize_returns()
         self._trim_returns()
@@ -70,8 +78,9 @@ class MultiEnv:
 
     It simulates several environments: it first receives a distribution
     from its head, samples an environment from it, simulates it and
-    then sends a (env_id, return) tuple to its head."""
+    then sends a (env_id, return) tuple to its head.
 
+    """
     def __init__(self, envs, head_conn, seed=None):
         self.envs = envs
         self.head_conn = head_conn
