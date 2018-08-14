@@ -67,9 +67,10 @@ class Bot:
         pos = self.mission.agent_pos
         dir_vec = self.mission.dir_vec
         right_vec = self.mission.right_vec
-        fwd_cell = pos + dir_vec
+        fwd_pos = pos + dir_vec
 
         actions = self.mission.actions
+        carrying = self.mission.carrying
 
         assert len(self.stack) > 0, "stack empty"
 
@@ -80,6 +81,20 @@ class Bot:
 
         # Open a door
         if subgoal == 'Open':
+            fwd_cell = self.mission.grid.get(*fwd_pos)
+            assert fwd_cell
+            assert fwd_cell.type == "door" or fwd_cell.type == "locked_door"
+
+            # If the door is locked, go find the key and then return
+            if fwd_cell.type == 'locked_door':
+                if not carrying or carrying.type != 'key' or carrying.color != fwd_cell.color:
+                    key_desc = ObjDesc('key', fwd_cell.color)
+                    key_desc.find_matching_objs(self.mission)
+                    self.stack.append(('GoToObj', datum))
+                    self.stack.append(('Pickup', key_desc))
+                    self.stack.append(('GoToObj', key_desc))
+                    return None
+
             self.stack.pop()
             return actions.toggle
 
@@ -102,7 +117,7 @@ class Bot:
             if obj_pos:
                 # If we are right in front of the object,
                 # go back to the previous subgoal
-                if np.array_equal(obj_pos, fwd_cell):
+                if np.array_equal(obj_pos, fwd_pos):
                     self.stack.pop()
                     return None
 
@@ -120,7 +135,7 @@ class Bot:
         # Go to a given location
         if subgoal == 'GoNextTo':
             # If we are facing the target cell, subgoal completed
-            if np.array_equal(datum, fwd_cell):
+            if np.array_equal(datum, fwd_pos):
                 self.stack.pop()
                 return None
 
@@ -130,7 +145,7 @@ class Bot:
             next_cell = path[0]
 
             # Turn towards the direction we need to go
-            if np.array_equal(next_cell, fwd_cell):
+            if np.array_equal(next_cell, fwd_pos):
                 return actions.forward
             if np.array_equal(next_cell - pos, right_vec):
                 return actions.right

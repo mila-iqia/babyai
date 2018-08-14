@@ -16,8 +16,9 @@ level_list = [
     'Open',
     'Pickup',
     'PickupLoc',
+    'PutNext',
 
-    #'Unlock',
+    'Unlock',
     #'UnblockPickup',
     #'GoToImpUnlock',
 
