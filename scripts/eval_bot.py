@@ -19,8 +19,8 @@ level_list = [
     'PutNext',
 
     'Unlock',
+    'GoToImpUnlock',
     #'UnblockPickup',
-    #'GoToImpUnlock',
 
     #'GoToSeq',
     #'Synth',
@@ -46,7 +46,7 @@ for level_name in level_list:
         mission = level(seed=mission_seed)
         expert = Bot(mission)
 
-        print('%s/%s: %s, seed=%d' % (run_no+1, num_runs, mission.surface, mission_seed))
+        #print('%s/%s: %s, seed=%d' % (run_no+1, num_runs, mission.surface, mission_seed))
 
         while True:
             action = expert.step()

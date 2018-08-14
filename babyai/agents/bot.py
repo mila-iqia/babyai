@@ -77,8 +77,6 @@ class Bot:
         # Get the topmost instruction on the stack
         subgoal, datum = self.stack[-1]
 
-        #print(subgoal)
-
         # Open a door
         if subgoal == 'Open':
             fwd_cell = self.mission.grid.get(*fwd_pos)
@@ -90,7 +88,7 @@ class Bot:
                 if not carrying or carrying.type != 'key' or carrying.color != fwd_cell.color:
                     key_desc = ObjDesc('key', fwd_cell.color)
                     key_desc.find_matching_objs(self.mission)
-                    self.stack.append(('GoToObj', datum))
+                    self.stack.append(('GoNextTo', tuple(fwd_pos)))
                     self.stack.append(('Pickup', key_desc))
                     self.stack.append(('GoToObj', key_desc))
                     return None
@@ -196,15 +194,35 @@ class Bot:
                 self.stack.append(('GoNextTo', unseen_pos))
                 return None
 
+            # Find the closest unlocked unopened door
+            def unopened_unlocked_door(pos, cell):
+                if not cell:
+                    return False
+                if cell.type != 'door':
+                    return False
+                return not cell.is_open
+
             # Find the closest unopened door
-            _, door_pos = self.shortest_path(
-                lambda pos, cell: cell and cell.type == 'door' and not cell.is_open
-            )
+            def unopened_door(pos, cell):
+                if not cell:
+                    return False
+                if cell.type != 'door' and cell.type != 'locked_door':
+                    return False
+                return not cell.is_open
+
+            # Try to find an unlocked door first
+            # We do this because otherwise, opening an unlocked door as
+            # a subgoal may try to open the same subdoor for exploration,
+            # resulting in an infinite loop
+            _, door_pos = self.shortest_path(unopened_unlocked_door)
+            if not door_pos:
+                _, door_pos = self.shortest_path(unopened_door)
 
             # Open the door
             if door_pos:
+                door = self.mission.grid.get(*door_pos)
                 self.stack.pop()
-                self.stack.append(('Open', unseen_pos))
+                self.stack.append(('Open', None))
                 self.stack.append(('GoNextTo', door_pos))
                 return None
 
@@ -246,6 +264,10 @@ class Bot:
                 self.vis_mask[abs_i, abs_j] = True
 
     def find_obj_pos(self, obj_desc):
+        """
+        Find the position of a visible object matching a given description
+        """
+
         assert len(obj_desc.obj_set) > 0
 
         for i in range(len(obj_desc.obj_set)):
@@ -305,7 +327,7 @@ class Bot:
 
             # Can't go through closed doors, don't visit neighbors
             if cell:
-                if cell.type != 'door':
+                if cell.type != 'door' and cell.type != 'locked_door':
                     continue
                 if not cell.is_open:
                     continue
