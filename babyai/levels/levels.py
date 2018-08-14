@@ -86,6 +86,22 @@ class Level_GoToObjMaze(RoomGridLevel):
     Go to an object, the object may be in another room. No distractors.
     """
 
+    def __init__(
+        self,
+        room_size=8,
+        num_rows=3,
+        num_cols=3,
+        doors_open=False,
+        seed=None
+    ):
+        self.doors_open = doors_open
+        super().__init__(
+            num_rows=num_rows,
+            num_cols=num_cols,
+            room_size=room_size,
+            seed=seed
+        )
+
     def gen_mission(self):
         self.place_agent()
         self.connect_all()
@@ -93,6 +109,20 @@ class Level_GoToObjMaze(RoomGridLevel):
         self.check_objs_reachable()
         obj = objs[0]
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
+
+        # If requested, open all the doors
+        if self.doors_open:
+            for i in range(self.num_rows):
+                for j in range(self.num_cols):
+                    room = self.get_room(i, j)
+                    for door in room.doors:
+                        if door:
+                            door.is_open = True
+
+
+class Level_GoToObjMazeOpen(Level_GoToObjMaze):
+    def __init__(self, seed=None):
+        super().__init__(doors_open=True, seed=seed)
 
 
 class Level_GoToObjMazeS4R2(Level_GoToObjMaze):
