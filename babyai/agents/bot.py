@@ -22,27 +22,53 @@ class Bot:
         self.vis_mask = np.zeros(shape=(grid_size, grid_size), dtype=np.bool)
 
         # Stack of tasks/subtasks to complete (tuples)
-        # - Go to an object matching a given description
-        # - Go to some position (to explore)
-        # - Perform the open action
         self.stack = []
 
-        instr = mission.instrs
+        # Process/parse the instructions
+        self.process_instr(mission.instrs)
+
+        #for subgoal, datum in self.stack:
+        #    print(subgoal)
+        #    if datum:
+        #        print(datum.surface(self.mission))
+
+    def process_instr(self, instr):
+        """
+        Translate instructions into an internal form the agent can execute
+        """
+
         if isinstance(instr, GoToInstr):
             self.stack.append(('GoToObj', instr.desc))
-        elif isinstance(instr, OpenInstr):
+            return
+
+        if isinstance(instr, OpenInstr):
             self.stack.append(('Open', instr.desc))
             self.stack.append(('GoToObj', instr.desc))
-        elif isinstance(instr, PickupInstr):
+            return
+
+        if isinstance(instr, PickupInstr):
             self.stack.append(('Pickup', instr.desc))
             self.stack.append(('GoToObj', instr.desc))
-        elif isinstance(instr, PutNextInstr):
+            return
+
+        if isinstance(instr, PutNextInstr):
             self.stack.append(('Drop', None))
             self.stack.append(('GoToAdjPos', instr.desc_fixed))
             self.stack.append(('Pickup', None))
             self.stack.append(('GoToObj', instr.desc_move))
-        else:
-            assert False
+            return
+
+        if isinstance(instr, BeforeInstr) or isinstance(instr, AndInstr):
+            self.process_instr(instr.instr_b)
+            self.process_instr(instr.instr_a)
+            return
+
+        if isinstance(instr, AfterInstr):
+            self.process_instr(instr.instr_a)
+            self.process_instr(instr.instr_b)
+            return
+
+        assert False, "unknown instruction type"
 
     def step(self):
         """

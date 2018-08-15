@@ -31,22 +31,41 @@ level_list = [
     #'BossLevel',
 ]
 
-seed = 1
-num_runs = 500
+parser = OptionParser()
+#parser.add_option(
+#    "--level",
+#    default='OpenRedDoor'
+#)
+parser.add_option(
+    "--seed",
+    type="int",
+    default=1
+)
+parser.add_option(
+    "--num_runs",
+    type="int",
+    default=500
+)
+parser.add_option(
+    "--verbose",
+    action='store_true'
+)
+(options, args) = parser.parse_args()
 
 for level_name in level_list:
 
     num_success = 0
     total_reward = 0
 
-    for run_no in range(num_runs):
+    for run_no in range(options.num_runs):
         level = level_dict[level_name]
 
-        mission_seed = seed+run_no
+        mission_seed = options.seed + run_no
         mission = level(seed=mission_seed)
         expert = Bot(mission)
 
-        #print('%s/%s: %s, seed=%d' % (run_no+1, num_runs, mission.surface, mission_seed))
+        if options.verbose:
+            print('%s/%s: %s, seed=%d' % (run_no+1, options.num_runs, mission.surface, mission_seed))
 
         while True:
             action = expert.step()
@@ -59,7 +78,7 @@ for level_name in level_list:
                     num_success += 1
                 break
 
-    success_rate = 100 * num_success / num_runs
-    mean_reward = total_reward / num_runs
+    success_rate = 100 * num_success / options.num_runs
+    mean_reward = total_reward / options.num_runs
 
     print('%16s: %.1f%%, r=%.2f' % (level_name, success_rate, mean_reward))
