@@ -4,13 +4,14 @@ import argparse
 import gym
 
 import babyai.utils as utils
+from babyai.agents.bot import Bot
 
 # Parse arguments
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to be run (REQUIRED)")
-parser.add_argument("--model", required=True,
+parser.add_argument("--model", required=False, default='BOT',
                     help="name of the trained model (REQUIRED)")
 parser.add_argument("--episodes", type=int, default=1000,
                     help="number of episodes to generate demonstrations for (default: 1000)")
@@ -57,6 +58,7 @@ while True:
 
     done = False
     obs = env.reset()
+    agent.on_reset()
     demo = []
 
     while not done:

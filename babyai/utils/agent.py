@@ -2,12 +2,16 @@ from abc import ABC, abstractmethod
 import torch
 
 from .. import utils
+from babyai.agents.bot import Bot
 
 
 class Agent(ABC):
     """An abstraction of the behavior of an agent. The agent is able:
     - to choose an action given an observation,
     - to analyze the feedback (i.e. reward and done state) of its action."""
+
+    def on_reset(self):
+        pass
 
     @abstractmethod
     def get_action(self, obs):
@@ -91,8 +95,27 @@ class DemoAgent(Agent):
             self.step_id = 0
 
 
+class BotAgent:
+
+    def __init__(self, env):
+        """An agent based on a GOFAI bot."""
+        self.env = env
+        self.on_reset()
+
+    def on_reset(self):
+        self.bot = Bot(self.env)
+
+    def get_action(self, *args, **kwargs):
+        return self.bot.step()
+
+    def analyze_feedback(self, reward, done):
+        pass
+
+
 def load_agent(args, env):
-    if args.model is not None:
+    if args.model == 'BOT':
+        return BotAgent(env)
+    elif args.model is not None:
         obss_preprocessor = utils.ObssPreprocessor(args.model, env.observation_space)
         return ModelAgent(args.model, obss_preprocessor, args.argmax)
     elif args.demos_origin is not None:
