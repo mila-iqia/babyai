@@ -44,7 +44,7 @@ class ObjDesc:
     """
 
     def __init__(self, type, color=None, loc=None):
-        if type is 'locked_door':
+        if type == 'locked_door':
             type = 'door'
 
         assert type in [None, *OBJ_TYPES], type
@@ -210,7 +210,7 @@ class ActionInstr(Instr):
             return 'failure'
 
         res = self.verify_action(action)
-        self.lastStepMatch = (res is 'success')
+        self.lastStepMatch = (res == 'success')
 
     def verify_action(self):
         """
@@ -224,7 +224,7 @@ class ActionInstr(Instr):
 class OpenInstr(ActionInstr):
     def __init__(self, obj_desc, strict=False):
         super().__init__()
-        assert obj_desc.type is 'door'
+        assert obj_desc.type == 'door'
         self.desc = obj_desc
         self.strict = strict
 
@@ -246,7 +246,7 @@ class OpenInstr(ActionInstr):
         if self.strict:
             if action == self.env.actions.toggle:
                 front_cell = self.env.grid.get(*self.env.front_pos)
-                if front_cell and front_cell.type is 'door':
+                if front_cell and front_cell.type == 'door':
                     return 'failure'
 
         return 'continue'
@@ -384,24 +384,24 @@ class BeforeInstr(SeqInstr):
         self.b_done = False
 
     def verify(self, action):
-        if self.a_done is 'success':
+        if self.a_done == 'success':
             self.b_done = self.instr_b.verify(action)
 
-            if self.b_done is 'failure':
+            if self.b_done == 'failure':
                 return 'failure'
 
-            if self.b_done is 'success':
+            if self.b_done == 'success':
                 return 'success'
         else:
             self.a_done = self.instr_a.verify(action)
-            self.b_done = self.instr_b.verify(action)
 
-            if self.a_done is 'failure':
+            if self.a_done == 'failure':
                 return 'failure'
 
             # In strict mode, completing b first means failure
-            if self.strict and self.b_done is 'success':
-                return 'failure'
+            if self.strict:
+                if self.instr_b.verify(action) == 'success':
+                    return 'failure'
 
         return 'continue'
 
@@ -423,24 +423,24 @@ class AfterInstr(SeqInstr):
         self.b_done = False
 
     def verify(self, action):
-        if self.b_done is 'success':
+        if self.b_done == 'success':
             self.a_done = self.instr_a.verify(action)
 
-            if self.a_done is 'success':
+            if self.a_done == 'success':
                 return 'success'
 
-            if self.a_done is 'failure':
+            if self.a_done == 'failure':
                 return 'failure'
         else:
-            self.a_done = self.instr_a.verify(action)
             self.b_done = self.instr_b.verify(action)
 
-            if self.b_done is 'failure':
+            if self.b_done == 'failure':
                 return 'failure'
 
             # In strict mode, completing a first means failure
-            if self.strict and self.a_done is 'success':
-                return 'failure'
+            if self.strict:
+                if self.instr_a.verify(action) == 'success':
+                    return 'failure'
 
         return 'continue'
 
@@ -474,10 +474,10 @@ class AndInstr(SeqInstr):
             self.b_done = self.instr_b.verify(action)
 
         if use_done_actions and action is self.env.actions.done:
-            if self.a_done is 'failure' and self.b_done is 'failure':
+            if self.a_done == 'failure' and self.b_done == 'failure':
                 return 'failure'
 
-        if self.a_done is 'success' and self.b_done is 'success':
+        if self.a_done == 'success' and self.b_done == 'success':
             return 'success'
 
         return 'continue'
