@@ -50,11 +50,6 @@ if demos is not None:
 else:
     demos = []
 
-
-
-done = False
-obs = env.reset()
-
 offset = 0
 
 while True:
@@ -71,8 +66,7 @@ while True:
 
         demo.append((obs, action, reward, done))
         obs = new_obs
-    if args.filter_steps is not 0:
-        if len(demo) <= args.filter_steps and reward != 0:
+    if reward > 0 and (args.filter_steps == 0 or len(demo) <= args.filter_steps):
             demos.append((demo, offset))
     if len(demos) >= args.episodes:
         break
