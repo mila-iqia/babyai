@@ -238,16 +238,21 @@ class OpenInstr(ActionInstr):
         self.desc.find_matching_objs(env)
 
     def verify_action(self, action):
+        # Only verify when the toggle action is performed
+        if action != self.env.actions.toggle:
+            return 'continue'
+
+        # Get the contents of the cell in front of the agent
+        front_cell = self.env.grid.get(*self.env.front_pos)
+
         for door in self.desc.obj_set:
-            if door.is_open:
+            if front_cell and front_cell is door and door.is_open:
                 return 'success'
 
         # If in strict mode and the wrong door is opened, failure
         if self.strict:
-            if action == self.env.actions.toggle:
-                front_cell = self.env.grid.get(*self.env.front_pos)
-                if front_cell and front_cell.type == 'door':
-                    return 'failure'
+            if front_cell and front_cell.type == 'door':
+                return 'failure'
 
         return 'continue'
 
@@ -299,18 +304,31 @@ class PickupInstr(ActionInstr):
     def reset_verifier(self, env):
         super().reset_verifier(env)
 
+        # Object previously being carried
+        self.preCarrying = None
+
         # Identify set of possible matching objects in the environment
         self.desc.find_matching_objs(env)
 
     def verify_action(self, action):
+        # To keep track of what was carried at the last time step
+        preCarrying = self.preCarrying
+        self.preCarrying = self.env.carrying
+
+        # Only verify when the pickup action is performed
+        if action != self.env.actions.pickup:
+            return 'continue'
+
         for obj in self.desc.obj_set:
-            if self.env.carrying is obj:
+            if preCarrying is None and self.env.carrying is obj:
                 return 'success'
 
         # If in strict mode and the wrong door object is picked up, failure
         if self.strict:
-            if action == self.env.actions.pickup and self.env.carrying:
+            if self.env.carrying:
                 return 'failure'
+
+        self.preCarrying = self.env.carrying
 
         return 'continue'
 
@@ -334,22 +352,50 @@ class PutNextInstr(ActionInstr):
     def reset_verifier(self, env):
         super().reset_verifier(env)
 
+        # Object previously being carried
+        self.preCarrying = None
+
         # Identify set of possible matching objects in the environment
         self.desc_move.find_matching_objs(env)
         self.desc_fixed.find_matching_objs(env)
 
-    def verify_action(self, action):
+    def objs_next(self):
+        """
+        Check if the objects are next to each other
+        This is used for rejection sampling
+        """
+
         for obj_a in self.desc_move.obj_set:
             pos_a = obj_a.cur_pos
 
             for pos_b in self.desc_fixed.obj_poss:
                 if pos_next_to(pos_a, pos_b):
-                    return 'success'
+                    return True
+        return False
+
+    def verify_action(self, action):
+        # To keep track of what was carried at the last time step
+        preCarrying = self.preCarrying
+        self.preCarrying = self.env.carrying
 
         # In strict mode, picking up the wrong object fails
         if self.strict:
             if action == self.env.actions.pickup and self.env.carrying:
                 return 'failure'
+
+        # Only verify when the drop action is performed
+        if action != self.env.actions.drop:
+            return 'continue'
+
+        for obj_a in self.desc_move.obj_set:
+            if preCarrying is not obj_a:
+                continue
+
+            pos_a = obj_a.cur_pos
+
+            for pos_b in self.desc_fixed.obj_poss:
+                if pos_next_to(pos_a, pos_b):
+                    return 'success'
 
         return 'continue'
 
