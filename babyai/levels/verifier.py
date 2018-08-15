@@ -440,9 +440,11 @@ class BeforeInstr(SeqInstr):
                 return 'success'
         else:
             self.a_done = self.instr_a.verify(action)
-
             if self.a_done == 'failure':
                 return 'failure'
+
+            if self.a_done == 'success':
+                return self.verify(action)
 
             # In strict mode, completing b first means failure
             if self.strict:
@@ -479,9 +481,11 @@ class AfterInstr(SeqInstr):
                 return 'failure'
         else:
             self.b_done = self.instr_b.verify(action)
-
             if self.b_done == 'failure':
                 return 'failure'
+
+            if self.b_done == 'success':
+                return self.verify(action)
 
             # In strict mode, completing a first means failure
             if self.strict:

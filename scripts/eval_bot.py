@@ -22,7 +22,7 @@ level_list = [
     'GoToImpUnlock',
     #'UnblockPickup',
 
-    #'GoToSeq',
+    'GoToSeq',
     #'Synth',
     #'SynthLoc',
     #'SynthSeq',
@@ -32,10 +32,10 @@ level_list = [
 ]
 
 parser = OptionParser()
-#parser.add_option(
-#    "--level",
-#    default='OpenRedDoor'
-#)
+parser.add_option(
+    "--level",
+    default=None
+)
 parser.add_option(
     "--seed",
     type="int",
@@ -51,6 +51,9 @@ parser.add_option(
     action='store_true'
 )
 (options, args) = parser.parse_args()
+
+if options.level:
+    level_list = [options.level]
 
 for level_name in level_list:
 
@@ -76,6 +79,8 @@ for level_name in level_list:
             if done == True:
                 if reward > 0:
                     num_success += 1
+                if reward <= 0 and options.verbose:
+                    print('FAILURE')
                 break
 
     success_rate = 100 * num_success / options.num_runs

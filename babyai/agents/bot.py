@@ -98,7 +98,8 @@ class Bot:
         actions = self.mission.actions
         carrying = self.mission.carrying
 
-        assert len(self.stack) > 0, "stack empty"
+        if len(self.stack) == 0:
+            return actions.done
 
         # Get the topmost instruction on the stack
         subgoal, datum = self.stack[-1]
