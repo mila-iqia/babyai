@@ -60,6 +60,10 @@ parser.add_argument("--patience", type=int, default=3,
                     help="patience for early stopping (default: 3)")
 parser.add_argument("--val-seed", type=int, default=0,
                     help="seed for environment used for validation (default: 0)")
+parser.add_argument("--image-dim", type=int, default=128,
+                    help="dimensionality of the image embedding")
+parser.add_argument("--memory-dim", type=int, default=128,
+                    help="dimensionality of the memory LSTM")
 
 def main(args):
     il_learn = ImitationLearning(args)

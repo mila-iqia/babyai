@@ -50,12 +50,10 @@ if demos is not None:
 else:
     demos = []
 
-while True:
-    # Run the expert for one episode
 
-    done = False
-    obs = env.reset()
-    demo = []
+
+done = False
+obs = env.reset()
 
 offset = 0
 

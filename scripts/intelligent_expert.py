@@ -75,6 +75,10 @@ parser.add_argument("--test-seed", type=int, default=6,
                     help="seed for environment used for testing (default: 6)")
 parser.add_argument("--test-episodes", type=int, default=1000,
                     help="number of episodes to use while testing (default: 1000)")
+parser.add_argument("--image-dim", type=int, default=128,
+                    help="dimensionality of the image embedding")
+parser.add_argument("--memory-dim", type=int, default=128,
+                    help="dimensionality of the memory LSTM")
 
 # Add new demonstrations based on mean reward of the baby agent
 def add_new_demos(args,il_learn):
