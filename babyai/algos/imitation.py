@@ -64,7 +64,7 @@ class ImitationLearning(object):
     # Define actor-critic model
     self.acmodel = utils.load_model(self.model_name, raise_not_found=False)
     if self.acmodel is None:
-      self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space,
+      self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space, args.image_dim, args.memory_dim,
                             not self.args.no_instr, self.args.instr_arch, not self.args.no_mem, self.args.arch)
 
     self.acmodel.train()

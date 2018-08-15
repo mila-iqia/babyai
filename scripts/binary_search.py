@@ -64,6 +64,10 @@ parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected for model agent while evaluating" )
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log into Tensorboard")
+parser.add_argument("--image-dim", type=int, default=128,
+                    help="dimensionality of the image embedding")
+parser.add_argument("--memory-dim", type=int, default=128,
+                    help="dimensionality of the memory LSTM")
 
 args = parser.parse_args()
 seeds = [1, 2, 3, 4, 5]
