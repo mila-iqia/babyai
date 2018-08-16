@@ -90,23 +90,25 @@ def keyDownCb(keyName):
         obs = env.reset()
         print("Mission: {}".format(obs["mission"]))
 
-
-for i in range(3):
-    env.reset()
-
+step = 0
 while True:
     time.sleep(args.pause)
     renderer = env.render("human")
     if args.manual_mode and renderer.window is not None:
         renderer.window.setKeyDownCb(keyDownCb)
     else:
-        action = agent.get_action(obs)
+        action, dist, value = agent.get_action_and_outputs(obs)
         obs, reward, done, _ = env.step(action)
         agent.analyze_feedback(reward, done)
+        dist_str = ", ".join("{:.4f}".format(float(p)) for p in dist.probs[0])
+        print("step: {}, mission: {}, dist: {}, entropy: {:.2f}, value: {:.2f}".format(
+            step, obs["mission"], dist_str, float(dist.entropy()), float(value)))
         if done:
             print("Reward:", reward)
             obs = env.reset()
-        print("Mission: {}".format(obs["mission"]))
+            step = 0
+        else:
+            step += 1
 
     if renderer.window is None:
         break
