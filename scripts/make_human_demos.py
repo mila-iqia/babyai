@@ -46,7 +46,7 @@ class AIGameWindow(QMainWindow):
         self.lastObs = None
 
         # Demonstrations
-        self.demos = utils.load_demos(args.env, "human")
+        self.demos = utils.load_demos(args.env, "human", raise_not_found=False)
         utils.synthesize_demos(self.demos)
         self.current_demo = []
 

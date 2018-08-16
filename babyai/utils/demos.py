@@ -15,6 +15,8 @@ def load_demos(env_name, origin, raise_not_found=True):
     except FileNotFoundError:
         if raise_not_found:
             raise FileNotFoundError("No demos found at {}".format(path))
+        else:
+            return []
 
 
 def save_demos(demos, env_name, origin):
