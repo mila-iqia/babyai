@@ -104,6 +104,9 @@ class Bot:
         # Get the topmost instruction on the stack
         subgoal, datum = self.stack[-1]
 
+        #print(subgoal, datum)
+        #print('pos:', pos)
+
         # Open a door
         if subgoal == 'Open':
             fwd_cell = self.mission.grid.get(*fwd_pos)
@@ -159,19 +162,45 @@ class Bot:
 
         # Go to a given location
         if subgoal == 'GoNextTo':
+            assert pos is not datum
+
             # If we are facing the target cell, subgoal completed
             if np.array_equal(datum, fwd_pos):
                 self.stack.pop()
                 return None
 
-            assert pos is not datum
+            # Try to find a path
+            path, _ = self.shortest_path(
+                lambda pos, cell: pos == datum
+            )
 
-            path, _ = self.shortest_path(lambda pos, cell: pos == datum)
+            # If we failed to find a path, try again while ignoring blockers
+            if not path:
+                path, _ = self.shortest_path(
+                    lambda pos, cell: pos == datum,
+                    ignore_blockers=True
+                )
+
             next_cell = path[0]
 
-            # Turn towards the direction we need to go
+            # If the destination is ahead of us
             if np.array_equal(next_cell, fwd_pos):
+                fwd_cell = self.mission.grid.get(*fwd_pos)
+
+                # If there is a blocking object in front of us
+                if fwd_cell and not fwd_cell.type.endswith('door'):
+                    # Find a position where to drop the object
+                    _, drop_pos = self.shortest_path(
+                        lambda p, c: not c and not np.array_equal(p, pos) and p not in path
+                    )
+
+                    self.stack.append(('Drop', None))
+                    self.stack.append(('GoNextTo', drop_pos))
+                    return actions.pickup
+
                 return actions.forward
+
+            # Turn towards the direction we need to go
             if np.array_equal(next_cell - pos, right_vec):
                 return actions.right
             return actions.left
@@ -186,7 +215,6 @@ class Bot:
                 return None
 
             # Find the closest position adjacent to the object
-            #adj_pos = self.closest_adj_pos(obj_pos)
             path, adj_pos = self.shortest_path(
                 lambda pos, cell: not cell and pos_next_to(pos, obj_pos)
             )
@@ -238,12 +266,16 @@ class Bot:
                 return not cell.is_open
 
             # Try to find an unlocked door first
-            # We do this because otherwise, opening an unlocked door as
-            # a subgoal may try to open the same subdoor for exploration,
+            # We do this because otherwise, opening a locked door as
+            # a subgoal may try to open the same door for exploration,
             # resulting in an infinite loop
             _, door_pos = self.shortest_path(unopened_unlocked_door)
             if not door_pos:
+                _, door_pos = self.shortest_path(unopened_unlocked_door, ignore_blockers=True)
+            if not door_pos:
                 _, door_pos = self.shortest_path(unopened_door)
+            if not door_pos:
+                _, door_pos = self.shortest_path(unopened_door, ignore_blockers=True)
 
             # Open the door
             if door_pos:
@@ -251,6 +283,17 @@ class Bot:
                 self.stack.pop()
                 self.stack.append(('Open', None))
                 self.stack.append(('GoNextTo', door_pos))
+                return None
+
+            # Find the closest unseen position, ignoring blocking objects
+            path, unseen_pos = self.shortest_path(
+                lambda pos, cell: not self.vis_mask[pos],
+                ignore_blockers=True
+            )
+
+            if unseen_pos:
+                self.stack.pop()
+                self.stack.append(('GoNextTo', unseen_pos))
                 return None
 
             print(self.stack)
@@ -308,7 +351,8 @@ class Bot:
 
     def shortest_path(
         self,
-        accept_fn
+        accept_fn,
+        ignore_blockers=False
     ):
         """
         Perform a Breadth-First Search (BFS) starting from the agent position,
@@ -352,12 +396,20 @@ class Bot:
             if not self.vis_mask[i, j]:
                 continue
 
-            # Can't go through closed doors, don't visit neighbors
+            # If there is something in this cell
             if cell:
-                if cell.type != 'door' and cell.type != 'locked_door':
+                # If this is a wall, don't visit neighbors
+                if cell.type == 'wall':
                     continue
-                if not cell.is_open:
-                    continue
+                # If this is a door
+                elif cell.type == 'door' or cell.type == 'locked_door':
+                    # If the door is closed, don't visit neighbors
+                    if not cell.is_open:
+                        continue
+                else:
+                    # This is a blocking object, don't visit neighbors
+                    if not ignore_blockers:
+                        continue
 
             # Visit each neighbor cell
             for k, l in [(0, 1), (0, -1), (1, 0), (-1, 0)]:

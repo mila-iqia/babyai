@@ -20,14 +20,13 @@ level_list = [
 
     'Unlock',
     'GoToImpUnlock',
-    #'UnblockPickup',
+    'UnblockPickup',
 
     'GoToSeq',
     #'Synth',
     #'SynthLoc',
     #'SynthSeq',
 
-    #'MiniBossLevel',
     #'BossLevel',
 ]
 
