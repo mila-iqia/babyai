@@ -237,7 +237,7 @@ class ImitationLearning(object):
     indexes = self.starting_indexes(num_frames)
     memory = memories[indexes]
     accuracy = 0
-
+    total_frames = len(indexes)*self.args.recurrence
     for _ in range(self.args.recurrence):
       obs = obss[indexes]
       preprocessed_obs = self.obss_preprocessor(obs, device=self.device)
@@ -248,7 +248,7 @@ class ImitationLearning(object):
       policy_loss = -dist.log_prob(action_step).mean()
       loss = policy_loss - self.args.entropy_coef * entropy
       action_pred = dist.probs.max(1, keepdim=True)[1]
-      accuracy += float((action_pred == action_step.unsqueeze(1)).sum())/len(flat_batch)
+      accuracy += float((action_pred == action_step.unsqueeze(1)).sum())/total_frames
       final_loss += loss
       final_entropy += entropy
       final_policy_loss += policy_loss
