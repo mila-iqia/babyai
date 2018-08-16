@@ -106,8 +106,8 @@ class RoomGrid(MiniGridEnv):
         assert x >= 0
         assert y >= 0
 
-        i = x // self.room_size
-        j = y // self.room_size
+        i = x // (self.room_size-1)
+        j = y // (self.room_size-1)
 
         assert i < self.num_cols
         assert j < self.num_rows

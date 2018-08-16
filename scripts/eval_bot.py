@@ -23,8 +23,8 @@ level_list = [
     'UnblockPickup',
 
     'GoToSeq',
-    #'Synth',
-    #'SynthLoc',
+    'Synth',
+    'SynthLoc',
     #'SynthSeq',
 
     #'BossLevel',
