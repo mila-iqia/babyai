@@ -171,13 +171,13 @@ class Bot:
 
             # Try to find a path
             path, _ = self.shortest_path(
-                lambda pos, cell: pos == datum
+                lambda pos, cell: np.array_equal(pos, datum)
             )
 
             # If we failed to find a path, try again while ignoring blockers
             if not path:
                 path, _ = self.shortest_path(
-                    lambda pos, cell: pos == datum,
+                    lambda pos, cell: np.array_equal(pos, datum),
                     ignore_blockers=True
                 )
 
@@ -190,9 +190,7 @@ class Bot:
                 # If there is a blocking object in front of us
                 if fwd_cell and not fwd_cell.type.endswith('door'):
                     # Find a position where to drop the object
-                    _, drop_pos = self.shortest_path(
-                        lambda p, c: not c and not np.array_equal(p, pos) and p not in path
-                    )
+                    drop_pos = self.find_drop_pos()
 
                     self.stack.append(('Drop', None))
                     self.stack.append(('GoNextTo', drop_pos))
@@ -418,3 +416,32 @@ class Bot:
 
         # Path not found
         return None, None
+
+    def find_drop_pos(self):
+        """
+        Find a position where an object can be dropped,
+        ideally without blocking anything
+        """
+
+        grid = self.mission.grid
+
+        def match_fn(pos, cell):
+            i, j = pos
+
+            if pos is self.mission.agent_pos:
+                return False
+
+            # If the cell or a neighbor was unseen or is occupied, reject
+            for k, l in [(0, 0), (0, 1), (0, -1), (1, 0), (-1, 0)]:
+                nb_pos = (i+k, j+l)
+                if not self.vis_mask[nb_pos] or grid.get(*nb_pos):
+                    return False
+
+            return True
+
+        _, drop_pos = self.shortest_path(match_fn)
+
+        if not drop_pos:
+            _, drop_pos = self.shortest_path(match_fn, ignore_blockers=True)
+
+        return drop_pos
