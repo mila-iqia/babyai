@@ -189,12 +189,30 @@ class Bot:
 
                 # If there is a blocking object in front of us
                 if fwd_cell and not fwd_cell.type.endswith('door'):
-                    # Find a position where to drop the object
-                    drop_pos = self.find_drop_pos()
+                    if carrying:
+                        drop_pos_cur = self.find_drop_pos()
+                        drop_pos_block = self.find_drop_pos(drop_pos_cur)
 
-                    self.stack.append(('Drop', None))
-                    self.stack.append(('GoNextTo', drop_pos))
-                    return actions.pickup
+                        # Take back the object being carried
+                        self.stack.append(('Pickup', None))
+                        self.stack.append(('GoNextTo', drop_pos_cur))
+
+                        # Pick up the blocking object and drop it
+                        self.stack.append(('Drop', None))
+                        self.stack.append(('GoNextTo', drop_pos_block))
+                        self.stack.append(('Pickup', None))
+                        self.stack.append(('GoNextTo', fwd_pos))
+
+                        # Drop the object being carried
+                        self.stack.append(('Drop', None))
+                        self.stack.append(('GoNextTo', drop_pos_cur))
+
+                        return None
+                    else:
+                        drop_pos = self.find_drop_pos()
+                        self.stack.append(('Drop', None))
+                        self.stack.append(('GoNextTo', drop_pos))
+                        return actions.pickup
 
                 return actions.forward
 
@@ -417,7 +435,7 @@ class Bot:
         # Path not found
         return None, None
 
-    def find_drop_pos(self):
+    def find_drop_pos(self, except_pos=None):
         """
         Find a position where an object can be dropped,
         ideally without blocking anything
@@ -428,7 +446,10 @@ class Bot:
         def match_fn(pos, cell):
             i, j = pos
 
-            if pos is self.mission.agent_pos:
+            if np.array_equal(pos, self.mission.agent_pos):
+                return False
+
+            if except_pos and np.array_equal(pos, except_pos):
                 return False
 
             # If the cell or a neighbor was unseen or is occupied, reject
