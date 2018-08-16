@@ -36,12 +36,12 @@ class ImitationLearning(object):
             self.env = gym.make(self.args.env)
 
             self.train_demos = utils.load_demos(self.args.env, self.args.demos_origin)
-            assert self.args.episodes <= len(self.train_demos), 'Not enough train demonstrations'
+            assert self.args.episodes <= len(self.train_demos), "Not enough train demonstrations"
             self.train_demos = self.train_demos[:self.args.episodes]
 
             self.val_demos = utils.load_demos(self.args.env, self.args.demos_origin + "_valid")
-            assert 500 <= len(self.val_demos), "Not enough validation demonstrations"
-            self.val_demos = self.val_demos[:500]
+            assert self.args.val_episodes <= len(self.val_demos), "Not enough validation demonstrations"
+            self.val_demos = self.val_demos[:self.args.val_episodes]
 
             # Separating train offsets and train demos
             self.train_offsets = [item[1] for item in self.train_demos]
