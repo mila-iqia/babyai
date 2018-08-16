@@ -16,7 +16,7 @@ parser.add_argument("--model", required=False, default='BOT',
 parser.add_argument("--episodes", type=int, default=1000,
                     help="number of episodes to generate demonstrations for (default: 1000)")
 parser.add_argument("--seed", type=int, default=1,
-                    help="random seed (default: 1)")
+                    help="random seed (default: 1 if not valid). If valid is specified, then setting this is useless")
 parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected")
 parser.add_argument("--save-interval", type=int, default=0,
@@ -29,7 +29,8 @@ parser.add_argument("--valid", action="store_true", default=False,
 args = parser.parse_args()
 
 # Set seed for all randomness sources
-
+if args.valid:
+    args.seed = 0
 utils.seed(args.seed)
 
 # Generate environment
@@ -38,7 +39,6 @@ env.seed(args.seed)
 
 # Select Origin
 origin = "agent" if not args.valid else "agent_valid"
-assert not args.valid or args.seed == 0
 
 # Define agent
 
