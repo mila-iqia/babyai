@@ -36,7 +36,7 @@ parser.add_argument("--lr", type=float, default=7e-4,
                     help="learning rate (default: 7e-4)")
 parser.add_argument("--entropy-coef", type=float, default=0.01,
                     help="entropy term coefficient (default: 0.01)")
-parser.add_argument("--recurrence", type=int, default=1,
+parser.add_argument("--recurrence", type=int, default=20,
                     help="number of timesteps gradient is backpropagated (default: 1)")
 parser.add_argument("--optim-eps", type=float, default=1e-5,
                     help="Adam optimizer epsilon (default: 1e-5)")
@@ -65,6 +65,7 @@ parser.add_argument("--image-dim", type=int, default=128,
 parser.add_argument("--memory-dim", type=int, default=128,
                     help="dimensionality of the memory LSTM")
 
+
 def main(args):
     il_learn = ImitationLearning(args)
 
@@ -75,18 +76,15 @@ def main(args):
         from tensorboardX import SummaryWriter
         writer = SummaryWriter(utils.get_log_dir(il_learn.model_name))
 
-
     # Log command, availability of CUDA, and model
     logger.info(args)
     logger.info("CUDA available: {}".format(torch.cuda.is_available()))
     logger.info(il_learn.acmodel)
 
-
     if not args.no_mem:
         il_learn.train(il_learn.train_demos, logger, writer)
     else:
         il_learn.train(il_learn.flat_train_demos, logger, writer)
-
 
 
 if __name__ == "__main__":
