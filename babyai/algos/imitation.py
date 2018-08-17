@@ -291,14 +291,13 @@ class ImitationLearning(object):
 
         if type(self.env) != list:
             assert len(logs) == 1
-            return np.mean(logs[0]["return_per_episode"])
-
-        return {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
+            return logs[0]
+        return logs
 
     def collect_returns(self):
         if torch.cuda.is_available():
             self.acmodel.cpu()
-        mean_return = self.validate(False)
+        mean_return = np.mean(self.validate(False)['return_per_episode'])
         if torch.cuda.is_available():
             self.acmodel.cuda()
         return mean_return
@@ -361,10 +360,14 @@ class ImitationLearning(object):
             if i % self.args.validation_interval == 0:
                 if torch.cuda.is_available():
                     self.acmodel.cpu()
-                mean_return = self.validate()
+                valid_log = self.validate()
+                mean_return = np.mean(valid_log['return_per_episode'])
+                success_rate = np.mean([1 if r > 0 else 0 for r in valid_log['return_per_episode']])
                 logger.info("Mean Validation Return %.3f" % mean_return)
+                logger.info("Success Rate %.3f" % success_rate)
                 if self.args.tb:
                     writer.add_scalar("validation_return", mean_return, i)
+                    writer.add_scalar("success_rate", success_rate, i)
 
                 if mean_return > best_mean_return:
                     best_mean_return = mean_return
