@@ -41,8 +41,7 @@ def main(args, seed, episodes):
 
     if args.model is None and args.episodes > len(agent.demos):
         # Set the number of episodes to be the number of demos
-
-        args.episodes = len(agent.demos)
+        episodes = len(agent.demos)
 
     # Evaluate
     logs = evaluate(agent, env, episodes, model_agent=(args.model is not None))
