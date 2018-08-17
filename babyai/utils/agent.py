@@ -63,8 +63,9 @@ class ModelAgent(Agent):
 class DemoAgent(Agent):
     """A demonstration-based agent. This agent behaves using demonstrations."""
 
-    def __init__(self, env_name, origin):
-        self.demos = utils.load_demos(env_name, origin)
+    def __init__(self, demos, env_name, origin):
+        self.demos_path = utils.get_demos_path(demos, env_name, origin, valid=False)
+        self.demos = utils.load_demos(self.demos_path)
         self.demo_id = 0
         self.step_id = 0
 
@@ -121,5 +122,5 @@ def load_agent(args, env):
     elif args.model is not None:
         obss_preprocessor = utils.ObssPreprocessor(args.model, env.observation_space)
         return ModelAgent(args.model, obss_preprocessor, args.argmax)
-    elif args.demos_origin is not None:
-        return DemoAgent(args.env, args.demos_origin)
+    elif args.demos_origin is not None or args.demos is not None:
+        return DemoAgent(demos=args.demos, env_name=args.env, origin=args.demos_origin)
