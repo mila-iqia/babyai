@@ -261,12 +261,17 @@ class Bot:
 
         # Explore the world, uncover new unseen cells
         if subgoal == 'Explore':
-            # TODO: handle unopened doors
-
             # Find the closest unseen position
             _, unseen_pos = self.shortest_path(
                 lambda pos, cell: not self.vis_mask[pos]
             )
+
+            if not unseen_pos:
+                _, unseen_pos = self.shortest_path(
+                    lambda pos, cell: not self.vis_mask[pos],
+                    ignore_blockers=True
+                )
+
 
             if unseen_pos:
                 self.stack.pop()
