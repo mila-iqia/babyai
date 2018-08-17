@@ -85,11 +85,10 @@ class DemoAgent(Agent):
     def get_action(self, obs):
         if self.demo_id >= len(self.demos):
             raise ValueError("No demonstration remaining")
-
-        expected_obs = self.demos[self.demo_id][self.step_id][0]
+        expected_obs = self.demos[self.demo_id][0][self.step_id][0]
         assert DemoAgent.check_obss_equality(obs, expected_obs), "The observations do not match"
 
-        return self.demos[self.demo_id][self.step_id][1]
+        return self.demos[self.demo_id][0][self.step_id][1]
 
     def analyze_feedback(self, reward, done):
         self.step_id += 1
