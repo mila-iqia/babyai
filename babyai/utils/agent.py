@@ -100,7 +100,6 @@ class DemoAgent(Agent):
 
 
 class BotAgent:
-
     def __init__(self, env):
         """An agent based on a GOFAI bot."""
         self.env = env
