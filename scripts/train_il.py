@@ -20,14 +20,17 @@ import torch
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to train on (REQUIRED)")
-parser.add_argument("--demos-origin", required=True,
+parser.add_argument("--demos", default=None,
+                    help="path to save demonstrations (based on --model and --demos-origin by default)")
+parser.add_argument("--demos-origin", required=False,
                     help="origin of the demonstrations: human | agent (REQUIRED)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ORIGIN_il)")
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
-parser.add_argument("--episodes", type=int, default=100,
-                    help="number of episodes of demonstrations to use (default: 100)")
+parser.add_argument("--episodes", type=int, default=0,
+                    help="number of episodes of demonstrations to use"
+                         "(default: 0, meaning all demos)")
 parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs (default: 1)")
 parser.add_argument("--tb", action="store_true", default=False,
