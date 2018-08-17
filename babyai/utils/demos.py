@@ -3,14 +3,16 @@ import pickle
 
 from .. import utils
 
+def get_demos_path(demos, env, origin, valid):
+    valid_suff = '_valid' if valid else ''
+    demos_path = (demos + valid_suff
+                  if demos
+                  else env + "_" + origin + valid_suff) + '.pkl'
+    return os.path.join(utils.storage_dir(), 'demos', demos_path)
 
-def get_demos_path(env_name, origin):
-    return os.path.join(utils.storage_dir(), 'demos', env_name+"_"+origin+".pkl")
 
-
-def load_demos(env_name, origin, raise_not_found=True):
+def load_demos(path, raise_not_found=True):
     try:
-        path = get_demos_path(env_name, origin)
         return pickle.load(open(path, "rb"))
     except FileNotFoundError:
         if raise_not_found:
@@ -19,8 +21,7 @@ def load_demos(env_name, origin, raise_not_found=True):
             return []
 
 
-def save_demos(demos, env_name, origin):
-    path = get_demos_path(env_name, origin)
+def save_demos(demos, path):
     utils.create_folders_if_necessary(path)
     pickle.dump(demos, open(path, "wb"))
 

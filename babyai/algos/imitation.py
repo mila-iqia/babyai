@@ -20,12 +20,12 @@ class ImitationLearning(object):
         if type(self.args.env) == list:
             self.env = [gym.make(item[0]) for item in self.args.env]
 
-            self.train_demos = [utils.load_demos(env, demos_origin)[:episodes]
-                                                    for env, demos_origin, episodes in self.args.env]
+            self.train_demos = [utils.load_demos(utils.get_demos_path(env=env, origin=demos_origin))[:episodes]
+                                for env, demos_origin, episodes in self.args.env]
 
             self.train_demos = [[demo[0] for demo in demos] for demos in self.train_demos]
-            self.val_demos = [utils.load_demos(env, demos_origin+"_valid")[:1]
-                                                for env, demos_origin, _ in self.args.env]
+            self.val_demos = [utils.load_demos(utils.get_demos_path(env=env, origin=demos_origin, valid=True))[:1]
+                              for env, demos_origin, _ in self.args.env]
             self.val_demos = [[demo[0] for demo in demos] for demos in self.val_demos]
 
 
@@ -35,17 +35,22 @@ class ImitationLearning(object):
         else:
             self.env = gym.make(self.args.env)
 
-            self.train_demos = utils.load_demos(self.args.env, self.args.demos_origin)[:self.args.episodes]
+        demos_path = utils.get_demos_path(args.demos, args.env, args.demos_origin, valid=False)
+        demos_path_valid = utils.get_demos_path(args.demos, args.env, args.demos_origin, valid=True)
 
-            self.val_demos = utils.load_demos(self.args.env, self.args.demos_origin+"_valid")[:500]
+        self.train_demos = utils.load_demos(demos_path)
+        if args.episodes:
+            self.train_demos = self.train_demos[:args.episodes]
 
-            # Separating train offsets and train demos
-            self.train_offsets = [item[1] for item in self.train_demos]
-            self.train_demos = [item[0] for item in self.train_demos]
-            self.val_demos = [item[0] for item in self.val_demos]
+        self.val_demos = utils.load_demos(demos_path_valid)[:500]
 
-            observation_space = self.env.observation_space
-            action_space = self.env.action_space
+        # Separating train offsets and train demos
+        self.train_offsets = [item[1] for item in self.train_demos]
+        self.train_demos = [item[0] for item in self.train_demos]
+        self.val_demos = [item[0] for item in self.val_demos]
+
+        observation_space = self.env.observation_space
+        action_space = self.env.action_space
 
         if type(self.args.env) == list:
             named_envs = '_'.join([item[0] for item in self.args.env])
@@ -65,7 +70,7 @@ class ImitationLearning(object):
         self.acmodel = utils.load_model(self.model_name, raise_not_found=False)
         if self.acmodel is None:
             self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space, args.image_dim, args.memory_dim,
-                                                        not self.args.no_instr, self.args.instr_arch, not self.args.no_mem, self.args.arch)
+                                  not self.args.no_instr, self.args.instr_arch, not self.args.no_mem, self.args.arch)
 
         self.acmodel.train()
         if torch.cuda.is_available():
@@ -148,7 +153,6 @@ class ImitationLearning(object):
         log["entropy"] = float(entropy)
         log["policy_loss"] = float(policy_loss)
         log["accuracy"] = float(accuracy)
-
         return log
 
     def starting_indexes(self, num_frames):
@@ -358,13 +362,16 @@ class ImitationLearning(object):
                 if torch.cuda.is_available():
                     self.acmodel.cpu()
                 mean_return = self.validate()
-                print("Mean Validation Return %.3f" % mean_return)
+                logger.info("Mean Validation Return %.3f" % mean_return)
+                if self.args.tb:
+                    writer.add_scalar("validation_return", mean_return, i)
 
                 if mean_return > best_mean_return:
                     best_mean_return = mean_return
                     patience = 0
                     # Saving the model
-                    print("Saving best model")
+                    logger.info("Saving best model")
+
                     self.obss_preprocessor.vocab.save()
                     if torch.cuda.is_available():
                         self.acmodel.cpu()
@@ -372,7 +379,8 @@ class ImitationLearning(object):
                     if torch.cuda.is_available():
                         self.acmodel.cuda()
                 else:
-                    print("Losing Patience")
+                    logger.info("Losing Patience")
+
                     patience += 1
                     if patience > self.args.patience:
                         break
