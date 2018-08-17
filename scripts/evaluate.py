@@ -21,7 +21,7 @@ parser.add_argument("--demos", default=None,
 parser.add_argument("--episodes", type=int, default=1000,
                     help="number of episodes of evaluation (default: 1000)")
 parser.add_argument("--seed", type=int, default=None,
-                    help="random seed (default: 0 if model agent, 1 if demo agent)")
+                    help="random seed (default: 0 if model agent, 1 if demo agent) -- needs to be set to 0 if valid")
 parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected for model agent")
 
