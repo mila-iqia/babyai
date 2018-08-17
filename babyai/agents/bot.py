@@ -149,7 +149,15 @@ class Bot:
                     self.stack.pop()
                     return None
 
-                path, _ = self.shortest_path(lambda pos, cell: pos == obj_pos)
+                path, _ = self.shortest_path(
+                    lambda pos, cell: pos == obj_pos
+                )
+
+                if not path:
+                    path, _ = self.shortest_path(
+                        lambda pos, cell: pos == obj_pos,
+                        ignore_blockers=True
+                    )
 
                 if path:
                     # New subgoal: go next to the object
@@ -443,7 +451,7 @@ class Bot:
 
         grid = self.mission.grid
 
-        def match_fn(pos, cell):
+        def match_noadj(pos, cell):
             i, j = pos
 
             if np.array_equal(pos, self.mission.agent_pos):
@@ -460,9 +468,29 @@ class Bot:
 
             return True
 
-        _, drop_pos = self.shortest_path(match_fn)
+        def match_empty(pos, cell):
+            i, j = pos
+
+            if np.array_equal(pos, self.mission.agent_pos):
+                return False
+
+            if except_pos and np.array_equal(pos, except_pos):
+                return False
+
+            if not self.vis_mask[pos] or grid.get(*pos):
+                return False
+
+            return True
+
+        _, drop_pos = self.shortest_path(match_noadj)
 
         if not drop_pos:
-            _, drop_pos = self.shortest_path(match_fn, ignore_blockers=True)
+            _, drop_pos = self.shortest_path(match_noadj, ignore_blockers=True)
+
+        if not drop_pos:
+            _, drop_pos = self.shortest_path(match_empty)
+
+        if not drop_pos:
+            _, drop_pos = self.shortest_path(match_empty, ignore_blockers=True)
 
         return drop_pos
