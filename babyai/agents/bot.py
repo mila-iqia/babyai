@@ -47,6 +47,9 @@ class Bot:
             return
 
         if isinstance(instr, PickupInstr):
+            # We pick up and immediately drop so
+            # that we may carry other objects
+            self.stack.append(('Drop', None))
             self.stack.append(('Pickup', instr.desc))
             self.stack.append(('GoToObj', instr.desc))
             return
@@ -244,10 +247,17 @@ class Bot:
             )
 
             if not adj_pos:
+                path, adj_pos = self.shortest_path(
+                    lambda pos, cell: not cell and pos_next_to(pos, obj_pos),
+                    ignore_blockers=True
+                )
+
+            if not adj_pos:
                 self.stack.append(('Explore', None))
                 return None
 
             # FIXME: h4xx
+            # If we are on the target position,
             # Randomly navigate away from this position
             if np.array_equal(pos, adj_pos):
                 if np.random.randint(0, 2) == 0:
