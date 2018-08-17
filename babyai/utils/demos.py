@@ -4,7 +4,7 @@ import pickle
 from .. import utils
 
 
-def get_demos_path(demos, env, origin, valid):
+def get_demos_path(demos=None, env=None, origin=None, valid=False):
     valid_suff = '_valid' if valid else ''
     demos_path = (demos + valid_suff
                   if demos
