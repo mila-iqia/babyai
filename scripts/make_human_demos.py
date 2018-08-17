@@ -228,9 +228,9 @@ class AIGameWindow(QMainWindow):
         if done:
             if reward > 0:  # i.e. we did not lose
                 if self.shift < len(self.demos):
-                    self.demos[self.shift] = self.current_demo
+                    self.demos[self.shift] = self.current_demo, self.shift
                 else:
-                    self.demos.append(self.current_demo)
+                    self.demos.append((self.current_demo, len(self.demos)))
                 utils.save_demos(self.demos, self.demos_path)
                 self.missionBox.append('Demonstrations are saved.')
                 utils.synthesize_demos(self.demos)
