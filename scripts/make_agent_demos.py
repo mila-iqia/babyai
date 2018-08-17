@@ -4,15 +4,16 @@ import argparse
 import gym
 
 import babyai.utils as utils
-from babyai.agents.bot import Bot
 
 # Parse arguments
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to be run (REQUIRED)")
-parser.add_argument("--model", required=False, default='BOT',
+parser.add_argument("--model", default='BOT',
                     help="name of the trained model (REQUIRED)")
+parser.add_argument("--demos", default=None,
+                    help="path to save demonstrations (based on --model and --origin by default)")
 parser.add_argument("--episodes", type=int, default=1000,
                     help="number of episodes to generate demonstrations for (default: 1000)")
 parser.add_argument("--seed", type=int, default=1,
@@ -44,8 +45,10 @@ origin = "agent" if not args.valid else "agent_valid"
 
 agent = utils.load_agent(args, env)
 
+demos_path = utils.get_demos_path(args.demos, args.env, origin, args.valid)
+
 # Load demonstrations
-demos = utils.load_demos(args.env, origin, raise_not_found=False)
+demos = utils.load_demos(demos_path, raise_not_found=False)
 if demos is not None:
     utils.synthesize_demos(demos)
 else:
@@ -76,10 +79,10 @@ while True:
     # Save demonstrations
 
     if args.save_interval > 0 and len(demos) < args.episodes and len(demos) % args.save_interval == 0:
-        utils.save_demos(demos, args.env, origin)
+        utils.save_demos(demos, demos_path)
         utils.synthesize_demos(demos)
     offset += 1
 
 # Save demonstrations
-utils.save_demos(demos, args.env, origin)
+utils.save_demos(demos, demos_path)
 utils.synthesize_demos(demos)
