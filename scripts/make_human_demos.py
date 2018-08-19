@@ -16,6 +16,8 @@ import babyai.utils as utils
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to be loaded (REQUIRED)")
+parser.add_argument("--demos", default=None,
+                    help="path to save demonstrations (based on --model and --origin by default)")
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
 parser.add_argument("--shift", type=int, default=None,
@@ -46,7 +48,8 @@ class AIGameWindow(QMainWindow):
         self.lastObs = None
 
         # Demonstrations
-        self.demos = utils.load_demos(args.env, "human", raise_not_found=False)
+        self.demos_path = utils.get_demos_path(args.demos, args.env, origin="human", valid=False)
+        self.demos = utils.load_demos(self.demos_path, raise_not_found=False)
         utils.synthesize_demos(self.demos)
         self.current_demo = []
 
@@ -225,10 +228,10 @@ class AIGameWindow(QMainWindow):
         if done:
             if reward > 0:  # i.e. we did not lose
                 if self.shift < len(self.demos):
-                    self.demos[self.shift] = self.current_demo
+                    self.demos[self.shift] = self.current_demo, self.shift
                 else:
-                    self.demos.append(self.current_demo)
-                utils.save_demos(self.demos, args.env, "human")
+                    self.demos.append((self.current_demo, len(self.demos)))
+                utils.save_demos(self.demos, self.demos_path)
                 self.missionBox.append('Demonstrations are saved.')
                 utils.synthesize_demos(self.demos)
 
