@@ -332,6 +332,11 @@ class ImitationLearning(object):
             with open(status_path, 'r') as src:
                 status = json.load(src)
 
+        # If the batch size is larger than the number of demos, we need to lower the batch size
+        if self.args.batch_size > len(train_demos):
+            self.args.batch_size = len(train_demos)
+            logger.info("Batch size too high. Setting it to the number of train demos ({})".format(len(train_demos)))
+
         # Model saved initially to avoid "Model not found Exception" during first validation step
         utils.save_model(self.acmodel, self.model_name)
 
