@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to train on (REQUIRED)")
 parser.add_argument("--demos", default=None,
-                    help="demos filename (REQUIRED of demos-origin required)")
+                    help="demos filename (REQUIRED or demos-origin required)")
 parser.add_argument("--demos-origin", required=False,
                     help="origin of the demonstrations: human | agent (REQUIRED or demos required)")
 parser.add_argument("--model", default=None,
@@ -84,6 +84,7 @@ def main(args):
         from tensorboardX import SummaryWriter
         writer = SummaryWriter(utils.get_log_dir(il_learn.model_name))
 
+    # Define csv writer
     csv_writer = None
     if args.csv:
         csv_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'log.csv')
@@ -94,6 +95,7 @@ def main(args):
         if first_created:
             csv_writer.writerow(header)
 
+    # Get the status path
     status_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'status.json')
 
     # Log command, availability of CUDA, and model
