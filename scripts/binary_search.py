@@ -20,6 +20,8 @@ import torch
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to train on (REQUIRED)")
+parser.add_argument("--demos", default=None,
+                    help="path to save demonstrations (based on --model and --demos-origin by default)")
 parser.add_argument("--demos-origin", required=True,
                     help="origin of the demonstrations: human | agent (REQUIRED)")
 parser.add_argument("--lr", type=float, default=7e-4,
@@ -31,7 +33,7 @@ parser.add_argument("--recurrence", type=int, default=1,
 parser.add_argument("--optim-eps", type=float, default=1e-5,
                     help="Adam optimizer epsilon (default: 1e-5)")
 parser.add_argument("--batch-size", type=int, default=50,
-                    help="batch size (In case of memory, the batch size is the number of demos, otherwise, it is the number of frames)(default: 50)")
+                    help="batch size (In case of memory, the BS is # demos, otherwise, it is # frames)(default: 50)")
 parser.add_argument("--no-instr", action="store_true", default=False,
                     help="don't use instructions in the model")
 parser.add_argument("--instr-arch", default="gru",
@@ -61,7 +63,7 @@ parser.add_argument("--test-seed", type=int, default=6,
 parser.add_argument("--test-episodes", type=int, default=1000,
                     help="number of episodes used for testing (default: 1000)")
 parser.add_argument("--argmax", action="store_true", default=False,
-                    help="action with highest probability is selected for model agent while evaluating" )
+                    help="action with highest probability is selected for model agent while evaluating")
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log into Tensorboard")
 parser.add_argument("--image-dim", type=int, default=128,
@@ -73,11 +75,12 @@ args = parser.parse_args()
 seeds = [1, 2, 3, 4, 5]
 
 result_dir = os.path.join(utils.storage_dir(), "binary_search_results")
-if not(os.path.isdir(result_dir)):
+if not (os.path.isdir(result_dir)):
     os.makedirs(result_dir)
 
-file = open(os.path.join(result_dir, "{}_binary_search.csv").format(args.env),"a")
+file = open(os.path.join(result_dir, "{}_binary_search.csv").format(args.env), "a")
 writer = csv.writer(file, delimiter=" ")
+
 
 def run(num_demos):
     results = []
@@ -98,7 +101,6 @@ def run(num_demos):
         logger.info(args)
         logger.info("CUDA available: {}".format(torch.cuda.is_available()))
         logger.info(il_learn.acmodel)
-
 
         if not args.no_mem:
             il_learn.train(il_learn.train_demos, logger, tb_writer)
@@ -126,26 +128,25 @@ return_max = run(max_demo)
 
 max_performance_bar = return_max
 
-
 while True:
     assert return_max >= return_min
 
-    if (max_performance_bar-return_min) <= args.epsilon:
+    if (max_performance_bar - return_min) <= args.epsilon:
         print("Minimum No. of Samples Required = %d" % min_demo)
         break
 
-    if np.log2(max_demo/min_demo) <= 0.5:
+    if np.log2(max_demo / min_demo) <= 0.5:
         print("Minimum No. of Samples Required = %d" % max_demo)
-        print("Ratio : %.3f" % np.log2(max_demo/min_demo))
+        print("Ratio : %.3f" % np.log2(max_demo / min_demo))
         break
 
-    mid_demo = (min_demo+max_demo)//2
+    mid_demo = (min_demo + max_demo) // 2
 
     return_mid = run(mid_demo)
 
-    assert return_mid >= return_min and return_mid <= return_max
+    assert return_min <= return_mid <= return_max
 
-    if (max_performance_bar-return_mid) >= args.epsilon:
+    if (max_performance_bar - return_mid) >= args.epsilon:
         min_demo = mid_demo
         return_min = return_mid
     else:
