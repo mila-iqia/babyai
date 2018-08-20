@@ -70,7 +70,7 @@ parser.add_argument("--log-interval", type=int, default=1,
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log the sub IL tasks into Tensorboard")
 parser.add_argument("--csv", action="store_true", default=False,
-                    help="log the sub IL tasks in a csv file")
+                    help="log the sub IL tasks in a csv file. The current BS task is logged by default.")
 parser.add_argument("--image-dim", type=int, default=128,
                     help="dimensionality of the image embedding")
 parser.add_argument("--memory-dim", type=int, default=128,
@@ -83,12 +83,26 @@ result_dir = os.path.join(utils.storage_dir(), "binary_search_results")
 if not (os.path.isdir(result_dir)):
     os.makedirs(result_dir)
 
-file = open(os.path.join(result_dir, "{}_binary_search.csv").format(args.env), "a")
-writer = csv.writer(file)
-writer.writerow(["num_demos", "seed", "model_name", "mean_return_per_episode"])
+csv_path = os.path.join(result_dir, "{}_binary_search.csv").format(args.env)
+first_created = not os.path.exists(csv_path)
+writer = csv.writer(open(csv_path, 'a', 1))
+if first_created:
+    writer.writerow(["num_demos", "seed", "model_name", "mean_return_per_episode"])
+
+# Define one logger for everything
+logger = utils.get_logger('{}_BinarySearch_{}_{}_{}_{}_{}'.format(args.env,
+                                                                  args.arch,
+                                                                  args.instr_arch if args.instr_arch else "noinstr",
+                                                                  "mem" if not args.no_mem else "nomem",
+                                                                  args.min_demo,
+                                                                  args.max_demo))
+
+# Log command, availability of CUDA
+logger.info(args)
+logger.info("CUDA available: {}".format(torch.cuda.is_available()))
 
 
-def run(num_demos):
+def run(num_demos, logger, first_run=False):
     results = []
     for seed in seeds:
         # Define model name. No need to add the date suffix to allow binary search to continue training without issues.
@@ -111,7 +125,6 @@ def run(num_demos):
         il_learn = ImitationLearning(args)
 
         # Define logger and Tensorboard writer for sub-IL tasks
-        logger = utils.get_logger(il_learn.model_name)
         header = (["update", "frames", "FPS", "duration", "entropy", "policy_loss", "train_accuracy"]
                   + ["validation_accuracy", "validation_return", "validation_success_rate"])
         tb_writer = None
@@ -133,15 +146,18 @@ def run(num_demos):
         # Get the status path
         status_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'status.json')
 
-        # Log command, availability of CUDA, and model
-        logger.info(args)
-        logger.info("CUDA available: {}".format(torch.cuda.is_available()))
-        logger.info(il_learn.acmodel)
+        # Log model if first time
+        if first_run and seed == seeds[0]:
+            logger.info(il_learn.acmodel)
+
+        # Log the current step of the loop
+        logger.info("\n----\n{} demonstrations. Seed {}.\n".format(num_demos, seed))
 
         if not args.no_mem:
             il_learn.train(il_learn.train_demos, logger, tb_writer, csv_writer, status_path, header)
         else:
             il_learn.train(il_learn.flat_train_demos, logger, tb_writer, csv_writer, status_path, header)
+        logger.info('Training finished. Evaluating the model on {} episodes now.'.format(args.test_episodes))
         env = gym.make(args.env)
         utils.seed(args.test_seed)
         agent = utils.load_agent(args, env)
@@ -150,6 +166,7 @@ def run(num_demos):
         logs = evaluate(agent, env, args.test_episodes)
 
         results.append(np.mean(logs["return_per_episode"]))
+        logger.info('The mean return per episode is {}'.format(np.mean(logs["return_per_episode"])))
         writer.writerow([num_demos, seed, args.model, str(np.mean(logs["return_per_episode"]))])
 
     return np.mean(results)
@@ -158,8 +175,8 @@ def run(num_demos):
 min_demo = args.min_demo
 max_demo = args.max_demo
 
-return_min = run(min_demo)
-return_max = run(max_demo)
+return_min = run(min_demo, logger, first_run=True)
+return_max = run(max_demo, logger)
 
 max_performance_bar = return_max
 
@@ -177,7 +194,7 @@ while True:
 
     mid_demo = (min_demo + max_demo) // 2
 
-    return_mid = run(mid_demo)
+    return_mid = run(mid_demo, logger)
 
     assert return_min <= return_mid <= return_max
 
