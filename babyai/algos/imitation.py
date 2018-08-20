@@ -326,7 +326,8 @@ class ImitationLearning(object):
     def train(self, train_demos, logger, writer, csv_writer, status_path, header):
         # Load the status
         status = {'i': 0,
-                  'num_frames': 0}
+                  'num_frames': 0,
+                  'patience': 0}
         if os.path.exists(status_path):
             with open(status_path, 'r') as src:
                 status = json.load(src)
@@ -406,12 +407,11 @@ class ImitationLearning(object):
                     if self.args.csv:
                         csv_writer.writerow(train_data + validation_data)
 
-                    with open(status_path, 'w') as dst:
-                        json.dump(status, dst)
-
                 if mean_return > best_mean_return:
                     best_mean_return = mean_return
-                    patience = 0
+                    status['patience'] = 0
+                    with open(status_path, 'w') as dst:
+                        json.dump(status, dst)
                     # Saving the model
                     logger.info("Saving best model")
 
@@ -424,8 +424,10 @@ class ImitationLearning(object):
                 else:
                     logger.info("Losing Patience")
 
-                    patience += 1
-                    if patience > self.args.patience:
+                    status['patience'] += 1
+                    with open(status_path, 'w') as dst:
+                        json.dump(status, dst)
+                    if status['patience'] > self.args.patience:
                         break
                     if torch.cuda.is_available():
                         self.acmodel.cuda()
