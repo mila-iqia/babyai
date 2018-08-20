@@ -54,12 +54,20 @@ class ImitationLearning(object):
 
         if type(self.args.env) == list:
             named_envs = '_'.join([item[0] for item in self.args.env])
-            named_demos_origin = '_'.join([item[1] for item in self.args.env])
         else:
             named_envs = self.args.env
-            named_demos_origin = self.args.demos_origin
 
-        default_model_name = "{}_{}_il".format(named_envs, named_demos_origin)
+        suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
+        instr = self.args.instr_arch if self.args.instr_arch else "noinstr"
+        mem = "mem" if not args.no_mem else "nomem"
+        model_name_parts = {
+            'envs': named_envs,
+            'arch': args.arch,
+            'instr': instr,
+            'mem': mem,
+            'seed': args.seed,
+            'suffix': suffix}
+        default_model_name = "{envs}_IL_{arch}_{instr}_{mem}_seed{seed}_{suffix}".format(**model_name_parts)
         self.model_name = self.args.model or default_model_name
         print("The model is saved in {}".format(self.model_name))
         self.args.model = self.model_name
