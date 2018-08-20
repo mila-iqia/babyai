@@ -42,9 +42,12 @@ class ImitationLearning(object):
 
         self.train_demos = utils.load_demos(demos_path)
         if args.episodes:
+            assert args.episodes <= len(self.train_demos), "there are only {} train demos".format(len(self.train_demos))
             self.train_demos = self.train_demos[:args.episodes]
 
-        self.val_demos = utils.load_demos(demos_path_valid)[:self.args.val_episodes]
+        self.val_demos = utils.load_demos(demos_path_valid)
+        assert args.val_episodes <= len(self.val_demos), "there are only {} valid. demos".format(len(self.val_demos))
+        self.val_demos = self.val_demos[:self.args.val_episodes]
 
         # Separating train offsets and train demos
         self.train_offsets = [item[1] for item in self.train_demos]
@@ -59,6 +62,7 @@ class ImitationLearning(object):
         else:
             named_envs = self.args.env
 
+        # Define model name
         suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
         instr = self.args.instr_arch if self.args.instr_arch else "noinstr"
         mem = "mem" if not args.no_mem else "nomem"
