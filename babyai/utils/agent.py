@@ -63,8 +63,9 @@ class ModelAgent(Agent):
 class DemoAgent(Agent):
     """A demonstration-based agent. This agent behaves using demonstrations."""
 
-    def __init__(self, env_name, origin):
-        self.demos = utils.load_demos(env_name, origin)
+    def __init__(self, demos, env_name, origin):
+        self.demos_path = utils.get_demos_path(demos, env_name, origin, valid=False)
+        self.demos = utils.load_demos(self.demos_path)
         self.demo_id = 0
         self.step_id = 0
 
@@ -84,11 +85,10 @@ class DemoAgent(Agent):
     def get_action(self, obs):
         if self.demo_id >= len(self.demos):
             raise ValueError("No demonstration remaining")
-
-        expected_obs = self.demos[self.demo_id][self.step_id][0]
+        expected_obs = self.demos[self.demo_id][0][self.step_id][0]
         assert DemoAgent.check_obss_equality(obs, expected_obs), "The observations do not match"
 
-        return self.demos[self.demo_id][self.step_id][1]
+        return self.demos[self.demo_id][0][self.step_id][1]
 
     def analyze_feedback(self, reward, done):
         self.step_id += 1
@@ -99,7 +99,6 @@ class DemoAgent(Agent):
 
 
 class BotAgent:
-
     def __init__(self, env):
         """An agent based on a GOFAI bot."""
         self.env = env
@@ -121,5 +120,5 @@ def load_agent(args, env):
     elif args.model is not None:
         obss_preprocessor = utils.ObssPreprocessor(args.model, env.observation_space)
         return ModelAgent(args.model, obss_preprocessor, args.argmax)
-    elif args.demos_origin is not None:
-        return DemoAgent(args.env, args.demos_origin)
+    elif args.demos_origin is not None or args.demos is not None:
+        return DemoAgent(demos=args.demos, env_name=args.env, origin=args.demos_origin)

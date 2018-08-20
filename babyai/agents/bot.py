@@ -9,7 +9,7 @@ class Bot:
     Heuristic-based level solver
     """
 
-    def __init__(self, mission):
+    def __init__(self, mission, timeout=10000):
         # Mission to be solved
         self.mission = mission
 
@@ -20,6 +20,12 @@ class Bot:
 
         # Visibility mask. True for explored/seen, false for unexplored.
         self.vis_mask = np.zeros(shape=(grid_size, grid_size), dtype=np.bool)
+
+        # Number of compute iterations performed
+        self.num_itrs = 0
+
+        # Maximum number of compute iterations to perform
+        self.timeout = timeout
 
         # Stack of tasks/subtasks to complete (tuples)
         self.stack = []
@@ -92,6 +98,11 @@ class Bot:
         Perform one iteration of the internal control loop
         Returns either an action to perform or None
         """
+
+        if self.num_itrs >= self.timeout:
+            raise TimeoutError('bot timed out')
+
+        self.num_itrs += 1
 
         pos = self.mission.agent_pos
         dir_vec = self.mission.dir_vec
@@ -500,10 +511,10 @@ class Bot:
         _, drop_pos = self.shortest_path(match_noadj)
 
         if not drop_pos:
-            _, drop_pos = self.shortest_path(match_noadj, ignore_blockers=True)
+            _, drop_pos = self.shortest_path(match_empty)
 
         if not drop_pos:
-            _, drop_pos = self.shortest_path(match_empty)
+            _, drop_pos = self.shortest_path(match_noadj, ignore_blockers=True)
 
         if not drop_pos:
             _, drop_pos = self.shortest_path(match_empty, ignore_blockers=True)
