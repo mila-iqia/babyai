@@ -22,9 +22,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to train on (REQUIRED)")
 parser.add_argument("--demos", default=None,
-                    help="path to save demonstrations (based on --model and --demos-origin by default)")
+                    help="demos filename (REQUIRED of demos-origin required)")
 parser.add_argument("--demos-origin", required=False,
-                    help="origin of the demonstrations: human | agent (REQUIRED)")
+                    help="origin of the demonstrations: human | agent (REQUIRED or demos required)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ORIGIN_il)")
 parser.add_argument("--seed", type=int, default=1,

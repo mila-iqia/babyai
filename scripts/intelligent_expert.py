@@ -24,9 +24,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to train on (REQUIRED)")
 parser.add_argument("--demos", default=None,
-                    help="path to save demonstrations (based on --model and --demos-origin by default)")
-parser.add_argument("--demos-origin", required=True,
-                    help="origin of the demonstrations: human | agent (REQUIRED)")
+                    help="demos filename (REQUIRED of demos-origin required)")
+parser.add_argument("--demos-origin", required=False,
+                    help="origin of the demonstrations: human | agent (REQUIRED or demos required)")
 parser.add_argument("--lr", type=float, default=7e-4,
                     help="learning rate (default: 7e-4)")
 parser.add_argument("--entropy-coef", type=float, default=0.2,
