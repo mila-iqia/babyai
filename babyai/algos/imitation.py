@@ -10,6 +10,8 @@ from babyai.evaluate import evaluate
 import babyai.utils as utils
 from babyai.rl import DictList
 from babyai.model import ACModel
+import os
+import json
 
 
 class ImitationLearning(object):
@@ -317,13 +319,23 @@ class ImitationLearning(object):
             self.acmodel.cuda()
         return mean_return
 
-    def train(self, train_demos, logger, writer, status):
+    def train(self, train_demos, logger, writer, csv_writer, status_path, header):
+        # Load the status
+        status = {'i': 0,
+                  'num_frames': 0}
+        if os.path.exists(status_path):
+            with open(status_path, 'r') as src:
+                status = json.load(src)
+
         # Model saved initially to avoid "Model not found Exception" during first validation step
         utils.save_model(self.acmodel, self.model_name)
 
         # best mean return to keep track of performance on validation set
         best_mean_return, patience, i = 0, 0, 0
         total_start_time = time.time()
+
+        # instantiate a valid_log with zeros for the first few updates before the evaluation of the validation metrics
+        validation_data = [0.] * len([key for key in header if 'valid' in key])
 
         while True:
             status['i'] += 1
@@ -344,41 +356,54 @@ class ImitationLearning(object):
             update_end_time = time.time()
 
             # Print logs
-            total_ellapsed_time = int(time.time() - total_start_time)
+            if status['i'] % self.args.log_interval == 0:
+                total_ellapsed_time = int(time.time() - total_start_time)
 
-            fps = total_len / (update_end_time - update_start_time)
-            duration = datetime.timedelta(seconds=total_ellapsed_time)
+                fps = total_len / (update_end_time - update_start_time)
+                duration = datetime.timedelta(seconds=total_ellapsed_time)
 
-            for key in log:
-                log[key] = np.mean(log[key])
+                for key in log:
+                    log[key] = np.mean(log[key])
 
-            train_data = [status['i'], status['num_frames'], fps, duration,
-                          log["entropy"], log["policy_loss"], log["accuracy"]]
+                train_data = [status['i'], status['num_frames'], fps, total_ellapsed_time,
+                              log["entropy"], log["policy_loss"], log["accuracy"]]
 
-            logger.info(
-                "U {} | F {:06} | FPS {:04.0f} | D {} | H {:.3f} | pL {: .3f} | A {: .3f}".format(*train_data))
+                logger.info(
+                    "U {} | F {:06} | FPS {:04.0f} | D {} | H {:.3f} | pL {: .3f} | A {: .3f}".format(*train_data))
 
-            if self.args.tb:
-                writer.add_scalar("FPS", fps, i)
-                writer.add_scalar("duration", total_ellapsed_time, i)
-                writer.add_scalar("entropy", log["entropy"], i)
-                writer.add_scalar("policy_loss", log["policy_loss"], i)
-                writer.add_scalar("accuracy", log["accuracy"], i)
+                # Log the gathered data only when we don't evaluate the validation metrics. It will be logged anyways
+                # afterwards when status['i'] % self.args.validation_interval == 0
+                if status['i'] % self.args.validation_interval != 0:
+                    assert len(header) == len(train_data + validation_data)
+                    if self.args.tb:
+                        for key, value in zip(header, train_data + validation_data):
+                            writer.add_scalar(key, float(value), status['num_frames'])
+                    if self.args.csv:
+                        csv_writer.writerow(train_data + validation_data)
 
-            if i % self.args.validation_interval == 0:
+                    with open(status_path, 'w') as dst:
+                        json.dump(status, dst)
+
+            if status['i'] % self.args.validation_interval == 0:
                 if torch.cuda.is_available():
                     self.acmodel.cpu()
                 valid_log, validation_accuracy = self.validate()
                 mean_return = np.mean(valid_log['return_per_episode'])
                 success_rate = np.mean([1 if r > 0 else 0 for r in valid_log['return_per_episode']])
 
-                validation_data = [validation_accuracy, mean_return, success_rate]
-                logger.info("Validation: A {: .3f} | R {: .3f} | S {: .3f}".format(*validation_data))
+                if status['i'] % self.args.log_interval == 0:
+                    validation_data = [validation_accuracy, mean_return, success_rate]
+                    logger.info("Validation: A {: .3f} | R {: .3f} | S {: .3f}".format(*validation_data))
 
-                if self.args.tb:
-                    writer.add_scalar("validation_accuracy", validation_accuracy, i)
-                    writer.add_scalar("validation_return", mean_return, i)
-                    writer.add_scalar("success_rate", success_rate, i)
+                    assert len(header) == len(train_data + validation_data)
+                    if self.args.tb:
+                        for key, value in zip(header, train_data + validation_data):
+                            writer.add_scalar(key, float(value), status['num_frames'])
+                    if self.args.csv:
+                        csv_writer.writerow(train_data + validation_data)
+
+                    with open(status_path, 'w') as dst:
+                        json.dump(status, dst)
 
                 if mean_return > best_mean_return:
                     best_mean_return = mean_return
