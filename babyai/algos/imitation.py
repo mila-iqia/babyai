@@ -121,7 +121,7 @@ class ImitationLearning(object):
         flat_demos_t = copy.deepcopy(flat_demos)
         if is_training:
             np.random.shuffle(flat_demos_t)
-        batch_size = self.args.batch_size
+        batch_size = min(self.args.batch_size, len(flat_demos_t))
 
         log = {"entropy": [], "policy_loss": [], "accuracy": []}
         offset = 0
@@ -179,7 +179,7 @@ class ImitationLearning(object):
         demos_t = copy.deepcopy(demos)
         if is_training:
             np.random.shuffle(demos_t)
-        batch_size = self.args.batch_size
+        batch_size = min(self.args.batch_size, len(demos_t))
         offset = 0
 
         # Log dictionary
