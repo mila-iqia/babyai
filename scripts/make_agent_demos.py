@@ -34,7 +34,10 @@ args = parser.parse_args()
 if args.seed == 0:
     raise ValueError("seed == 0 is reserved for validation purposes")
 
+
 def generate_demos(n_episodes, valid, seed):
+    if n_episodes == 0:
+        return
     utils.seed(seed)
 
     # Generate environment
@@ -80,6 +83,7 @@ def generate_demos(n_episodes, valid, seed):
     # Save demonstrations
     utils.save_demos(demos, demos_path)
     utils.synthesize_demos(demos[-100:])
+
 
 generate_demos(args.episodes, False, args.seed)
 generate_demos(args.valid_episodes, True, 0)
