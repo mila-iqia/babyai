@@ -42,7 +42,7 @@ class ImitationLearning(object):
         if args.episodes:
             self.train_demos = self.train_demos[:args.episodes]
 
-        self.val_demos = utils.load_demos(demos_path_valid)[:500]
+        self.val_demos = utils.load_demos(demos_path_valid)[:self.args.val_episodes]
 
         # Separating train offsets and train demos
         self.train_offsets = [item[1] for item in self.train_demos]
