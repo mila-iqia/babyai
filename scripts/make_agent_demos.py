@@ -16,13 +16,13 @@ parser.add_argument("--demos", default=None,
                     help="path to save demonstrations (based on --model and --origin by default)")
 parser.add_argument("--episodes", type=int, default=1000,
                     help="number of episodes to generate demonstrations for (default: 1000)")
-parser.add_argument("--valid-episodes", type=int, default=500,
-                    help="number of validation episodes to generate demonstrations for (default: 500)")
+parser.add_argument("--valid-episodes", type=int, default=512,
+                    help="number of validation episodes to generate demonstrations for (default: 512)")
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
 parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected")
-parser.add_argument("--save-interval", type=int, default=0,
+parser.add_argument("--save-interval", type=int, default=1000,
                     help="interval between demonstrations saving (default: 0, 0 means only at the end)")
 parser.add_argument("--filter-steps", type=int, default=0,
                     help="filter out demos with number of steps more than filter-steps (default: 0, No filtering)")
@@ -75,6 +75,7 @@ def generate_demos(n_episodes, valid, seed):
         # Save demonstrations
 
         if args.save_interval > 0 and len(demos) < n_episodes and len(demos) % args.save_interval == 0:
+            print("{} demos out of {}".format(len(demos), n_episodes))
             utils.save_demos(demos, demos_path)
             # print statistics for the last 100 demonstrations
             utils.synthesize_demos(demos[-100:])
