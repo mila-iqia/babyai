@@ -24,30 +24,30 @@ parser.add_argument("--demos", default=None,
                     help="demos filename (REQUIRED of demos-origin required)")
 parser.add_argument("--demos-origin", required=False,
                     help="origin of the demonstrations: human | agent (REQUIRED or demos required)")
-parser.add_argument("--lr", type=float, default=7e-4,
-                    help="learning rate (default: 7e-4)")
+parser.add_argument("--lr", type=float, default=1e-4,
+                    help="learning rate (default: 1e-4)")
 parser.add_argument("--entropy-coef", type=float, default=0.2,
                     help="entropy term coefficient (default: 0.2)")
 parser.add_argument("--recurrence", type=int, default=1,
                     help="number of timesteps gradient is backpropagated (default: 1)")
 parser.add_argument("--optim-eps", type=float, default=1e-5,
                     help="Adam optimizer epsilon (default: 1e-5)")
-parser.add_argument("--batch-size", type=int, default=50,
-                    help="batch size (In case of memory, the BS is # demos, otherwise, it is # frames)(default: 50)")
+parser.add_argument("--batch-size", type=int, default=256,
+                    help="batch size (In case of memory, the BS is # demos, otherwise, it is # frames)(default: 256)")
 parser.add_argument("--no-instr", action="store_true", default=False,
                     help="don't use instructions in the model")
 parser.add_argument("--instr-arch", default="gru",
                     help="arch to encode instructions, possible values: gru, conv, bow (default: gru)")
 parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
-parser.add_argument("--arch", default='cnn1',
-                    help="image embedding architecture, possible values: cnn1, cnn2, filmcnn (default: cnn1)")
+parser.add_argument("--arch", default='expert_filmcnn',
+                    help="image embedding architecture, possible values: cnn1, cnn2, filmcnn (default: expert_filmcnn)")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
 parser.add_argument("--validation-interval", type=int, default=20,
                     help="number of epochs between two validation checks (default: 20)")
-parser.add_argument("--val-episodes", type=int, default=1000,
-                    help="number of episodes used for validation (default: 1000)")
+parser.add_argument("--val-episodes", type=int, default=500,
+                    help="number of episodes used for validation (default: 500)")
 parser.add_argument("--patience", type=int, default=3,
                     help="patience for early stopping (default: 3)")
 parser.add_argument("--val-seed", type=int, default=0,
