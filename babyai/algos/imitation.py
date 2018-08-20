@@ -343,6 +343,10 @@ class ImitationLearning(object):
         validation_data = [0.] * len([key for key in header if 'valid' in key])
 
         while True:
+            # Do not learn if using a pre-trained model that already lost patience
+            if status['patience'] > self.args.patience:
+                break
+
             status['i'] += 1
             i = status['i']
             update_start_time = time.time()
@@ -427,7 +431,5 @@ class ImitationLearning(object):
                     status['patience'] += 1
                     with open(status_path, 'w') as dst:
                         json.dump(status, dst)
-                    if status['patience'] > self.args.patience:
-                        break
                     if torch.cuda.is_available():
                         self.acmodel.cuda()
