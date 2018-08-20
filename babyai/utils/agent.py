@@ -14,7 +14,14 @@ class Agent(ABC):
         pass
 
     @abstractmethod
-    def get_action(self, obs):
+    def act(self, obs):
+        """Propose an action based on observation.
+
+        Returns a dict, with 'action` entry containing the proposed action,
+        and optionaly other entries containing auxiliary information
+        (e.g. value function).
+
+        """
         pass
 
     @abstractmethod
@@ -36,7 +43,7 @@ class ModelAgent(Agent):
     def _initialize_memory(self):
         self.memory = torch.zeros(1, self.model.memory_size)
 
-    def get_action_and_outputs(self, obs):
+    def act(self, obs):
         preprocessed_obs = self.obss_preprocessor([obs])
 
         with torch.no_grad():
@@ -50,10 +57,9 @@ class ModelAgent(Agent):
         else:
             action = dist.sample()
 
-        return action, dist, value
-
-    def get_action(self, obs):
-        return self.get_action_and_outputs(obs)[0]
+        return {'action': action,
+                'dist': dist,
+                'value': value}
 
     def analyze_feedback(self, reward, done):
         if done and self.model.recurrent:
@@ -82,13 +88,13 @@ class DemoAgent(Agent):
                     return False
         return True
 
-    def get_action(self, obs):
+    def act(self, obs):
         if self.demo_id >= len(self.demos):
             raise ValueError("No demonstration remaining")
         expected_obs = self.demos[self.demo_id][0][self.step_id][0]
         assert DemoAgent.check_obss_equality(obs, expected_obs), "The observations do not match"
 
-        return self.demos[self.demo_id][0][self.step_id][1]
+        return {'action': self.demos[self.demo_id][0][self.step_id][1]}
 
     def analyze_feedback(self, reward, done):
         self.step_id += 1
@@ -107,8 +113,8 @@ class BotAgent:
     def on_reset(self):
         self.bot = Bot(self.env)
 
-    def get_action(self, *args, **kwargs):
-        return self.bot.step()
+    def act(self, *args, **kwargs):
+        return {'action': self.bot.step()}
 
     def analyze_feedback(self, reward, done):
         pass
