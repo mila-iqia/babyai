@@ -297,10 +297,17 @@ class ImitationLearning(object):
             env.seed(self.args.val_seed)
             logs += [evaluate(agent, env, self.args.val_episodes)]
 
+        if not self.args.no_mem:
+            val_log = self.run_epoch_recurrence(self.val_demos)
+        else:
+            val_log = self.run_epoch_norecur(self.flat_val_demos)
+        validation_accuracy = np.mean(val_log["accuracy"])
+
         if type(self.env) != list:
             assert len(logs) == 1
-            return logs[0]
-        return logs
+            return logs[0], validation_accuracy
+
+        return logs, validation_accuracy
 
     def collect_returns(self):
         if torch.cuda.is_available():
@@ -310,7 +317,7 @@ class ImitationLearning(object):
             self.acmodel.cuda()
         return mean_return
 
-    def train(self, train_demos, logger, writer):
+    def train(self, train_demos, logger, writer, status):
         # Model saved initially to avoid "Model not found Exception" during first validation step
         utils.save_model(self.acmodel, self.model_name)
 
@@ -319,7 +326,8 @@ class ImitationLearning(object):
         total_start_time = time.time()
 
         while True:
-            i += 1
+            status['i'] += 1
+            i = status['i']
             update_start_time = time.time()
 
             # Learning rate scheduler
@@ -331,6 +339,7 @@ class ImitationLearning(object):
             else:
                 log = self.run_epoch_norecur(train_demos, is_training=True)
                 total_len = len(train_demos)
+            status['num_frames'] += total_len
 
             update_end_time = time.time()
 
@@ -343,18 +352,11 @@ class ImitationLearning(object):
             for key in log:
                 log[key] = np.mean(log[key])
 
+            train_data = [status['i'], status['num_frames'], fps, duration,
+                          log["entropy"], log["policy_loss"], log["accuracy"]]
+
             logger.info(
-                "U {} | FPS {:04.0f} | D {} | H {:.3f} | pL {: .3f} | A {: .3f}"
-                    .format(i, fps, duration,
-                            log["entropy"], log["policy_loss"], log["accuracy"]))
-
-            if not (self.args.no_mem):
-                val_log = self.run_epoch_recurrence(self.val_demos)
-            else:
-                val_log = self.run_epoch_norecur(self.flat_val_demos)
-
-            for key in val_log:
-                val_log[key] = np.mean(val_log[key])
+                "U {} | F {:06} | FPS {:04.0f} | D {} | H {:.3f} | pL {: .3f} | A {: .3f}".format(*train_data))
 
             if self.args.tb:
                 writer.add_scalar("FPS", fps, i)
@@ -362,17 +364,19 @@ class ImitationLearning(object):
                 writer.add_scalar("entropy", log["entropy"], i)
                 writer.add_scalar("policy_loss", log["policy_loss"], i)
                 writer.add_scalar("accuracy", log["accuracy"], i)
-                writer.add_scalar("validation_accuracy", val_log["accuracy"], i)
 
             if i % self.args.validation_interval == 0:
                 if torch.cuda.is_available():
                     self.acmodel.cpu()
-                valid_log = self.validate()
+                valid_log, validation_accuracy = self.validate()
                 mean_return = np.mean(valid_log['return_per_episode'])
                 success_rate = np.mean([1 if r > 0 else 0 for r in valid_log['return_per_episode']])
-                logger.info("Mean Validation Return %.3f" % mean_return)
-                logger.info("Success Rate %.3f" % success_rate)
+
+                validation_data = [validation_accuracy, mean_return, success_rate]
+                logger.info("Validation: A {: .3f} | R {: .3f} | S {: .3f}".format(*validation_data))
+
                 if self.args.tb:
+                    writer.add_scalar("validation_accuracy", validation_accuracy, i)
                     writer.add_scalar("validation_return", mean_return, i)
                     writer.add_scalar("success_rate", success_rate, i)
 
