@@ -16,6 +16,7 @@ from babyai.algos.imitation import ImitationLearning
 import gym
 import babyai
 import torch
+import datetime
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
@@ -64,8 +65,12 @@ parser.add_argument("--test-episodes", type=int, default=1000,
                     help="number of episodes used for testing (default: 1000)")
 parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected for model agent while evaluating")
+parser.add_argument("--log-interval", type=int, default=1,
+                    help="number of updates between two logs of the sub-IL tasks(default: 1)")
 parser.add_argument("--tb", action="store_true", default=False,
-                    help="log into Tensorboard")
+                    help="log the sub IL tasks into Tensorboard")
+parser.add_argument("--csv", action="store_true", default=False,
+                    help="log the sub IL tasks in a csv file")
 parser.add_argument("--image-dim", type=int, default=128,
                     help="dimensionality of the image embedding")
 parser.add_argument("--memory-dim", type=int, default=128,
@@ -79,23 +84,54 @@ if not (os.path.isdir(result_dir)):
     os.makedirs(result_dir)
 
 file = open(os.path.join(result_dir, "{}_binary_search.csv").format(args.env), "a")
-writer = csv.writer(file, delimiter=" ")
+writer = csv.writer(file)
+writer.writerow(["num_demos", "seed", "model_name", "mean_return_per_episode"])
 
 
 def run(num_demos):
     results = []
     for seed in seeds:
-        args.model = "{}_{}_il_seed_{}_demos_{}".format(args.env, args.demos_origin, seed, num_demos)
+        # Define model name. No need to add the date suffix to allow binary search to continue training without issues.
+        # This assumes that the source of the demos doesn't change from one run to the other, as there is no way
+        # to differentiate between different demo sources given their logs.
+        instr = args.instr_arch if args.instr_arch else "noinstr"
+        mem = "mem" if not args.no_mem else "nomem"
+        model_name_parts = {
+            'env': args.env,
+            'arch': args.arch,
+            'instr': instr,
+            'mem': mem,
+            'seed': seed,
+            'num_demos': num_demos}
+        args.model = "{env}_IL_{arch}_{instr}_{mem}_seed{seed}_demos{num_demos}".format(**model_name_parts)
+
         args.episodes = num_demos
         args.seed = seed
+
         il_learn = ImitationLearning(args)
 
-        # Define logger and Tensorboard writer
+        # Define logger and Tensorboard writer for sub-IL tasks
         logger = utils.get_logger(il_learn.model_name)
+        header = (["update", "frames", "FPS", "duration", "entropy", "policy_loss", "train_accuracy"]
+                  + ["validation_accuracy", "validation_return", "validation_success_rate"])
         tb_writer = None
         if args.tb:
             from tensorboardX import SummaryWriter
             tb_writer = SummaryWriter(utils.get_log_dir(il_learn.model_name))
+
+        # Define csv writer for sub-IL tasks
+        csv_writer = None
+        if args.csv:
+            csv_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'log.csv')
+            first_created = not os.path.exists(csv_path)
+            # we don't buffer data going in the csv log, cause we assume
+            # that one update will take much longer that one write to the log
+            csv_writer = csv.writer(open(csv_path, 'a', 1))
+            if first_created:
+                csv_writer.writerow(header)
+
+        # Get the status path
+        status_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'status.json')
 
         # Log command, availability of CUDA, and model
         logger.info(args)
@@ -103,10 +139,9 @@ def run(num_demos):
         logger.info(il_learn.acmodel)
 
         if not args.no_mem:
-            il_learn.train(il_learn.train_demos, logger, tb_writer)
+            il_learn.train(il_learn.train_demos, logger, tb_writer, csv_writer, status_path, header)
         else:
-            il_learn.train(il_learn.flat_train_demos, logger, tb_writer)
-
+            il_learn.train(il_learn.flat_train_demos, logger, tb_writer, csv_writer, status_path, header)
         env = gym.make(args.env)
         utils.seed(args.test_seed)
         agent = utils.load_agent(args, env)
@@ -115,7 +150,7 @@ def run(num_demos):
         logs = evaluate(agent, env, args.test_episodes)
 
         results.append(np.mean(logs["return_per_episode"]))
-        writer.writerow([args.model, str(np.mean(logs["return_per_episode"]))])
+        writer.writerow([num_demos, seed, args.model, str(np.mean(logs["return_per_episode"]))])
 
     return np.mean(results)
 
