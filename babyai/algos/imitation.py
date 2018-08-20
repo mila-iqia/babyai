@@ -11,6 +11,7 @@ import babyai.utils as utils
 from babyai.rl import DictList
 from babyai.model import ACModel
 
+
 class ImitationLearning(object):
     def __init__(self, args):
         self.args = args
@@ -27,7 +28,6 @@ class ImitationLearning(object):
             self.val_demos = [utils.load_demos(utils.get_demos_path(env=env, origin=demos_origin, valid=True))[:1]
                               for env, demos_origin, _ in self.args.env]
             self.val_demos = [[demo[0] for demo in demos] for demos in self.val_demos]
-
 
             observation_space = self.env[0].observation_space
             action_space = self.env[0].action_space
@@ -70,7 +70,7 @@ class ImitationLearning(object):
         self.acmodel = utils.load_model(self.model_name, raise_not_found=False)
         if self.acmodel is None:
             self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space, args.image_dim, args.memory_dim,
-                                  not self.args.no_instr, self.args.instr_arch, not self.args.no_mem, self.args.arch)
+                                   not self.args.no_instr, self.args.instr_arch, not self.args.no_mem, self.args.arch)
 
         self.acmodel.train()
         if torch.cuda.is_available():
@@ -109,10 +109,10 @@ class ImitationLearning(object):
             np.random.shuffle(flat_demos_t)
         batch_size = self.args.batch_size
 
-        log = {"entropy": [],"policy_loss": [], "accuracy": []}
+        log = {"entropy": [], "policy_loss": [], "accuracy": []}
         offset = 0
-        for j in range(len(flat_demos_t)//batch_size):
-            flat_batch = flat_demos_t[offset:offset+batch_size,:]
+        for j in range(len(flat_demos_t) // batch_size):
+            flat_batch = flat_demos_t[offset:offset + batch_size, :]
 
             _log = self.run_epoch_norecur_one_batch(flat_batch, is_training=is_training)
 
@@ -125,21 +125,21 @@ class ImitationLearning(object):
         return log
 
     def run_epoch_norecur_one_batch(self, flat_batch, is_training=False):
-        obs, action_true, done = flat_batch[:,0], flat_batch[:,1], flat_batch[:,3]
+        obs, action_true, done = flat_batch[:, 0], flat_batch[:, 1], flat_batch[:, 3]
         preprocessed_obs = self.obss_preprocessor(obs, device=self.device)
 
-        action_true = torch.tensor([action for action in action_true],device=self.device,dtype=torch.long)
-        memory = torch.zeros([self.args.batch_size,self.acmodel.memory_size], device=self.device)
+        action_true = torch.tensor([action for action in action_true], device=self.device, dtype=torch.long)
+        memory = torch.zeros([self.args.batch_size, self.acmodel.memory_size], device=self.device)
 
         # Compute loss
-        dist, _, memory = self.acmodel(preprocessed_obs,memory)
+        dist, _, memory = self.acmodel(preprocessed_obs, memory)
 
         entropy = dist.entropy().mean()
 
         policy_loss = -dist.log_prob(action_true).mean()
 
         action_pred = dist.probs.max(1, keepdim=True)[1]
-        accuracy = float((action_pred == action_true.unsqueeze(1)).sum())/self.args.batch_size
+        accuracy = float((action_pred == action_true.unsqueeze(1)).sum()) / self.args.batch_size
 
         loss = policy_loss - self.args.entropy_coef * entropy
 
@@ -169,10 +169,10 @@ class ImitationLearning(object):
         offset = 0
 
         # Log dictionary
-        log = {"entropy": [],"policy_loss": [],"accuracy" : []}
+        log = {"entropy": [], "policy_loss": [], "accuracy": []}
 
-        for batch_index in range(len(demos_t)//batch_size):
-            batch = demos_t[offset:offset+batch_size]
+        for batch_index in range(len(demos_t) // batch_size):
+            batch = demos_t[offset:offset + batch_size]
 
             _log = self.run_epoch_recurrence_one_batch(batch, is_training=is_training)
 
@@ -185,7 +185,7 @@ class ImitationLearning(object):
         return log
 
     def run_epoch_recurrence_one_batch(self, batch, is_training=False):
-        batch.sort(key=len,reverse=True)
+        batch.sort(key=len, reverse=True)
         # Constructing flat batch and indices pointing to start of each demonstration
         flat_batch = []
         inds = [0]
@@ -198,17 +198,17 @@ class ImitationLearning(object):
         inds = inds[:-1]
         num_frames = len(flat_batch)
 
-        mask = np.ones([len(flat_batch)],dtype=np.float64)
+        mask = np.ones([len(flat_batch)], dtype=np.float64)
         mask[inds] = 0
-        mask = torch.tensor(mask,device=self.device,dtype=torch.float).unsqueeze(1)
+        mask = torch.tensor(mask, device=self.device, dtype=torch.float).unsqueeze(1)
 
         # Observations, true action, values and done for each of the stored demostration
-        obss, action_true, done = flat_batch[:,0], flat_batch[:,1], flat_batch[:,3]
-        action_true = torch.tensor([action for action in action_true],device=self.device,dtype=torch.long)
+        obss, action_true, done = flat_batch[:, 0], flat_batch[:, 1], flat_batch[:, 3]
+        action_true = torch.tensor([action for action in action_true], device=self.device, dtype=torch.long)
 
         # Memory to be stored
-        memories = torch.zeros([len(flat_batch),self.acmodel.memory_size], device=self.device)
-        memory = torch.zeros([self.args.batch_size,self.acmodel.memory_size], device=self.device)
+        memories = torch.zeros([len(flat_batch), self.acmodel.memory_size], device=self.device)
+        memory = torch.zeros([self.args.batch_size, self.acmodel.memory_size], device=self.device)
 
         # Loop terminates when every observation in the flat_batch has been handled
         while True:
@@ -218,41 +218,41 @@ class ImitationLearning(object):
             preprocessed_obs = self.obss_preprocessor(obs, device=self.device)
             with torch.no_grad():
                 # taking the memory till the length of time_step_inds, as demos beyond that have already finished
-                _, _, new_memory = self.acmodel(preprocessed_obs, memory[:len(inds),:])
+                _, _, new_memory = self.acmodel(preprocessed_obs, memory[:len(inds), :])
 
             for i in range(len(inds)):
                 # Copying to the memories at the corresponding locations
-                memories[inds[i],:] = memory[i,:]
+                memories[inds[i], :] = memory[i, :]
 
-            memory[:len(inds),:] = new_memory
+            memory[:len(inds), :] = new_memory
 
             # Updating inds, by removing those indices corresponding to which the demonstrations have finished
-            inds = inds[:len(inds)-sum(done_step)]
+            inds = inds[:len(inds) - sum(done_step)]
             if len(inds) == 0:
                 break
 
             # Incrementing the remaining indices
-            inds = [index+1 for index in inds]
+            inds = [index + 1 for index in inds]
 
         # Here, actual backprop upto args.recurrence happens
         final_loss = 0
-        final_entropy, final_policy_loss, final_value_loss = 0,0,0
+        final_entropy, final_policy_loss, final_value_loss = 0, 0, 0
 
         indexes = self.starting_indexes(num_frames)
         memory = memories[indexes]
         accuracy = 0
-        total_frames = len(indexes)*self.args.recurrence
+        total_frames = len(indexes) * self.args.recurrence
         for _ in range(self.args.recurrence):
             obs = obss[indexes]
             preprocessed_obs = self.obss_preprocessor(obs, device=self.device)
             action_step = action_true[indexes]
             mask_step = mask[indexes]
-            dist, value, memory = self.acmodel(preprocessed_obs, memory*mask_step)
+            dist, value, memory = self.acmodel(preprocessed_obs, memory * mask_step)
             entropy = dist.entropy().mean()
             policy_loss = -dist.log_prob(action_step).mean()
             loss = policy_loss - self.args.entropy_coef * entropy
             action_pred = dist.probs.max(1, keepdim=True)[1]
-            accuracy += float((action_pred == action_step.unsqueeze(1)).sum())/total_frames
+            accuracy += float((action_pred == action_step.unsqueeze(1)).sum()) / total_frames
             final_loss += loss
             final_entropy += entropy
             final_policy_loss += policy_loss
@@ -266,8 +266,8 @@ class ImitationLearning(object):
             self.optimizer.step()
 
         log = {}
-        log["entropy"] = float(final_entropy/self.args.recurrence)
-        log["policy_loss"] = float(final_policy_loss/self.args.recurrence)
+        log["entropy"] = float(final_entropy / self.args.recurrence)
+        log["policy_loss"] = float(final_policy_loss / self.args.recurrence)
         log["accuracy"] = float(accuracy)
 
         return log
@@ -287,7 +287,7 @@ class ImitationLearning(object):
         logs = []
         for env in envs:
             env.seed(self.args.val_seed)
-            logs += [evaluate(agent,env,self.args.val_episodes)]
+            logs += [evaluate(agent, env, self.args.val_episodes)]
 
         if type(self.env) != list:
             assert len(logs) == 1
@@ -317,7 +317,7 @@ class ImitationLearning(object):
             # Learning rate scheduler
             self.scheduler.step()
 
-            if not(self.args.no_mem):
+            if not self.args.no_mem:
                 log = self.run_epoch_recurrence(train_demos, is_training=True)
                 total_len = sum([len(item) for item in train_demos])
             else:
@@ -329,7 +329,7 @@ class ImitationLearning(object):
             # Print logs
             total_ellapsed_time = int(time.time() - total_start_time)
 
-            fps = total_len/(update_end_time - update_start_time)
+            fps = total_len / (update_end_time - update_start_time)
             duration = datetime.timedelta(seconds=total_ellapsed_time)
 
             for key in log:
@@ -337,10 +337,10 @@ class ImitationLearning(object):
 
             logger.info(
                 "U {} | FPS {:04.0f} | D {} | H {:.3f} | pL {: .3f} | A {: .3f}"
-                        .format(i, fps, duration,
-                                        log["entropy"], log["policy_loss"], log["accuracy"]))
+                    .format(i, fps, duration,
+                            log["entropy"], log["policy_loss"], log["accuracy"]))
 
-            if not(self.args.no_mem):
+            if not (self.args.no_mem):
                 val_log = self.run_epoch_recurrence(self.val_demos)
             else:
                 val_log = self.run_epoch_norecur(self.flat_val_demos)
@@ -354,8 +354,7 @@ class ImitationLearning(object):
                 writer.add_scalar("entropy", log["entropy"], i)
                 writer.add_scalar("policy_loss", log["policy_loss"], i)
                 writer.add_scalar("accuracy", log["accuracy"], i)
-                writer.add_scalar("validation_accuracy",val_log["accuracy"], i)
-
+                writer.add_scalar("validation_accuracy", val_log["accuracy"], i)
 
             if i % self.args.validation_interval == 0:
                 if torch.cuda.is_available():
