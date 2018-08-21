@@ -83,7 +83,7 @@ for level_name in level_list:
                     if reward <= 0:
                         print('FAILURE on %s, seed %d' % (level_name, mission_seed))
                     break
-        except Error as e:
+        except Exception as e:
             print('FAILURE on %s, seed %d' % (level_name, mission_seed))
             print(e)
 
