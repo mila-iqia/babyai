@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to train on (REQUIRED)")
 parser.add_argument("--demos", default=None,
-                    help="demos filename (REQUIRED of demos-origin required)")
+                    help="demos filename (REQUIRED or demos-origin required)")
 parser.add_argument("--demos-origin", required=False,
                     help="origin of the demonstrations: human | agent (REQUIRED or demos required)")
 parser.add_argument("--lr", type=float, default=1e-4,
@@ -184,12 +184,12 @@ while True:
     assert return_max >= return_min
 
     if (max_performance_bar - return_min) <= args.epsilon:
-        print("Minimum No. of Samples Required = %d" % min_demo)
+        logger.info("Minimum No. of Samples Required = %d" % min_demo)
         break
 
     if np.log2(max_demo / min_demo) <= 0.5:
-        print("Minimum No. of Samples Required = %d" % max_demo)
-        print("Ratio : %.3f" % np.log2(max_demo / min_demo))
+        logger.info("Minimum No. of Samples Required = %d" % max_demo)
+        logger.info("Ratio : %.3f" % np.log2(max_demo / min_demo))
         break
 
     mid_demo = (min_demo + max_demo) // 2
