@@ -389,7 +389,7 @@ class ImitationLearning(object):
                     validation_data = [''] * len([key for key in header if 'valid' in key])
                     assert len(header) == len(train_data + validation_data)
                     if self.args.tb:
-                        for key, value in zip(header, train_data + validation_data):
+                        for key, value in zip(header, train_data):
                             writer.add_scalar(key, float(value), status['num_frames'])
                     if self.args.csv:
                         csv_writer.writerow(train_data + validation_data)
