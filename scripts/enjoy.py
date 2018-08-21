@@ -99,15 +99,18 @@ while True:
     if args.manual_mode and renderer.window is not None:
         renderer.window.setKeyDownCb(keyDownCb)
     else:
-        action, dist, value = agent.get_action_and_outputs(obs)
-        obs, reward, done, _ = env.step(action)
+        result = agent.act(obs)
+        obs, reward, done, _ = env.step(result['action'])
         agent.analyze_feedback(reward, done)
-        dist_str = ", ".join("{:.4f}".format(float(p)) for p in dist.probs[0])
-        print("step: {}, mission: {}, dist: {}, entropy: {:.2f}, value: {:.2f}".format(
-            step, obs["mission"], dist_str, float(dist.entropy()), float(value)))
+        if 'dist' in result and 'value' in result:
+            dist, value = result['dist'], result['value']
+            dist_str = ", ".join("{:.4f}".format(float(p)) for p in dist.probs[0])
+            print("step: {}, mission: {}, dist: {}, entropy: {:.2f}, value: {:.2f}".format(
+                step, obs["mission"], dist_str, float(dist.entropy()), float(value)))
         if done:
             print("Reward:", reward)
             obs = env.reset()
+            agent.on_reset()
             step = 0
         else:
             step += 1
