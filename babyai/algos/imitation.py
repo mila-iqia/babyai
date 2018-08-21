@@ -344,9 +344,6 @@ class ImitationLearning(object):
         best_mean_return, patience, i = 0, 0, 0
         total_start_time = time.time()
 
-        # instantiate a valid_log with zeros for the first few updates before the evaluation of the validation metrics
-        validation_data = [0.] * len([key for key in header if 'valid' in key])
-
         while True:
             # Do not learn if using a pre-trained model that already lost patience
             if status['patience'] > self.args.patience:
@@ -388,6 +385,8 @@ class ImitationLearning(object):
                 # Log the gathered data only when we don't evaluate the validation metrics. It will be logged anyways
                 # afterwards when status['i'] % self.args.validation_interval == 0
                 if status['i'] % self.args.validation_interval != 0:
+                    # instantiate a validation_log with empty strings when no validation is done
+                    validation_data = [''] * len([key for key in header if 'valid' in key])
                     assert len(header) == len(train_data + validation_data)
                     if self.args.tb:
                         for key, value in zip(header, train_data + validation_data):
