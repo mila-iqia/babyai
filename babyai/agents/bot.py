@@ -137,6 +137,10 @@ class Bot:
                     self.stack.append(('GoToObj', key_desc))
                     return None
 
+            # If the door is already open, close it so we can open it again
+            if fwd_cell.type == 'door' and fwd_cell.is_open:
+                return actions.toggle
+
             self.stack.pop()
             return actions.toggle
 
