@@ -130,12 +130,43 @@ class Bot:
             # If the door is locked, go find the key and then return
             if fwd_cell.type == 'locked_door':
                 if not carrying or carrying.type != 'key' or carrying.color != fwd_cell.color:
+                    # Find the key
                     key_desc = ObjDesc('key', fwd_cell.color)
                     key_desc.find_matching_objs(self.mission)
-                    self.stack.append(('GoNextTo', tuple(fwd_pos)))
-                    self.stack.append(('Pickup', key_desc))
-                    self.stack.append(('GoToObj', key_desc))
+
+                    # If we're already carrying something
+                    if carrying:
+                        self.stack.pop()
+
+                        # Find a location to drop what we're already carrying
+                        drop_pos_cur = self.find_drop_pos()
+
+                        # Take back the object being carried
+                        self.stack.append(('Pickup', None))
+                        self.stack.append(('GoNextTo', drop_pos_cur))
+
+                        # Go back to the door and open it
+                        self.stack.append(('Open', None))
+                        self.stack.append(('GoNextTo', tuple(fwd_pos)))
+
+                        # Go to the key and pick it up
+                        self.stack.append(('Pickup', key_desc))
+                        self.stack.append(('GoToObj', key_desc))
+
+                        # Drop the object being carried
+                        self.stack.append(('Drop', None))
+                        self.stack.append(('GoNextTo', drop_pos_cur))
+                    else:
+                        self.stack.append(('GoNextTo', tuple(fwd_pos)))
+                        self.stack.append(('Pickup', key_desc))
+                        self.stack.append(('GoToObj', key_desc))
+
+                    # Don't perform any action for this iteration
                     return None
+
+            # If the door is already open, close it so we can open it again
+            if fwd_cell.type == 'door' and fwd_cell.is_open:
+                return actions.toggle
 
             self.stack.pop()
             return actions.toggle
