@@ -3,8 +3,9 @@
 """
 Script to train agent through imitation learning using demonstrations.
 """
-
+import os
 import argparse
+import csv
 import copy
 import gym
 import time
@@ -21,9 +22,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to train on (REQUIRED)")
 parser.add_argument("--demos", default=None,
-                    help="path to save demonstrations (based on --model and --demos-origin by default)")
+                    help="demos filename (REQUIRED or demos-origin required)")
 parser.add_argument("--demos-origin", required=False,
-                    help="origin of the demonstrations: human | agent (REQUIRED)")
+                    help="origin of the demonstrations: human | agent (REQUIRED or demos required)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ORIGIN_il)")
 parser.add_argument("--seed", type=int, default=1,
@@ -35,6 +36,8 @@ parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs (default: 1)")
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log into Tensorboard")
+parser.add_argument("--csv", action="store_true", default=False,
+                    help="log in a csv file")
 parser.add_argument("--lr", type=float, default=1e-4,
                     help="learning rate (default: 1e-4)")
 parser.add_argument("--entropy-coef", type=float, default=0.01,
@@ -74,10 +77,26 @@ def main(args):
 
     # Define logger and Tensorboard writer
     logger = utils.get_logger(il_learn.model_name)
+    header = (["update", "frames", "FPS", "duration", "entropy", "policy_loss", "train_accuracy"]
+              + ["validation_accuracy", "validation_return", "validation_success_rate"])
     writer = None
     if args.tb:
         from tensorboardX import SummaryWriter
         writer = SummaryWriter(utils.get_log_dir(il_learn.model_name))
+
+    # Define csv writer
+    csv_writer = None
+    if args.csv:
+        csv_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'log.csv')
+        first_created = not os.path.exists(csv_path)
+        # we don't buffer data going in the csv log, cause we assume
+        # that one update will take much longer that one write to the log
+        csv_writer = csv.writer(open(csv_path, 'a', 1))
+        if first_created:
+            csv_writer.writerow(header)
+
+    # Get the status path
+    status_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'status.json')
 
     # Log command, availability of CUDA, and model
     logger.info(args)
@@ -85,9 +104,9 @@ def main(args):
     logger.info(il_learn.acmodel)
 
     if not args.no_mem:
-        il_learn.train(il_learn.train_demos, logger, writer)
+        il_learn.train(il_learn.train_demos, logger, writer, csv_writer, status_path, header)
     else:
-        il_learn.train(il_learn.flat_train_demos, logger, writer)
+        il_learn.train(il_learn.flat_train_demos, logger, writer, csv_writer, status_path, header)
 
 
 if __name__ == "__main__":
