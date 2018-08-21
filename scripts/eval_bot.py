@@ -70,18 +70,22 @@ for level_name in level_list:
         if options.verbose:
             print('%s/%s: %s, seed=%d' % (run_no+1, options.num_runs, mission.surface, mission_seed))
 
-        while True:
-            action = expert.step()
-            obs, reward, done, info = mission.step(action)
+        try:
+            while True:
+                action = expert.step()
+                obs, reward, done, info = mission.step(action)
 
-            total_reward += reward
+                total_reward += reward
 
-            if done == True:
-                if reward > 0:
-                    num_success += 1
-                if reward <= 0 and options.verbose:
-                    print('FAILURE')
-                break
+                if done == True:
+                    if reward > 0:
+                        num_success += 1
+                    if reward <= 0:
+                        print('FAILURE on %s, seed %d' % (level_name, mission_seed))
+                    break
+        except Exception as e:
+            print('FAILURE on %s, seed %d' % (level_name, mission_seed))
+            print(e)
 
     success_rate = 100 * num_success / options.num_runs
     mean_reward = total_reward / options.num_runs
