@@ -6,7 +6,6 @@ based on the current performance of the agent. The new demonstrations can be exp
 python -m scripts.intelligent_expert --env BabyAI-LevelName-v0 --model model_name --demos-origin agent --start-demo 10 --episodes-to-add 10 --dagger(If you want to train using dagger) --expert-model(required when dagger is True)
 """
 
-
 import numpy as np
 import argparse
 import csv
@@ -21,67 +20,69 @@ from babyai.evaluate import evaluate
 import babyai
 from tensorboardX import SummaryWriter
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
-                                        help="name of the environment to train on (REQUIRED)")
-parser.add_argument("--demos-origin", required=True,
-                                        help="origin of the demonstrations: human | agent (REQUIRED)")
-parser.add_argument("--lr", type=float, default=7e-4,
-                                        help="learning rate (default: 7e-4)")
+                    help="name of the environment to train on (REQUIRED)")
+parser.add_argument("--demos", default=None,
+                    help="demos filename (REQUIRED of demos-origin required)")
+parser.add_argument("--demos-origin", required=False,
+                    help="origin of the demonstrations: human | agent (REQUIRED or demos required)")
+parser.add_argument("--lr", type=float, default=1e-4,
+                    help="learning rate (default: 1e-4)")
 parser.add_argument("--entropy-coef", type=float, default=0.2,
-                                        help="entropy term coefficient (default: 0.2)")
+                    help="entropy term coefficient (default: 0.2)")
 parser.add_argument("--recurrence", type=int, default=1,
-                                        help="number of timesteps gradient is backpropagated (default: 1)")
+                    help="number of timesteps gradient is backpropagated (default: 1)")
 parser.add_argument("--optim-eps", type=float, default=1e-5,
-                                        help="Adam optimizer epsilon (default: 1e-5)")
-parser.add_argument("--batch-size", type=int, default=50,
-                                        help="batch size (In case of memory, the batch size is the number of demos, otherwise, it is the number of frames)(default: 50)")
+                    help="Adam optimizer epsilon (default: 1e-5)")
+parser.add_argument("--batch-size", type=int, default=256,
+                    help="batch size (In case of memory, the BS is # demos, otherwise, it is # frames)(default: 256)")
 parser.add_argument("--no-instr", action="store_true", default=False,
-                                        help="don't use instructions in the model")
+                    help="don't use instructions in the model")
 parser.add_argument("--no-mem", action="store_true", default=False,
-                                        help="don't use memory in the model")
-parser.add_argument("--arch", default='cnn1',
-                                        help="image embedding architecture, possible values: cnn1, cnn2, filmcnn (default: cnn1)")
+                    help="don't use memory in the model")
+parser.add_argument("--arch", default='expert_filmcnn',
+                    help="image embedding architecture, possible values: cnn1, cnn2, filmcnn (default: expert_filmcnn)")
 parser.add_argument("--discount", type=float, default=0.99,
-                                        help="discount factor (default: 0.99)")
+                    help="discount factor (default: 0.99)")
 parser.add_argument("--validation-interval", type=int, default=20,
-                                        help="number of epochs between two validation checks (default: 20)")
+                    help="number of epochs between two validation checks (default: 20)")
 parser.add_argument("--episodes-to-add", type=int, default=100,
-                                        help="number of episodes to add each time  (default: 100)")
+                    help="number of episodes to add each time  (default: 100)")
 parser.add_argument("--patience", type=int, default=3,
-                                        help="patience for early stopping (default: 3)")
+                    help="patience for early stopping (default: 3)")
 parser.add_argument("--val-seed", type=int, default=0,
-                                        help="seed for environment used for validation (default: 0)")
+                    help="seed for environment used for validation (default: 0)")
 parser.add_argument("--start-demo", type=int, default=50,
-                                        help="the starting number of demonstrations (default: 50)")
+                    help="the starting number of demonstrations (default: 50)")
 parser.add_argument("--model", default=None,
-                                        help="name of the model (default: ENV_ORIGIN_il)")
+                    help="name of the model (default: ENV_ORIGIN_il)")
 parser.add_argument("--seed", type=int, default=1,
-                                        help="random seed (default: 1)")
-parser.add_argument("--val-episodes", type=int, default=1000,
-                                        help="number of episodes used for validation (default: 1000)")
+                    help="random seed (default: 1)")
+parser.add_argument("--val-episodes", type=int, default=500,
+                    help="number of episodes used for validation (default: 500)")
 parser.add_argument("--tb", action="store_true", default=False,
-                                        help="log into Tensorboard")
+                    help="log into Tensorboard")
 parser.add_argument("--instr-arch", default="gru",
-                                        help="arch to encode instructions, possible values: gru, conv, bow (default: gru)")
+                    help="arch to encode instructions, possible values: gru, conv, bow (default: gru)")
 parser.add_argument("--expert-model", default=None,
-                                        help="model to be used for Dagger sataset generation")
+                    help="model to be used for Dagger sataset generation")
 parser.add_argument("--max-demo", default=5000,
-                                        help="the maximum number of demonstrations allowed (default: 5000)")
+                    help="the maximum number of demonstrations allowed (default: 5000)")
 parser.add_argument("--dagger", action="store_true", default=False,
-                                        help="add new demos through dagger method (default: False")
+                    help="add new demos through dagger method (default: False")
 parser.add_argument("--test-seed", type=int, default=6,
-                                        help="seed for environment used for testing (default: 6)")
+                    help="seed for environment used for testing (default: 6)")
 parser.add_argument("--test-episodes", type=int, default=1000,
-                                        help="number of episodes to use while testing (default: 1000)")
+                    help="number of episodes to use while testing (default: 1000)")
 parser.add_argument("--image-dim", type=int, default=128,
-                                        help="dimensionality of the image embedding")
+                    help="dimensionality of the image embedding")
 parser.add_argument("--memory-dim", type=int, default=128,
-                                        help="dimensionality of the memory LSTM")
+                    help="dimensionality of the memory LSTM")
+
 
 # Add new demonstrations based on mean reward of the baby agent
-def add_new_demos(args,il_learn):
+def add_new_demos(args, il_learn):
     model = args.model
     env = gym.make(args.env)
     env.seed(args.seed)
@@ -96,7 +97,7 @@ def add_new_demos(args,il_learn):
 
     new_inds = np.argsort(returns)[:args.episodes_to_add]
 
-    new_demos  = []
+    new_demos = []
 
     if not args.dagger:
         for index in new_inds:
@@ -111,9 +112,9 @@ def add_new_demos(args,il_learn):
         # Episodes where the expert is not able to finish the episode where the baby left off, are eliminated
         data = {}
         for index in new_inds:
-            data[index] = test_expert(agent, expert_agent, env, il_learn.train_offsets[index], min(int(optimal_steps),len(observations[index])))
+            data[index] = test_expert(agent, expert_agent, env, il_learn.train_offsets[index],
+                                      min(int(optimal_steps), len(observations[index])))
             expert_agent._initialize_memory()
-
 
         for index in new_inds:
             demo = []
@@ -123,13 +124,14 @@ def add_new_demos(args,il_learn):
                 continue
 
             # Getting expert action for the observations experienced by the baby
-            for i in range(min(int(optimal_steps),len(observations[index]))):
+            for i in range(min(int(optimal_steps), len(observations[index]))):
                 obs = observations[index][i]
                 action = expert_agent.get_action(obs)
                 demo.append((obs, action, 0, False))
 
             # Getting further part of the demo by letting the expert act on the environment
-            demo_part = get_obs(agent, expert_agent, env, il_learn.train_offsets[index], min(int(optimal_steps),len(observations[index])))
+            demo_part = get_obs(agent, expert_agent, env, il_learn.train_offsets[index],
+                                min(int(optimal_steps), len(observations[index])))
 
             if len(demo_part) != 0:
                 demo.extend(demo_part)
@@ -146,6 +148,7 @@ def add_new_demos(args,il_learn):
 
     return new_demos
 
+
 # Returns the expert's trajectory from the point the baby left off
 def get_obs(agent, expert_agent, env, shift, episode_len):
     demo = []
@@ -160,7 +163,7 @@ def get_obs(agent, expert_agent, env, shift, episode_len):
     # Baby acts on the environment until the step where it fails
     agent._initialize_memory()
     expert_agent._initialize_memory()
-    for i in range(episode_len-1):
+    for i in range(episode_len - 1):
         action = agent.get_action(obs)
         action_t = expert_agent.get_action(obs)
         obs, reward, done, _ = env.step(action)
@@ -173,7 +176,7 @@ def get_obs(agent, expert_agent, env, shift, episode_len):
         action = expert_agent.get_action(obs)
         new_obs, reward, done, _ = env.step(action)
         expert_agent.analyze_feedback(reward, done)
-        demo.append((obs, action, 0 , False))
+        demo.append((obs, action, 0, False))
         obs = new_obs
         num_frames += 1
         if num_frames == optimal_steps:
@@ -188,6 +191,7 @@ def get_obs(agent, expert_agent, env, shift, episode_len):
 
     return demo
 
+
 # Testing the expert on the episode at a given shift starting the expert from the step, the baby failed
 def test_expert(agent, expert_agent, env, shift, episode_len):
     env.seed(args.seed)
@@ -201,7 +205,7 @@ def test_expert(agent, expert_agent, env, shift, episode_len):
     # Baby acts on the environment until the step where it fails
     agent._initialize_memory()
     expert_agent._initialize_memory()
-    for i in range(episode_len-1):
+    for i in range(episode_len - 1):
         action = agent.get_action(obs)
         action_t = expert_agent.get_action(obs)
         obs, reward, done, _ = env.step(action)
@@ -216,7 +220,7 @@ def test_expert(agent, expert_agent, env, shift, episode_len):
         obs, reward, done, _ = env.step(action)
         expert_agent.analyze_feedback(reward, done)
         num_frames += 1
-        if num_frames == 2*optimal_steps:
+        if num_frames == 2 * optimal_steps:
             return False
 
     if reward != 0:
@@ -224,13 +228,14 @@ def test_expert(agent, expert_agent, env, shift, episode_len):
 
     return False
 
+
 # Evaluating the baby to find worst performing episodes
 def evaluate_child(agent, env, episodes, offsets):
     # Initialize logs
     logs = {"num_frames_per_episode": [], "return_per_episode": [], "observations_per_episode": []}
     count = 0
     for i in range(episodes):
-    # Ensuring test on seed offsets that generated successful demonstrations
+        # Ensuring test on seed offsets that generated successful demonstrations
         while count != offsets[i]:
             obs = env.reset()
             count += 1
@@ -241,7 +246,7 @@ def evaluate_child(agent, env, episodes, offsets):
         num_frames = 0
         returnn = 0
         obss = []
-        while not(done):
+        while not done:
             action = agent.get_action(obs)
             obss.append(obs)
             obs, reward, done, _ = env.step(action)
@@ -255,6 +260,7 @@ def evaluate_child(agent, env, episodes, offsets):
         count += 1
 
     return logs
+
 
 # Function to check the unique number of starting observations currently present in the dataset
 def find_unique_demos(demos):
@@ -270,12 +276,14 @@ def find_unique_demos(demos):
             unique_obs.append(obs)
     return len(unique_obs)
 
+
 # Flattens the demos in a single list
 def flatten(demos):
     flat_demos = []
     for demo in demos:
         flat_demos.extend(demo)
     return np.array(flat_demos)
+
 
 # Finds the average number of steps taken by the expert
 def find_optimal_steps():
@@ -306,7 +314,6 @@ def main(args):
     # Starting with start_demo number of demonstrations
     train_demos = il_learn.train_demos[:start_demo]
 
-
     while len(train_demos) < args.max_demo:
 
         print("Number of unique demos  is %d out of %d demos" % (find_unique_demos(train_demos), len(train_demos)))
@@ -315,10 +322,9 @@ def main(args):
         writer = None
         if args.tb:
             from tensorboardX import SummaryWriter
-            writer = SummaryWriter(utils.get_log_dir(il_learn.model_name+"_"+str(len(train_demos))))
+            writer = SummaryWriter(utils.get_log_dir(il_learn.model_name + "_" + str(len(train_demos))))
 
         print("Training for %d demos" % len(train_demos))
-
 
         if args.no_mem:
             flat_train_demos = flatten(train_demos)
@@ -328,7 +334,6 @@ def main(args):
             il_learn.train(train_demos, logger, writer)
         else:
             il_learn.train(flat_train_demos, logger, writer)
-
 
         if torch.cuda.is_available():
             il_learn.acmodel.cpu()
@@ -347,12 +352,13 @@ def main(args):
         logger = utils.get_logger(il_learn.model_name)
         logger.info(il_learn.acmodel)
 
+
 if __name__ == "__main__":
     args = parser.parse_args()
     result_dir = os.path.join(utils.storage_dir(), "intelligent_expert_results")
-    if not(os.path.isdir(result_dir)):
+    if not (os.path.isdir(result_dir)):
         os.makedirs(result_dir)
-    file = open(os.path.join(result_dir, "{}_intelligent_expert_seed_{}.csv").format(args.env, args.seed),"a")
+    file = open(os.path.join(result_dir, "{}_intelligent_expert_seed_{}.csv").format(args.env, args.seed), "a")
     writer = csv.writer(file, delimiter=" ")
 
     if args.dagger:

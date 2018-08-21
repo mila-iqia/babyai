@@ -15,9 +15,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to be run (REQUIRED)")
 parser.add_argument("--model", default=None,
-                    help="name of the trained model (REQUIRED or --demos-origin REQUIRED)")
+                    help="name of the trained model (REQUIRED or --demos-origin or --demos REQUIRED)")
+parser.add_argument("--demos", default=None,
+                    help="demos filename (REQUIRED or --model demos-origin required)")
 parser.add_argument("--demos-origin", default=None,
-                    help="origin of the demonstrations: human | agent (REQUIRED or --model REQUIRED)")
+                    help="origin of the demonstrations: human | agent (REQUIRED or --model or --demos REQUIRED)")
 parser.add_argument("--seed", type=int, default=None,
                     help="random seed (default: 0 if model agent, 1 if demo agent)")
 parser.add_argument("--shift", type=int, default=0,
