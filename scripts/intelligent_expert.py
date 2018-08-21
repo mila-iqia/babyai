@@ -85,7 +85,6 @@ parser.add_argument("--memory-dim", type=int, default=128,
 parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs of the sub-IL tasks(default: 1)")
 
-
 # Add new demonstrations based on mean reward of the baby agent
 def add_new_demos(args, il_learn):
     model = args.model
@@ -334,17 +333,6 @@ def main(args):
             from tensorboardX import SummaryWriter
             writer = SummaryWriter(utils.get_log_dir(il_learn.model_name + "_" + str(len(train_demos))))
 
-        # Define csv writer for sub-IL tasks
-        csv_writer = None
-        if args.csv:
-            csv_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'log.csv')
-            first_created = not os.path.exists(csv_path)
-            # we don't buffer data going in the csv log, cause we assume
-            # that one update will take much longer that one write to the log
-            csv_writer = csv.writer(open(csv_path, 'a', 1))
-            if first_created:
-                csv_writer.writerow(header)
-
         print("Training for %d demos" % len(train_demos))
 
         if args.no_mem:
@@ -354,10 +342,11 @@ def main(args):
         status_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'status.json')
 
         # Training on the present dataset
+        # TODO: define csv_writer
         if not args.no_mem:
-            il_learn.train(train_demos, logger, writer, csv_writer, status_path, header)
+            il_learn.train(train_demos, logger, writer, None, status_path, header)
         else:
-            il_learn.train(flat_train_demos, logger, writer, csv_writer, status_path, header)
+            il_learn.train(flat_train_demos, logger, writer, None, status_path, header)
 
         if torch.cuda.is_available():
             il_learn.acmodel.cpu()
@@ -379,7 +368,6 @@ def main(args):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-
     result_dir = os.path.join(utils.storage_dir(), "intelligent_expert_results")
     if not (os.path.isdir(result_dir)):
         os.makedirs(result_dir)
@@ -392,8 +380,7 @@ if __name__ == "__main__":
     if args.dagger:
         assert args.expert_model is not None, "--expert-model not specified"
         optimal_steps = find_optimal_steps()
-        logger.info("Using DAGGER")
-        logger.info("Optimal number of steps (Average number taken by expert): %d" % optimal_steps)
+        print("Optimal number of steps %d" % optimal_steps)
 
     start_demo = args.start_demo
     batch_size = args.batch_size
