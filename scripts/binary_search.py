@@ -47,8 +47,9 @@ parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
 parser.add_argument("--validation-interval", type=int, default=20,
                     help="number of epochs between two validation checks (default: 20)")
-parser.add_argument("--val-episodes", type=int, default=500,
-                    help="number of episodes used for validation (default: 500)")
+parser.add_argument("--val-episodes", type=int, default=0,
+                    help="number of episodes used for validation"
+                         "(default: 0, meaning all demos)")
 parser.add_argument("--patience", type=int, default=3,
                     help="patience for early stopping (default: 3)")
 parser.add_argument("--val-seed", type=int, default=0,
