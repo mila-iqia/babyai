@@ -37,25 +37,25 @@ class ImitationLearning(object):
         else:
             self.env = gym.make(self.args.env)
 
-        demos_path = utils.get_demos_path(args.demos, args.env, args.demos_origin, valid=False)
-        demos_path_valid = utils.get_demos_path(args.demos, args.env, args.demos_origin, valid=True)
+            demos_path = utils.get_demos_path(args.demos, args.env, args.demos_origin, valid=False)
+            demos_path_valid = utils.get_demos_path(args.demos, args.env, args.demos_origin, valid=True)
 
-        self.train_demos = utils.load_demos(demos_path)
-        if args.episodes:
-            assert args.episodes <= len(self.train_demos), "there are only {} train demos".format(len(self.train_demos))
-            self.train_demos = self.train_demos[:args.episodes]
+            self.train_demos = utils.load_demos(demos_path)
+            if args.episodes:
+                assert args.episodes <= len(self.train_demos), "there are only {} train demos".format(len(self.train_demos))
+                self.train_demos = self.train_demos[:args.episodes]
 
-        self.val_demos = utils.load_demos(demos_path_valid)
-        assert args.val_episodes <= len(self.val_demos), "there are only {} valid. demos".format(len(self.val_demos))
-        self.val_demos = self.val_demos[:self.args.val_episodes]
+            self.val_demos = utils.load_demos(demos_path_valid)
+            assert args.val_episodes <= len(self.val_demos), "there are only {} valid. demos".format(len(self.val_demos))
+            self.val_demos = self.val_demos[:self.args.val_episodes]
 
-        # Separating train offsets and train demos
-        self.train_offsets = [item[1] for item in self.train_demos]
-        self.train_demos = [item[0] for item in self.train_demos]
-        self.val_demos = [item[0] for item in self.val_demos]
+            # Separating train offsets and train demos
+            self.train_offsets = [item[1] for item in self.train_demos]
+            self.train_demos = [item[0] for item in self.train_demos]
+            self.val_demos = [item[0] for item in self.val_demos]
 
-        observation_space = self.env.observation_space
-        action_space = self.env.action_space
+            observation_space = self.env.observation_space
+            action_space = self.env.action_space
 
         if type(self.args.env) == list:
             named_envs = '_'.join([item[0] for item in self.args.env])
