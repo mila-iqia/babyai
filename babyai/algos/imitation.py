@@ -357,7 +357,7 @@ class ImitationLearning(object):
                 job.join()
             rewards = {}
             index = 0
-
+            
             for env_name in self.args.env:
                 rewards[index] = sum([item[env_name[0]]["return_per_episode"] for item in return_dict.values()],[])
 

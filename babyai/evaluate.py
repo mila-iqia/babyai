@@ -58,7 +58,7 @@ def evaluateProc(agent, penv, episodes, log_dict, env_names, proc_id):
             returnn = 0
             obss = []
             while not(done):
-                action = agent.act(obs)
+                action = agent.act(obs)['action']
                 action = action.item()
                 obss.append(obs)
                 obs, reward, done, _ = env.step(action)
