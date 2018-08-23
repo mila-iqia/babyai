@@ -255,8 +255,7 @@ def main(args, graphs):
 if __name__ == "__main__":
     args = parser.parse_args()
     graphs = [
-        ("BabyAI-OpenTwoDoorsDebug-v0", 'agent_noseed', 100),
-        ("BabyAI-OpenDoorColorDebug-v0", 'agent_noseed', 100),
-        ("BabyAI-OpenRedBlueDoorsDebug-v0", 'agent', 100)
-    ]
+        ("BabyAI-GoToObj-v0", 'GoToObj-bot-100k.pkl','bot', 200),
+        ("BabyAI-GoToLocal-v0", 'GoToLocal-bot-100k.pkl','bot', 500),
+        ]
     main(args, graphs)

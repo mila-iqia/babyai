@@ -25,12 +25,14 @@ class ImitationLearning(object):
         if type(self.args.env) == list:
             self.env = [gym.make(item[0]) for item in self.args.env]
 
-            self.train_demos = [utils.load_demos(utils.get_demos_path(env=env, origin=demos_origin))[:episodes]
-                                for env, demos_origin, episodes in self.args.env]
+            self.train_demos = [utils.load_demos(utils.get_demos_path(demo_file, env, demos_origin, valid=False))[:episodes]
+                                for env, demo_file, demos_origin, episodes in self.args.env]
 
             self.train_demos = [[demo[0] for demo in demos] for demos in self.train_demos]
-            self.val_demos = [utils.load_demos(utils.get_demos_path(env=env, origin=demos_origin, valid=True))[:500]
-                              for env, demos_origin, _ in self.args.env]
+            self.val_demos = [utils.load_demos(utils.get_demos_path(demo_file, env, demos_origin valid=True))[:self.args.val_episodes]
+                              for env, demo_file, demos_origin, _ in self.args.env]
+
+
             self.val_demos = [[demo[0] for demo in demos] for demos in self.val_demos]
 
             # If not using multiprocessing
