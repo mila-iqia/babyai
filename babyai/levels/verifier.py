@@ -204,7 +204,7 @@ class ActionInstr(Instr):
         if not use_done_actions:
             return self.verify_action(action)
 
-        if action is self.env.actions.done:
+        if action == self.env.actions.done:
             if self.lastStepMatch:
                 return 'success'
             return 'failure'

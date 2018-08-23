@@ -396,7 +396,7 @@ class Bot:
                 self.stack.append(('GoNextTo', unseen_pos))
                 return None
 
-            print(self.stack)
+            #print(self.stack)
             assert False, "nothing left to explore"
 
         assert False, 'invalid subgoal "%s"' % subgoal
@@ -573,3 +573,47 @@ class Bot:
             _, drop_pos = self.shortest_path(match_empty, ignore_blockers=True)
 
         return drop_pos
+
+
+class BotRewardWrapper(gym.Wrapper):
+    """
+    Wrapper that rewards the agent for taking the same action as the
+    bot would take
+    """
+
+    def step(self, action):
+        try:
+            expert_action = self.expert.step()
+        except:
+            expert_action = None
+
+        obs, reward, done, info = self.env.step(action)
+
+        reward *= 1000
+
+        if action == expert_action:
+            #reward += 1 / self.unwrapped.max_steps
+            reward += 1
+
+        return obs, reward, done, info
+
+    def reset(self, **kwargs):
+        obs = self.env.reset(**kwargs)
+        self.expert = Bot(self.env)
+        return obs
+
+
+class BotActionInfoWrapper(gym.Wrapper):
+    def step(self, action):
+        bot_action = self.expert.step()
+
+        obs, reward, done, info = self.env.step(action)
+
+        info['bot_action'] = bot_action
+
+        return obs, reward, done, info
+
+    def reset(self, **kwargs):
+        obs = self.env.reset(**kwargs)
+        self.expert = Bot(self.env)
+        return obs
