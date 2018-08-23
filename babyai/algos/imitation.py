@@ -36,14 +36,14 @@ class ImitationLearning(object):
             self.val_demos = [[demo[0] for demo in demos] for demos in self.val_demos]
 
             # If not using multiprocessing
-            if 'num_proc_val_return' not in self.args or self.args.num_proc_val_return is None:
+            if 'num_procs' not in self.args or self.args.num_procs is None:
                 self.eval_env = [gym.make(item[0]) for item in self.args.env]
                 for env in self.eval_env:
                     env.seed(self.args.val_seed)
 
             else:
                 self.eval_env = []
-                for proc_id in range(self.args.num_proc_val_return):
+                for proc_id in range(self.args.num_procs):
                     envs = [gym.make(env_name[0]) for env_name in args.env]
                     for env in envs:
                         env.seed(self.args.val_seed+proc_id*1000)
@@ -338,17 +338,17 @@ class ImitationLearning(object):
 
         elif use_procs:
 
-            episodes_per_proc = episodes//self.args.num_proc_val_return
+            episodes_per_proc = episodes//self.args.num_procs
 
             agent = utils.load_agent(self.args, self.eval_env[0][0])
             agent.model = self.acmodel
-            agents = [copy.deepcopy(agent)]*self.args.num_proc_val_return
+            agents = [copy.deepcopy(agent)]*self.args.num_procs
             jobs = []
 
             manager = multiprocessing.Manager()
             return_dict = manager.dict()
 
-            for index in range(self.args.num_proc_val_return):
+            for index in range(self.args.num_procs):
                 process = multiprocessing.Process(target=evaluateProc, args=(agents[index], self.eval_env[index], episodes_per_proc, return_dict, self.args.env, index))
                 jobs.append(process)
                 process.start()
@@ -367,7 +367,9 @@ class ImitationLearning(object):
     def collect_returns(self):
         if torch.cuda.is_available():
             self.acmodel.cpu()
-        mean_return = self.validate(episodes= self.args.eval_episodes, verbose=False, use_procs='num_proc_val_return' in self.args and self.args.num_proc_val_return is not None)
+        mean_return = self.validate(episodes= self.args.eval_episodes, verbose=False, use_procs='num_procs' in self.args and self.args.num_procs is not None)
+        for key in mean_return.keys():
+            mean_return[key] = np.mean(mean_return[key]['return_per_episode'])
         if torch.cuda.is_available():
             self.acmodel.cuda()
         return mean_return
