@@ -30,7 +30,7 @@ def get_logger(log_name):
 
     logging.basicConfig(
         level=logging.INFO,
-        format="%(message)s",
+        format="%(name)s: %(message)s",
         handlers=[
             logging.FileHandler(filename=path),
             logging.StreamHandler(sys.stdout)

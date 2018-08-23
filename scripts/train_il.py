@@ -105,9 +105,9 @@ def main(args):
     logger.info(il_learn.acmodel)
 
     if not args.no_mem:
-        il_learn.train(il_learn.train_demos, logger, writer, csv_writer, status_path, header)
+        il_learn.train(il_learn.train_demos, writer, csv_writer, status_path, header)
     else:
-        il_learn.train(il_learn.flat_train_demos, logger, writer, csv_writer, status_path, header)
+        il_learn.train(il_learn.flat_train_demos, writer, csv_writer, status_path, header)
 
 
 if __name__ == "__main__":
