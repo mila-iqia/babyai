@@ -25,9 +25,9 @@ from babyai.batchsampler import BatchSampler
 parser = argparse.ArgumentParser()
 parser.add_argument("--lr", type=float, default=7e-4,
                     help="learning rate (default: 7e-4)")
-parser.add_argument("--entropy-coef", type=float, default=0.2,
-                    help="entropy term coefficient (default: 0.2)")
-parser.add_argument("--recurrence", type=int, default=1,
+parser.add_argument("--entropy-coef", type=float, default=0.01,
+                    help="entropy term coefficient (default: 0.01)")
+parser.add_argument("--recurrence", type=int, default=20,
                     help="number of timesteps gradient is backpropagated (default: 1)")
 parser.add_argument("--optim-eps", type=float, default=1e-5,
                     help="Adam optimizer epsilon (default: 1e-5)")
@@ -37,7 +37,7 @@ parser.add_argument("--no-instr", action="store_true", default=False,
                     help="don't use instructions in the model")
 parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
-parser.add_argument("--arch", default='cnn1',
+parser.add_argument("--arch", default='expert_filmcnn',
                     help="image embedding architecture")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
@@ -256,6 +256,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     graphs = [
         ("BabyAI-GoToObj-v0", 'GoToObj-bot-100k.pkl','bot', 200),
-        ("BabyAI-GoToLocal-v0", 'GoToLocal-bot-100k.pkl','bot', 500),
+        ("BabyAI-GoToLocal-v0", 'GoToLocal-bot-100k.pkl','bot', 500)
         ]
     main(args, graphs)
