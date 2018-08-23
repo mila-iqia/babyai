@@ -333,10 +333,10 @@ def main(args):
 
         # Training on the present dataset
         if not args.no_mem:
-            il_learn.train(train_demos, logger, writer, csv_writer, status_path, header)
+            il_learn.train(train_demos, writer, csv_writer, status_path, header)
         else:
             flat_train_demos = flatten(train_demos)
-            il_learn.train(flat_train_demos, logger, writer, csv_writer, status_path, header)
+            il_learn.train(flat_train_demos, writer, csv_writer, status_path, header)
 
         if torch.cuda.is_available():
             il_learn.acmodel.cpu()

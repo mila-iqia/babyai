@@ -155,9 +155,9 @@ def run(num_demos, logger, first_run=False):
         logger.info("\n----\n{} demonstrations. Seed {}.\n".format(num_demos, seed))
 
         if not args.no_mem:
-            il_learn.train(il_learn.train_demos, logger, tb_writer, csv_writer, status_path, header)
+            il_learn.train(il_learn.train_demos, tb_writer, csv_writer, status_path, header)
         else:
-            il_learn.train(il_learn.flat_train_demos, logger, tb_writer, csv_writer, status_path, header)
+            il_learn.train(il_learn.flat_train_demos, tb_writer, csv_writer, status_path, header)
         logger.info('Training finished. Evaluating the model on {} episodes now.'.format(args.test_episodes))
         env = gym.make(args.env)
         utils.seed(args.test_seed)
