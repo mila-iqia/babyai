@@ -81,6 +81,10 @@ parser.add_argument("--return-interval", type=int, default=10,
                     help="number of batches to collect the returns to update the task distribution (default: 10)")
 parser.add_argument("--num-procs", type=int, default=None,
                     help="number of processes to use to collect returns (default: None)")
+parser.add_argument("--image-dim", type=int, default=128,
+                    help="dimensionality of the image embedding")
+parser.add_argument("--memory-dim", type=int, default=128,
+                    help="dimensionality of the memory LSTM")
 
 
 
