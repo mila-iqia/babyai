@@ -13,15 +13,18 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to be run (REQUIRED)")
 parser.add_argument("--model", default=None,
-                    help="name of the trained model (REQUIRED or --demos-origin REQUIRED)")
+                    help="name of the trained model (REQUIRED or --demos-origin or --demos REQUIRED)")
 parser.add_argument("--demos-origin", default=None,
-                    help="origin of the demonstrations: human | agent (REQUIRED or --model REQUIRED)")
+                    help="origin of the demonstrations: human | agent (REQUIRED or --model or --demos REQUIRED)")
+parser.add_argument("--demos", default=None,
+                    help="name of the demos file (REQUIRED or --demos-origin or --model REQUIRED)")
 parser.add_argument("--episodes", type=int, default=1000,
                     help="number of episodes of evaluation (default: 1000)")
 parser.add_argument("--seed", type=int, default=None,
-                    help="random seed (default: 0 if model agent, 1 if demo agent)")
+                    help="random seed (default: 0 if model agent, 1 if demo agent) -- needs to be set to 0 if valid")
 parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected for model agent")
+
 
 def main(args, seed, episodes):
     # Set seed for all randomness sources
@@ -38,19 +41,18 @@ def main(args, seed, episodes):
 
     if args.model is None and args.episodes > len(agent.demos):
         # Set the number of episodes to be the number of demos
-
-        args.episodes = len(agent.demos)
+        episodes = len(agent.demos)
 
     # Evaluate
-    logs = evaluate(agent, env, episodes)
-
+    logs = evaluate(agent, env, episodes, model_agent=(args.model is not None))
 
     return logs
 
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    assert args.model is not None or args.demos_origin is not None, "--model or --demos-origin must be specified."
+    assert_text = "ONE of --model or --demos-origin or --demos must be specified."
+    assert int(args.model is None) + int(args.demos_origin is None) + int(args.demos is None) == 2, assert_text
     if args.seed is None:
         args.seed = 0 if args.model is not None else 1
 
@@ -58,18 +60,20 @@ if __name__ == "__main__":
     logs = main(args, args.seed, args.episodes)
     end_time = time.time()
 
-
     # Print logs
     num_frames = sum(logs["num_frames_per_episode"])
     fps = num_frames/(end_time - start_time)
     ellapsed_time = int(end_time - start_time)
     duration = datetime.timedelta(seconds=ellapsed_time)
     return_per_episode = utils.synthesize(logs["return_per_episode"])
+    success_per_episode = utils.synthesize(
+        [1 if r > 0 else 0 for r in logs["return_per_episode"]])
     num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
-    print("F {} | FPS {:.0f} | D {} | R:x̄σmM {:.2f} {:.2f} {:.2f} {:.2f} | F:x̄σmM {:.1f} {:.1f} {} {}"
+    print("F {} | FPS {:.0f} | D {} | R:x̄σmM {:.2f} {:.2f} {:.2f} {:.2f} | S {:.2f} | F:x̄σmM {:.1f} {:.1f} {} {}"
           .format(num_frames, fps, duration,
                   *return_per_episode.values(),
+                  success_per_episode['mean'],
                   *num_frames_per_episode.values()))
 
     indexes = sorted(range(len(logs["return_per_episode"])), key=lambda k: logs["return_per_episode"][k])

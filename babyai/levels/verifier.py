@@ -1,7 +1,20 @@
-from abc import ABC, abstractmethod
-from collections import namedtuple
+import os
+import numpy as np
+from enum import Enum
+from gym_minigrid.minigrid import COLOR_NAMES, DIR_TO_VEC
 
-State = namedtuple("State", ["dir", "pos", "carry"])
+# Object types we are allowed to describe in language
+OBJ_TYPES = ['box', 'ball', 'key', 'door']
+
+# Object types we are allowed to describe in language
+OBJ_TYPES_NOT_DOOR = list(filter(lambda t: t is not 'door', OBJ_TYPES))
+
+# Locations are all relative to the agent's starting position
+LOC_NAMES = ['left', 'right', 'front', 'behind']
+
+# Environment flag to indicate that done actions should be
+# used by the verifier
+use_done_actions = os.environ.get('BABYAI_DONE_ACTIONS', False)
 
 
 def dot_product(v1, v2):
@@ -12,59 +25,115 @@ def dot_product(v1, v2):
     return sum([i*j for i, j in zip(v1, v2)])
 
 
-class Verifier(ABC):
-    def __init__(self, env):
-        self.env = env
-        self.startDirVec = env.get_dir_vec()
+def pos_next_to(pos_a, pos_b):
+    """
+    Test if two positions are next to each other.
+    The positions have to line up either horizontally or vertically,
+    but positions that are diagonally adjacent are not counted.
+    """
 
-    @abstractmethod
-    def step(self):
+    xa, ya = pos_a
+    xb, yb = pos_b
+    d = abs(xa - xb) + abs(ya - yb)
+    return d < 2
+
+
+class ObjDesc:
+    """
+    Description of a set of objects in an environment
+    """
+
+    def __init__(self, type, color=None, loc=None):
+        if type == 'locked_door':
+            type = 'door'
+
+        assert type in [None, *OBJ_TYPES], type
+        assert color in [None, *COLOR_NAMES], color
+        assert loc in [None, *LOC_NAMES], loc
+
+        self.color = color
+        self.type = type
+        self.loc = loc
+
+        # Set of objects possibly matching the description
+        self.obj_set = []
+
+        # Set of initial object positions
+        self.obj_poss = []
+
+    def surface(self, env):
         """
-        Update verifier's internal state and returns true
-        iff the agent did what he was expected to.
+        Generate a natural language representation of the object description
         """
 
-        return
+        self.find_matching_objs(env)
+        assert len(self.obj_set) > 0, "no object matching description"
 
-    def _obj_desc_to_poss(self, obj_desc):
+        if self.type:
+            s = str(self.type)
+        else:
+            s = 'object'
+
+        if self.color:
+            s = self.color + ' ' + s
+
+        if self.loc:
+            if self.loc == 'front':
+                s = s + ' in front of you'
+            elif self.loc == 'behind':
+                s = s + ' behind you'
+            else:
+                s = s + ' on your ' + self.loc
+
+        # Singular vs plural
+        if len(self.obj_set) > 1:
+            s = 'a ' + s
+        else:
+            s = 'the ' + s
+
+        return s
+
+    def find_matching_objs(self, env):
         """
-        Get the positions of all the objects that match the description.
+        Find the set of objects matching the description and their positions
         """
 
-        poss = []
+        self.obj_set = []
+        self.obj_poss = []
 
-        for i in range(self.env.grid.width):
-            for j in range(self.env.grid.height):
-                cell = self.env.grid.get(i, j)
+        agent_room = env.room_from_pos(*env.start_pos)
+
+        for i in range(env.grid.width):
+            for j in range(env.grid.height):
+                cell = env.grid.get(i, j)
                 if cell == None:
                     continue
 
                 if cell.type == "locked_door":
                     type = "door"
-                    state = "locked"
                 else:
                     type = cell.type
-                    state = None
 
-                # Check if object's type matches description                
-                if obj_desc.type != None and type != obj_desc.type:
-                    continue
-
-                # Check if object's state matches description
-                if obj_desc.state != None and state != obj_desc.state:
+                # Check if object's type matches description
+                if self.type != None and type != self.type:
                     continue
 
                 # Check if object's color matches description
-                if obj_desc.color != None and cell.color != obj_desc.color:
+                if self.color != None and cell.color != self.color:
                     continue
 
                 # Check if object's position matches description
-                if obj_desc.loc in ["left", "right", "front", "behind"]:
+                if self.loc in ["left", "right", "front", "behind"]:
+                    # Locations apply only to objects in the same room
+                    # the agent starts in
+                    if not agent_room.pos_inside(i, j):
+                        continue
+
                     # Direction from the agent to the object
-                    v = (i-self.env.start_pos[0], j-self.env.start_pos[1])
+                    v = (i-env.start_pos[0], j-env.start_pos[1])
 
                     # (d1, d2) is an oriented orthonormal basis
-                    d1 = self.startDirVec
+                    d1 = DIR_TO_VEC[env.start_dir]
                     d2 = (-d1[1], d1[0])
 
                     # Check if object's position matches with location
@@ -75,161 +144,390 @@ class Verifier(ABC):
                         "behind": dot_product(v, d1) < 0
                     }
 
-                    if not(pos_matches[obj_desc.loc]):
+                    if not(pos_matches[self.loc]):
                         continue
 
-                poss.append((i, j))
+                self.obj_set.append(cell)
+                self.obj_poss.append((i, j))
 
-        return poss
+        return self.obj_set, self.obj_poss
 
-    def _get_in_front_of_pos(self):
+
+class Instr:
+    """
+    Base class for all instructions in the baby language
+    """
+
+    def __init__(self):
+        self.env = None
+
+    def surface(self, env):
         """
-        Get the position in front of the agent.
-        The agent's state is the 2-tuple (agent_dir, agent_pos).
-        """
-
-        pos = self.env.agent_pos
-        d = self.env.get_dir_vec()
-        pos = (pos[0] + d[0], pos[1] + d[1])
-
-        return pos
-
-
-class InstrSeqVerifier(Verifier):
-    def __init__(self, env, instr):
-        super().__init__(env)
-
-        self.instr = instr
-        self.instr_index = 0
-
-        self.obj_to_drop = None
-        self.intermediary_state = None
-
-        self._load_next_verifier()
-
-    def step(self):
-        if self.verifier != None and self.verifier.step():
-            self._close_verifier()
-            self._load_next_verifier()
-        return self.verifier == None
-
-    def _load_next_verifier(self):
-        if self.instr_index >= len(self.instr):
-            return
-
-        instr = self.instr[self.instr_index]
-        self.instr_index += 1
-
-        if instr.action == "open":
-            self.verifier = OpenVerifier(self.env, instr.object)
-        elif instr.action == "goto":
-            self.verifier = GotoVerifier(self.env, instr.object)
-        elif instr.action == "pickup":
-            self.verifier = PickupVerifier(self.env, instr.object)
-        elif instr.action == "drop":
-            self.verifier = DropVerifier(self.env, self.obj_to_drop)
-
-        self.verifier.state = self.intermediary_state
-
-    def _close_verifier(self):
-        if isinstance(self.verifier, PickupVerifier):
-            self.obj_to_drop = self.verifier.state.carry
-
-        self.intermediary_state = self.verifier.state
-
-        self.verifier = None
-
-
-class InstrVerifier(Verifier):
-    def __init__(self, env):
-        super().__init__(env)
-
-        self.previous_state = None
-        self.state = None
-
-    def step(self):
-        """
-        Update verifier's internal state and returns true
-        iff the agent did what he was expected to.
+        Produce a natural language representation of the instruction
         """
 
-        self.previous_state = self.state
-        self.state = State(
-            dir=self.env.agent_dir,
-            pos=self.env.agent_pos,
-            carry=self.env.carrying
-        )
+        raise NotImplementedError
 
-        return self._done()
-
-    @abstractmethod
-    def _done(self):
+    def reset_verifier(self, env):
         """
-        Check if the agent did what he was expected to.
+        Must be called at the beginning of the episode
         """
 
-        return
+        self.env = env
+
+    def verify(self, action):
+        """
+        Verify if the task described by the instruction is incomplete,
+        complete with success or failed. The return value is a string,
+        one of: 'success', 'failure' or 'continue'.
+        """
+
+        raise NotImplementedError
 
 
-class GotoVerifier(InstrVerifier):
-    def __init__(self, env, obj):
-        super().__init__(env)
+class ActionInstr(Instr):
+    """
+    Base class for all action instructions (clauses)
+    """
 
-        self.obj_poss = self._obj_desc_to_poss(obj)
-        self.obj_cells = [self.env.grid.get(*pos) for pos in self.obj_poss]
+    def __init__(self):
+        super().__init__()
 
-    def _done(self):
-        on_cell = self.env.grid.get(*self.state.pos)
-        ifo_pos = self._get_in_front_of_pos()
-        ifo_cell = self.env.grid.get(*ifo_pos)
+        # Indicates that the action was completed on the last step
+        self.lastStepMatch = False
 
-        check_on_goal = on_cell != None and on_cell.type == "goal"
-        check_goto_goal = check_on_goal and on_cell in self.obj_cells
+    def verify(self, action):
+        """
+        Verifies actions, with and without the done action.
+        """
 
-        check_not_ifo_goal = ifo_cell == None or ifo_cell.type != "goal"
-        check_goto_not_goal = check_not_ifo_goal and ifo_cell in self.obj_cells
+        if not use_done_actions:
+            return self.verify_action(action)
 
-        return check_goto_goal or check_goto_not_goal
+        if action is self.env.actions.done:
+            if self.lastStepMatch:
+                return 'success'
+            return 'failure'
 
+        res = self.verify_action(action)
+        self.lastStepMatch = (res == 'success')
 
-class PickupVerifier(InstrVerifier):
-    def __init__(self, env, obj):
-        super().__init__(env)
+    def verify_action(self):
+        """
+        Each action instruction class should implement this method
+        to verify the action.
+        """
 
-        self.obj_poss = self._obj_desc_to_poss(obj)
-        self.obj_cells = [self.env.grid.get(*pos) for pos in self.obj_poss]
-
-    def _done(self):
-        check_wasnt_carrying = self.previous_state == None or self.previous_state.carry == None
-        check_carrying = self.state.carry in self.obj_cells
-
-        return check_wasnt_carrying and check_carrying
-
-
-class OpenVerifier(InstrVerifier):
-    def __init__(self, env, obj):
-        super().__init__(env)
-
-        self.obj_poss = self._obj_desc_to_poss(obj)
-        self.obj_cells = [self.env.grid.get(*pos) for pos in self.obj_poss]
-
-    def _done(self):
-        ifo_pos = self._get_in_front_of_pos()
-        ifo_cell = self.env.grid.get(*ifo_pos)
-
-        check_opened = ifo_cell in self.obj_cells and ifo_cell.is_open
-
-        return check_opened
+        raise NotImplementedError
 
 
-class DropVerifier(InstrVerifier):
-    def __init__(self, env, obj_to_drop):
-        super().__init__(env)
+class OpenInstr(ActionInstr):
+    def __init__(self, obj_desc, strict=False):
+        super().__init__()
+        assert obj_desc.type == 'door'
+        self.desc = obj_desc
+        self.strict = strict
 
-        self.obj_to_drop = obj_to_drop
+    def surface(self, env):
+        return 'open ' + self.desc.surface(env)
 
-    def _done(self):
-        check_was_carrying = self.previous_state != None and self.previous_state.carry == self.obj_to_drop
-        check_isnt_carrying = self.state.carry == None
+    def reset_verifier(self, env):
+        super().reset_verifier(env)
 
-        return check_was_carrying and check_isnt_carrying
+        # Identify set of possible matching objects in the environment
+        self.desc.find_matching_objs(env)
+
+    def verify_action(self, action):
+        # Only verify when the toggle action is performed
+        if action != self.env.actions.toggle:
+            return 'continue'
+
+        # Get the contents of the cell in front of the agent
+        front_cell = self.env.grid.get(*self.env.front_pos)
+
+        for door in self.desc.obj_set:
+            if front_cell and front_cell is door and door.is_open:
+                return 'success'
+
+        # If in strict mode and the wrong door is opened, failure
+        if self.strict:
+            if front_cell and front_cell.type == 'door':
+                return 'failure'
+
+        return 'continue'
+
+
+class GoToInstr(ActionInstr):
+    """
+    Go next to (and look towards) an object matching a given description
+    eg: go to the door
+    """
+
+    def __init__(self, obj_desc):
+        super().__init__()
+        self.desc = obj_desc
+
+    def surface(self, env):
+        return 'go to ' + self.desc.surface(env)
+
+    def reset_verifier(self, env):
+        super().reset_verifier(env)
+
+        # Identify set of possible matching objects in the environment
+        self.desc.find_matching_objs(env)
+
+    def verify_action(self, action):
+        # For each object position
+        for pos in self.desc.obj_poss:
+            # If the agent is next to (and facing) the object
+            if np.array_equal(pos, self.env.front_pos):
+                return 'success'
+
+        return 'continue'
+
+
+class PickupInstr(ActionInstr):
+    """
+    Pick up an object matching a given description
+    eg: pick up the grey ball
+    """
+
+    def __init__(self, obj_desc, strict=False):
+        super().__init__()
+        assert obj_desc.type is not 'door'
+        self.desc = obj_desc
+        self.strict = strict
+
+    def surface(self, env):
+        return 'pick up ' + self.desc.surface(env)
+
+    def reset_verifier(self, env):
+        super().reset_verifier(env)
+
+        # Object previously being carried
+        self.preCarrying = None
+
+        # Identify set of possible matching objects in the environment
+        self.desc.find_matching_objs(env)
+
+    def verify_action(self, action):
+        # To keep track of what was carried at the last time step
+        preCarrying = self.preCarrying
+        self.preCarrying = self.env.carrying
+
+        # Only verify when the pickup action is performed
+        if action != self.env.actions.pickup:
+            return 'continue'
+
+        for obj in self.desc.obj_set:
+            if preCarrying is None and self.env.carrying is obj:
+                return 'success'
+
+        # If in strict mode and the wrong door object is picked up, failure
+        if self.strict:
+            if self.env.carrying:
+                return 'failure'
+
+        self.preCarrying = self.env.carrying
+
+        return 'continue'
+
+
+class PutNextInstr(ActionInstr):
+    """
+    Put an object next to another object
+    eg: put the red ball next to the blue key
+    """
+
+    def __init__(self, obj_move, obj_fixed, strict=False):
+        super().__init__()
+        assert obj_move.type is not 'door'
+        self.desc_move = obj_move
+        self.desc_fixed = obj_fixed
+        self.strict = strict
+
+    def surface(self, env):
+        return 'put ' + self.desc_move.surface(env) + ' next to ' + self.desc_fixed.surface(env)
+
+    def reset_verifier(self, env):
+        super().reset_verifier(env)
+
+        # Object previously being carried
+        self.preCarrying = None
+
+        # Identify set of possible matching objects in the environment
+        self.desc_move.find_matching_objs(env)
+        self.desc_fixed.find_matching_objs(env)
+
+    def objs_next(self):
+        """
+        Check if the objects are next to each other
+        This is used for rejection sampling
+        """
+
+        for obj_a in self.desc_move.obj_set:
+            pos_a = obj_a.cur_pos
+
+            for pos_b in self.desc_fixed.obj_poss:
+                if pos_next_to(pos_a, pos_b):
+                    return True
+        return False
+
+    def verify_action(self, action):
+        # To keep track of what was carried at the last time step
+        preCarrying = self.preCarrying
+        self.preCarrying = self.env.carrying
+
+        # In strict mode, picking up the wrong object fails
+        if self.strict:
+            if action == self.env.actions.pickup and self.env.carrying:
+                return 'failure'
+
+        # Only verify when the drop action is performed
+        if action != self.env.actions.drop:
+            return 'continue'
+
+        for obj_a in self.desc_move.obj_set:
+            if preCarrying is not obj_a:
+                continue
+
+            pos_a = obj_a.cur_pos
+
+            for pos_b in self.desc_fixed.obj_poss:
+                if pos_next_to(pos_a, pos_b):
+                    return 'success'
+
+        return 'continue'
+
+
+class SeqInstr(Instr):
+    """
+    Base class for sequencing instructions (before, after, and)
+    """
+
+    def __init__(self, instr_a, instr_b, strict=False):
+        assert isinstance(instr_a, ActionInstr) or isinstance(instr_a, AndInstr)
+        assert isinstance(instr_b, ActionInstr) or isinstance(instr_b, AndInstr)
+        self.instr_a = instr_a
+        self.instr_b = instr_b
+        self.strict = strict
+
+
+class BeforeInstr(SeqInstr):
+    """
+    Sequence two instructions in order:
+    eg: go to the red door then pick up the blue ball
+    """
+
+    def surface(self, env):
+        return self.instr_a.surface(env) + ', then ' + self.instr_b.surface(env)
+
+    def reset_verifier(self, env):
+        super().reset_verifier(env)
+        self.instr_a.reset_verifier(env)
+        self.instr_b.reset_verifier(env)
+        self.a_done = False
+        self.b_done = False
+
+    def verify(self, action):
+        if self.a_done == 'success':
+            self.b_done = self.instr_b.verify(action)
+
+            if self.b_done == 'failure':
+                return 'failure'
+
+            if self.b_done == 'success':
+                return 'success'
+        else:
+            self.a_done = self.instr_a.verify(action)
+            if self.a_done == 'failure':
+                return 'failure'
+
+            if self.a_done == 'success':
+                return self.verify(action)
+
+            # In strict mode, completing b first means failure
+            if self.strict:
+                if self.instr_b.verify(action) == 'success':
+                    return 'failure'
+
+        return 'continue'
+
+
+class AfterInstr(SeqInstr):
+    """
+    Sequence two instructions in reverse order:
+    eg: go to the red door after you pick up the blue ball
+    """
+
+    def surface(self, env):
+        return self.instr_a.surface(env) + ' after you ' + self.instr_b.surface(env)
+
+    def reset_verifier(self, env):
+        super().reset_verifier(env)
+        self.instr_a.reset_verifier(env)
+        self.instr_b.reset_verifier(env)
+        self.a_done = False
+        self.b_done = False
+
+    def verify(self, action):
+        if self.b_done == 'success':
+            self.a_done = self.instr_a.verify(action)
+
+            if self.a_done == 'success':
+                return 'success'
+
+            if self.a_done == 'failure':
+                return 'failure'
+        else:
+            self.b_done = self.instr_b.verify(action)
+            if self.b_done == 'failure':
+                return 'failure'
+
+            if self.b_done == 'success':
+                return self.verify(action)
+
+            # In strict mode, completing a first means failure
+            if self.strict:
+                if self.instr_a.verify(action) == 'success':
+                    return 'failure'
+
+        return 'continue'
+
+
+class AndInstr(SeqInstr):
+    """
+    Conjunction of two actions, both can be completed in any other
+    eg: go to the red door and pick up the blue ball
+    """
+
+    def __init__(self, instr_a, instr_b, strict=False):
+        assert isinstance(instr_a, ActionInstr)
+        assert isinstance(instr_b, ActionInstr)
+        super().__init__(instr_a, instr_b, strict)
+
+    def surface(self, env):
+        return self.instr_a.surface(env) + ' and ' + self.instr_b.surface(env)
+
+    def reset_verifier(self, env):
+        super().reset_verifier(env)
+        self.instr_a.reset_verifier(env)
+        self.instr_b.reset_verifier(env)
+        self.a_done = False
+        self.b_done = False
+
+    def verify(self, action):
+        if self.a_done is not 'success':
+            self.a_done = self.instr_a.verify(action)
+
+        if self.b_done is not 'success':
+            self.b_done = self.instr_b.verify(action)
+
+        if use_done_actions and action is self.env.actions.done:
+            if self.a_done == 'failure' and self.b_done == 'failure':
+                return 'failure'
+
+        if self.a_done == 'success' and self.b_done == 'success':
+            return 'success'
+
+        return 'continue'

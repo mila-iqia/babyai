@@ -182,6 +182,8 @@ class AIGameWindow(QMainWindow):
             self.stepEnv(actions.drop)
         elif e.key() == Qt.Key_Space:
             self.stepEnv(actions.toggle)
+        elif e.key() == Qt.Key_Return:
+            self.stepEnv(actions.done)
 
         elif e.key() == Qt.Key_Backspace:
             self.resetEnv()

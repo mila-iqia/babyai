@@ -10,11 +10,10 @@ setup(
         'gym>=0.9.6',
         'numpy>=1.10.0',
         'pyqt5>=5.10.1',
+        "torch>=0.4.0",
         'gym_minigrid',
-        'torch_rl'
     ],
     dependency_links=[
         'git+https://github.com/maximecb/gym-minigrid.git#egg=gym_minigrid-0',
-        'git+https://github.com/lcswillems/pytorch-a2c-ppo.git#egg=torch_rl-0&subdirectory=torch_rl'
     ]
 )
