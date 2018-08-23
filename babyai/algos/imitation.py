@@ -299,10 +299,15 @@ class ImitationLearning(object):
         # Setting the agent model to the current model
         agent.model = self.acmodel
 
+        # because ModelAgent places inputs on CPU, we have to move the model
+        if torch.cuda.is_available():
+            self.acmodel.cpu()
         logs = []
         for env in envs:
             env.seed(self.args.val_seed)
             logs += [evaluate(agent, env, self.args.val_episodes)]
+        if torch.cuda.is_available():
+            self.acmodel.cuda()
 
         if not self.args.no_mem:
             val_log = self.run_epoch_recurrence(self.val_demos)
@@ -317,12 +322,7 @@ class ImitationLearning(object):
         return logs, validation_accuracy
 
     def collect_returns(self):
-        if torch.cuda.is_available():
-            self.acmodel.cpu()
-        mean_return = np.mean(self.validate(False)['return_per_episode'])
-        if torch.cuda.is_available():
-            self.acmodel.cuda()
-        return mean_return
+        return np.mean(self.validate(False)['return_per_episode'])
 
     def train(self, train_demos, logger, writer, csv_writer, status_path, header):
         # Load the status
@@ -399,8 +399,6 @@ class ImitationLearning(object):
                         json.dump(status, dst)
 
             if status['i'] % self.args.validation_interval == 0:
-                if torch.cuda.is_available():
-                    self.acmodel.cpu()
                 valid_log, validation_accuracy = self.validate()
                 mean_return = np.mean(valid_log['return_per_episode'])
                 success_rate = np.mean([1 if r > 0 else 0 for r in valid_log['return_per_episode']])
@@ -436,5 +434,3 @@ class ImitationLearning(object):
                     status['patience'] += 1
                     with open(status_path, 'w') as dst:
                         json.dump(status, dst)
-                    if torch.cuda.is_available():
-                        self.acmodel.cuda()

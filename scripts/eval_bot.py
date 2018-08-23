@@ -45,6 +45,11 @@ parser.add_option(
     default=500
 )
 parser.add_option(
+    "--forget-time",
+    type="int",
+    default=5000000
+)
+parser.add_option(
     "--verbose",
     action='store_true'
 )
@@ -65,7 +70,7 @@ for level_name in level_list:
 
         mission_seed = options.seed + run_no
         mission = level(seed=mission_seed)
-        expert = Bot(mission)
+        expert = Bot(mission, forget_time=options.forget_time)
 
         if options.verbose:
             print('%s/%s: %s, seed=%d' % (run_no+1, options.num_runs, mission.surface, mission_seed))

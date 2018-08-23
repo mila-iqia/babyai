@@ -25,6 +25,11 @@ def test():
         "--partial-obs",
         action='store_true'
     )
+    parser.add_option(
+        "--forget-time",
+        type="int",
+        default=5000000
+    )
     (options, args) = parser.parse_args()
 
     rng = random.Random()
@@ -46,7 +51,7 @@ def test():
             seed = rng.randint(0, 0xFFFFFF)
 
         mission = level(seed=seed)
-        expert = Bot(mission)
+        expert = Bot(mission, forget_time=options.forget_time)
 
         print('seed=%d' % seed)
         print(mission.surface)
