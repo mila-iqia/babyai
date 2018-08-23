@@ -1,5 +1,6 @@
 import numpy
 import time
+import math
 
 from gym_minigrid.minigrid import *
 from babyai.levels.verifier import *
@@ -9,7 +10,7 @@ class Bot:
     Heuristic-based level solver
     """
 
-    def __init__(self, mission):
+    def __init__(self, mission, forget_time=math.inf, timeout=10000):
         # Mission to be solved
         self.mission = mission
 
@@ -18,31 +19,76 @@ class Bot:
         # Grid containing what has been mapped out
         self.grid = Grid(grid_size, grid_size)
 
+        # Time a given grid cell was last seen
+        self.last_seen = np.full(shape=(grid_size, grid_size), dtype=np.float, fill_value=-math.inf)
+
         # Visibility mask. True for explored/seen, false for unexplored.
         self.vis_mask = np.zeros(shape=(grid_size, grid_size), dtype=np.bool)
 
+        # Number of environment steps
+        self.step_count = 0
+
+        # Time visible cells can be remembered (number of env steps)
+        assert forget_time > 0
+        self.forget_time = forget_time
+
+        # Number of compute iterations performed
+        self.itr_count = 0
+
+        # Maximum number of compute iterations to perform
+        self.timeout = timeout
+
         # Stack of tasks/subtasks to complete (tuples)
-        # - Go to an object matching a given description
-        # - Go to some position (to explore)
-        # - Perform the open action
         self.stack = []
 
-        instr = mission.instrs
+        # Process/parse the instructions
+        self.process_instr(mission.instrs)
+
+        #for subgoal, datum in self.stack:
+        #    print(subgoal)
+        #    if datum:
+        #        print(datum.surface(self.mission))
+
+    def process_instr(self, instr):
+        """
+        Translate instructions into an internal form the agent can execute
+        """
+
         if isinstance(instr, GoToInstr):
             self.stack.append(('GoToObj', instr.desc))
-        elif isinstance(instr, OpenInstr):
+            return
+
+        if isinstance(instr, OpenInstr):
             self.stack.append(('Open', instr.desc))
             self.stack.append(('GoToObj', instr.desc))
-        elif isinstance(instr, PickupInstr):
+            return
+
+        if isinstance(instr, PickupInstr):
+            # We pick up and immediately drop so
+            # that we may carry other objects
+            self.stack.append(('Drop', None))
             self.stack.append(('Pickup', instr.desc))
             self.stack.append(('GoToObj', instr.desc))
-        elif isinstance(instr, PutNextInstr):
+            return
+
+        if isinstance(instr, PutNextInstr):
             self.stack.append(('Drop', None))
             self.stack.append(('GoToAdjPos', instr.desc_fixed))
             self.stack.append(('Pickup', None))
             self.stack.append(('GoToObj', instr.desc_move))
-        else:
-            assert False
+            return
+
+        if isinstance(instr, BeforeInstr) or isinstance(instr, AndInstr):
+            self.process_instr(instr.instr_b)
+            self.process_instr(instr.instr_a)
+            return
+
+        if isinstance(instr, AfterInstr):
+            self.process_instr(instr.instr_a)
+            self.process_instr(instr.instr_b)
+            return
+
+        assert False, "unknown instruction type"
 
     def step(self):
         """
@@ -51,6 +97,8 @@ class Bot:
 
         # Process the current observation
         self.process_obs()
+
+        self.step_count += 1
 
         # Iterate until we have an action to perform
         while True:
@@ -64,6 +112,11 @@ class Bot:
         Returns either an action to perform or None
         """
 
+        if self.itr_count >= self.timeout:
+            raise TimeoutError('bot timed out')
+
+        self.itr_count += 1
+
         pos = self.mission.agent_pos
         dir_vec = self.mission.dir_vec
         right_vec = self.mission.right_vec
@@ -72,10 +125,14 @@ class Bot:
         actions = self.mission.actions
         carrying = self.mission.carrying
 
-        assert len(self.stack) > 0, "stack empty"
+        if len(self.stack) == 0:
+            return actions.done
 
         # Get the topmost instruction on the stack
         subgoal, datum = self.stack[-1]
+
+        #print(subgoal, datum)
+        #print('pos:', pos)
 
         # Open a door
         if subgoal == 'Open':
@@ -86,12 +143,43 @@ class Bot:
             # If the door is locked, go find the key and then return
             if fwd_cell.type == 'locked_door':
                 if not carrying or carrying.type != 'key' or carrying.color != fwd_cell.color:
+                    # Find the key
                     key_desc = ObjDesc('key', fwd_cell.color)
                     key_desc.find_matching_objs(self.mission)
-                    self.stack.append(('GoNextTo', tuple(fwd_pos)))
-                    self.stack.append(('Pickup', key_desc))
-                    self.stack.append(('GoToObj', key_desc))
+
+                    # If we're already carrying something
+                    if carrying:
+                        self.stack.pop()
+
+                        # Find a location to drop what we're already carrying
+                        drop_pos_cur = self.find_drop_pos()
+
+                        # Take back the object being carried
+                        self.stack.append(('Pickup', None))
+                        self.stack.append(('GoNextTo', drop_pos_cur))
+
+                        # Go back to the door and open it
+                        self.stack.append(('Open', None))
+                        self.stack.append(('GoNextTo', tuple(fwd_pos)))
+
+                        # Go to the key and pick it up
+                        self.stack.append(('Pickup', key_desc))
+                        self.stack.append(('GoToObj', key_desc))
+
+                        # Drop the object being carried
+                        self.stack.append(('Drop', None))
+                        self.stack.append(('GoNextTo', drop_pos_cur))
+                    else:
+                        self.stack.append(('GoNextTo', tuple(fwd_pos)))
+                        self.stack.append(('Pickup', key_desc))
+                        self.stack.append(('GoToObj', key_desc))
+
+                    # Don't perform any action for this iteration
                     return None
+
+            # If the door is already open, close it so we can open it again
+            if fwd_cell.type == 'door' and fwd_cell.is_open:
+                return actions.toggle
 
             self.stack.pop()
             return actions.toggle
@@ -119,7 +207,15 @@ class Bot:
                     self.stack.pop()
                     return None
 
-                path, _ = self.shortest_path(lambda pos, cell: pos == obj_pos)
+                path, _ = self.shortest_path(
+                    lambda pos, cell: pos == obj_pos
+                )
+
+                if not path:
+                    path, _ = self.shortest_path(
+                        lambda pos, cell: pos == obj_pos,
+                        ignore_blockers=True
+                    )
 
                 if path:
                     # New subgoal: go next to the object
@@ -132,19 +228,67 @@ class Bot:
 
         # Go to a given location
         if subgoal == 'GoNextTo':
+            assert pos is not datum
+
             # If we are facing the target cell, subgoal completed
             if np.array_equal(datum, fwd_pos):
                 self.stack.pop()
                 return None
 
-            assert pos is not datum
+            # Try to find a path
+            path, _ = self.shortest_path(
+                lambda pos, cell: np.array_equal(pos, datum)
+            )
 
-            path, _ = self.shortest_path(lambda pos, cell: pos == datum)
+            # If we failed to find a path, try again while ignoring blockers
+            if not path:
+                path, _ = self.shortest_path(
+                    lambda pos, cell: np.array_equal(pos, datum),
+                    ignore_blockers=True
+                )
+
+            # No path found, explore the world
+            if not path:
+                # Explore the world
+                self.stack.append(('Explore', None))
+                return None
+
             next_cell = path[0]
 
-            # Turn towards the direction we need to go
+            # If the destination is ahead of us
             if np.array_equal(next_cell, fwd_pos):
+                fwd_cell = self.mission.grid.get(*fwd_pos)
+
+                # If there is a blocking object in front of us
+                if fwd_cell and not fwd_cell.type.endswith('door'):
+                    if carrying:
+                        drop_pos_cur = self.find_drop_pos()
+                        drop_pos_block = self.find_drop_pos(drop_pos_cur)
+
+                        # Take back the object being carried
+                        self.stack.append(('Pickup', None))
+                        self.stack.append(('GoNextTo', drop_pos_cur))
+
+                        # Pick up the blocking object and drop it
+                        self.stack.append(('Drop', None))
+                        self.stack.append(('GoNextTo', drop_pos_block))
+                        self.stack.append(('Pickup', None))
+                        self.stack.append(('GoNextTo', fwd_pos))
+
+                        # Drop the object being carried
+                        self.stack.append(('Drop', None))
+                        self.stack.append(('GoNextTo', drop_pos_cur))
+
+                        return None
+                    else:
+                        drop_pos = self.find_drop_pos()
+                        self.stack.append(('Drop', None))
+                        self.stack.append(('GoNextTo', drop_pos))
+                        return actions.pickup
+
                 return actions.forward
+
+            # Turn towards the direction we need to go
             if np.array_equal(next_cell - pos, right_vec):
                 return actions.right
             return actions.left
@@ -159,16 +303,22 @@ class Bot:
                 return None
 
             # Find the closest position adjacent to the object
-            #adj_pos = self.closest_adj_pos(obj_pos)
             path, adj_pos = self.shortest_path(
                 lambda pos, cell: not cell and pos_next_to(pos, obj_pos)
             )
+
+            if not adj_pos:
+                path, adj_pos = self.shortest_path(
+                    lambda pos, cell: not cell and pos_next_to(pos, obj_pos),
+                    ignore_blockers=True
+                )
 
             if not adj_pos:
                 self.stack.append(('Explore', None))
                 return None
 
             # FIXME: h4xx
+            # If we are on the target position,
             # Randomly navigate away from this position
             if np.array_equal(pos, adj_pos):
                 if np.random.randint(0, 2) == 0:
@@ -182,12 +332,17 @@ class Bot:
 
         # Explore the world, uncover new unseen cells
         if subgoal == 'Explore':
-            # TODO: handle unopened doors
-
             # Find the closest unseen position
             _, unseen_pos = self.shortest_path(
                 lambda pos, cell: not self.vis_mask[pos]
             )
+
+            if not unseen_pos:
+                _, unseen_pos = self.shortest_path(
+                    lambda pos, cell: not self.vis_mask[pos],
+                    ignore_blockers=True
+                )
+
 
             if unseen_pos:
                 self.stack.pop()
@@ -211,12 +366,16 @@ class Bot:
                 return not cell.is_open
 
             # Try to find an unlocked door first
-            # We do this because otherwise, opening an unlocked door as
-            # a subgoal may try to open the same subdoor for exploration,
+            # We do this because otherwise, opening a locked door as
+            # a subgoal may try to open the same door for exploration,
             # resulting in an infinite loop
             _, door_pos = self.shortest_path(unopened_unlocked_door)
             if not door_pos:
+                _, door_pos = self.shortest_path(unopened_unlocked_door, ignore_blockers=True)
+            if not door_pos:
                 _, door_pos = self.shortest_path(unopened_door)
+            if not door_pos:
+                _, door_pos = self.shortest_path(unopened_door, ignore_blockers=True)
 
             # Open the door
             if door_pos:
@@ -224,6 +383,17 @@ class Bot:
                 self.stack.pop()
                 self.stack.append(('Open', None))
                 self.stack.append(('GoNextTo', door_pos))
+                return None
+
+            # Find the closest unseen position, ignoring blocking objects
+            path, unseen_pos = self.shortest_path(
+                lambda pos, cell: not self.vis_mask[pos],
+                ignore_blockers=True
+            )
+
+            if unseen_pos:
+                self.stack.pop()
+                self.stack.append(('GoNextTo', unseen_pos))
                 return None
 
             print(self.stack)
@@ -261,7 +431,10 @@ class Bot:
                 if abs_j < 0 or abs_j >= self.vis_mask.shape[1]:
                     continue
 
-                self.vis_mask[abs_i, abs_j] = True
+                self.last_seen[abs_i, abs_j] = self.step_count
+
+        # Recompute the visibility mask
+        self.vis_mask = np.less(self.step_count - self.last_seen, self.forget_time)
 
     def find_obj_pos(self, obj_desc):
         """
@@ -281,7 +454,8 @@ class Bot:
 
     def shortest_path(
         self,
-        accept_fn
+        accept_fn,
+        ignore_blockers=False
     ):
         """
         Perform a Breadth-First Search (BFS) starting from the agent position,
@@ -325,12 +499,20 @@ class Bot:
             if not self.vis_mask[i, j]:
                 continue
 
-            # Can't go through closed doors, don't visit neighbors
+            # If there is something in this cell
             if cell:
-                if cell.type != 'door' and cell.type != 'locked_door':
+                # If this is a wall, don't visit neighbors
+                if cell.type == 'wall':
                     continue
-                if not cell.is_open:
-                    continue
+                # If this is a door
+                elif cell.type == 'door' or cell.type == 'locked_door':
+                    # If the door is closed, don't visit neighbors
+                    if not cell.is_open:
+                        continue
+                else:
+                    # This is a blocking object, don't visit neighbors
+                    if not ignore_blockers:
+                        continue
 
             # Visit each neighbor cell
             for k, l in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
@@ -339,3 +521,55 @@ class Bot:
 
         # Path not found
         return None, None
+
+    def find_drop_pos(self, except_pos=None):
+        """
+        Find a position where an object can be dropped,
+        ideally without blocking anything
+        """
+
+        grid = self.mission.grid
+
+        def match_noadj(pos, cell):
+            i, j = pos
+
+            if np.array_equal(pos, self.mission.agent_pos):
+                return False
+
+            if except_pos and np.array_equal(pos, except_pos):
+                return False
+
+            # If the cell or a neighbor was unseen or is occupied, reject
+            for k, l in [(0, 0), (0, 1), (0, -1), (1, 0), (-1, 0)]:
+                nb_pos = (i+k, j+l)
+                if not self.vis_mask[nb_pos] or grid.get(*nb_pos):
+                    return False
+
+            return True
+
+        def match_empty(pos, cell):
+            i, j = pos
+
+            if np.array_equal(pos, self.mission.agent_pos):
+                return False
+
+            if except_pos and np.array_equal(pos, except_pos):
+                return False
+
+            if not self.vis_mask[pos] or grid.get(*pos):
+                return False
+
+            return True
+
+        _, drop_pos = self.shortest_path(match_noadj)
+
+        if not drop_pos:
+            _, drop_pos = self.shortest_path(match_empty)
+
+        if not drop_pos:
+            _, drop_pos = self.shortest_path(match_noadj, ignore_blockers=True)
+
+        if not drop_pos:
+            _, drop_pos = self.shortest_path(match_empty, ignore_blockers=True)
+
+        return drop_pos

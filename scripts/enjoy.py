@@ -15,9 +15,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
                     help="name of the environment to be run (REQUIRED)")
 parser.add_argument("--model", default=None,
-                    help="name of the trained model (REQUIRED or --demos-origin REQUIRED)")
+                    help="name of the trained model (REQUIRED or --demos-origin or --demos REQUIRED)")
+parser.add_argument("--demos", default=None,
+                    help="demos filename (REQUIRED or --model demos-origin required)")
 parser.add_argument("--demos-origin", default=None,
-                    help="origin of the demonstrations: human | agent (REQUIRED or --model REQUIRED)")
+                    help="origin of the demonstrations: human | agent (REQUIRED or --model or --demos REQUIRED)")
 parser.add_argument("--seed", type=int, default=None,
                     help="random seed (default: 0 if model agent, 1 if demo agent)")
 parser.add_argument("--shift", type=int, default=0,
@@ -90,23 +92,28 @@ def keyDownCb(keyName):
         obs = env.reset()
         print("Mission: {}".format(obs["mission"]))
 
-
-for i in range(3):
-    env.reset()
-
+step = 0
 while True:
     time.sleep(args.pause)
     renderer = env.render("human")
     if args.manual_mode and renderer.window is not None:
         renderer.window.setKeyDownCb(keyDownCb)
     else:
-        action = agent.get_action(obs)
-        obs, reward, done, _ = env.step(action)
+        result = agent.act(obs)
+        obs, reward, done, _ = env.step(result['action'])
         agent.analyze_feedback(reward, done)
+        if 'dist' in result and 'value' in result:
+            dist, value = result['dist'], result['value']
+            dist_str = ", ".join("{:.4f}".format(float(p)) for p in dist.probs[0])
+            print("step: {}, mission: {}, dist: {}, entropy: {:.2f}, value: {:.2f}".format(
+                step, obs["mission"], dist_str, float(dist.entropy()), float(value)))
         if done:
             print("Reward:", reward)
             obs = env.reset()
-        print("Mission: {}".format(obs["mission"]))
+            agent.on_reset()
+            step = 0
+        else:
+            step += 1
 
     if renderer.window is None:
         break

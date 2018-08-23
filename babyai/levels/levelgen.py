@@ -98,7 +98,7 @@ class RoomGridLevel(RoomGrid):
             instr.reset_verifier(self)
 
             # Check that the objects are not already next to each other
-            if instr.verify(None) is 'success':
+            if instr.objs_next():
                 raise RejectSampling('objs already next to each other')
 
             # Check that we are not asking to move an object next to itself

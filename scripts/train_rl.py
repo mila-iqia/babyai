@@ -60,10 +60,10 @@ parser.add_argument("--beta1", type=float, default=0.9,
                     help="beta1 for Adam (default: 0.9)")
 parser.add_argument("--beta2", type=float, default=0.999,
                     help="beta2 for Adam (default: 0.999)")
-parser.add_argument("--reward-scale", type=float, default=20.,
+parser.add_argument("--reward-scale", type=float, default=40.,
                     help="Reward scale multiplier")
-parser.add_argument("--gae-tau", type=float, default=0.95,
-                    help="tau coefficient in GAE formula (default: 0.95, 1 means no gae)")
+parser.add_argument("--gae-lambda", type=float, default=0.99,
+                    help="lambda coefficient in GAE formula (default: 0.99, 1 means no gae)")
 parser.add_argument("--entropy-coef", type=float, default=0.01,
                     help="entropy term coefficient (default: 0.01)")
 parser.add_argument("--value-loss-coef", type=float, default=0.5,
@@ -92,7 +92,7 @@ parser.add_argument("--instr-arch", default="gru",
                     help="arch to encode instructions, possible values: gru, bigru, conv, bow (default: gru)")
 parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
-parser.add_argument("--arch", default='cnn1',
+parser.add_argument("--arch", default='expert_filmcnn',
                     help="image embedding architecture")
 parser.add_argument("--test-seed", type=int, default=0,
                     help="random seed for testing (default: 0)")
@@ -163,11 +163,11 @@ if torch.cuda.is_available():
 
 reshape_reward = lambda _0, _1, reward, _2: args.reward_scale * reward
 if args.algo == "a2c":
-    algo = babyai.rl.A2CAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_tau,
+    algo = babyai.rl.A2CAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_lambda,
                             args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                             args.optim_alpha, args.optim_eps, obss_preprocessor, reshape_reward)
 elif args.algo == "ppo":
-    algo = babyai.rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.beta1, args.beta2, args.gae_tau,
+    algo = babyai.rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.beta1, args.beta2, args.gae_lambda,
                             args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                             args.optim_eps, args.clip_eps, args.epochs, args.batch_size, obss_preprocessor,
                             reshape_reward)
