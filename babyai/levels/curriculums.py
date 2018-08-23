@@ -66,6 +66,10 @@ curriculums = {
         "BabyAI-GoToObjDoor-v0",
         "BabyAI-ActionObjDoor-v0",
         "BabyAI-GoToDoor-v0"
+    ],
+    "GoTo": [
+        "BabyAI-GoToObjMaze-v0",
+        "BabyAI-GoTo-v0"
     ]
 }
 
