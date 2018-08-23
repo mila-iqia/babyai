@@ -58,13 +58,13 @@ parser.add_argument("--arch", default='expert_filmcnn',
                     help="image embedding architecture, possible values: cnn1, cnn2, filmcnn (default: cnn1)")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
-parser.add_argument("--validation-interval", type=int, default=10,
-                    help="number of epochs between two validation checks (default: 10)")
+parser.add_argument("--validation-interval", type=int, default=1,
+                    help="number of epochs between two validation checks (default: 1)")
 parser.add_argument("--val-episodes", type=int, default=0,
                     help="number of episodes used for validation"
                          "(default: 0, meaning all demos)")
-parser.add_argument("--patience", type=int, default=3,
-                    help="patience for early stopping (default: 3)")
+parser.add_argument("--patience", type=int, default=100,
+                    help="patience for early stopping (default: 100)")
 parser.add_argument("--val-seed", type=int, default=0,
                     help="seed for environment used for validation (default: 0)")
 parser.add_argument("--image-dim", type=int, default=128,
@@ -113,7 +113,3 @@ def main(args):
 if __name__ == "__main__":
     args = parser.parse_args()
     main(args)
-
-
-
-
