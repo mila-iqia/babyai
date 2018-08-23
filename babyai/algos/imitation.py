@@ -29,7 +29,7 @@ class ImitationLearning(object):
                                 for env, demo_file, demos_origin, episodes in self.args.env]
 
             self.train_demos = [[demo[0] for demo in demos] for demos in self.train_demos]
-            self.val_demos = [utils.load_demos(utils.get_demos_path(demo_file, env, demos_origin valid=True))[:self.args.val_episodes]
+            self.val_demos = [utils.load_demos(utils.get_demos_path(demo_file, env, demos_origin, valid=True))[:self.args.val_episodes]
                               for env, demo_file, demos_origin, _ in self.args.env]
 
 
