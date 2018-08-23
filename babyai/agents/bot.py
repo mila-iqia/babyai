@@ -29,6 +29,7 @@ class Bot:
         self.step_count = 0
 
         # Time visible cells can be remembered (number of env steps)
+        assert forget_time > 0
         self.forget_time = forget_time
 
         # Number of compute iterations performed
@@ -245,6 +246,12 @@ class Bot:
                     lambda pos, cell: np.array_equal(pos, datum),
                     ignore_blockers=True
                 )
+
+            # No path found, explore the world
+            if not path:
+                # Explore the world
+                self.stack.append(('Explore', None))
+                return None
 
             next_cell = path[0]
 
