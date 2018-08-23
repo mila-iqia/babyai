@@ -46,7 +46,7 @@ def load_logs(root):
     return dfs
 
 
-def plot_average(df, regexps, quantity='return_mean', window=1):
+def plot_average(df, regexps, quantity='return_mean', window=1, agg='mean'):
     """Plot averages over groups of runs  defined by regular expressions."""
     pyplot.figure(figsize=(15, 5))
 
@@ -54,6 +54,7 @@ def plot_average(df, regexps, quantity='return_mean', window=1):
     model_groups = [[m for m in unique_models if re.match(regex, m)]
                      for regex in regexps]
 
+    all_values = []
     for regex, models in zip(regexps, model_groups):
         df_re = df[df['model'].isin(models)]
         # the average doesn't make sense if most models are not included,
@@ -62,12 +63,20 @@ def plot_average(df, regexps, quantity='return_mean', window=1):
                                for _, df_model in df_re.groupby('model')]
         median_progress = sorted(num_frames_per_model)[(len(num_frames_per_model) - 1) // 2]
         df_re = df_re[df_re['frames'] <= median_progress]
-        df_agg = df_re.groupby(['frames']).agg(['mean', 'std'])
 
-        values = df_agg[quantity]['mean']
-        values = values.rolling(window).mean()
+        # smooth
+        parts = []
+        for _, df_model in df_re.groupby('model'):
+            df_model = df_model.copy()
+            df_model.loc[:, quantity] = df_model[quantity].rolling(window).mean()
+            parts.append(df_model)
+        df_re = pandas.concat(parts)
+
+        df_agg = df_re.groupby(['frames']).agg([agg])
+        values = df_agg[quantity][agg]
         pyplot.plot(df_agg.index, values, label=regex)
         print(regex, median_progress)
+        all_values.append(values)
 
     pyplot.legend()
 
