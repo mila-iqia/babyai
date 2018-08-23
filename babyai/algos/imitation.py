@@ -359,7 +359,7 @@ class ImitationLearning(object):
             index = 0
 
             for env_name in self.args.env:
-                rewards[index] = sum([item[env_name[0]]["return_per_episode"] for item in return_dict.values()],[])
+                rewards[index] = np.mean([item[env_name[0]]["return_per_episode"] for item in return_dict.values()])
 
                 index += 1
 
@@ -369,8 +369,7 @@ class ImitationLearning(object):
         if torch.cuda.is_available():
             self.acmodel.cpu()
         mean_return = self.validate(episodes= self.args.eval_episodes, verbose=False, use_procs='num_procs' in self.args and self.args.num_procs is not None)
-        for key in mean_return.keys():
-            mean_return[key] = np.mean(mean_return[key]['return_per_episode'])
+
         if torch.cuda.is_available():
             self.acmodel.cuda()
         return mean_return
