@@ -1,5 +1,6 @@
 import numpy
 import time
+import math
 
 from gym_minigrid.minigrid import *
 from babyai.levels.verifier import *
@@ -9,7 +10,7 @@ class Bot:
     Heuristic-based level solver
     """
 
-    def __init__(self, mission, timeout=10000):
+    def __init__(self, mission, forget_time=math.inf, timeout=10000):
         # Mission to be solved
         self.mission = mission
 
@@ -18,11 +19,20 @@ class Bot:
         # Grid containing what has been mapped out
         self.grid = Grid(grid_size, grid_size)
 
+        # Time a given grid cell was last seen
+        self.last_seen = np.full(shape=(grid_size, grid_size), dtype=np.float, fill_value=-math.inf)
+
         # Visibility mask. True for explored/seen, false for unexplored.
         self.vis_mask = np.zeros(shape=(grid_size, grid_size), dtype=np.bool)
 
+        # Number of environment steps
+        self.step_count = 0
+
+        # Time visible cells can be remembered (number of env steps)
+        self.forget_time = forget_time
+
         # Number of compute iterations performed
-        self.num_itrs = 0
+        self.itr_count = 0
 
         # Maximum number of compute iterations to perform
         self.timeout = timeout
@@ -87,6 +97,8 @@ class Bot:
         # Process the current observation
         self.process_obs()
 
+        self.step_count += 1
+
         # Iterate until we have an action to perform
         while True:
             action = self._iterate()
@@ -99,10 +111,10 @@ class Bot:
         Returns either an action to perform or None
         """
 
-        if self.num_itrs >= self.timeout:
+        if self.itr_count >= self.timeout:
             raise TimeoutError('bot timed out')
 
-        self.num_itrs += 1
+        self.itr_count += 1
 
         pos = self.mission.agent_pos
         dir_vec = self.mission.dir_vec
@@ -412,7 +424,10 @@ class Bot:
                 if abs_j < 0 or abs_j >= self.vis_mask.shape[1]:
                     continue
 
-                self.vis_mask[abs_i, abs_j] = True
+                self.last_seen[abs_i, abs_j] = self.step_count
+
+        # Recompute the visibility mask
+        self.vis_mask = np.less(self.step_count - self.last_seen, self.forget_time)
 
     def find_obj_pos(self, obj_desc):
         """
