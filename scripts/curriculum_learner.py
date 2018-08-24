@@ -21,7 +21,7 @@ from babyai.multienv.dist_creator import *
 from babyai.multienv.dist_computer import *
 from babyai.multienv.return_history import *
 from babyai.batchsampler import BatchSampler
-from babyai.levels import curriculums
+from babyai.levels import imitation_curriculums
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--lr", type=float, default=7e-4,
