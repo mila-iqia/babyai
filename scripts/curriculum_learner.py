@@ -21,10 +21,13 @@ from babyai.multienv.dist_creator import *
 from babyai.multienv.dist_computer import *
 from babyai.multienv.return_history import *
 from babyai.batchsampler import BatchSampler
+from babyai.levels import curriculums
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--lr", type=float, default=7e-4,
                     help="learning rate (default: 7e-4)")
+parser.add_argument("--curriculum", required=True,
+                    help="the curriculum to train using imitation learning")
 parser.add_argument("--entropy-coef", type=float, default=0.01,
                     help="entropy term coefficient (default: 0.01)")
 parser.add_argument("--recurrence", type=int, default=20,
@@ -218,8 +221,8 @@ def main(args, graphs):
                 writer.add_scalar("policy_loss", log["policy_loss"], current_num_evaluate)
                 writer.add_scalar("accuracy", log["accuracy"], current_num_evaluate)
                 for key in val_log_envs:
-                    writer.add_scalar("{}_{}".format(key,"val_accuracy"), val_log_envs[key], current_num_evaluate)
-                    writer.add_scalar("{}_{}".format(key,"prob"), prob_log_envs[key], current_num_evaluate)
+                    writer.add_scalar("val_accuracy/{}".format(key), val_log_envs[key], current_num_evaluate)
+                    writer.add_scalar("proba/{}".format(key), prob_log_envs[key], current_num_evaluate)
 
             if current_num_evaluate % args.validation_interval == 0:
                 if torch.cuda.is_available():
@@ -229,7 +232,7 @@ def main(args, graphs):
                     mean_return[item] = np.mean(mean_return[item]['return_per_episode'])
                 if args.tb:
                     for item in range(num_envs):
-                        writer.add_scalar("{}_{}".format(graphs[item][0],"return"), mean_return[item], current_num_evaluate)
+                        writer.add_scalar("return/{}".format(graphs[item][0]), mean_return[item], current_num_evaluate)
 
                 mean_return = np.mean(list(mean_return.values()))
                 print("Mean Validation Return %.3f" % mean_return)
@@ -260,8 +263,5 @@ def main(args, graphs):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    graphs = [
-        ("BabyAI-GoToObj-v0", 'GoToObj-bot-100k','bot', 200),
-        ("BabyAI-GoToLocal-v0", 'GoToLocal-bot-100k','bot', 500)
-        ]
+    graphs = imitation_curriculums[args.curriculum]
     main(args, graphs)

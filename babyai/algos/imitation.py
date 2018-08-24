@@ -385,7 +385,6 @@ class ImitationLearning(object):
         if torch.cuda.is_available():
             self.acmodel.cpu()
         mean_return = self.validate(episodes= self.args.eval_episodes, verbose=False, use_procs='num_procs' in self.args and self.args.num_procs is not None)
-
         if torch.cuda.is_available():
             self.acmodel.cuda()
         return mean_return
