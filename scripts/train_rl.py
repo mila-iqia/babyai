@@ -235,7 +235,6 @@ logger.info(acmodel)
 total_start_time = time.time()
 best_mean_return = 0
 test_env_name = args.env if args.env is not None else curriculum[-1]
-test_env = gym.make(test_env_name)
 while status['num_frames'] < args.frames:
     # Update parameters
 
@@ -302,10 +301,9 @@ while status['num_frames'] < args.frames:
             acmodel.cpu()
 
         # Testing the model before saving
-        test_env.seed(args.test_seed)
         agent = ModelAgent(model_name, obss_preprocessor, argmax=True)
         agent.model = acmodel
-        logs = evaluate(agent, test_env, args.test_episodes)
+        logs = evaluate(agent, test_env_name, args.test_seed, args.test_episodes)
         mean_return = np.mean(logs["return_per_episode"])
         if mean_return > best_mean_return:
             best_mean_return = mean_return

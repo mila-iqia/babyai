@@ -71,7 +71,7 @@ def batch_evaluate(agent, env_name, seed, episodes):
     envs = []
     for i in range(num_envs):
         env = gym.make(env_name)
-        env.seed(100 * seed + i)
+        env.seed((int)(1e9) + 100 * seed + i)
         envs.append(env)
     env = ManyEnvs(envs)
 
