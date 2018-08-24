@@ -225,9 +225,11 @@ def main(args, graphs):
                     writer.add_scalar("proba/{}".format(key), prob_log_envs[key], current_num_evaluate)
 
             if current_num_evaluate % args.validation_interval == 0:
-                if torch.cuda.is_available():
-                    il_learn.acmodel.cpu()
+                # if torch.cuda.is_available():
+                #     il_learn.acmodel.cpu()
                 mean_return = il_learn.validate(episodes = args.val_episodes, validating=True)
+                # if torch.cuda.is_available():
+                #     il_learn.acmodel.cuda()
                 for item in range(num_envs):
                     mean_return[item] = np.mean(mean_return[item]['return_per_episode'])
                 if args.tb:
