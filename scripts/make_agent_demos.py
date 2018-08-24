@@ -67,7 +67,7 @@ def generate_demos(n_episodes, valid, seed):
 
         try:
             while not done:
-                action = agent.get_action(obs)
+                action = agent.act(obs)['action']
                 new_obs, reward, done, _ = env.step(action)
                 agent.analyze_feedback(reward, done)
 
