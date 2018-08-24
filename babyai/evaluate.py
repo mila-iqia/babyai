@@ -41,9 +41,11 @@ def evaluate(agent, env, episodes, model_agent=True, offsets=None):
     return logs
 
 # Function used for evaluation when using multiple processors
-def evaluateProc(agent, penv, episodes, log_dict, env_names, proc_id):
+def evaluateProc(agent, penv, episodes, log_dict, env_names, proc_id, model_agent = True):
 
     # Initialize logs
+    if model_agent:
+        agent.model.eval()
     logs = {}
     for index in range(len(penv)):
 
@@ -75,5 +77,9 @@ def evaluateProc(agent, penv, episodes, log_dict, env_names, proc_id):
             log_env[key] = np.mean(log_env[key])
         logs[env_names[index][0]] = log_env
 
+    if model_agent:
+        agent.model.train()
     log_dict[proc_id] = logs
+
+
 
