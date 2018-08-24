@@ -37,8 +37,7 @@ class ModelAgent(Agent):
         self.model = utils.load_model(model_name)
         self.argmax = argmax
 
-        if self.model.recurrent:
-            self._initialize_memory()
+        self._initialize_memory()
 
     def _initialize_memory(self):
         self.memory = torch.zeros(1, self.model.memory_size)
@@ -47,10 +46,7 @@ class ModelAgent(Agent):
         preprocessed_obs = self.obss_preprocessor([obs])
 
         with torch.no_grad():
-            if self.model.recurrent:
-                dist, value, self.memory = self.model(preprocessed_obs, self.memory)
-            else:
-                dist, value = self.model(preprocessed_obs)
+            dist, value, self.memory = self.model(preprocessed_obs, self.memory)
 
         if self.argmax:
             action = dist.probs.max(1, keepdim=True)[1]
@@ -62,7 +58,7 @@ class ModelAgent(Agent):
                 'value': value}
 
     def analyze_feedback(self, reward, done):
-        if done and self.model.recurrent:
+        if done:
             self._initialize_memory()
 
 

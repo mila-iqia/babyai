@@ -37,8 +37,7 @@ class A2CAlgo(BaseAlgo):
 
         # Initialize memory
 
-        if self.acmodel.recurrent:
-            memory = exps.memory[inds]
+        memory = exps.memory[inds]
 
         for i in range(self.recurrence):
             # Create a sub-batch of experience
@@ -47,10 +46,7 @@ class A2CAlgo(BaseAlgo):
 
             # Compute loss
 
-            if self.acmodel.recurrent:
-                dist, value, memory = self.acmodel(sb.obs, memory * sb.mask)
-            else:
-                dist, value = self.acmodel(sb.obs)
+            dist, value, memory = self.acmodel(sb.obs, memory * sb.mask)
 
             entropy = dist.entropy().mean()
 

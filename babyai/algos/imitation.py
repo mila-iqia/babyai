@@ -14,6 +14,10 @@ from babyai.model import ACModel
 import multiprocessing
 import os
 import json
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 class ImitationLearning(object):
     def __init__(self, args):
@@ -60,7 +64,9 @@ class ImitationLearning(object):
             demos_path = utils.get_demos_path(args.demos, args.env, args.demos_origin, valid=False)
             demos_path_valid = utils.get_demos_path(args.demos, args.env, args.demos_origin, valid=True)
 
+            logger.info('loading demos')
             self.train_demos = utils.load_demos(demos_path)
+            logger.info('loaded demos')
             if args.episodes:
                 assert args.episodes <= len(self.train_demos), "there are only {} train demos".format(len(self.train_demos))
                 self.train_demos = self.train_demos[:args.episodes]
@@ -95,7 +101,7 @@ class ImitationLearning(object):
             'suffix': suffix}
         default_model_name = "{envs}_IL_{arch}_{instr}_{mem}_seed{seed}_{suffix}".format(**model_name_parts)
         self.model_name = self.args.model or default_model_name
-        print("The model is saved in {}".format(self.model_name))
+        logger.info("The model is saved in {}".format(self.model_name))
         self.args.model = self.model_name
 
         self.obss_preprocessor = utils.ObssPreprocessor(self.model_name, observation_space)
@@ -115,27 +121,28 @@ class ImitationLearning(object):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.flat_train_demos, self.flat_val_demos = [], []
-        if type(self.args.env) == list:
-            for demos in self.train_demos:
-                flat_demos = []
-                for dm in demos:
-                    flat_demos += dm
-                flat_demos = np.array(flat_demos)
-                self.flat_train_demos.append(flat_demos)
-            for demos in self.val_demos:
-                flat_demos = []
-                for dm in demos:
-                    flat_demos += dm
-                flat_demos = np.array(flat_demos)
-                self.flat_val_demos.append(flat_demos)
-        else:
-            for demo in self.train_demos:
-                self.flat_train_demos += demo
-            for demo in self.val_demos:
-                self.flat_val_demos += demo
-            self.flat_train_demos = np.array(self.flat_train_demos)
-            self.flat_val_demos = np.array(self.flat_val_demos)
+        if not mem:
+            self.flat_train_demos, self.flat_val_demos = [], []
+            if type(self.args.env) == list:
+                for demos in self.train_demos:
+                    flat_demos = []
+                    for dm in demos:
+                        flat_demos += dm
+                    flat_demos = np.array(flat_demos)
+                    self.flat_train_demos.append(flat_demos)
+                for demos in self.val_demos:
+                    flat_demos = []
+                    for dm in demos:
+                        flat_demos += dm
+                    flat_demos = np.array(flat_demos)
+                    self.flat_val_demos.append(flat_demos)
+            else:
+                for demo in self.train_demos:
+                    self.flat_train_demos += demo
+                for demo in self.val_demos:
+                    self.flat_val_demos += demo
+                self.flat_train_demos = np.array(self.flat_train_demos)
+                self.flat_val_demos = np.array(self.flat_val_demos)
 
     def run_epoch_norecur(self, flat_demos, is_training=False):
         flat_demos_t = copy.deepcopy(flat_demos)
@@ -196,17 +203,17 @@ class ImitationLearning(object):
             return np.arange(0, num_frames, self.args.recurrence)[:-1]
 
     def run_epoch_recurrence(self, demos, is_training=False):
-        demos_t = copy.deepcopy(demos)
+        indices = list(range(len(demos)))
         if is_training:
-            np.random.shuffle(demos_t)
-        batch_size = min(self.args.batch_size, len(demos_t))
+            np.random.shuffle(indices)
+        batch_size = min(self.args.batch_size, len(demos))
         offset = 0
 
         # Log dictionary
         log = {"entropy": [], "policy_loss": [], "accuracy": []}
 
-        for batch_index in range(len(demos_t) // batch_size):
-            batch = demos_t[offset:offset + batch_size]
+        for batch_index in range(len(indices) // batch_size):
+            batch = [demos[i] for i in indices[offset:offset+batch_size]]
 
             _log = self.run_epoch_recurrence_one_batch(batch, is_training=is_training)
 
@@ -311,7 +318,7 @@ class ImitationLearning(object):
         utils.seed(self.args.val_seed)
         self.args.argmax = True
         if verbose:
-            print("Validating the model")
+            logger.info("Validating the model")
 
         if validating or not use_procs:
             if validating:
@@ -322,6 +329,15 @@ class ImitationLearning(object):
             agent = utils.load_agent(self.args, envs[0])
             # Setting the agent model to the current model
             agent.model = self.acmodel
+            # because ModelAgent places inputs on CPU, we have to move the model
+            if torch.cuda.is_available():
+                self.acmodel.cpu()
+            logs = []
+            for env in envs:
+                env.seed(self.args.val_seed)
+                logs += [evaluate(agent, env, self.args.val_episodes)]
+            if torch.cuda.is_available():
+                self.acmodel.cuda()
 
             logs = []
             for env in envs:
@@ -334,7 +350,7 @@ class ImitationLearning(object):
                 assert len(logs) == 1
                 return logs[0]
 
-            return {tid : log for tid, log in enumerate(logs)}
+            return {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
 
         elif use_procs:
 
@@ -357,7 +373,7 @@ class ImitationLearning(object):
                 job.join()
             rewards = {}
             index = 0
-            
+
             for env_name in self.args.env:
                 rewards[index] = np.mean([item[env_name[0]]["return_per_episode"] for item in return_dict.values()])
 
@@ -375,7 +391,8 @@ class ImitationLearning(object):
         return mean_return
 
 
-    def train(self, train_demos, logger, writer, csv_writer, status_path, header):
+
+    def train(self, train_demos, writer, csv_writer, status_path, header):
         # Load the status
         status = {'i': 0,
                   'num_frames': 0,
@@ -450,8 +467,6 @@ class ImitationLearning(object):
                         json.dump(status, dst)
 
             if status['i'] % self.args.validation_interval == 0:
-                if torch.cuda.is_available():
-                    self.acmodel.cpu()
 
                 valid_log = self.validate(self.args.val_episodes,validating=True)
                 mean_return = np.mean(valid_log['return_per_episode'])
@@ -495,5 +510,3 @@ class ImitationLearning(object):
                     status['patience'] += 1
                     with open(status_path, 'w') as dst:
                         json.dump(status, dst)
-                    if torch.cuda.is_available():
-                        self.acmodel.cuda()

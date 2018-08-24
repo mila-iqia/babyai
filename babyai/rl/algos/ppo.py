@@ -51,8 +51,7 @@ class PPOAlgo(BaseAlgo):
 
                 # Initialize memory
 
-                if self.acmodel.recurrent:
-                    memory = exps.memory[inds]
+                memory = exps.memory[inds]
 
                 for i in range(self.recurrence):
                     # Create a sub-batch of experience
@@ -61,10 +60,7 @@ class PPOAlgo(BaseAlgo):
 
                     # Compute loss
 
-                    if self.acmodel.recurrent:
-                        dist, value, memory = self.acmodel(sb.obs, memory * sb.mask)
-                    else:
-                        dist, value = self.acmodel(sb.obs)
+                    dist, value, memory = self.acmodel(sb.obs, memory * sb.mask)
 
                     entropy = dist.entropy().mean()
 
@@ -90,7 +86,7 @@ class PPOAlgo(BaseAlgo):
 
                     # Update memories for next epoch
 
-                    if self.acmodel.recurrent and i < self.recurrence - 1:
+                    if i < self.recurrence - 1:
                         exps.memory[inds + i + 1] = memory.detach()
 
                 # Update batch values

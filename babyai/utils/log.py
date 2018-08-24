@@ -15,12 +15,13 @@ def get_log_path(log_name):
 
 
 def synthesize(array):
-    return {
-        "mean": numpy.mean(array),
-        "std": numpy.std(array),
-        "min": numpy.amin(array),
-        "max": numpy.amax(array)
-    }
+    import collections
+    d = collections.OrderedDict()
+    d["mean"] = numpy.mean(array)
+    d["std"] = numpy.std(array)
+    d["min"] = numpy.amin(array)
+    d["max"] = numpy.amax(array)
+    return d
 
 
 def get_logger(log_name):
@@ -29,7 +30,7 @@ def get_logger(log_name):
 
     logging.basicConfig(
         level=logging.INFO,
-        format="%(message)s",
+        format="%(name)s: %(message)s",
         handlers=[
             logging.FileHandler(filename=path),
             logging.StreamHandler(sys.stdout)
