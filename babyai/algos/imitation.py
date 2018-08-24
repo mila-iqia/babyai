@@ -48,13 +48,14 @@ class ImitationLearning(object):
             self.train_demos = utils.load_demos(demos_path)
             logger.info('loaded demos')
             if args.episodes:
-                assert args.episodes <= len(self.train_demos), "there are only {} train demos".format(len(self.train_demos))
+                if args.episodes <= len(self.train_demos):
+                    raise ValueError("there are only {} train demos".format(len(self.train_demos)))
                 self.train_demos = self.train_demos[:args.episodes]
 
             self.val_demos = utils.load_demos(demos_path_valid)
-            if args.val_episodes:
-                assert args.val_episodes <= len(self.val_demos), "there are only {} valid. demos".format(len(self.val_demos))
-                self.val_demos = self.val_demos[:self.args.val_episodes]
+            if args.val_episodes > len(self.val_demos):
+                logger.info('Using all the available {} demos to evaluate valid. accuracy'.format(len(self.val_demos)))
+            self.val_demos = self.val_demos[:self.args.val_episodes]
 
             # Separating train offsets and train demos
             self.train_offsets = [item[1] for item in self.train_demos]
