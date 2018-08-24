@@ -53,7 +53,7 @@ class ManyEnvs(gym.Env):
         return many_obs
 
     def step(self, actions):
-        self.results = [env.step(action) #if not done else self.last_results[i]
+        self.results = [env.step(action) if not done else self.last_results[i]
                         for i, (env, action, done)
                         in enumerate(zip(self.envs, actions, self.done))]
         self.done = [result[2] for result in self.results]
