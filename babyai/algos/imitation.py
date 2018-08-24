@@ -333,12 +333,6 @@ class ImitationLearning(object):
                 self.acmodel.cpu()
             agent.model = self.acmodel
 
-            logs = []
-            for env in envs:
-                env.seed(self.args.val_seed)
-                logs += [evaluate(agent, env, self.args.val_episodes)]
-            if torch.cuda.is_available():
-                self.acmodel.cuda()
 
             logs = []
             for env in envs:
@@ -346,6 +340,9 @@ class ImitationLearning(object):
                 env.seed(self.args.val_seed)
 
                 logs += [evaluate(agent,env,episodes)]
+
+            if torch.cuda.is_available():
+                self.acmodel.cuda()
 
             if len(envs) == 1:
                 assert len(logs) == 1
