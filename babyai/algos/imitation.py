@@ -328,10 +328,11 @@ class ImitationLearning(object):
 
             agent = utils.load_agent(self.args, envs[0])
             # Setting the agent model to the current model
-            agent.model = self.acmodel
             # because ModelAgent places inputs on CPU, we have to move the model
             if torch.cuda.is_available():
                 self.acmodel.cpu()
+            agent.model = self.acmodel
+
             logs = []
             for env in envs:
                 env.seed(self.args.val_seed)
