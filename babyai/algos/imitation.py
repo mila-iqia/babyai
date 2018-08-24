@@ -5,8 +5,7 @@ import datetime
 import numpy as np
 import sys
 import torch
-import torch.nn.functional as F
-from babyai.evaluate import evaluate
+from babyai.evaluate import evaluate, batch_evaluate
 import babyai.utils as utils
 from babyai.rl import DictList
 from babyai.model import ACModel
@@ -48,7 +47,7 @@ class ImitationLearning(object):
             self.train_demos = utils.load_demos(demos_path)
             logger.info('loaded demos')
             if args.episodes:
-                if args.episodes <= len(self.train_demos):
+                if args.episodes > len(self.train_demos):
                     raise ValueError("there are only {} train demos".format(len(self.train_demos)))
                 self.train_demos = self.train_demos[:args.episodes]
 
@@ -304,18 +303,12 @@ class ImitationLearning(object):
 
         envs = self.env if type(self.env) == list else [self.env]
         agent = utils.load_agent(self.args, envs[0])
-        # Setting the agent model to the current model
         agent.model = self.acmodel
 
         # because ModelAgent places inputs on CPU, we have to move the model
-        if torch.cuda.is_available():
-            self.acmodel.cpu()
         logs = []
-        for env in envs:
-            env.seed(self.args.val_seed)
-            logs += [evaluate(agent, env, self.args.val_episodes)]
-        if torch.cuda.is_available():
-            self.acmodel.cuda()
+        for env_name in ([self.args.env] if isinstance(self.args.env, str) else self.args.env):
+            logs += [batch_evaluate(agent, env_name, self.args.val_seed, self.args.val_episodes)]
 
         if not self.args.no_mem:
             val_log = self.run_epoch_recurrence(self.val_demos)

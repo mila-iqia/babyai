@@ -6,7 +6,7 @@ import time
 import datetime
 
 import babyai.utils as utils
-from babyai.evaluate import evaluate
+from babyai.evaluate import evaluate, batch_evaluate
 # Parse arguments
 
 parser = argparse.ArgumentParser()
@@ -30,13 +30,10 @@ def main(args, seed, episodes):
     # Set seed for all randomness sources
     utils.seed(seed)
 
-    # Generate environment
+    # Define agent
 
     env = gym.make(args.env)
     env.seed(seed)
-
-    # Define agent
-
     agent = utils.load_agent(args, env)
 
     if args.model is None and args.episodes > len(agent.demos):
@@ -44,7 +41,10 @@ def main(args, seed, episodes):
         episodes = len(agent.demos)
 
     # Evaluate
-    logs = evaluate(agent, env, episodes, model_agent=(args.model is not None))
+    if args.model:
+        logs = batch_evaluate(agent, args.env, seed, episodes)
+    else:
+        logs = evaluate(agent, env, episodes, False)
 
     return logs
 
