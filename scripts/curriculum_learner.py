@@ -226,8 +226,8 @@ def main(args, graphs):
 
             if current_num_evaluate % args.validation_interval == 0:
                 mean_return = il_learn.validate(episodes = args.val_episodes, validating=True)
-                for item in range(num_envs):
-                    mean_return[item] = np.mean(mean_return[item]['return_per_episode'])
+                # for item in range(num_envs):
+                #     mean_return[item] = np.mean(mean_return[item]['return_per_episode'])
                 if args.tb:
                     for item in range(num_envs):
                         writer.add_scalar("return/{}".format(graphs[item][0]), mean_return[item], current_num_evaluate)
