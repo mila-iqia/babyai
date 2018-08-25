@@ -223,7 +223,7 @@ def main(args, graphs):
                     writer.add_scalar("proba/{}".format(key), prob_log_envs[key], current_num_evaluate)
 
             if current_num_evaluate % args.validation_interval == 0:
-                logs = il_learn.validate(episodes = args.val_episodes, validating=True)
+                logs = il_learn.validate(episodes = args.val_episodes)
                 mean_return = [np.mean(log['return_per_episode']) for log in logs]
                 success_rate = [np.mean([1 if r > 0 else 0 for r in log['return_per_episode']]) for log in logs]
                 if args.tb:
@@ -231,7 +231,7 @@ def main(args, graphs):
                         writer.add_scalar("return/{}".format(graphs[item][0]), mean_return[item], current_num_evaluate)
                         writer.add_scalar("success_rate/{}".format(graphs[item][0]), success_rate[item], current_num_evaluate)
 
-                mean_return = np.mean(list(mean_return.values()))
+                mean_return = np.mean(list(mean_return))
                 print("Mean Validation Return %.3f" % mean_return)
 
                 if mean_return > best_mean_return:
