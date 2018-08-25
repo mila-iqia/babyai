@@ -352,8 +352,6 @@ class ImitationLearning(object):
 
             agent = utils.load_agent(self.args, self.eval_env[0][0])
             agent.model = self.acmodel
-            if torch.cuda.is_available():
-                self.acmodel.cpu()
             agents = [copy.deepcopy(agent)]*self.args.num_procs
             jobs = []
 
@@ -370,10 +368,6 @@ class ImitationLearning(object):
                 job.join()
             rewards = {}
             index = 0
-
-            if torch.cuda.is_available():
-                self.acmodel.cuda()
-
             for env_name in self.args.env:
                 rewards[index] = np.mean([item[env_name[0]]["return_per_episode"] for item in return_dict.values()])
 
