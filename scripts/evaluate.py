@@ -70,7 +70,7 @@ if __name__ == "__main__":
         [1 if r > 0 else 0 for r in logs["return_per_episode"]])
     num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
-    print("F {} | FPS {:.0f} | D {} | R:x̄σmM {:.2f} {:.2f} {:.2f} {:.2f} | S {:.2f} | F:x̄σmM {:.1f} {:.1f} {} {}"
+    print("F {} | FPS {:.0f} | D {} | R:xsmM {:.2f} {:.2f} {:.2f} {:.2f} | S {:.2f} | F:xsmM {:.1f} {:.1f} {} {}"
           .format(num_frames, fps, duration,
                   *return_per_episode.values(),
                   success_per_episode['mean'],
