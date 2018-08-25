@@ -383,7 +383,7 @@ class ImitationLearning(object):
 
     def collect_returns(self):
         is_procs='num_procs' in self.args and self.args.num_procs is not None
-        mean_return = self.validate(episodes= self.args.eval_episodes, verbose=False,use_procs=isprocs)
+        mean_return = self.validate(episodes= self.args.eval_episodes, verbose=False,use_procs=is_procs)
         return mean_return
 
 
