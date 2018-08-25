@@ -301,35 +301,34 @@ class ImitationLearning(object):
 
         return log
 
-    def validate(self, episodes, verbose=True, validating=False):
+    def validate(self, episodes, verbose=True):
         # Seed needs to be reset for each validation, to ensure consistency
         utils.seed(self.args.val_seed)
         self.args.argmax = True
         if verbose:
             logger.info("Validating the model")
 
-        if validating or not use_procs:
-            agent = utils.load_agent(self.args, envs[0])
+        agent = utils.load_agent(self.args, self.env[0])
 
-            # Setting the agent model to the current model
-            agent.model = self.acmodel
+        # Setting the agent model to the current model
+        agent.model = self.acmodel
 
-            agent.model.eval()
-            logs = []
+        agent.model.eval()
+        logs = []
 
-            for env_name in ([self.args.env] if isinstance(self.args.env, str) else list(zip(*self.args.env))[0]):
-                logs += [batch_evaluate(agent, env_name, self.args.val_seed, episodes)]
-            agent.model.train()
+        for env_name in ([self.args.env] if isinstance(self.args.env, str) else list(zip(*self.args.env))[0]):
+            logs += [batch_evaluate(agent, env_name, self.args.val_seed, episodes)]
+        agent.model.train()
 
-            if len(self.args.env) == 1:
-                assert len(logs) == 1
-                return logs[0]
+        if len(self.args.env) == 1:
+            assert len(logs) == 1
+            return logs[0]
 
-            return {tid : log for tid, log in enumerate(logs)}
+        return logs
 
     def collect_returns(self):
-        log_dict = self.validate(episodes= self.args.eval_episodes, verbose=False)
-        mean_return = {tid : np.mean(log["return_per_episode"]) for tid,log in enumerate(log_dict)}
+        logs = self.validate(episodes= self.args.eval_episodes, verbose=False)
+        mean_return = {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
         return mean_return
 
     def train(self, train_demos, writer, csv_writer, status_path, header):

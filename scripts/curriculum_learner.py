@@ -223,9 +223,9 @@ def main(args, graphs):
                     writer.add_scalar("proba/{}".format(key), prob_log_envs[key], current_num_evaluate)
 
             if current_num_evaluate % args.validation_interval == 0:
-                log_dict = il_learn.validate(episodes = args.val_episodes, validating=True)
-                mean_return = {tid : np.mean(log['return_per_episode']) for tid,log in enumerate(log_dict)}
-                success_rate = {tid : np.mean([1 if r > 0 else 0 for r in log['return_per_episode']]) for tid,log in enumerate(log_dict)}
+                logs = il_learn.validate(episodes = args.val_episodes, validating=True)
+                mean_return = [np.mean(log['return_per_episode']) for log in logs]
+                success_rate = [np.mean([1 if r > 0 else 0 for r in log['return_per_episode']]) for log in logs]
                 if args.tb:
                     for item in range(num_envs):
                         writer.add_scalar("return/{}".format(graphs[item][0]), mean_return[item], current_num_evaluate)
