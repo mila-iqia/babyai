@@ -330,10 +330,6 @@ class ImitationLearning(object):
 
             agent = utils.load_agent(self.args, envs[0])
 
-            # because ModelAgent places inputs on CPU, we have to move the model
-            if torch.cuda.is_available():
-                self.acmodel.cpu()
-
             # Setting the agent model to the current model
             agent.model = self.acmodel
 
@@ -343,9 +339,6 @@ class ImitationLearning(object):
             for env_name in ([self.args.env] if isinstance(self.args.env, str) else list(zip(*self.args.env))[0]):
                 logs += [batch_evaluate(agent, env_name, self.args.val_seed, episodes)]
             agent.model.train()
-
-            if torch.cuda.is_available():
-                self.acmodel.cuda()
 
             if len(envs) == 1:
                 assert len(logs) == 1
@@ -383,11 +376,7 @@ class ImitationLearning(object):
             return rewards
 
     def collect_returns(self):
-        if torch.cuda.is_available():
-            self.acmodel.cpu()
         mean_return = self.validate(episodes= self.args.eval_episodes, verbose=False, use_procs='num_procs' in self.args and self.args.num_procs is not None)
-        if torch.cuda.is_available():
-            self.acmodel.cuda()
         return mean_return
 
 
