@@ -12,6 +12,7 @@ import time
 import datetime
 import numpy as np
 import sys
+import logging
 import babyai.utils as utils
 from babyai.algos.imitation import ImitationLearning
 import torch
@@ -60,9 +61,8 @@ parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
 parser.add_argument("--validation-interval", type=int, default=1,
                     help="number of epochs between two validation checks (default: 1)")
-parser.add_argument("--val-episodes", type=int, default=0,
-                    help="number of episodes used for validation"
-                         "(default: 0, meaning all demos)")
+parser.add_argument("--val-episodes", type=int, default=500,
+                    help="number of episodes used to evaluate the agent, and to evaluate validation accuracy")
 parser.add_argument("--patience", type=int, default=100,
                     help="patience for early stopping (default: 100)")
 parser.add_argument("--val-seed", type=int, default=0,
@@ -74,10 +74,11 @@ parser.add_argument("--memory-dim", type=int, default=128,
 
 
 def main(args):
+    logger = utils.get_logger(args.model)
+
     il_learn = ImitationLearning(args)
 
     # Define logger and Tensorboard writer
-    logger = utils.get_logger(il_learn.model_name)
     header = (["update", "frames", "FPS", "duration", "entropy", "policy_loss", "train_accuracy"]
               + ["validation_accuracy", "validation_return", "validation_success_rate"])
     writer = None

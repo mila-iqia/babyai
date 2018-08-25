@@ -32,18 +32,25 @@ class Agent(ABC):
 class ModelAgent(Agent):
     """A model-based agent. This agent behaves using a model."""
 
-    def __init__(self, model_name, obss_preprocessor, argmax):
+    def __init__(self, model_or_name, obss_preprocessor, argmax):
         self.obss_preprocessor = obss_preprocessor
-        self.model = utils.load_model(model_name)
+        if isinstance(model_or_name, str):
+            self.model = utils.load_model(model_or_name)
+            if torch.cuda.is_available():
+                self.model.cuda()
+        else:
+            self.model = model_or_name
+        self.device = next(self.model.parameters()).device
         self.argmax = argmax
+        self.memory = None
 
-        self._initialize_memory()
-
-    def _initialize_memory(self):
-        self.memory = torch.zeros(1, self.model.memory_size)
-
-    def act(self, obs):
-        preprocessed_obs = self.obss_preprocessor([obs])
+    def act_batch(self, many_obs):
+        if self.memory is None:
+            self.memory = torch.zeros(
+                len(many_obs), self.model.memory_size, device=self.device)
+        elif self.memory.shape[0] != len(many_obs):
+            raise ValueError("stick to one batch size for the lifetime of an agent")
+        preprocessed_obs = self.obss_preprocessor(many_obs, device=self.device)
 
         with torch.no_grad():
             dist, value, self.memory = self.model(preprocessed_obs, self.memory)
@@ -57,9 +64,16 @@ class ModelAgent(Agent):
                 'dist': dist,
                 'value': value}
 
+    def act(self, obs):
+        return self.act_batch([obs])
+
     def analyze_feedback(self, reward, done):
-        if done:
-            self._initialize_memory()
+        if isinstance(done, tuple):
+            for i in range(len(done)):
+                if done[i]:
+                    self.memory[i, :] *= 0.
+        else:
+            self.memory *= (1 - done)
 
 
 class DemoAgent(Agent):

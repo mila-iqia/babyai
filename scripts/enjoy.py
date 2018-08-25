@@ -77,7 +77,7 @@ def keyDownCb(keyName):
     if keyName not in action_map and keyName != "RETURN":
         return
 
-    agent_action = agent.get_action(obs)
+    agent_action = agent.act(obs)['action']
 
     if keyName in action_map:
         action = env.actions[action_map[keyName]]

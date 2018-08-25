@@ -62,9 +62,8 @@ parser.add_argument("--model", default=None,
                     help="name of the base model. Can be obtained from one of the IL models trained without _demosN")
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
-parser.add_argument("--val-episodes", type=int, default=0,
-                    help="number of episodes used for validation"
-                         "(default: 0, meaning all demos)")
+parser.add_argument("--val-episodes", type=int, default=500,
+                    help="number of episodes used to evaluate the agent, and to evaluate validation accuracy")
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log the sub IL tasks into Tensorboard")
 parser.add_argument("--csv", action="store_true", default=False,
