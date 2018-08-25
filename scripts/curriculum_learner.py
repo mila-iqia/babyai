@@ -230,8 +230,8 @@ def main(args, graphs):
                                 log["entropy"], log["policy_loss"], log["accuracy"]))
                 if status['i'] % args.validation_interval != 0:
                     validation_data = ['']*len([key for key in header if 'valid' in key])
-                    proba_data = ['']*len([key for key in header if 'proba' in key])
-                    return_data = ['']*len([key for key in header if 'return' in key])
+                    proba_data = ['']*len([key for key in header if 'proba/' in key])
+                    return_data = ['']*len([key for key in header if 'return/' in key])
                     assert len(header) == len(train_data + validation_data + proba_data + return_data)
                     if args.tb:
                         for key, value in zip(header, train_data):
