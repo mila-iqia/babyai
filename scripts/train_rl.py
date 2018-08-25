@@ -20,7 +20,7 @@ import babyai.utils as utils
 import babyai.rl
 from babyai.model import ACModel
 from babyai.levels import curriculums, create_menvs
-from babyai.evaluate import evaluate
+from babyai.evaluate import batch_evaluate
 from babyai.utils.agent import ModelAgent
 
 # Parse arguments
@@ -297,20 +297,17 @@ while status['num_frames'] < args.frames:
 
     if args.save_interval > 0 and status['i'] % args.save_interval == 0:
         obss_preprocessor.vocab.save()
-        if torch.cuda.is_available():
-            acmodel.cpu()
 
         # Testing the model before saving
         agent = ModelAgent(model_name, obss_preprocessor, argmax=True)
         agent.model = acmodel
-        logs = evaluate(agent, test_env_name, args.test_seed, args.test_episodes)
+        agent.model.eval()
+        logs = batch_evaluate(agent, test_env_name, args.test_seed, args.test_episodes)
+        agent.model.train()
         mean_return = np.mean(logs["return_per_episode"])
         if mean_return > best_mean_return:
             best_mean_return = mean_return
             utils.save_model(acmodel, model_name)
             logger.info("Best model is saved.")
         else:
-            logger.info("Not the best model; not saved")
-
-        if torch.cuda.is_available():
-            acmodel.cuda()
+            logger.info("Return {}; not the best model; not saved".format(mean_return))
