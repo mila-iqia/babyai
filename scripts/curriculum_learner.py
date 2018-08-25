@@ -46,6 +46,8 @@ parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
 parser.add_argument("--validation-interval", type=int, default=20,
                     help="number of epochs between two validation checks (default: 20)")
+parser.add_argument("--log-interval", type=int, default=1,
+                    help="number of updates between two logs (default: 1)")
 parser.add_argument("--patience", type=int, default=3,
                     help="patience for early stopping (default: 3)")
 parser.add_argument("--val-seed", type=int, default=0,
@@ -86,11 +88,14 @@ parser.add_argument("--image-dim", type=int, default=128,
                     help="dimensionality of the image embedding")
 parser.add_argument("--memory-dim", type=int, default=128,
                     help="dimensionality of the memory LSTM")
+parser.add_argument("--csv", action="store_true", default=False,
+                    help="log in a csv file")
 
 
 
 def main(args, graphs):
     num_envs = len(graphs)
+
 
     return_hists = [ReturnHistory() for _ in range(num_envs)]
     compute_lp = {
@@ -118,6 +123,30 @@ def main(args, graphs):
 
     il_learn = ImitationLearning(args)
     utils.save_model(il_learn.acmodel, il_learn.model_name)
+
+    if args.csv:
+        csv_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'log.csv')
+        first_created = not os.path.exists(csv_path)
+        # we don't buffer data going in the csv log, cause we assume
+        # that one update will take much longer that one write to the log
+        csv_writer = csv.writer(open(csv_path, 'a', 1))
+        if first_created:
+            csv_writer.writerow(header)
+
+    status_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'status.json')
+    status = {'i': 0,
+              'num_frames': 0,
+              'patience' : 0}
+    if os.path.exists(status_path):
+        with open(status_path, 'r') as src:
+            status = json.load(src)
+    # Define logger and Tensorboard writer
+    header = (["update", "frames", "FPS", "duration", "entropy", "policy_loss", "train_accuracy"]
+              + ["validation_accuracy", "validation_return", "validation_success_rate"])
+    for env in graphs:
+        header.append("proba/{}".format(env[0]))
+        header.append("return/{}".format(env[0]))
+
 
     # Define logger
     logger = utils.get_logger(il_learn.model_name)
@@ -147,6 +176,9 @@ def main(args, graphs):
         writer = SummaryWriter(utils.get_log_dir(il_learn.model_name))
 
     while True:
+        if status['patience'] > args.patience:
+            break
+
         current_batch, should_evaluate = sampler.sample()
 
         update_start_time = time.time()
@@ -175,54 +207,65 @@ def main(args, graphs):
         log["accuracy"].append(_log["accuracy"])
 
         if should_evaluate:
+            status['i'] += 1
             current_num_evaluate += 1
 
             for key in log:
                 log[key] = np.mean(log[key])
 
+
             total_ellapsed_time = int(time.time() - total_start_time)
             duration = datetime.timedelta(seconds=total_ellapsed_time)
+            status['num_frames'] += total_len
 
-            logger.info(
-                "U {} | FPS {:04.0f} | D {} | H {:.3f} | pL {: .3f} | A {: .3f}"
-                    .format(current_num_evaluate, np.mean(fps), duration,
-                            log["entropy"], log["policy_loss"], log["accuracy"]))
+            if status['i'] % args.log_interval:
+                train_data = [status['i'], status['num_frames'], np.mean(fps), total_ellapsed_time,
+                                  log["entropy"], log["policy_loss"], log["accuracy"]]
 
-            val_logs = []
+                logger.info(
+                    "U {} | FPS {:04.0f} | D {} | H {:.3f} | pL {: .3f} | A {: .3f}"
+                        .format(current_num_evaluate, np.mean(fps), duration,
+                                log["entropy"], log["policy_loss"], log["accuracy"]))
+                if status['i'] % args.validation_interval != 0:
+                    validation_data = ['']*len([key for key in header if 'valid' in key])
+                    proba_data = ['']*len([key for key in header if 'proba' in key])
+                    return_data = ['']*len([key for key in header if 'return' in key])
+                    assert len(header) == len(train_data + validation_data + proba_data + return_data)
+                    if args.tb:
+                        for key, value in zip(header, train_data):
+                            writer.add_scalar(key, float(value), status['num_frames'])
+                    if args.csv:
+                        csv_writer.writerow(train_data + validation_data + proba_data + return_data)
+                    with open(status_path, 'w') as dst:
+                        json.dump(status, dst)
 
-            if not(args.no_mem):
-                for val_demos in il_learn.val_demos:
-                    val_logs += [il_learn.run_epoch_recurrence(val_demos)]
-            else:
-                for flat_val_demos in il_learn.flat_val_demos:
-                    val_logs += [il_learn.run_epoch_norecur(flat_val_demos)]
+            if status['i'] % args.validation_interval == 0:
 
-            val_log_all_task = defaultdict(list)
-            for val_log in val_logs:
-                for key in val_log:
-                    val_log[key] = np.mean(val_log[key])
-                    val_log_all_task[key].append(val_log[key])
+                val_logs = []
 
-            val_log_envs, prob_log_envs = {}, {}
-            for item in range(num_envs):
-                val_log_envs[graphs[item][0]] = val_log_all_task["accuracy"][item]
-                prob_log_envs[graphs[item][0]] = sampler.dist_task[item]
+                if not(args.no_mem):
+                    for val_demos in il_learn.val_demos:
+                        val_logs += [il_learn.run_epoch_recurrence(val_demos)]
+                else:
+                    for flat_val_demos in il_learn.flat_val_demos:
+                        val_logs += [il_learn.run_epoch_norecur(flat_val_demos)]
+
+                val_log_all_task = defaultdict(list)
+                for val_log in val_logs:
+                    for key in val_log:
+                        val_log[key] = np.mean(val_log[key])
+                        val_log_all_task[key].append(val_log[key])
+
+                val_log_envs, prob_log_envs = {}, {}
+                for item in range(num_envs):
+                    val_log_envs[graphs[item][0]] = val_log_all_task["accuracy"][item]
+                    prob_log_envs[graphs[item][0]] = sampler.dist_task[item]
 
 
-            for key in val_log_all_task:
-                val_log_all_task[key] = np.mean(val_log_all_task[key])
+                for key in val_log_all_task:
+                    val_log_all_task[key] = np.mean(val_log_all_task[key])
 
-            if args.tb:
-                writer.add_scalar("FPS", np.mean(fps), current_num_evaluate)
-                writer.add_scalar("duration", total_ellapsed_time, current_num_evaluate)
-                writer.add_scalar("entropy", log["entropy"], current_num_evaluate)
-                writer.add_scalar("policy_loss", log["policy_loss"], current_num_evaluate)
-                writer.add_scalar("accuracy", log["accuracy"], current_num_evaluate)
-                for key in val_log_envs:
-                    writer.add_scalar("val_accuracy/{}".format(key), val_log_envs[key], current_num_evaluate)
-                    writer.add_scalar("proba/{}".format(key), prob_log_envs[key], current_num_evaluate)
 
-            if current_num_evaluate % args.validation_interval == 0:
                 logs = il_learn.validate(episodes = args.val_episodes)
                 mean_return = [np.mean(log['return_per_episode']) for log in logs]
                 success_rate = [np.mean([1 if r > 0 else 0 for r in log['return_per_episode']]) for log in logs]
@@ -231,14 +274,30 @@ def main(args, graphs):
                         writer.add_scalar("return/{}".format(graphs[item][0]), mean_return[item], current_num_evaluate)
                         writer.add_scalar("success_rate/{}".format(graphs[item][0]), success_rate[item], current_num_evaluate)
 
-                mean_return = np.mean(list(mean_return))
-                print("Mean Validation Return %.3f" % mean_return)
+                mean_return_all_task = np.mean(list(mean_return))
+                success_rate_all_task = np.mean(list(success_rate))
+                validation_data = [val_log_all_task['accuracy'], mean_return_all_task, success_rate_all_task]
+                rest_data = []
+                for index in range(len(graphs)):
+                    rest_data.append(prob_log_envs[graphs[index][0]])
+                    rest_data.append(mean_return[index])
+                logger.info("Validation: A {: .3f} | R {: .3f} | S {: .3f}".format(*validation_data))
+
+                assert len(header) == len(train_data + validation_data + rest_data)
+                if self.args.tb:
+                    for key, value in zip(header, train_data + validation_data + rest_data):
+                        writer.add_scalar(key, float(value), status['num_frames'])
+                if self.args.csv:
+                    csv_writer.writerow(train_data + validation_data + rest_data)
+
 
                 if mean_return > best_mean_return:
                     best_mean_return = mean_return
-                    patience = 0
+                    status['patience'] = 0
+                    with open(status_path, 'w') as dst:
+                        json.dump(status, dst)
                     # Saving the model
-                    print("Saving best model")
+                    logger.info("Saving best model")
                     il_learn.obss_preprocessor.vocab.save()
                     if torch.cuda.is_available():
                         il_learn.acmodel.cpu()
@@ -246,10 +305,10 @@ def main(args, graphs):
                     if torch.cuda.is_available():
                         il_learn.acmodel.cuda()
                 else:
-                    print("Losing Patience")
-                    patience += 1
-                    if patience > args.patience:
-                        break
+                    logger.info("Losing Patience")
+                    status['patience'] += 1
+                    with open(status_path, 'w') as dst:
+                        json.dump(status, dst)
                     if torch.cuda.is_available():
                         il_learn.acmodel.cuda()
 
