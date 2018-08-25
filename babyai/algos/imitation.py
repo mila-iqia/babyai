@@ -5,8 +5,7 @@ import datetime
 import numpy as np
 import sys
 import torch
-import torch.nn.functional as F
-from babyai.evaluate import evaluate
+from babyai.evaluate import evaluate, batch_evaluate
 import babyai.utils as utils
 from babyai.rl import DictList
 from babyai.model import ACModel
@@ -48,7 +47,7 @@ class ImitationLearning(object):
             self.train_demos = utils.load_demos(demos_path)
             logger.info('loaded demos')
             if args.episodes:
-                if args.episodes <= len(self.train_demos):
+                if args.episodes > len(self.train_demos):
                     raise ValueError("there are only {} train demos".format(len(self.train_demos)))
                 self.train_demos = self.train_demos[:args.episodes]
 
@@ -83,7 +82,7 @@ class ImitationLearning(object):
             'suffix': suffix}
         default_model_name = "{envs}_IL_{arch}_{instr}_{mem}_seed{seed}_{suffix}".format(**model_name_parts)
         self.model_name = self.args.model or default_model_name
-        logger.info("The model is saved in {}".format(self.model_name))
+        logger.info("the model name is  {}".format(self.model_name))
         self.args.model = self.model_name
 
         self.obss_preprocessor = utils.ObssPreprocessor(self.model_name, observation_space)
@@ -93,6 +92,8 @@ class ImitationLearning(object):
         if self.acmodel is None:
             self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space, args.image_dim, args.memory_dim,
                                    not self.args.no_instr, self.args.instr_arch, not self.args.no_mem, self.args.arch)
+        else:
+            logger.info("model loaded")
 
         self.acmodel.train()
         if torch.cuda.is_available():
@@ -304,18 +305,14 @@ class ImitationLearning(object):
 
         envs = self.env if type(self.env) == list else [self.env]
         agent = utils.load_agent(self.args, envs[0])
-        # Setting the agent model to the current model
         agent.model = self.acmodel
 
         # because ModelAgent places inputs on CPU, we have to move the model
-        if torch.cuda.is_available():
-            self.acmodel.cpu()
+        agent.model.eval()
         logs = []
-        for env in envs:
-            env.seed(self.args.val_seed)
-            logs += [evaluate(agent, env, self.args.val_episodes)]
-        if torch.cuda.is_available():
-            self.acmodel.cuda()
+        for env_name in ([self.args.env] if isinstance(self.args.env, str) else self.args.env):
+            logs += [batch_evaluate(agent, env_name, self.args.val_seed, self.args.val_episodes)]
+        agent.model.train()
 
         if not self.args.no_mem:
             val_log = self.run_epoch_recurrence(self.val_demos)

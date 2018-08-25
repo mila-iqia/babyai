@@ -12,6 +12,7 @@ import time
 import datetime
 import numpy as np
 import sys
+import logging
 import babyai.utils as utils
 from babyai.algos.imitation import ImitationLearning
 import torch
@@ -73,10 +74,11 @@ parser.add_argument("--memory-dim", type=int, default=128,
 
 
 def main(args):
+    logger = utils.get_logger(args.model)
+
     il_learn = ImitationLearning(args)
 
     # Define logger and Tensorboard writer
-    logger = utils.get_logger(il_learn.model_name)
     header = (["update", "frames", "FPS", "duration", "entropy", "policy_loss", "train_accuracy"]
               + ["validation_accuracy", "validation_return", "validation_success_rate"])
     writer = None
