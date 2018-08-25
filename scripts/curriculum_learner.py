@@ -10,7 +10,9 @@ import argparse
 import csv
 import copy
 import datetime
+import os
 import time
+import json
 from collections import defaultdict
 from babyai.algos.imitation import ImitationLearning
 import babyai.utils as utils
@@ -218,7 +220,7 @@ def main(args, graphs):
             duration = datetime.timedelta(seconds=total_ellapsed_time)
             status['num_frames'] += total_len
 
-            if status['i'] % args.log_interval:
+            if status['i'] % args.log_interval == 0:
                 train_data = [status['i'], status['num_frames'], np.mean(fps), total_ellapsed_time,
                                   log["entropy"], log["policy_loss"], log["accuracy"]]
 
@@ -269,10 +271,6 @@ def main(args, graphs):
                 logs = il_learn.validate(episodes = args.val_episodes)
                 mean_return = [np.mean(log['return_per_episode']) for log in logs]
                 success_rate = [np.mean([1 if r > 0 else 0 for r in log['return_per_episode']]) for log in logs]
-                if args.tb:
-                    for item in range(num_envs):
-                        writer.add_scalar("return/{}".format(graphs[item][0]), mean_return[item], current_num_evaluate)
-                        writer.add_scalar("success_rate/{}".format(graphs[item][0]), success_rate[item], current_num_evaluate)
 
                 mean_return_all_task = np.mean(list(mean_return))
                 success_rate_all_task = np.mean(list(success_rate))
@@ -284,15 +282,15 @@ def main(args, graphs):
                 logger.info("Validation: A {: .3f} | R {: .3f} | S {: .3f}".format(*validation_data))
 
                 assert len(header) == len(train_data + validation_data + rest_data)
-                if self.args.tb:
+                if args.tb:
                     for key, value in zip(header, train_data + validation_data + rest_data):
                         writer.add_scalar(key, float(value), status['num_frames'])
-                if self.args.csv:
+                if args.csv:
                     csv_writer.writerow(train_data + validation_data + rest_data)
 
 
-                if mean_return > best_mean_return:
-                    best_mean_return = mean_return
+                if mean_return_all_task > best_mean_return:
+                    best_mean_return = mean_return_all_task
                     status['patience'] = 0
                     with open(status_path, 'w') as dst:
                         json.dump(status, dst)
