@@ -82,8 +82,6 @@ parser.add_argument("--batchSampler-seed", type=int, default=0,
                     help="seed for batchSampler used for sampling batches (default: 10)")
 parser.add_argument("--return-interval", type=int, default=10,
                     help="number of batches to collect the returns to update the task distribution (default: 10)")
-parser.add_argument("--num-procs", type=int, default=None,
-                    help="number of processes to use to collect returns (default: None)")
 parser.add_argument("--image-dim", type=int, default=128,
                     help="dimensionality of the image embedding")
 parser.add_argument("--memory-dim", type=int, default=128,
@@ -225,12 +223,13 @@ def main(args, graphs):
                     writer.add_scalar("proba/{}".format(key), prob_log_envs[key], current_num_evaluate)
 
             if current_num_evaluate % args.validation_interval == 0:
-                mean_return = il_learn.validate(episodes = args.val_episodes, validating=True)
-                # for item in range(num_envs):
-                #     mean_return[item] = np.mean(mean_return[item]['return_per_episode'])
+                log_dict = il_learn.validate(episodes = args.val_episodes, validating=True)
+                mean_return = {tid : np.mean(log['return_per_episode']) for tid,log in enumerate(log_dict)}
+                success_rate = {tid : np.mean([1 if r > 0 else 0 for r in log['return_per_episode']]) for tid,log in enumerate(log_dict)}
                 if args.tb:
                     for item in range(num_envs):
                         writer.add_scalar("return/{}".format(graphs[item][0]), mean_return[item], current_num_evaluate)
+                        writer.add_scalar("success_rate/{}".format(graphs[item][0]), success_rate[item], current_num_evaluate)
 
                 mean_return = np.mean(list(mean_return.values()))
                 print("Mean Validation Return %.3f" % mean_return)

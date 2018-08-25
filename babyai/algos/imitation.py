@@ -38,20 +38,6 @@ class ImitationLearning(object):
 
             self.val_demos = [[demo[0] for demo in demos] for demos in self.val_demos]
 
-            # If not using multiprocessing
-            if 'num_procs' not in self.args or self.args.num_procs is None:
-                self.eval_env = [gym.make(item[0]) for item in self.args.env]
-                for env in self.eval_env:
-                    env.seed(self.args.val_seed)
-
-            else:
-                self.eval_env = []
-                for proc_id in range(self.args.num_procs):
-                    envs = [gym.make(env_name[0]) for env_name in args.env]
-                    for env in envs:
-                        env.seed(self.args.val_seed+proc_id*1000)
-                    self.eval_env.append(envs)
-
             # Environment created for calculating the mean reward during validation
             self.env = [gym.make(item[0]) for item in self.args.env]
             observation_space = self.env[0].observation_space
@@ -315,7 +301,7 @@ class ImitationLearning(object):
 
         return log
 
-    def validate(self, episodes, verbose=True, use_procs=False, validating=False):
+    def validate(self, episodes, verbose=True, validating=False):
         # Seed needs to be reset for each validation, to ensure consistency
         utils.seed(self.args.val_seed)
         self.args.argmax = True
@@ -323,11 +309,6 @@ class ImitationLearning(object):
             logger.info("Validating the model")
 
         if validating or not use_procs:
-            if validating:
-                envs = self.env if type(self.env) == list else [self.env]
-            else:
-                envs = self.eval_env
-
             agent = utils.load_agent(self.args, envs[0])
 
             # Setting the agent model to the current model
@@ -340,48 +321,16 @@ class ImitationLearning(object):
                 logs += [batch_evaluate(agent, env_name, self.args.val_seed, episodes)]
             agent.model.train()
 
-            if len(envs) == 1:
+            if len(self.args.env) == 1:
                 assert len(logs) == 1
                 return logs[0]
 
-            return {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
-
-        elif use_procs:
-
-            episodes_per_proc = episodes//self.args.num_procs
-
-            agent = utils.load_agent(self.args, self.eval_env[0][0])
-            agent.model = self.acmodel
-            agents = [copy.deepcopy(agent)]*self.args.num_procs
-            jobs = []
-
-            manager = multiprocessing.Manager()
-            return_dict = manager.dict()
-
-            for index in range(self.args.num_procs):
-                process = multiprocessing.Process(target=evaluateProc, args=(agents[index], self.eval_env[index],
-                                                    episodes_per_proc, return_dict, self.args.env, index))
-                jobs.append(process)
-                process.start()
-
-            for job in jobs:
-                job.join()
-            rewards = {}
-            index = 0
-            for env_name in self.args.env:
-                rewards[index] = np.mean([item[env_name[0]]["return_per_episode"] for item in return_dict.values()])
-
-                index += 1
-
-            return rewards
+            return {tid : log for tid, log in enumerate(logs)}
 
     def collect_returns(self):
-        is_procs='num_procs' in self.args and self.args.num_procs is not None
-        mean_return = self.validate(episodes= self.args.eval_episodes, verbose=False,use_procs=is_procs)
+        log_dict = self.validate(episodes= self.args.eval_episodes, verbose=False)
+        mean_return = {tid : np.mean(log["return_per_episode"]) for tid,log in enumerate(log_dict)}
         return mean_return
-
-
-
 
     def train(self, train_demos, writer, csv_writer, status_path, header):
         # Load the status
