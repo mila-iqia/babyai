@@ -74,9 +74,8 @@ parser.add_argument("--memory-dim", type=int, default=128,
 
 
 def main(args):
-    logger = utils.get_logger(args.model)
-
     il_learn = ImitationLearning(args)
+    logger = utils.get_logger(il_learn.model_name)
 
     # Define logger and Tensorboard writer
     header = (["update", "frames", "FPS", "duration", "entropy", "policy_loss", "train_accuracy"]
