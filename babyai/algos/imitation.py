@@ -407,7 +407,7 @@ class ImitationLearning(object):
 
             if status['i'] % self.args.validation_interval == 0:
 
-                valid_log = self.validate(self.args.val_episodes,validating=True)
+                valid_log = self.validate(self.args.val_episodes)
                 mean_return = np.mean(valid_log['return_per_episode'])
                 success_rate = np.mean([1 if r > 0 else 0 for r in valid_log['return_per_episode']])
 
