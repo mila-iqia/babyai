@@ -126,7 +126,12 @@ def main(args, graphs):
     il_learn = ImitationLearning(args)
     utils.save_model(il_learn.acmodel, il_learn.model_name)
 
+    # Define logger
+    logger = utils.get_logger(il_learn.model_name)
+    header = (["update", "frames", "FPS", "duration", "entropy", "policy_loss", "train_accuracy"]
+              + ["validation_accuracy", "validation_return", "validation_success_rate"])
     if args.csv:
+
         csv_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'log.csv')
         first_created = not os.path.exists(csv_path)
         # we don't buffer data going in the csv log, cause we assume
@@ -143,15 +148,13 @@ def main(args, graphs):
         with open(status_path, 'r') as src:
             status = json.load(src)
     # Define logger and Tensorboard writer
-    header = (["update", "frames", "FPS", "duration", "entropy", "policy_loss", "train_accuracy"]
-              + ["validation_accuracy", "validation_return", "validation_success_rate"])
+
     for env in graphs:
         header.append("proba/{}".format(env[0]))
         header.append("return/{}".format(env[0]))
 
 
-    # Define logger
-    logger = utils.get_logger(il_learn.model_name)
+
 
     # Log command, availability of CUDA, and model
     logger.info(args)
