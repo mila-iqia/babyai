@@ -307,8 +307,10 @@ class ImitationLearning(object):
         self.args.argmax = True
         if verbose:
             logger.info("Validating the model")
-
-        agent = utils.load_agent(self.args, self.env[0])
+        if type(self.env) == list:
+            agent = utils.load_agent(self.args, self.env[0])
+        else:
+            agent = utils.load_agent(self.args, self.env)
 
         # Setting the agent model to the current model
         agent.model = self.acmodel
@@ -320,7 +322,7 @@ class ImitationLearning(object):
             logs += [batch_evaluate(agent, env_name, self.args.val_seed, episodes)]
         agent.model.train()
 
-        if len(self.args.env) == 1:
+        if type(self.args.env) != list:
             assert len(logs) == 1
             return logs[0]
 
