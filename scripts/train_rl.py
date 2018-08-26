@@ -98,6 +98,8 @@ parser.add_argument("--test-seed", type=int, default=0,
                     help="random seed for testing (default: 0)")
 parser.add_argument("--test-episodes", type=int, default=200,
                     help="Number of episodes to use for testing (default: 200)")
+parser.add_argument("--pretrained-model", default=None,
+                    help='If you\'re using a pre-trained model and want the fine-tuned one to have a new name')
 
 args = parser.parse_args()
 
@@ -140,6 +142,8 @@ model_name_parts = {
     'suffix': suffix}
 default_model_name = "{env}_{algo}_{arch}_{instr}_{mem}_seed{seed}_{suffix}".format(**model_name_parts)
 model_name = args.model.format(**model_name_parts) if args.model else default_model_name
+if args.pretrained_model:
+    model_name = args.pretrained_model + '_pretrained_' + default_model_name
 
 # Define obss preprocessor
 if 'emb' in args.arch:
@@ -149,7 +153,12 @@ else:
 
 # Define actor-critic model
 
-acmodel = utils.load_model(model_name, raise_not_found=False)
+if args.pretrained_model:
+    acmodel = utils.load_model(args.pretrained_model)
+    utils.save_model(acmodel, model_name)
+else:
+    acmodel = utils.load_model(model_name, raise_not_found=False)
+
 if acmodel is None:
     acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
                       args.image_dim, args.memory_dim,
