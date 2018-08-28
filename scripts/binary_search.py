@@ -10,6 +10,7 @@ import numpy as np
 import argparse
 import csv
 import os
+import sys
 from babyai.evaluate import evaluate
 import babyai.utils as utils
 from babyai.algos.imitation import ImitationLearning
@@ -120,6 +121,11 @@ def run(num_demos, logger, first_run=False):
             'seed': seed,
             'num_demos': num_demos}
         args.model = "{env}_IL_{arch}_{instr}_{mem}_seed{seed}_demos{num_demos}".format(**model_name_parts)
+        utils.create_folders_if_necessary(utils.get_log_path(args.model))
+        logging.getLogger().handlers = [
+            logging.FileHandler(filename=utils.get_log_path(args.model)),
+            logging.StreamHandler(sys.stdout)
+        ]
 
         args.episodes = num_demos
         args.seed = seed
