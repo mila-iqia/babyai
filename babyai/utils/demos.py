@@ -30,7 +30,7 @@ def save_demos(demos, path):
 
 def synthesize_demos(demos):
     print('{} demonstrations saved'.format(len(demos)))
-    num_frames_per_episode = [len(demo[0]) for demo in demos]
+    num_frames_per_episode = [len(demo[2]) for demo in demos]
     if len(demos) > 0:
         print('Demo num frames: {}'.format(num_frames_per_episode))
 
