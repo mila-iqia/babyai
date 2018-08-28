@@ -41,8 +41,8 @@ parser.add_argument("--csv", action="store_true", default=False,
                     help="log in a csv file")
 parser.add_argument("--lr", type=float, default=1e-4,
                     help="learning rate (default: 1e-4)")
-parser.add_argument("--entropy-coef", type=float, default=0.01,
-                    help="entropy term coefficient (default: 0.01)")
+parser.add_argument("--entropy-coef", type=float, default=0.0,
+                    help="entropy term coefficient")
 parser.add_argument("--recurrence", type=int, default=20,
                     help="number of timesteps gradient is backpropagated (default: 1)")
 parser.add_argument("--optim-eps", type=float, default=1e-5,
