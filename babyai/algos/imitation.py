@@ -57,7 +57,6 @@ class ImitationLearning(object):
             self.val_demos = self.val_demos[:self.args.val_episodes]
 
             # Separating train offsets and train demos
-            self.train_offsets = [item[1] for item in self.train_demos]
             self.train_demos = [item[0] for item in self.train_demos]
             self.val_demos = [item[0] for item in self.val_demos]
 
