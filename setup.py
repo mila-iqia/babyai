@@ -12,6 +12,7 @@ setup(
         'pyqt5>=5.10.1',
         "torch>=0.4.0",
         'gym_minigrid',
+        'blosc>=1.5.1'
     ],
     dependency_links=[
         'git+https://github.com/maximecb/gym-minigrid.git#egg=gym_minigrid-0',
