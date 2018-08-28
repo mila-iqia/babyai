@@ -103,7 +103,6 @@ parser.add_argument("--pretrained-model", default=None,
                     help='If you\'re using a pre-trained model and want the fine-tuned one to have a new name')
 
 args = parser.parse_args()
-utils.configure_logging(args.model)
 
 assert args.env is not None or args.curriculum is not None, "--env or --curriculum must be specified."
 
@@ -146,6 +145,7 @@ default_model_name = "{env}_{algo}_{arch}_{instr}_{mem}_seed{seed}_{suffix}".for
 model_name = args.model.format(**model_name_parts) if args.model else default_model_name
 if args.pretrained_model:
     model_name = args.pretrained_model + '_pretrained_' + default_model_name
+utils.configure_logging(model_name)
 
 # Define obss preprocessor
 if 'emb' in args.arch:
