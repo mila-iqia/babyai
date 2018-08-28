@@ -153,7 +153,7 @@ else:
     for i in range(args.jobs):
         cmd_i = list(map(str,
             command 
-              + ['--shift', i * demos_per_job]
+              + ['--seed', args.seed + i]
               + ['--demos', job_demo_names[i]]
               + ['--episodes', demos_per_job]
               + ['--jobs', 0]
