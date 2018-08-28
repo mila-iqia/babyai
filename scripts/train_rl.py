@@ -5,6 +5,7 @@ Script to train the agent through reinforcment learning.
 """
 
 import os
+import logging
 import csv
 import json
 import argparse
@@ -102,6 +103,7 @@ parser.add_argument("--pretrained-model", default=None,
                     help='If you\'re using a pre-trained model and want the fine-tuned one to have a new name')
 
 args = parser.parse_args()
+utils.configure_logging(args.model)
 
 assert args.env is not None or args.curriculum is not None, "--env or --curriculum must be specified."
 
@@ -194,7 +196,7 @@ if os.path.exists(status_path):
 
 # Define logger and Tensorboard writer and CSV writer
 
-logger = utils.get_logger(model_name)
+logger = logging.getLogger(__name__)
 header = (["update", "frames", "FPS", "duration"]
           + ["return_" + stat for stat in ['mean', 'std', 'min', 'max']]
           + ["success_rate"]
