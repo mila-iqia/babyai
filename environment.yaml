@@ -10,4 +10,3 @@ dependencies:
     - numpy
     - pip:
         - gym
-        - blosc=1.5.1
