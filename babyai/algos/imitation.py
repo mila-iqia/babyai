@@ -66,15 +66,13 @@ class ImitationLearning(object):
         # Define model name
         suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
         instr = self.args.instr_arch if self.args.instr_arch else "noinstr"
-        mem = "mem" if not args.no_mem else "nomem"
         model_name_parts = {
             'envs': named_envs,
             'arch': args.arch,
             'instr': instr,
-            'mem': mem,
             'seed': args.seed,
             'suffix': suffix}
-        default_model_name = "{envs}_IL_{arch}_{instr}_{mem}_seed{seed}_{suffix}".format(**model_name_parts)
+        default_model_name = "{envs}_IL_{arch}_{instr}_seed{seed}_{suffix}".format(**model_name_parts)
         self.model_name = self.args.model or default_model_name
         logger.info("the model name is  {}".format(self.model_name))
         self.args.model = self.model_name
@@ -97,82 +95,6 @@ class ImitationLearning(object):
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=100, gamma=0.9)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        # TODO: not using memory doesn't really work. Because the observations of a demo are compressed together, I don't see how we can create self.flat_train_demos without reading all in memory
-        if args.no_mem:
-            self.flat_train_demos, self.flat_val_demos = [], []
-            if type(self.args.env) == list:
-                for demos in self.train_demos:
-                    flat_demos = []
-                    for dm in demos:
-                        flat_demos += dm
-                    flat_demos = np.array(flat_demos)
-                    self.flat_train_demos.append(flat_demos)
-                for demos in self.val_demos:
-                    flat_demos = []
-                    for dm in demos:
-                        flat_demos += dm
-                    flat_demos = np.array(flat_demos)
-                    self.flat_val_demos.append(flat_demos)
-            else:
-                for demo in self.train_demos:
-                    self.flat_train_demos += demo
-                for demo in self.val_demos:
-                    self.flat_val_demos += demo
-                self.flat_train_demos = np.array(self.flat_train_demos)
-                self.flat_val_demos = np.array(self.flat_val_demos)
-
-    def run_epoch_norecur(self, flat_demos, is_training=False):
-        flat_demos_t = copy.deepcopy(flat_demos)
-        if is_training:
-            np.random.shuffle(flat_demos_t)
-        batch_size = min(self.args.batch_size, len(flat_demos_t))
-
-        log = {"entropy": [], "policy_loss": [], "accuracy": []}
-        offset = 0
-        for j in range(len(flat_demos_t) // batch_size):
-            flat_batch = flat_demos_t[offset:offset + batch_size, :]
-
-            _log = self.run_epoch_norecur_one_batch(flat_batch, is_training=is_training)
-
-            log["entropy"].append(_log["entropy"])
-            log["policy_loss"].append(_log["policy_loss"])
-            log["accuracy"].append(_log["accuracy"])
-
-            offset += batch_size
-
-        return log
-
-    def run_epoch_norecur_one_batch(self, flat_batch, is_training=False):
-        obs, action_true, done = flat_batch[:, 0], flat_batch[:, 1], flat_batch[:, 3]
-        preprocessed_obs = self.obss_preprocessor(obs, device=self.device)
-
-        action_true = torch.tensor([action for action in action_true], device=self.device, dtype=torch.long)
-        memory = torch.zeros([self.args.batch_size, self.acmodel.memory_size], device=self.device)
-
-        # Compute loss
-        dist, _, memory = self.acmodel(preprocessed_obs, memory)
-
-        entropy = dist.entropy().mean()
-
-        policy_loss = -dist.log_prob(action_true).mean()
-
-        action_pred = dist.probs.max(1, keepdim=True)[1]
-        accuracy = float((action_pred == action_true.unsqueeze(1)).sum()) / self.args.batch_size
-
-        loss = policy_loss - self.args.entropy_coef * entropy
-
-        # Update actor-critic
-        if is_training:
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
-        log = {}
-        log["entropy"] = float(entropy)
-        log["policy_loss"] = float(policy_loss)
-        log["accuracy"] = float(accuracy)
-        return log
 
     def starting_indexes(self, num_frames):
         if num_frames % self.args.recurrence == 0:
@@ -310,10 +232,7 @@ class ImitationLearning(object):
             logs += [batch_evaluate(agent, env_name, self.args.val_seed, self.args.val_episodes)]
         agent.model.train()
 
-        if not self.args.no_mem:
-            val_log = self.run_epoch_recurrence(self.val_demos)
-        else:
-            val_log = self.run_epoch_norecur(self.flat_val_demos)
+        val_log = self.run_epoch_recurrence(self.val_demos)
         validation_accuracy = np.mean(val_log["accuracy"])
 
         if type(self.env) != list:
