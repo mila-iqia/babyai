@@ -305,13 +305,19 @@ class LevelGen(RoomGridLevel):
             self.add_object(i, j, 'key', door.color)
             break
 
-    def rand_obj(self, types=OBJ_TYPES, colors=COLOR_NAMES):
+    def rand_obj(self, types=OBJ_TYPES, colors=COLOR_NAMES, max_tries=100):
         """
         Generate a random object descriptor
         """
 
+        num_tries = 0
+
         # Keep trying until we find a matching object
         while True:
+            if num_tries > max_tries:
+                raise RecursionError('failed to find suitable object')
+            num_tries += 1
+
             color = self._rand_elem([None, *colors])
             type = self._rand_elem(types)
 
