@@ -58,29 +58,10 @@ class ImitationLearning(object):
             observation_space = self.env.observation_space
             action_space = self.env.action_space
 
-        if type(self.args.env) == list:
-            named_envs = '_'.join([item[0] for item in self.args.env])
-        else:
-            named_envs = self.args.env
-
-        # Define model name
-        suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-        instr = self.args.instr_arch if self.args.instr_arch else "noinstr"
-        model_name_parts = {
-            'envs': named_envs,
-            'arch': args.arch,
-            'instr': instr,
-            'seed': args.seed,
-            'suffix': suffix}
-        default_model_name = "{envs}_IL_{arch}_{instr}_seed{seed}_{suffix}".format(**model_name_parts)
-        self.model_name = self.args.model or default_model_name
-        logger.info("the model name is  {}".format(self.model_name))
-        self.args.model = self.model_name
-
-        self.obss_preprocessor = utils.ObssPreprocessor(self.model_name, observation_space)
+        self.obss_preprocessor = utils.ObssPreprocessor(args.model, observation_space)
 
         # Define actor-critic model
-        self.acmodel = utils.load_model(self.model_name, raise_not_found=False)
+        self.acmodel = utils.load_model(args.model, raise_not_found=False)
         if self.acmodel is None:
             self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space, args.image_dim, args.memory_dim,
                                    not self.args.no_instr, self.args.instr_arch, not self.args.no_mem, self.args.arch)
@@ -95,6 +76,24 @@ class ImitationLearning(object):
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=100, gamma=0.9)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    @staticmethod
+    def default_model_name(args):
+        if type(args.env) == list:
+            named_envs = '_'.join([item[0] for item in args.env])
+        else:
+            named_envs = args.env
+
+        # Define model name
+        suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
+        instr = args.instr_arch if args.instr_arch else "noinstr"
+        model_name_parts = {
+            'envs': named_envs,
+            'arch': args.arch,
+            'instr': instr,
+            'seed': args.seed,
+            'suffix': suffix}
+        return  "{envs}_IL_{arch}_{instr}_seed{seed}_{suffix}".format(**model_name_parts)
 
     def starting_indexes(self, num_frames):
         if num_frames % self.args.recurrence == 0:
@@ -260,7 +259,7 @@ class ImitationLearning(object):
             logger.info("Batch size too high. Setting it to the number of train demos ({})".format(len(train_demos)))
 
         # Model saved initially to avoid "Model not found Exception" during first validation step
-        utils.save_model(self.acmodel, self.model_name)
+        utils.save_model(self.acmodel, self.args.model)
 
         # best mean return to keep track of performance on validation set
         best_mean_return, patience, i = 0, 0, 0
@@ -342,7 +341,7 @@ class ImitationLearning(object):
                     self.obss_preprocessor.vocab.save()
                     if torch.cuda.is_available():
                         self.acmodel.cpu()
-                    utils.save_model(self.acmodel, self.model_name)
+                    utils.save_model(self.acmodel, self.args.model)
                     if torch.cuda.is_available():
                         self.acmodel.cuda()
                 else:
