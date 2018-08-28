@@ -29,10 +29,8 @@ class ImitationLearning(object):
             self.train_demos = [utils.load_demos(utils.get_demos_path(env=env, origin=demos_origin))[:episodes]
                                 for env, demos_origin, episodes in self.args.env]
 
-            self.train_demos = [[demo[0] for demo in demos] for demos in self.train_demos]
             self.val_demos = [utils.load_demos(utils.get_demos_path(env=env, origin=demos_origin, valid=True))[:1]
                               for env, demos_origin, _ in self.args.env]
-            self.val_demos = [[demo[0] for demo in demos] for demos in self.val_demos]
 
             observation_space = self.env[0].observation_space
             action_space = self.env[0].action_space
@@ -56,9 +54,6 @@ class ImitationLearning(object):
                 logger.info('Using all the available {} demos to evaluate valid. accuracy'.format(len(self.val_demos)))
             self.val_demos = self.val_demos[:self.args.val_episodes]
 
-            # Separating train offsets and train demos
-            self.train_demos = [item[0] for item in self.train_demos]
-            self.val_demos = [item[0] for item in self.val_demos]
 
             observation_space = self.env.observation_space
             action_space = self.env.action_space
@@ -103,7 +98,8 @@ class ImitationLearning(object):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        if not mem:
+        # TODO: not using memory doesn't really work. Because the observations of a demo are compressed together, I don't see how we can create self.flat_train_demos without reading all in memory
+        if args.no_mem:
             self.flat_train_demos, self.flat_val_demos = [], []
             if type(self.args.env) == list:
                 for demos in self.train_demos:
@@ -195,7 +191,7 @@ class ImitationLearning(object):
         log = {"entropy": [], "policy_loss": [], "accuracy": []}
 
         for batch_index in range(len(indices) // batch_size):
-            batch = [demos[i] for i in indices[offset:offset+batch_size]]
+            batch = [demos[i] for i in indices[offset: offset + batch_size]]
 
             _log = self.run_epoch_recurrence_one_batch(batch, is_training=is_training)
 
@@ -208,6 +204,7 @@ class ImitationLearning(object):
         return log
 
     def run_epoch_recurrence_one_batch(self, batch, is_training=False):
+        batch = utils.demos.transform_demos(batch)
         batch.sort(key=len, reverse=True)
         # Constructing flat batch and indices pointing to start of each demonstration
         flat_batch = []
@@ -226,7 +223,7 @@ class ImitationLearning(object):
         mask = torch.tensor(mask, device=self.device, dtype=torch.float).unsqueeze(1)
 
         # Observations, true action, values and done for each of the stored demostration
-        obss, action_true, done = flat_batch[:, 0], flat_batch[:, 1], flat_batch[:, 3]
+        obss, action_true, done = flat_batch[:, 0], flat_batch[:, 1], flat_batch[:, 2]
         action_true = torch.tensor([action for action in action_true], device=self.device, dtype=torch.long)
 
         # Memory to be stored
