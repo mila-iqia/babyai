@@ -5,12 +5,14 @@ import copy
 import random
 import argparse
 import gym
+import numpy as np
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QInputDialog
 from PyQt5.QtWidgets import QLabel, QTextEdit, QFrame
 from PyQt5.QtWidgets import QPushButton, QHBoxLayout, QVBoxLayout
 
 import babyai.utils as utils
+import blosc
 
 # Parse arguments
 parser = argparse.ArgumentParser()
@@ -51,7 +53,7 @@ class AIGameWindow(QMainWindow):
         self.demos_path = utils.get_demos_path(args.demos, args.env, origin="human", valid=False)
         self.demos = utils.load_demos(self.demos_path, raise_not_found=False)
         utils.synthesize_demos(self.demos)
-        self.current_demo = []
+
 
         self.shift = len(self.demos) if args.shift is None else args.shift
 
@@ -188,10 +190,17 @@ class AIGameWindow(QMainWindow):
 
     def resetEnv(self):
         self.current_demo = []
-        
+
+        self.current_demo = []
+        self.current_actions = []
+        self.current_images = []
+        self.current_directions = []
+
         obs = self.env.reset()
         self.lastObs = obs
         self.showEnv(obs)
+
+        self.current_mission = obs['mission']
 
         self.missionBox.setText(obs["mission"])
 
@@ -220,7 +229,9 @@ class AIGameWindow(QMainWindow):
 
         obs, reward, done, info = self.env.step(action)
 
-        self.current_demo.append((self.lastObs, action, reward, done))
+        self.current_actions.append(action)
+        self.current_images.append(obs['image'])
+        self.current_directions.append(obs['direction'])
 
         self.showEnv(obs)
         self.lastObs = obs
@@ -230,7 +241,10 @@ class AIGameWindow(QMainWindow):
                 if self.shift < len(self.demos):
                     self.demos[self.shift] = self.current_demo, self.shift
                 else:
-                    self.demos.append((self.current_demo, len(self.demos)))
+                    self.demos.append((self.current_mission,
+                                       blosc.pack_array(np.array(self.current_images)),
+                                       self.current_directions,
+                                       self.current_actions))
                 utils.save_demos(self.demos, self.demos_path)
                 self.missionBox.append('Demonstrations are saved.')
                 utils.synthesize_demos(self.demos)

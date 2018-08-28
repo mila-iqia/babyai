@@ -7,6 +7,8 @@ import sys
 import subprocess
 import os
 import time
+import numpy as np
+import blosc
 
 import babyai.utils as utils
 
@@ -76,7 +78,11 @@ def generate_demos(n_episodes, valid, seed, shift=0):
         done = False
         obs = env.reset()
         agent.on_reset()
-        demo = []
+
+        actions = []
+        mission = obs["mission"]
+        images = []
+        directions = []
 
         try:
             while not done:
@@ -84,10 +90,14 @@ def generate_demos(n_episodes, valid, seed, shift=0):
                 new_obs, reward, done, _ = env.step(action)
                 agent.analyze_feedback(reward, done)
 
-                demo.append((obs, action, reward, done))
+                actions.append(action)
+                images.append(obs['image'])
+                directions.append(obs['direction'])
+
                 obs = new_obs
-            if reward > 0 and (args.filter_steps == 0 or len(demo) <= args.filter_steps):
-                demos.append((demo, offset))
+            if reward > 0 and (args.filter_steps == 0 or len(images) <= args.filter_steps):
+                demos.append((mission, blosc.pack_array(np.array(images)), directions, actions))
+
             if len(demos) >= n_episodes:
                 break
             if reward == 0:
@@ -143,7 +153,7 @@ else:
     for i in range(args.jobs):
         cmd_i = list(map(str,
             command 
-              + ['--shift', i * demos_per_job]
+              + ['--seed', args.seed + i]
               + ['--demos', job_demo_names[i]]
               + ['--episodes', demos_per_job]
               + ['--jobs', 0]
