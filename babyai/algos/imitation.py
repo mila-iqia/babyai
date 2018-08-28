@@ -277,12 +277,8 @@ class ImitationLearning(object):
             # Learning rate scheduler
             self.scheduler.step()
 
-            if not self.args.no_mem:
-                log = self.run_epoch_recurrence(train_demos, is_training=True)
-                total_len = sum([len(item) for item in train_demos])
-            else:
-                log = self.run_epoch_norecur(train_demos, is_training=True)
-                total_len = len(train_demos)
+            log = self.run_epoch_recurrence(train_demos, is_training=True)
+            total_len = sum([len(item[3]) for item in train_demos])
             status['num_frames'] += total_len
 
             update_end_time = time.time()
