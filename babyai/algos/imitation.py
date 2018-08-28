@@ -113,6 +113,7 @@ class ImitationLearning(object):
         log = {"entropy": [], "policy_loss": [], "accuracy": []}
 
         for batch_index in range(len(indices) // batch_size):
+            logger.info("batch {}".format(batch_index))
             batch = [demos[i] for i in indices[offset: offset + batch_size]]
 
             _log = self.run_epoch_recurrence_one_batch(batch, is_training=is_training)
