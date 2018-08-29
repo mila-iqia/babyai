@@ -10,6 +10,7 @@ import numpy as np
 import argparse
 import csv
 import os
+import logging
 import torch
 import torch.nn.functional as F
 import copy
@@ -385,7 +386,8 @@ if __name__ == "__main__":
     model_name = args.model or default_model_name
 
     # Define one logger for everything
-    logger = utils.get_logger('{env}_IE_{arch}_{instr}_{mem}_seed{seed}'.format(**model_name_parts))
+    utils.configure_logging('{env}_IE_{arch}_{instr}_{mem}_seed{seed}'.format(**model_name_parts))
+    logger = logging.getLogger(__name__)
 
     # Log command, availability of CUDA, and model
     logger.info(args)

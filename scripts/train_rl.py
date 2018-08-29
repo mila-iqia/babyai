@@ -5,6 +5,7 @@ Script to train the agent through reinforcment learning.
 """
 
 import os
+import logging
 import csv
 import json
 import argparse
@@ -144,6 +145,7 @@ default_model_name = "{env}_{algo}_{arch}_{instr}_{mem}_seed{seed}_{suffix}".for
 model_name = args.model.format(**model_name_parts) if args.model else default_model_name
 if args.pretrained_model:
     model_name = args.pretrained_model + '_pretrained_' + default_model_name
+utils.configure_logging(model_name)
 
 # Define obss preprocessor
 if 'emb' in args.arch:
@@ -194,7 +196,7 @@ if os.path.exists(status_path):
 
 # Define logger and Tensorboard writer and CSV writer
 
-logger = utils.get_logger(model_name)
+logger = logging.getLogger(__name__)
 header = (["update", "frames", "FPS", "duration"]
           + ["return_" + stat for stat in ['mean', 'std', 'min', 'max']]
           + ["success_rate"]

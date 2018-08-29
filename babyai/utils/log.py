@@ -24,7 +24,7 @@ def synthesize(array):
     return d
 
 
-def get_logger(log_name):
+def configure_logging(log_name):
     path = get_log_path(log_name)
     utils.create_folders_if_necessary(path)
 
@@ -36,5 +36,3 @@ def get_logger(log_name):
             logging.StreamHandler(sys.stdout)
         ]
     )
-
-    return logging.getLogger()

@@ -74,8 +74,10 @@ parser.add_argument("--memory-dim", type=int, default=128,
 
 
 def main(args):
+    args.model = args.model or ImitationLearning.default_model_name(args)
+    utils.configure_logging(args.model)
+    logger = logging.getLogger(__name__)
     il_learn = ImitationLearning(args)
-    logger = utils.get_logger(il_learn.model_name)
 
     # Define logger and Tensorboard writer
     header = (["update", "frames", "FPS", "duration", "entropy", "policy_loss", "train_accuracy"]
@@ -83,12 +85,12 @@ def main(args):
     writer = None
     if args.tb:
         from tensorboardX import SummaryWriter
-        writer = SummaryWriter(utils.get_log_dir(il_learn.model_name))
+        writer = SummaryWriter(utils.get_log_dir(args.model))
 
     # Define csv writer
     csv_writer = None
     if args.csv:
-        csv_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'log.csv')
+        csv_path = os.path.join(utils.get_log_dir(args.model), 'log.csv')
         first_created = not os.path.exists(csv_path)
         # we don't buffer data going in the csv log, cause we assume
         # that one update will take much longer that one write to the log
@@ -97,7 +99,7 @@ def main(args):
             csv_writer.writerow(header)
 
     # Get the status path
-    status_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'status.json')
+    status_path = os.path.join(utils.get_log_dir(args.model), 'status.json')
 
     # Log command, availability of CUDA, and model
     logger.info(args)
