@@ -390,14 +390,30 @@ class Level_GoToSeq(LevelGen):
     No unblocking.
     """
 
-    def __init__(self, seed=None):
+    def __init__(
+        self,
+        room_size=8,
+        num_rows=3,
+        num_cols=3,
+        num_dists=18,
+        seed=None
+    ):
         super().__init__(
+            room_size=room_size,
+            num_rows=num_rows,
+            num_cols=num_cols,
+            num_dists=num_dists,
             seed=seed,
             action_kinds=['goto'],
             locked_room_prob=0,
             locations=False,
             unblocking=False
         )
+
+
+class Level_GoToSeqS4R2(Level_GoToSeq):
+    def __init__(self, seed=None):
+        super().__init__(room_size=4, num_rows=2, num_cols=2, num_dists=4, seed=seed)
 
 
 class Level_Synth(LevelGen):
