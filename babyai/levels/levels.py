@@ -411,9 +411,9 @@ class Level_GoToSeq(LevelGen):
         )
 
 
-class Level_GoToSeqS4R2(Level_GoToSeq):
+class Level_GoToSeqS5R2(Level_GoToSeq):
     def __init__(self, seed=None):
-        super().__init__(room_size=4, num_rows=2, num_cols=2, num_dists=4, seed=seed)
+        super().__init__(room_size=5, num_rows=2, num_cols=2, num_dists=4, seed=seed)
 
 
 class Level_Synth(LevelGen):
