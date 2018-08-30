@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
 
 """
-Intelligent Expert for imitation learning. Starts with some training demonstrations, and incrementally adds demonstrations to training set
-based on the current performance of the agent. The new demonstrations can be expert action annotated (DAGGER) agent's trajectory or just expert's trajectory.
-python -m scripts.intelligent_expert --env BabyAI-LevelName-v0 --model model_name --demos-origin agent --start-demo 10 --episodes-to-add 10 --dagger(If you want to train using dagger) --expert-model(required when dagger is True)
+Intelligent expert for imitation learning. Starts with some training
+demonstrations, and incrementally adds demonstrations to training set
+based on the current performance of the agent. The new demonstrations
+can be expert action annotated (DAGGER) agent's trajectory or just
+expert's trajectory.
+
+Usage:
+python3 -m scripts.intelligent_expert --env BabyAI-LevelName-v0 --model model_name --demos-origin agent --start-demo 10 --episodes-to-add 10 --dagger(If you want to train using dagger) --expert-model(required when dagger is True)
+
+Example:
+python3 -m scripts.intelligent_expert --env BabyAI-GoToObj-v0 --model model_name --demos-origin agent --start-demo 10
 """
 
 import numpy as np
