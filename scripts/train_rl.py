@@ -169,9 +169,9 @@ utils.configure_logging(model_name)
 
 # Define obss preprocessor
 if 'emb' in args.arch:
-    obss_preprocessor = utils.IntObssPreprocessor(model_name, envs[0].observation_space)
+    obss_preprocessor = utils.IntObssPreprocessor(args.pretrained_model or model_name, envs[0].observation_space)
 else:
-    obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space)
+    obss_preprocessor = utils.ObssPreprocessor(args.pretrained_model or model_name, envs[0].observation_space)
 
 # Define actor-critic model
 
@@ -355,6 +355,6 @@ while status['num_frames'] < args.frames:
         if mean_return > best_mean_return:
             best_mean_return = mean_return
             utils.save_model(acmodel, model_name)
-            logger.info("Best model is saved.")
+            logger.info("Return {: .2f}; best model is saved".format(mean_return))
         else:
-            logger.info("Return {}; not the best model; not saved".format(mean_return))
+            logger.info("Return {: .2f}; not the best model; not saved".format(mean_return))
