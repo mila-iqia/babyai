@@ -53,7 +53,10 @@ class ModelAgent(Agent):
         preprocessed_obs = self.obss_preprocessor(many_obs, device=self.device)
 
         with torch.no_grad():
-            dist, value, self.memory = self.model(preprocessed_obs, self.memory)
+            model_results = self.model(preprocessed_obs, self.memory)
+            dist = model_results['dist']
+            value = model_results['value']
+            self.memory = model_results['memory']
 
         if self.argmax:
             action = dist.probs.max(1, keepdim=True)[1]

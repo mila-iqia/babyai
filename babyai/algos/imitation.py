@@ -160,7 +160,7 @@ class ImitationLearning(object):
             preprocessed_obs = self.obss_preprocessor(obs, device=self.device)
             with torch.no_grad():
                 # taking the memory till the length of time_step_inds, as demos beyond that have already finished
-                _, _, new_memory = self.acmodel(preprocessed_obs, memory[:len(inds), :])
+                new_memory = self.acmodel(preprocessed_obs, memory[:len(inds), :])['memory']
 
             for i in range(len(inds)):
                 # Copying to the memories at the corresponding locations
@@ -189,7 +189,11 @@ class ImitationLearning(object):
             preprocessed_obs = self.obss_preprocessor(obs, device=self.device)
             action_step = action_true[indexes]
             mask_step = mask[indexes]
-            dist, value, memory = self.acmodel(preprocessed_obs, memory * mask_step)
+            model_results = self.acmodel(preprocessed_obs, memory * mask_step)
+            dist = model_results['dist']
+            value = model_results['value']
+            memory = model_results['memory']
+
             entropy = dist.entropy().mean()
             policy_loss = -dist.log_prob(action_step).mean()
             loss = policy_loss - self.args.entropy_coef * entropy

@@ -152,7 +152,7 @@ else:
     command += sys.argv
     for i in range(args.jobs):
         cmd_i = list(map(str,
-            command 
+            command
               + ['--seed', args.seed + i]
               + ['--demos', job_demo_names[i]]
               + ['--episodes', demos_per_job]

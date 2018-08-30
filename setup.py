@@ -10,7 +10,7 @@ setup(
         'gym>=0.9.6',
         'numpy>=1.10.0',
         'pyqt5>=5.10.1',
-        "torch>=0.4.0",
+        "torch>=0.4.1",
         'gym_minigrid',
         'blosc>=1.5.1'
     ],

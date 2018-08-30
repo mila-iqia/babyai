@@ -5,6 +5,8 @@ from torch.autograd import Variable
 from torch.distributions.categorical import Categorical
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import babyai.rl
+from babyai.rl.utils.supervised_losses import required_heads
+
 
 # Function from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/model.py
 def initialize_parameters(m):
@@ -15,15 +17,16 @@ def initialize_parameters(m):
         if m.bias is not None:
             m.bias.data.fill_(0)
 
+
 # Inspired by FiLMedBlock from https://arxiv.org/abs/1709.07871
 
 class AgentControllerFiLM(nn.Module):
     def __init__(self, in_features, out_features, in_channels, imm_channels):
         super().__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=imm_channels, kernel_size=(1,1)),
+            nn.Conv2d(in_channels=in_channels, out_channels=imm_channels, kernel_size=(1, 1)),
             nn.ReLU(),
-            nn.Conv2d(in_channels=imm_channels, out_channels=64, kernel_size=(1,1)),
+            nn.Conv2d(in_channels=imm_channels, out_channels=64, kernel_size=(1, 1)),
             nn.ReLU()
         )
         self.weight = nn.Linear(in_features, out_features)
@@ -34,12 +37,13 @@ class AgentControllerFiLM(nn.Module):
     def forward(self, x, y):
         return self.conv(x) * self.weight(y).unsqueeze(2).unsqueeze(3) + self.bias(y).unsqueeze(2).unsqueeze(3)
 
+
 class ExpertControllerFiLM(nn.Module):
     def __init__(self, in_features, out_features, in_channels, imm_channels):
         super().__init__()
-        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=imm_channels, kernel_size=(3,3), padding=1)
+        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=imm_channels, kernel_size=(3, 3), padding=1)
         self.bn1 = nn.BatchNorm2d(imm_channels)
-        self.conv2 = nn.Conv2d(in_channels=imm_channels, out_channels=out_features, kernel_size=(3,3), padding=1)
+        self.conv2 = nn.Conv2d(in_channels=imm_channels, out_channels=out_features, kernel_size=(3, 3), padding=1)
         self.bn2 = nn.BatchNorm2d(out_features)
 
         self.weight = nn.Linear(in_features, out_features)
@@ -54,6 +58,7 @@ class ExpertControllerFiLM(nn.Module):
         out = self.bn2(out)
         out = F.relu(out)
         return out
+
 
 class ImageBOWEmbedding(nn.Module):
     def __init__(self, num_embeddings, embedding_dim, padding_idx=None, reduce_fn=torch.mean):
@@ -70,9 +75,11 @@ class ImageBOWEmbedding(nn.Module):
         embeddings = torch.transpose(torch.transpose(embeddings, 1, 3), 2, 3)
         return embeddings
 
+
 class ACModel(nn.Module, babyai.rl.RecurrentACModel):
     def __init__(self, obs_space, action_space,
-                 image_dim=128, memory_dim=128,  use_instr=False, lang_model="gru", use_memory=False, arch="cnn1"):
+                 image_dim=128, memory_dim=128,  use_instr=False, lang_model="gru", use_memory=False, arch="cnn1",
+                 aux_info=None):
         super().__init__()
 
         # Decide which components are enabled
@@ -80,9 +87,9 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         self.use_memory = use_memory
         self.arch = arch
         self.lang_model = lang_model
+        self.aux_info = aux_info
         self.image_dim = image_dim
         self.memory_dim = memory_dim
-
 
         self.obs_space = obs_space
 
@@ -127,13 +134,13 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 nn.Conv2d(in_channels=3, out_channels=128, kernel_size=(2, 2), padding=1),
                 nn.BatchNorm2d(128),
                 nn.ReLU(),
-                nn.MaxPool2d(kernel_size=(2,2), stride=2),
+                nn.MaxPool2d(kernel_size=(2, 2), stride=2),
                 nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), padding=1),
                 nn.BatchNorm2d(128),
                 nn.ReLU(),
-                nn.MaxPool2d(kernel_size=(2,2), stride=2)
+                nn.MaxPool2d(kernel_size=(2, 2), stride=2)
             )
-            self.film_pool = nn.MaxPool2d(kernel_size=(2,2), stride=2)
+            self.film_pool = nn.MaxPool2d(kernel_size=(2, 2), stride=2)
         elif arch == 'embcnn1':
             self.image_conv = nn.Sequential(
                 ImageBOWEmbedding(obs_space["image"], embedding_dim=16, padding_idx=0, reduce_fn=torch.mean),
@@ -158,10 +165,11 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                     instr_embedding_size = self.instr_embedding_size
                     if self.lang_model == 'bigru':
                         instr_embedding_size = instr_embedding_size // 2
-                    self.instr_rnn = nn.GRU(self.word_embedding_size, instr_embedding_size, batch_first=True, bidirectional=(self.lang_model == 'bigru'))
+                    self.instr_rnn = nn.GRU(self.word_embedding_size, instr_embedding_size, batch_first=True,
+                                            bidirectional=(self.lang_model == 'bigru'))
                 else:
                     kernel_dim = 64
-                    kernel_sizes = [3,4]
+                    kernel_sizes = [3, 4]
                     self.instr_convs = nn.ModuleList([nn.Conv2d(1, kernel_dim, (K, self.word_embedding_size)) for K in kernel_sizes])
                     self.instr_embedding_size = kernel_dim * len(kernel_sizes)
 
@@ -195,7 +203,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             if arch == "expert_filmcnn":
                 num_module = 2
             else:
-                num_module = int(arch[(arch.rfind('_')+1):])
+                num_module = int(arch[(arch.rfind('_') + 1):])
             self.controllers = []
             for ni in range(num_module):
                 if ni < num_module-1:
@@ -225,6 +233,48 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
         # Initialize parameters correctly
         self.apply(initialize_parameters)
+
+        # Define head for extra info
+        if self.aux_info:
+            self.extra_heads = None
+            self.add_heads()
+
+    def add_heads(self):
+        '''
+        When using auxiliary tasks, the environment yields at each step some binary, continous, or multiclass
+        information. The agent needs to predict those information. This function add extra heads to the model
+        that output the predictions. There is a head per extra information (the head type depends on the extra
+        information type).
+        '''
+        self.extra_heads = nn.ModuleDict()
+        for info in self.aux_info:
+            if required_heads[info] == 'binary':
+                self.extra_heads[info] = nn.Linear(self.embedding_size, 1)
+            elif required_heads[info].startswith('multiclass'):
+                n_classes = int(required_heads[info].split('multiclass')[-1])
+                self.extra_heads[info] = nn.Linear(self.embedding_size, n_classes)
+            elif required_heads[info].startswith('continuous'):
+                if required_heads[info].endswith('01'):
+                    self.extra_heads[info] = nn.Sequential(nn.Linear(self.embedding_size, 1), nn.Sigmoid())
+                else:
+                    raise ValueError('Only continous01 is implemented')
+            else:
+                raise ValueError('Type not supported')
+            # initializing these parameters independently is done in order to have consistency of results when using
+            # supervised-loss-coef = 0 and when not using any extra binary information
+            self.extra_heads[info].apply(initialize_parameters)
+
+    def add_extra_heads_if_necessary(self, aux_info):
+        '''
+        This function allows using a pre-trained model without aux_info and add aux_info to it and still make
+        it possible to finetune.
+        '''
+        try:
+            if not hasattr(self, 'aux_info') or not set(self.aux_info) == set(aux_info):
+                self.aux_info = aux_info
+                self.add_heads()
+        except Exception:
+            raise ValueError('Could not add extra heads')
 
     @property
     def memory_size(self):
@@ -268,13 +318,18 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         if self.use_instr and self.arch != "filmcnn" and not self.arch.startswith("expert_filmcnn"):
             embedding = torch.cat((embedding, embed_instr), dim=1)
 
+        if hasattr(self, 'aux_info') and self.aux_info:
+            extra_predictions = {info: self.extra_heads[info](embedding) for info in self.extra_heads}
+        else:
+            extra_predictions = dict()
+
         x = self.actor(embedding)
         dist = Categorical(logits=F.log_softmax(x, dim=1))
 
         x = self.critic(embedding)
         value = x.squeeze(1)
 
-        return dist, value, memory
+        return {'dist': dist, 'value': value, 'memory': memory, 'extra_predictions': extra_predictions}
 
     def _get_embed_instr(self, instr):
         if self.lang_model == 'gru':
@@ -302,7 +357,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 instr = instr[:, 0:lengths[0]]
                 outputs, h_n = self.instr_rnn(self.word_embedding(instr))
                 iperm_idx = None
-            h_n = h_n.transpose(0,1).contiguous()
+            h_n = h_n.transpose(0, 1).contiguous()
             h_n = h_n.view(h_n.shape[0], -1)
             if iperm_idx is not None:
                 outputs, _ = pad_packed_sequence(outputs, batch_first=True)
@@ -317,7 +372,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             return outputs, hidden, masks
 
         elif self.lang_model == 'conv':
-            inputs = self.word_embedding(instr).unsqueeze(1) # (B,1,T,D)
+            inputs = self.word_embedding(instr).unsqueeze(1)  # (B,1,T,D)
             inputs = [F.relu(conv(inputs)).squeeze(3) for conv in self.instr_convs]
             inputs = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in inputs]
 

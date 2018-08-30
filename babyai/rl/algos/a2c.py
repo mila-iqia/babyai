@@ -46,7 +46,10 @@ class A2CAlgo(BaseAlgo):
 
             # Compute loss
 
-            dist, value, memory = self.acmodel(sb.obs, memory * sb.mask)
+            model_results = self.acmodel(sb.obs, memory * sb.mask)
+            dist = model_results['dist']
+            value = model_results['value']
+            memory = model_results['memory']
 
             entropy = dist.entropy().mean()
 
