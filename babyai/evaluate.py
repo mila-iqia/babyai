@@ -31,8 +31,7 @@ def evaluate(agent, env, episodes, model_agent=True, offsets=None):
             agent.analyze_feedback(reward, done)
             num_frames += 1
             returnn += reward
-            if num_frames > 30:
-                break
+
 
         logs["observations_per_episode"].append(obss)
         logs["num_frames_per_episode"].append(num_frames)
@@ -41,47 +40,6 @@ def evaluate(agent, env, episodes, model_agent=True, offsets=None):
         agent.model.train()
     return logs
 
-# Function used for evaluation when using multiple processors
-def evaluateProc(agent, penv, episodes, log_dict, env_names, proc_id, model_agent = True):
-
-    # Initialize logs
-    if model_agent:
-        agent.model.eval()
-    logs = {}
-    for index in range(len(penv)):
-
-        log_env = {"num_frames_per_episode": [], "return_per_episode": []}
-
-        env = penv[index]
-        for _ in range(episodes):
-            obs = env.reset()
-            done = False
-
-            num_frames = 0
-            returnn = 0
-            obss = []
-            while not(done):
-                action = agent.act(obs)['action']
-                action = action.item()
-                obss.append(obs)
-                obs, reward, done, _ = env.step(action)
-                agent.analyze_feedback(reward, done)
-                num_frames += 1
-                returnn += reward
-                if num_frames > 30:
-                    break
-
-            log_env["num_frames_per_episode"].append(num_frames)
-            log_env["return_per_episode"].append(returnn)
-
-        for key in log_env:
-            log_env[key] = np.mean(log_env[key])
-        logs[env_names[index][0]] = log_env
-
-    if model_agent:
-        agent.model.train()
-    log_dict[proc_id] = logs
-    
 
 class ManyEnvs(gym.Env):
 
@@ -117,8 +75,8 @@ def batch_evaluate(agent, env_name, seed, episodes):
         envs.append(env)
     env = ManyEnvs(envs)
 
-    logs = {"num_frames_per_episode": [], 
-            "return_per_episode": [], 
+    logs = {"num_frames_per_episode": [],
+            "return_per_episode": [],
             "observations_per_episode": []}
 
     for i in range((episodes + num_envs - 1) // num_envs):

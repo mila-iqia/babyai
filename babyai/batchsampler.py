@@ -29,12 +29,11 @@ class BatchSampler(object):
         self.dist_task = dist_task
 
     def reset(self, tid):
-        demo = copy.deepcopy(self.demos[tid])
-        np.random.shuffle(demo)
-        self.current_demos[tid] = demo
+        np.random.shuffle(self.demos[tid])
+        self.current_demos[tid] = self.demos[tid]
         self.current_ids[tid] = 0
 
-        return len(demo)
+        return len(self.demos[tid])
 
     def sample(self):
 

@@ -25,6 +25,7 @@ from babyai.multienv.return_history import *
 from babyai.batchsampler import BatchSampler
 from babyai.levels import imitation_curriculums
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--lr", type=float, default=7e-4,
                     help="learning rate (default: 7e-4)")
@@ -70,7 +71,7 @@ parser.add_argument("--dist-cp", default="Lp",
                     help="name of the distribution computer (default: Lp)")
 parser.add_argument("--lp-cp", default="Online",
                     help="name of the learning progress computer (default: Online), Window, AbsWindow, Online, AbsOnline")
-parser.add_argument("--dist-cr", default="GreedyAmax",
+parser.add_argument("--dist-cr", default="GreedyProp",
                     help="name of the distribution creator (default: GreedyAmax), ClippedProp, Boltzmann, GreedyAmax")
 parser.add_argument("--dist-alpha", type=float, default=0.1,
                     help="learning rate for TS learning progress computers (default: 0.2)")
@@ -122,7 +123,6 @@ def main(args, graphs):
     }[args.dist_cp]
 
     args.env = graphs
-
     il_learn = ImitationLearning(args)
     utils.save_model(il_learn.acmodel, il_learn.model_name)
 
@@ -156,6 +156,7 @@ def main(args, graphs):
 
 
 
+
     # Log command, availability of CUDA, and model
     logger.info(args)
     logger.info("CUDA available: {}".format(torch.cuda.is_available()))
@@ -172,7 +173,7 @@ def main(args, graphs):
     current_num_evaluate, total_len, current_number_batch, fps = 0, 1, 0, []
 
     # Log dictionary
-    log = {"entropy": [],"value_loss": [],"policy_loss": [],"accuracy" : []}
+    log = {"entropy": [],"policy_loss": [],"accuracy" : []}
 
     writer = None
 
@@ -187,7 +188,6 @@ def main(args, graphs):
         current_batch, should_evaluate = sampler.sample()
 
         update_start_time = time.time()
-
         if not(args.no_mem):
             _log = il_learn.run_epoch_recurrence_one_batch(current_batch, is_training=True)
             total_len += sum([len(item) for item in current_batch])
@@ -199,7 +199,6 @@ def main(args, graphs):
         fps.append(total_len/(update_end_time - update_start_time))
 
         current_number_batch += 1
-
         # Evaluating the performance, and recalculating task distribution
         if current_number_batch % args.return_interval == 0:
             current_returns = il_learn.collect_returns()
@@ -214,7 +213,6 @@ def main(args, graphs):
         if should_evaluate:
             status['i'] += 1
             current_num_evaluate += 1
-
             for key in log:
                 log[key] = np.mean(log[key])
 
@@ -316,7 +314,7 @@ def main(args, graphs):
             fps = []
             total_len = 0
             il_learn.scheduler.step()
-            log = {"entropy": [],"value_loss": [],"policy_loss": [],"accuracy" : []}
+            log = {"entropy": [],"policy_loss": [],"accuracy" : []}
 
 if __name__ == "__main__":
     args = parser.parse_args()
