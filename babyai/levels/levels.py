@@ -28,6 +28,11 @@ class Level_GoToObjS4(Level_GoToObj):
         super().__init__(room_size=4, seed=seed)
 
 
+class Level_GoToObjS6(Level_GoToObj):
+    def __init__(self, seed=None):
+        super().__init__(room_size=6, seed=seed)
+
+
 class Level_GoToLocal(RoomGridLevel):
     """
     Go to an object, inside a single room with no doors, no distractors
@@ -55,22 +60,29 @@ class Level_GoToLocalS5(Level_GoToLocal):
         super().__init__(room_size=5, num_dists=3, seed=seed)
 
 
+class Level_GoToLocalS6(Level_GoToLocal):
+    def __init__(self, seed=None):
+        super().__init__(room_size=6, num_dists=4, seed=seed)
+
+
 class Level_PutNextLocal(RoomGridLevel):
     """
     Put an object next to another object, inside a single room
     with no doors, no distractors
     """
 
-    def __init__(self, seed=None):
+    def __init__(self, room_size=8, num_objs=8, seed=None):
+        self.num_objs = num_objs
         super().__init__(
             num_rows=1,
             num_cols=1,
+            room_size=room_size,
             seed=seed
         )
 
     def gen_mission(self):
         self.place_agent()
-        objs = self.add_distractors(num_distractors=8, all_unique=True)
+        objs = self.add_distractors(num_distractors=self.num_objs, all_unique=True)
         self.check_objs_reachable()
         o1, o2 = self._rand_subset(objs, 2)
 
@@ -78,6 +90,16 @@ class Level_PutNextLocal(RoomGridLevel):
             ObjDesc(o1.type, o1.color),
             ObjDesc(o2.type, o2.color)
         )
+
+
+class Level_PutNextLocalS5N3(Level_PutNextLocal):
+    def __init__(self, seed=None):
+        super().__init__(room_size=5, num_objs=3, seed=seed)
+
+
+class Level_PutNextLocalS6N4(Level_PutNextLocal):
+    def __init__(self, seed=None):
+        super().__init__(room_size=6, num_objs=4, seed=seed)
 
 
 class Level_GoTo(RoomGridLevel):
@@ -368,14 +390,30 @@ class Level_GoToSeq(LevelGen):
     No unblocking.
     """
 
-    def __init__(self, seed=None):
+    def __init__(
+        self,
+        room_size=8,
+        num_rows=3,
+        num_cols=3,
+        num_dists=18,
+        seed=None
+    ):
         super().__init__(
+            room_size=room_size,
+            num_rows=num_rows,
+            num_cols=num_cols,
+            num_dists=num_dists,
             seed=seed,
             action_kinds=['goto'],
             locked_room_prob=0,
             locations=False,
             unblocking=False
         )
+
+
+class Level_GoToSeqS5R2(Level_GoToSeq):
+    def __init__(self, seed=None):
+        super().__init__(room_size=5, num_rows=2, num_cols=2, num_dists=4, seed=seed)
 
 
 class Level_Synth(LevelGen):
@@ -386,15 +424,37 @@ class Level_Synth(LevelGen):
     but only if it is explicitly referred by the instruction.
     """
 
-    def __init__(self, seed=None):
+    def __init__(
+        self,
+        room_size=8,
+        num_rows=3,
+        num_cols=3,
+        num_dists=18,
+        seed=None
+    ):
         # We add many distractors to increase the probability
         # of ambiguous locations within the same room
         super().__init__(
+            room_size=room_size,
+            num_rows=num_rows,
+            num_cols=num_cols,
+            num_dists=num_dists,
             seed=seed,
             instr_kinds=['action'],
             locations=False,
             unblocking=True,
             implicit_unlock=False
+        )
+
+
+class Level_SynthS5R2(Level_Synth):
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=5,
+            num_rows=2,
+            num_cols=2,
+            num_dists=7,
+            seed=seed
         )
 
 

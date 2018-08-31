@@ -10,6 +10,7 @@ import numpy as np
 import argparse
 import csv
 import os
+import sys
 from babyai.evaluate import evaluate
 import babyai.utils as utils
 from babyai.algos.imitation import ImitationLearning
@@ -17,6 +18,7 @@ import gym
 import babyai
 import torch
 import datetime
+import logging
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--env", required=True,
@@ -45,7 +47,7 @@ parser.add_argument("--arch", default='expert_filmcnn',
                     help="image embedding architecture, possible values: cnn1, cnn2, filmcnn (default: expert_filmcnn)")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
-parser.add_argument("--validation-interval", type=int, default=20,
+parser.add_argument("--validation-interval", type=int, default=1,
                     help="number of epochs between two validation checks (default: 20)")
 parser.add_argument("--val-episodes", type=int, default=500,
                     help="number of episodes used to evaluate the agent, and to evaluate validation accuracy")
@@ -90,19 +92,22 @@ if first_created:
     writer.writerow(["num_demos", "seed", "model_name", "mean_return_per_episode"])
 
 # Define one logger for everything
-logger = utils.get_logger('{}_BinarySearch_{}_{}_{}_{}_{}'.format(args.env,
-                                                                  args.arch,
-                                                                  args.instr_arch if args.instr_arch else "noinstr",
-                                                                  "mem" if not args.no_mem else "nomem",
-                                                                  args.min_demo,
-                                                                  args.max_demo))
+utils.configure_logging('{}_BinarySearch_{}_{}_{}_{}_{}'.format(args.env,
+                                                               args.arch,
+                                                               args.instr_arch if args.instr_arch else "noinstr",
+                                                               "mem" if not args.no_mem else "nomem",
+                                                               args.min_demo,
+                                                               args.max_demo))
+logger = logging.getLogger(__name__)
 
 # Log command, availability of CUDA
 logger.info(args)
 logger.info("CUDA available: {}".format(torch.cuda.is_available()))
 
 
-def run(num_demos, logger, first_run=False):
+def run(num_demos, first_run=False):
+    prev_handlers = logging.getLogger().handlers
+
     results = []
     for seed in seeds:
         # Define model name. No need to add the date suffix to allow binary search to continue training without issues.
@@ -118,6 +123,15 @@ def run(num_demos, logger, first_run=False):
             'seed': seed,
             'num_demos': num_demos}
         args.model = "{env}_IL_{arch}_{instr}_{mem}_seed{seed}_demos{num_demos}".format(**model_name_parts)
+        utils.create_folders_if_necessary(utils.get_log_path(args.model))
+        # changine the handlers of the root logger
+        handlers = [
+            logging.FileHandler(filename=utils.get_log_path(args.model)),
+            logging.StreamHandler(sys.stdout)
+        ]
+        for h in handlers:
+            h.formatter = prev_handlers[0].formatter
+        logging.getLogger().handlers = handlers
 
         args.episodes = num_demos
         args.seed = seed
@@ -130,12 +144,12 @@ def run(num_demos, logger, first_run=False):
         tb_writer = None
         if args.tb:
             from tensorboardX import SummaryWriter
-            tb_writer = SummaryWriter(utils.get_log_dir(il_learn.model_name))
+            tb_writer = SummaryWriter(utils.get_log_dir(args.model))
 
         # Define csv writer for sub-IL tasks
         csv_writer = None
         if args.csv:
-            csv_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'log.csv')
+            csv_path = os.path.join(utils.get_log_dir(args.model), 'log.csv')
             first_created = not os.path.exists(csv_path)
             # we don't buffer data going in the csv log, cause we assume
             # that one update will take much longer that one write to the log
@@ -144,19 +158,16 @@ def run(num_demos, logger, first_run=False):
                 csv_writer.writerow(header)
 
         # Get the status path
-        status_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'status.json')
+        status_path = os.path.join(utils.get_log_dir(args.model), 'status.json')
 
-        # Log model if first time
+        # Log model if is first time
         if first_run and seed == seeds[0]:
             logger.info(il_learn.acmodel)
 
         # Log the current step of the loop
         logger.info("\n----\n{} demonstrations. Seed {}.\n".format(num_demos, seed))
 
-        if not args.no_mem:
-            il_learn.train(il_learn.train_demos, tb_writer, csv_writer, status_path, header)
-        else:
-            il_learn.train(il_learn.flat_train_demos, tb_writer, csv_writer, status_path, header)
+        il_learn.train(il_learn.train_demos, tb_writer, csv_writer, status_path, header)
         logger.info('Training finished. Evaluating the model on {} episodes now.'.format(args.test_episodes))
         env = gym.make(args.env)
         utils.seed(args.test_seed)
@@ -169,19 +180,22 @@ def run(num_demos, logger, first_run=False):
         logger.info('The mean return per episode is {}'.format(np.mean(logs["return_per_episode"])))
         writer.writerow([num_demos, seed, args.model, str(np.mean(logs["return_per_episode"]))])
 
+    logging.getLogger().handlers = prev_handlers
+
     return np.mean(results)
 
 
 min_demo = args.min_demo
 max_demo = args.max_demo
 
-return_min = run(min_demo, logger, first_run=True)
-return_max = run(max_demo, logger)
+return_min = run(min_demo, first_run=True)
+return_max = run(max_demo)
+if return_max < return_min:
+    raise ValueError("return_max={} is less than return_min={}".format(return_max, return_min))
 
 max_performance_bar = return_max
 
 while True:
-    assert return_max >= return_min
 
     if (max_performance_bar - return_min) <= args.epsilon:
         logger.info("Minimum No. of Samples Required = %d" % min_demo)
@@ -196,7 +210,9 @@ while True:
 
     return_mid = run(mid_demo, logger)
 
-    assert return_min <= return_mid <= return_max
+    if not return_min <= return_mid <= return_max:
+        logger.warn("return_mid={} is not between return_min={} and return_max={}".format(
+            return_mid, return_min, return_max))
 
     if (max_performance_bar - return_mid) >= args.epsilon:
         min_demo = mid_demo

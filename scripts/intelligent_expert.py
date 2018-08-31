@@ -1,15 +1,24 @@
 #!/usr/bin/env python3
 
 """
-Intelligent Expert for imitation learning. Starts with some training demonstrations, and incrementally adds demonstrations to training set
-based on the current performance of the agent. The new demonstrations can be expert action annotated (DAGGER) agent's trajectory or just expert's trajectory.
-python -m scripts.intelligent_expert --env BabyAI-LevelName-v0 --model model_name --demos-origin agent --start-demo 10 --episodes-to-add 10 --dagger(If you want to train using dagger) --expert-model(required when dagger is True)
+Intelligent expert for imitation learning. Starts with some training
+demonstrations, and incrementally adds demonstrations to training set
+based on the current performance of the agent. The new demonstrations
+can be expert action annotated (DAGGER) agent's trajectory or just
+expert's trajectory.
+
+Usage:
+python3 -m scripts.intelligent_expert --env BabyAI-LevelName-v0 --model model_name --demos-origin agent --start-demo 10 --episodes-to-add 10 --dagger(If you want to train using dagger) --expert-model(required when dagger is True)
+
+Example:
+python3 -m scripts.intelligent_expert --env BabyAI-GoToObj-v0 --model model_name --demos-origin agent --start-demo 10
 """
 
 import numpy as np
 import argparse
 import csv
 import os
+import logging
 import torch
 import torch.nn.functional as F
 import copy
@@ -385,7 +394,8 @@ if __name__ == "__main__":
     model_name = args.model or default_model_name
 
     # Define one logger for everything
-    logger = utils.get_logger('{env}_IE_{arch}_{instr}_{mem}_seed{seed}'.format(**model_name_parts))
+    utils.configure_logging('{env}_IE_{arch}_{instr}_{mem}_seed{seed}'.format(**model_name_parts))
+    logger = logging.getLogger(__name__)
 
     # Log command, availability of CUDA, and model
     logger.info(args)

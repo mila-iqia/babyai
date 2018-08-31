@@ -4,12 +4,14 @@ import numpy
 
 from babyai.rl.format import default_preprocess_obss
 from babyai.rl.utils import DictList, ParallelEnv
+from babyai.rl.utils.supervised_losses import ExtraInfoCollector
+
 
 class BaseAlgo(ABC):
     """The base class for RL algorithms."""
 
     def __init__(self, envs, acmodel, num_frames_per_proc, discount, lr, gae_lambda, entropy_coef,
-                 value_loss_coef, max_grad_norm, recurrence, preprocess_obss, reshape_reward):
+                 value_loss_coef, max_grad_norm, recurrence, preprocess_obss, reshape_reward, aux_info):
         """
         Initializes a `BaseAlgo` instance.
 
@@ -42,6 +44,9 @@ class BaseAlgo(ABC):
         reshape_reward : function
             a function that shapes the reward, takes an
             (observation, action, reward, done) tuple as an input
+        aux_info : list
+            a list of strings corresponding to the name of the extra information
+            retrieved from the environment for supervised auxiliary losses
 
         """
         # Store parameters
@@ -59,6 +64,7 @@ class BaseAlgo(ABC):
         self.recurrence = recurrence
         self.preprocess_obss = preprocess_obss or default_preprocess_obss
         self.reshape_reward = reshape_reward
+        self.aux_info = aux_info
 
         # Store helpers values
 
@@ -86,6 +92,9 @@ class BaseAlgo(ABC):
         self.rewards = torch.zeros(*shape, device=self.device)
         self.advantages = torch.zeros(*shape, device=self.device)
         self.log_probs = torch.zeros(*shape, device=self.device)
+
+        if self.aux_info:
+            self.aux_info_collector = ExtraInfoCollector(self.aux_info, shape, self.device)
 
         # Initialize log values
 
@@ -124,10 +133,18 @@ class BaseAlgo(ABC):
 
             preprocessed_obs = self.preprocess_obss(self.obs, device=self.device)
             with torch.no_grad():
-                dist, value, memory = self.acmodel(preprocessed_obs, self.memory * self.mask.unsqueeze(1))
+                model_results = self.acmodel(preprocessed_obs, self.memory * self.mask.unsqueeze(1))
+                dist = model_results['dist']
+                value = model_results['value']
+                memory = model_results['memory']
+                extra_predictions = model_results['extra_predictions']
+
             action = dist.sample()
 
-            obs, reward, done, _ = self.env.step(action.cpu().numpy())
+            obs, reward, done, env_info = self.env.step(action.cpu().numpy())
+            if self.aux_info:
+                env_info = self.aux_info_collector.process(env_info)
+                # env_info = self.process_aux_info(env_info)
 
             # Update experiences values
 
@@ -150,6 +167,9 @@ class BaseAlgo(ABC):
                 self.rewards[i] = torch.tensor(reward, device=self.device)
             self.log_probs[i] = dist.log_prob(action)
 
+            if self.aux_info:
+                self.aux_info_collector.fill_dictionaries(i, env_info, extra_predictions)
+
             # Update log values
 
             self.log_episode_return += torch.tensor(reward, device=self.device, dtype=torch.float)
@@ -171,7 +191,7 @@ class BaseAlgo(ABC):
 
         preprocessed_obs = self.preprocess_obss(self.obs, device=self.device)
         with torch.no_grad():
-            _, next_value, _ = self.acmodel(preprocessed_obs, self.memory * self.mask.unsqueeze(1))
+            next_value = self.acmodel(preprocessed_obs, self.memory * self.mask.unsqueeze(1))['value']
 
         for i in reversed(range(self.num_frames_per_proc)):
             next_mask = self.masks[i+1] if i < self.num_frames_per_proc - 1 else self.mask
@@ -203,6 +223,9 @@ class BaseAlgo(ABC):
         exps.advantage = self.advantages.transpose(0, 1).reshape(-1)
         exps.returnn = exps.value + exps.advantage
         exps.log_prob = self.log_probs.transpose(0, 1).reshape(-1)
+
+        if self.aux_info:
+            exps = self.aux_info_collector.end_collection(exps)
 
         # Preprocess experiences
 

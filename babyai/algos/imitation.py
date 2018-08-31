@@ -6,7 +6,7 @@ import numpy as np
 import sys
 import itertools
 import torch
-from babyai.evaluate import evaluate, batch_evaluate, evaluateProc
+from babyai.evaluate import batch_evaluate
 import babyai.utils as utils
 from babyai.rl import DictList
 from babyai.model import ACModel
@@ -35,8 +35,8 @@ class ImitationLearning(object):
             self.val_demos = [utils.load_demos(utils.get_demos_path(demo_file, env, demos_origin, valid=True))[:self.args.val_episodes]
                               for env, demo_file, demos_origin, _ in self.args.env]
 
-
             self.val_demos = [[demo[0] for demo in demos] for demos in self.val_demos]
+
 
             # Environment created for calculating the mean reward during validation
             self.env = [gym.make(item[0]) for item in self.args.env]
@@ -66,34 +66,14 @@ class ImitationLearning(object):
             self.train_offsets = [item[1] for item in self.train_demos]
             self.train_demos = [item[0] for item in self.train_demos]
             self.val_demos = [item[0] for item in self.val_demos]
+
             observation_space = self.env.observation_space
             action_space = self.env.action_space
 
-        if type(self.args.env) == list:
-            named_envs = '_'.join([item[0] for item in self.args.env])
-        else:
-            named_envs = self.args.env
-
-        # Define model name
-        suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
-        instr = self.args.instr_arch if self.args.instr_arch else "noinstr"
-        mem = "mem" if not args.no_mem else "nomem"
-        model_name_parts = {
-            'envs': named_envs,
-            'arch': args.arch,
-            'instr': instr,
-            'mem': mem,
-            'seed': args.seed,
-            'suffix': suffix}
-        default_model_name = "{envs}_IL_{arch}_{instr}_{mem}_seed{seed}_{suffix}".format(**model_name_parts)
-        self.model_name = self.args.model or default_model_name
-        logger.info("the model name is  {}".format(self.model_name))
-        self.args.model = self.model_name
-
-        self.obss_preprocessor = utils.ObssPreprocessor(self.model_name, observation_space)
+        self.obss_preprocessor = utils.ObssPreprocessor(args.model, observation_space)
 
         # Define actor-critic model
-        self.acmodel = utils.load_model(self.model_name, raise_not_found=False)
+        self.acmodel = utils.load_model(args.model, raise_not_found=False)
         if self.acmodel is None:
             self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space, args.image_dim, args.memory_dim,
                                    not self.args.no_instr, self.args.instr_arch, not self.args.no_mem, self.args.arch)
@@ -109,80 +89,23 @@ class ImitationLearning(object):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        if not mem:
-            self.flat_train_demos, self.flat_val_demos = [], []
-            if type(self.args.env) == list:
-                for demos in self.train_demos:
-                    flat_demos = []
-                    for dm in demos:
-                        flat_demos += dm
-                    flat_demos = np.array(flat_demos)
-                    self.flat_train_demos.append(flat_demos)
-                for demos in self.val_demos:
-                    flat_demos = []
-                    for dm in demos:
-                        flat_demos += dm
-                    flat_demos = np.array(flat_demos)
-                    self.flat_val_demos.append(flat_demos)
-            else:
-                for demo in self.train_demos:
-                    self.flat_train_demos += demo
-                for demo in self.val_demos:
-                    self.flat_val_demos += demo
-                self.flat_train_demos = np.array(self.flat_train_demos)
-                self.flat_val_demos = np.array(self.flat_val_demos)
+    @staticmethod
+    def default_model_name(args):
+        if type(args.env) == list:
+            named_envs = '_'.join([item[0] for item in args.env])
+        else:
+            named_envs = args.env
 
-    def run_epoch_norecur(self, flat_demos, is_training=False):
-        flat_demos_t = copy.deepcopy(flat_demos)
-        if is_training:
-            np.random.shuffle(flat_demos_t)
-        batch_size = min(self.args.batch_size, len(flat_demos_t))
-
-        log = {"entropy": [], "policy_loss": [], "accuracy": []}
-        offset = 0
-        for j in range(len(flat_demos_t) // batch_size):
-            flat_batch = flat_demos_t[offset:offset + batch_size, :]
-
-            _log = self.run_epoch_norecur_one_batch(flat_batch, is_training=is_training)
-
-            log["entropy"].append(_log["entropy"])
-            log["policy_loss"].append(_log["policy_loss"])
-            log["accuracy"].append(_log["accuracy"])
-
-            offset += batch_size
-
-        return log
-
-    def run_epoch_norecur_one_batch(self, flat_batch, is_training=False):
-        obs, action_true, done = flat_batch[:, 0], flat_batch[:, 1], flat_batch[:, 3]
-        preprocessed_obs = self.obss_preprocessor(obs, device=self.device)
-
-        action_true = torch.tensor([action for action in action_true], device=self.device, dtype=torch.long)
-        memory = torch.zeros([self.args.batch_size, self.acmodel.memory_size], device=self.device)
-
-        # Compute loss
-        dist, _, memory = self.acmodel(preprocessed_obs, memory)
-
-        entropy = dist.entropy().mean()
-
-        policy_loss = -dist.log_prob(action_true).mean()
-
-        action_pred = dist.probs.max(1, keepdim=True)[1]
-        accuracy = float((action_pred == action_true.unsqueeze(1)).sum()) / self.args.batch_size
-
-        loss = policy_loss - self.args.entropy_coef * entropy
-
-        # Update actor-critic
-        if is_training:
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
-        log = {}
-        log["entropy"] = float(entropy)
-        log["policy_loss"] = float(policy_loss)
-        log["accuracy"] = float(accuracy)
-        return log
+        # Define model name
+        suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
+        instr = args.instr_arch if args.instr_arch else "noinstr"
+        model_name_parts = {
+            'envs': named_envs,
+            'arch': args.arch,
+            'instr': instr,
+            'seed': args.seed,
+            'suffix': suffix}
+        return  "{envs}_IL_{arch}_{instr}_seed{seed}_{suffix}".format(**model_name_parts)
 
     def starting_indexes(self, num_frames):
         if num_frames % self.args.recurrence == 0:
@@ -201,7 +124,8 @@ class ImitationLearning(object):
         log = {"entropy": [], "policy_loss": [], "accuracy": []}
 
         for batch_index in range(len(indices) // batch_size):
-            batch = [demos[i] for i in indices[offset:offset+batch_size]]
+            logger.info("batch {}".format(batch_index))
+            batch = [demos[i] for i in indices[offset: offset + batch_size]]
 
             _log = self.run_epoch_recurrence_one_batch(batch, is_training=is_training)
 
@@ -214,6 +138,7 @@ class ImitationLearning(object):
         return log
 
     def run_epoch_recurrence_one_batch(self, batch, is_training=False):
+        batch = utils.demos.transform_demos(batch)
         batch.sort(key=len, reverse=True)
         # Constructing flat batch and indices pointing to start of each demonstration
         flat_batch = []
@@ -232,7 +157,7 @@ class ImitationLearning(object):
         mask = torch.tensor(mask, device=self.device, dtype=torch.float).unsqueeze(1)
 
         # Observations, true action, values and done for each of the stored demostration
-        obss, action_true, done = flat_batch[:, 0], flat_batch[:, 1], flat_batch[:, 3]
+        obss, action_true, done = flat_batch[:, 0], flat_batch[:, 1], flat_batch[:, 2]
         action_true = torch.tensor([action for action in action_true], device=self.device, dtype=torch.long)
 
         # Memory to be stored
@@ -247,7 +172,7 @@ class ImitationLearning(object):
             preprocessed_obs = self.obss_preprocessor(obs, device=self.device)
             with torch.no_grad():
                 # taking the memory till the length of time_step_inds, as demos beyond that have already finished
-                _, _, new_memory = self.acmodel(preprocessed_obs, memory[:len(inds), :])
+                new_memory = self.acmodel(preprocessed_obs, memory[:len(inds), :])['memory']
 
             for i in range(len(inds)):
                 # Copying to the memories at the corresponding locations
@@ -276,7 +201,11 @@ class ImitationLearning(object):
             preprocessed_obs = self.obss_preprocessor(obs, device=self.device)
             action_step = action_true[indexes]
             mask_step = mask[indexes]
-            dist, value, memory = self.acmodel(preprocessed_obs, memory * mask_step)
+            model_results = self.acmodel(preprocessed_obs, memory * mask_step)
+            dist = model_results['dist']
+            value = model_results['value']
+            memory = model_results['memory']
+
             entropy = dist.entropy().mean()
             policy_loss = -dist.log_prob(action_step).mean()
             loss = policy_loss - self.args.entropy_coef * entropy
@@ -348,7 +277,7 @@ class ImitationLearning(object):
             logger.info("Batch size too high. Setting it to the number of train demos ({})".format(len(train_demos)))
 
         # Model saved initially to avoid "Model not found Exception" during first validation step
-        utils.save_model(self.acmodel, self.model_name)
+        utils.save_model(self.acmodel, self.args.model)
 
         # best mean return to keep track of performance on validation set
         best_mean_return, patience, i = 0, 0, 0
@@ -366,12 +295,8 @@ class ImitationLearning(object):
             # Learning rate scheduler
             self.scheduler.step()
 
-            if not self.args.no_mem:
-                log = self.run_epoch_recurrence(train_demos, is_training=True)
-                total_len = sum([len(item) for item in train_demos])
-            else:
-                log = self.run_epoch_norecur(train_demos, is_training=True)
-                total_len = len(train_demos)
+            log = self.run_epoch_recurrence(train_demos, is_training=True)
+            total_len = sum([len(item[3]) for item in train_demos])
             status['num_frames'] += total_len
 
             update_end_time = time.time()
@@ -413,12 +338,8 @@ class ImitationLearning(object):
                 mean_return = np.mean(valid_log['return_per_episode'])
                 success_rate = np.mean([1 if r > 0 else 0 for r in valid_log['return_per_episode']])
 
-                if not self.args.no_mem:
-                    val_log = self.run_epoch_recurrence(self.val_demos)
-                else:
-                    val_log = self.run_epoch_norecur(self.flat_val_demos)
+                val_log = self.run_epoch_recurrence(self.val_demos)
                 validation_accuracy = np.mean(val_log["accuracy"])
-
 
                 if status['i'] % self.args.log_interval == 0:
                     validation_data = [validation_accuracy, mean_return, success_rate]
@@ -442,7 +363,7 @@ class ImitationLearning(object):
                     self.obss_preprocessor.vocab.save()
                     if torch.cuda.is_available():
                         self.acmodel.cpu()
-                    utils.save_model(self.acmodel, self.model_name)
+                    utils.save_model(self.acmodel, self.args.model)
                     if torch.cuda.is_available():
                         self.acmodel.cuda()
                 else:

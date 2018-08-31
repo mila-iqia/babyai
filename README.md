@@ -11,7 +11,7 @@ Requirements:
 - OpenAI gym
 - NumPy
 - PyQT5
-- PyTorch 0.4+
+- PyTorch 0.4.1+
 
 Start by manually installing PyTorch. See the [PyTorch website](http://pytorch.org/)
 for installation instructions specific to your platform.

@@ -5,6 +5,7 @@ Script to train the agent through reinforcment learning.
 """
 
 import os
+import logging
 import csv
 import json
 import argparse
@@ -20,6 +21,7 @@ import babyai.utils as utils
 import babyai.rl
 from babyai.model import ACModel
 from babyai.levels import curriculums, create_menvs
+from babyai.levels.supervised_losses import wrap_env
 from babyai.evaluate import batch_evaluate
 from babyai.utils.agent import ModelAgent
 
@@ -94,14 +96,28 @@ parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='expert_filmcnn',
                     help="image embedding architecture")
+parser.add_argument("--aux-loss", nargs='*', default=[],
+                    help="List of extra information that the environment yields at each step"
+                         "The agent tries to learn that using a supervised loss. If not specified, no info is used"
+                         "Possible infos: seen_state, see_door, see_obj, in_front_of_what, visit_proportion, "
+                         "obj_in_instr, bot_action")
+parser.add_argument("--aux-loss-coef", nargs='*', type=float, default=[],
+                    help="Coefficients for the auxiliary supervised loss. There should be as many as extra infos"
+                         "If not specified, they will all be set to 1")
 parser.add_argument("--test-seed", type=int, default=0,
                     help="random seed for testing (default: 0)")
 parser.add_argument("--test-episodes", type=int, default=200,
                     help="Number of episodes to use for testing (default: 200)")
+parser.add_argument("--pretrained-model", default=None,
+                    help='If you\'re using a pre-trained model and want the fine-tuned one to have a new name')
 
 args = parser.parse_args()
 
 assert args.env is not None or args.curriculum is not None, "--env or --curriculum must be specified."
+
+if len(args.aux_loss_coef) == 0:
+    args.aux_loss_coef = [1.] * len(args.aux_loss)
+assert len(args.aux_loss) == len(args.aux_loss_coef)
 
 # Set seed for all randomness sources
 
@@ -119,6 +135,8 @@ if args.env is not None:
     envs = []
     for i in range(args.procs):
         env = gym.make(args.env)
+        if args.aux_loss:
+            env = wrap_env(env, args.aux_loss)
         env.seed(100 * args.seed + i)
         envs.append(env)
 else:
@@ -137,27 +155,41 @@ model_name_parts = {
     'instr': instr,
     'mem': mem,
     'seed': args.seed,
+    'info': '',
+    'coef': '',
     'suffix': suffix}
-default_model_name = "{env}_{algo}_{arch}_{instr}_{mem}_seed{seed}_{suffix}".format(**model_name_parts)
+if len(args.aux_loss) > 0:
+    model_name_parts['info'] = '_' + ''.join([info[0].upper() for info in args.aux_loss])
+    model_name_parts['coef'] = '_' + '-'.join(map(str, args.aux_loss_coef))
+default_model_name = "{env}_{algo}_{arch}_{instr}_{mem}_seed{seed}{info}{coef}_{suffix}".format(**model_name_parts)
 model_name = args.model.format(**model_name_parts) if args.model else default_model_name
+if args.pretrained_model:
+    model_name = args.pretrained_model + '_pretrained_' + default_model_name
+utils.configure_logging(model_name)
 
 # Define obss preprocessor
 if 'emb' in args.arch:
-    obss_preprocessor = utils.IntObssPreprocessor(model_name, envs[0].observation_space)
+    obss_preprocessor = utils.IntObssPreprocessor(args.pretrained_model or model_name, envs[0].observation_space)
 else:
-    obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space)
+    obss_preprocessor = utils.ObssPreprocessor(args.pretrained_model or model_name, envs[0].observation_space)
 
 # Define actor-critic model
 
-acmodel = utils.load_model(model_name, raise_not_found=False)
+if args.pretrained_model:
+    acmodel = utils.load_model(args.pretrained_model)
+    utils.save_model(acmodel, model_name)
+else:
+    acmodel = utils.load_model(model_name, raise_not_found=False)
+
 if acmodel is None:
     acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
                       args.image_dim, args.memory_dim,
-                      not args.no_instr, args.instr_arch, not args.no_mem, args.arch)
+                      not args.no_instr, args.instr_arch, not args.no_mem, args.arch, args.aux_loss)
     utils.save_model(acmodel, model_name)
 if torch.cuda.is_available():
     acmodel.cuda()
-
+if len(args.aux_loss) > 0:
+    acmodel.add_extra_heads_if_necessary(args.aux_loss)
 
 # Define actor-critic algo
 
@@ -170,9 +202,16 @@ elif args.algo == "ppo":
     algo = babyai.rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.beta1, args.beta2, args.gae_lambda,
                             args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                             args.optim_eps, args.clip_eps, args.epochs, args.batch_size, obss_preprocessor,
-                            reshape_reward)
+                            reshape_reward, args.aux_loss, args.aux_loss_coef)
 else:
     raise ValueError("Incorrect algorithm name: {}".format(args.algo))
+
+# When using extra binary information, more tensors (model params) are initialized compared to when we don't use that.
+# Thus, there starts to be a difference in the random state. If we want to avoid it, in order to make sure that
+# the results of supervised-loss-coef=0. and extra-binary-info=0 match, we need to reseed here.
+
+utils.seed(args.seed)
+
 
 # Restore training status
 
@@ -185,12 +224,14 @@ if os.path.exists(status_path):
 
 # Define logger and Tensorboard writer and CSV writer
 
-logger = utils.get_logger(model_name)
+logger = logging.getLogger(__name__)
 header = (["update", "frames", "FPS", "duration"]
           + ["return_" + stat for stat in ['mean', 'std', 'min', 'max']]
           + ["success_rate"]
           + ["num_frames_" + stat for stat in ['mean', 'std', 'min', 'max']]
-          + ["entropy", "value", "policy_loss", "value_loss", "grad_norm"])
+          + ["entropy", "value", "policy_loss", "value_loss", "loss", "grad_norm"])
+if args.aux_loss:
+    header += ["supervised_loss", "supervised_accuracy", "supervised_L2_loss", "supervised_prevalence"]
 if args.curriculum is not None:
     for env_key in curriculum:
         header.append("proba/{}".format(env_key))
@@ -263,16 +304,22 @@ while status['num_frames'] < args.frames:
                 success_per_episode['mean'],
                 *num_frames_per_episode.values(),
                 logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"],
-                logs["grad_norm"]]
-        format_str = ("U {} | F {:06} | FPS {:04.0f} | D {} | R:x̄σmM {: .2f} {: .2f} {: .2f} {: .2f} | "
-                      "S {:.2f} | F:x̄σmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | "
-                      "pL {: .3f} | vL {:.3f} | gN {:.3f} | ")
+                logs["loss"], logs["grad_norm"]]
+
+        format_str = ("U {} | F {:06} | FPS {:04.0f} | D {} | R:xsmM {: .2f} {: .2f} {: .2f} {: .2f} | "
+                      "S {:.2f} | F:xsmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | "
+                      "pL {: .3f} | vL {:.3f} | L {:.3f} | gN {:.3f} | ")
+        if args.aux_loss:
+            data += [logs["supervised_loss"], logs["supervised_accuracy"], logs["supervised_L2_loss"],
+                     logs["supervised_prevalence"]]
+            format_str += "sL {: .3f} | sA {:.3f} | sL2 {: .3f} | sP {: .3f} | "
         if args.curriculum is not None:
             for env_id, _ in enumerate(curriculum):
                 data.append(menv_head.dist[env_id])
                 data.append(menv_head.synthesized_returns.get(env_id, np.NaN))
                 format_str += "pr{} {:.2f} | ".format(env_id, menv_head.dist[env_id])
                 format_str += "R{} {:.2f} | ".format(env_id, menv_head.synthesized_returns.get(env_id, np.NaN))
+
         logger.info(format_str.format(*data))
         if args.tb:
             assert len(header) == len(data)
@@ -308,6 +355,6 @@ while status['num_frames'] < args.frames:
         if mean_return > best_mean_return:
             best_mean_return = mean_return
             utils.save_model(acmodel, model_name)
-            logger.info("Best model is saved.")
+            logger.info("Return {: .2f}; best model is saved".format(mean_return))
         else:
-            logger.info("Return {}; not the best model; not saved".format(mean_return))
+            logger.info("Return {: .2f}; not the best model; not saved".format(mean_return))

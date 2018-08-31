@@ -41,8 +41,8 @@ parser.add_argument("--csv", action="store_true", default=False,
                     help="log in a csv file")
 parser.add_argument("--lr", type=float, default=1e-4,
                     help="learning rate (default: 1e-4)")
-parser.add_argument("--entropy-coef", type=float, default=0.01,
-                    help="entropy term coefficient (default: 0.01)")
+parser.add_argument("--entropy-coef", type=float, default=0.0,
+                    help="entropy term coefficient")
 parser.add_argument("--recurrence", type=int, default=20,
                     help="number of timesteps gradient is backpropagated (default: 1)")
 parser.add_argument("--optim-eps", type=float, default=1e-5,
@@ -74,8 +74,9 @@ parser.add_argument("--memory-dim", type=int, default=128,
 
 
 def main(args):
-    logger = utils.get_logger(args.model)
-
+    args.model = args.model or ImitationLearning.default_model_name(args)
+    utils.configure_logging(args.model)
+    logger = logging.getLogger(__name__)
     il_learn = ImitationLearning(args)
 
     # Define logger and Tensorboard writer
@@ -84,12 +85,12 @@ def main(args):
     writer = None
     if args.tb:
         from tensorboardX import SummaryWriter
-        writer = SummaryWriter(utils.get_log_dir(il_learn.model_name))
+        writer = SummaryWriter(utils.get_log_dir(args.model))
 
     # Define csv writer
     csv_writer = None
     if args.csv:
-        csv_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'log.csv')
+        csv_path = os.path.join(utils.get_log_dir(args.model), 'log.csv')
         first_created = not os.path.exists(csv_path)
         # we don't buffer data going in the csv log, cause we assume
         # that one update will take much longer that one write to the log
@@ -98,7 +99,7 @@ def main(args):
             csv_writer.writerow(header)
 
     # Get the status path
-    status_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'status.json')
+    status_path = os.path.join(utils.get_log_dir(args.model), 'status.json')
 
     # Log command, availability of CUDA, and model
     logger.info(args)

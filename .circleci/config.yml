@@ -13,7 +13,7 @@ jobs:
       # Test the BabyAI levels
       - run: ./run_tests.py
       # Quickly exercise the RL training code
-      - run: time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --save-interval 100 --frames 3000
+      - run: time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --save-interval 100 --frames 300 --arch cnn1
 workflows:
   version: 2
   build_and_test:
