@@ -1,5 +1,4 @@
 import numpy as np
-
 import gym
 
 # Returns the performance of the agent on the environment for a particular number of episodes.
@@ -33,13 +32,14 @@ def evaluate(agent, env, episodes, model_agent=True, offsets=None):
             num_frames += 1
             returnn += reward
 
+
         logs["observations_per_episode"].append(obss)
         logs["num_frames_per_episode"].append(num_frames)
         logs["return_per_episode"].append(returnn)
     if model_agent:
         agent.model.train()
     return logs
-    
+
 
 class ManyEnvs(gym.Env):
 
@@ -75,8 +75,8 @@ def batch_evaluate(agent, env_name, seed, episodes):
         envs.append(env)
     env = ManyEnvs(envs)
 
-    logs = {"num_frames_per_episode": [], 
-            "return_per_episode": [], 
+    logs = {"num_frames_per_episode": [],
+            "return_per_episode": [],
             "observations_per_episode": []}
 
     for i in range((episodes + num_envs - 1) // num_envs):
@@ -101,3 +101,4 @@ def batch_evaluate(agent, env_name, seed, episodes):
         logs["return_per_episode"].extend(list(returns))
 
     return logs
+

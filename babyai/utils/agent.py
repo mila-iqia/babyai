@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 import torch
-
 from .. import utils
 from babyai.agents.bot import Bot
 
