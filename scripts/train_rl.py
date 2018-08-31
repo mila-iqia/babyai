@@ -355,7 +355,7 @@ while status['num_frames'] < args.frames:
         logs = batch_evaluate(agent, test_env_name, args.test_seed, args.test_episodes)
         agent.model.train()
         mean_return = np.mean(logs["return_per_episode"])
-        if mean_return >= best_mean_return:
+        if mean_return > best_mean_return:
             best_mean_return = mean_return
             utils.save_model(acmodel, model_name)
             logger.info("Return {: .2f}; best model is saved".format(mean_return))
