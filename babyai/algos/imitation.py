@@ -256,7 +256,7 @@ class ImitationLearning(object):
         if os.path.exists(status_path):
             with open(status_path, 'r') as src:
                 status = json.load(src)
-        else:
+        elif not os.path.exists(os.path.dirname(status_path)):
             # Ensure that the status directory exists
             os.makedirs(os.path.dirname(status_path))
 
