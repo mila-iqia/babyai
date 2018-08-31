@@ -264,15 +264,11 @@ class ImitationLearning(object):
         status = {'i': 0,
                   'num_frames': 0,
                   'patience': 0}
-        print(status_path)
         if os.path.exists(status_path):
-            print(0)
             with open(status_path, 'r') as src:
                 status = json.load(src)
-        else:
-            print(1)
+        elif not os.path.exists(os.path.dirname(status_path)):
             # Ensure that the status directory exists
-            print(os.path.dirname(status_path))
             os.makedirs(os.path.dirname(status_path))
 
         # If the batch size is larger than the number of demos, we need to lower the batch size
