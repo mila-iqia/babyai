@@ -162,9 +162,10 @@ if len(args.aux_loss) > 0:
     model_name_parts['info'] = '_' + ''.join([info[0].upper() for info in args.aux_loss])
     model_name_parts['coef'] = '_' + '-'.join(map(str, args.aux_loss_coef))
 default_model_name = "{env}_{algo}_{arch}_{instr}_{mem}_seed{seed}{info}{coef}_{suffix}".format(**model_name_parts)
-model_name = args.model.format(**model_name_parts) if args.model else default_model_name
 if args.pretrained_model:
-    model_name = args.pretrained_model + '_pretrained_' + default_model_name
+    default_model_name = args.pretrained_model + '_pretrained_' + default_model_name
+model_name = args.model.format(**model_name_parts) if args.model else default_model_name
+
 utils.configure_logging(model_name)
 
 # Define obss preprocessor
@@ -176,6 +177,8 @@ else:
 # Define actor-critic model
 
 if args.pretrained_model:
+    utils.change_preprocessor_model_name(obss_preprocessor, model_name)
+    obss_preprocessor.vocab.save()
     acmodel = utils.load_model(args.pretrained_model)
     utils.save_model(acmodel, model_name)
 else:
@@ -352,7 +355,7 @@ while status['num_frames'] < args.frames:
         logs = batch_evaluate(agent, test_env_name, args.test_seed, args.test_episodes)
         agent.model.train()
         mean_return = np.mean(logs["return_per_episode"])
-        if mean_return > best_mean_return:
+        if mean_return >= best_mean_return:
             best_mean_return = mean_return
             utils.save_model(acmodel, model_name)
             logger.info("Return {: .2f}; best model is saved".format(mean_return))

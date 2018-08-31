@@ -58,10 +58,17 @@ class ImitationLearning(object):
             observation_space = self.env.observation_space
             action_space = self.env.action_space
 
-        self.obss_preprocessor = utils.ObssPreprocessor(args.model, observation_space)
+        self.obss_preprocessor = utils.ObssPreprocessor(args.pretrained_model or args.model, observation_space)
 
         # Define actor-critic model
-        self.acmodel = utils.load_model(args.model, raise_not_found=False)
+        if args.pretrained_model:
+            utils.change_preprocessor_model_name(self.obss_preprocessor, args.model)
+            self.obss_preprocessor.vocab.save()
+            self.acmodel = utils.load_model(args.pretrained_model)
+            utils.save_model(self.acmodel, args.model)
+        else:
+            self.acmodel = utils.load_model(args.model, raise_not_found=False)
+
         if self.acmodel is None:
             self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space, args.image_dim, args.memory_dim,
                                    not self.args.no_instr, self.args.instr_arch, not self.args.no_mem, self.args.arch)
@@ -93,7 +100,11 @@ class ImitationLearning(object):
             'instr': instr,
             'seed': args.seed,
             'suffix': suffix}
-        return  "{envs}_IL_{arch}_{instr}_seed{seed}_{suffix}".format(**model_name_parts)
+        default_model_name = "{envs}_IL_{arch}_{instr}_seed{seed}_{suffix}".format(**model_name_parts)
+        if args.pretrained_model:
+            default_model_name = args.pretrained_model + '_pretrained_' + default_model_name
+        return default_model_name
+
 
     def starting_indexes(self, num_frames):
         if num_frames % self.args.recurrence == 0:
@@ -253,11 +264,15 @@ class ImitationLearning(object):
         status = {'i': 0,
                   'num_frames': 0,
                   'patience': 0}
+        print(status_path)
         if os.path.exists(status_path):
+            print(0)
             with open(status_path, 'r') as src:
                 status = json.load(src)
         else:
+            print(1)
             # Ensure that the status directory exists
+            print(os.path.dirname(status_path))
             os.makedirs(os.path.dirname(status_path))
 
         # If the batch size is larger than the number of demos, we need to lower the batch size
@@ -337,7 +352,7 @@ class ImitationLearning(object):
                     if self.args.csv:
                         csv_writer.writerow(train_data + validation_data)
 
-                if mean_return > best_mean_return:
+                if mean_return >= best_mean_return:
                     best_mean_return = mean_return
                     status['patience'] = 0
                     with open(status_path, 'w') as dst:

@@ -7,8 +7,13 @@ import babyai.rl
 
 from .. import utils
 
+
 def get_vocab_path(model_name):
     return os.path.join(utils.get_model_dir(model_name), "vocab.json")
+
+
+def change_preprocessor_model_name(preprocessor, model_name):
+    preprocessor.instr_preproc.vocab.path = get_vocab_path(model_name)
 
 
 class Vocabulary:
