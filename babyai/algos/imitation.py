@@ -58,22 +58,21 @@ class ImitationLearning(object):
             observation_space = self.env.observation_space
             action_space = self.env.action_space
 
-        self.obss_preprocessor = utils.ObssPreprocessor(args.pretrained_model or args.model, observation_space)
+        self.model_name = args.model_name
+
+        self.obss_preprocessor = utils.ObssPreprocessor(args.load_model_from or self.model_name, observation_space)
 
         # Define actor-critic model
-        if args.pretrained_model:
-            utils.change_preprocessor_model_name(self.obss_preprocessor, args.model)
-            self.obss_preprocessor.vocab.save()
-            self.acmodel = utils.load_model(args.pretrained_model)
-            utils.save_model(self.acmodel, args.model)
-        else:
-            self.acmodel = utils.load_model(args.model, raise_not_found=False)
 
-        if self.acmodel is None:
+        if args.load_model_from:
+            utils.change_preprocessor_model_name(self.obss_preprocessor, self.model_name)
+            self.obss_preprocessor.vocab.save()
+            self.acmodel = utils.load_model(args.load_model_from)
+            logger.info("model loaded")
+        else:
             self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space, args.image_dim, args.memory_dim,
                                    not self.args.no_instr, self.args.instr_arch, not self.args.no_mem, self.args.arch)
-        else:
-            logger.info("model loaded")
+        utils.save_model(self.acmodel, self.model_name)
 
         self.acmodel.train()
         if torch.cuda.is_available():
@@ -101,8 +100,8 @@ class ImitationLearning(object):
             'seed': args.seed,
             'suffix': suffix}
         default_model_name = "{envs}_IL_{arch}_{instr}_seed{seed}_{suffix}".format(**model_name_parts)
-        if args.pretrained_model:
-            default_model_name = args.pretrained_model + '_pretrained_' + default_model_name
+        if args.load_model_from:
+            default_model_name = args.load_model_from + '_pretrained_' + default_model_name
         return default_model_name
 
 
@@ -277,13 +276,15 @@ class ImitationLearning(object):
             logger.info("Batch size too high. Setting it to the number of train demos ({})".format(len(train_demos)))
 
         # Model saved initially to avoid "Model not found Exception" during first validation step
-        utils.save_model(self.acmodel, self.args.model)
+        utils.save_model(self.acmodel, self.model_name)
 
         # best mean return to keep track of performance on validation set
         best_mean_return, patience, i = 0, 0, 0
         total_start_time = time.time()
 
         while True:
+            if 'patience' not in status:  # if for some reason you're finetuining with IL an RL pretrained agent
+                status['patience'] = 0
             # Do not learn if using a pre-trained model that already lost patience
             if status['patience'] > self.args.patience:
                 break
@@ -359,7 +360,7 @@ class ImitationLearning(object):
                     self.obss_preprocessor.vocab.save()
                     if torch.cuda.is_available():
                         self.acmodel.cpu()
-                    utils.save_model(self.acmodel, self.args.model)
+                    utils.save_model(self.acmodel, self.model_name)
                     if torch.cuda.is_available():
                         self.acmodel.cuda()
                 else:

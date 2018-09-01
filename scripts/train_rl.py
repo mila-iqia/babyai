@@ -34,8 +34,12 @@ parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --curriculum REQUIRED)")
 parser.add_argument("--curriculum", default=None,
                     help="name of the curriculum to train on (REQUIRED or --env REQUIRED)")
+parser.add_argument("--load-model-from", default=None,
+                    help='To specify if you want to use a pretrained model')
+parser.add_argument("--store-model-to", default=None,
+                    help="To specify if you want to save the model under a specific name")
 parser.add_argument("--model", default=None,
-                    help="name of the model (default: ENV_ALGO_TIME)")
+                    help="DEPRECATED: plays the role of both '--store-model-to' and '--load-model-from'")
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed; if 0, a random random seed will be used  (default: 1)")
 parser.add_argument("--task-id-seed", action='store_true',
@@ -108,10 +112,14 @@ parser.add_argument("--test-seed", type=int, default=0,
                     help="random seed for testing (default: 0)")
 parser.add_argument("--test-episodes", type=int, default=200,
                     help="Number of episodes to use for testing (default: 200)")
-parser.add_argument("--pretrained-model", default=None,
-                    help='If you\'re using a pre-trained model and want the fine-tuned one to have a new name')
 
 args = parser.parse_args()
+
+if args.model:
+    args.load_model_from = args.model
+    args.store_model_to = args.model
+    # TODO: The logger is define a bit later (needs the model name) - change this to a log message ?
+    print("WARNING: --model is DEPRECATED, please ue --load-model-from and --store-model-to instead")
 
 assert args.env is not None or args.curriculum is not None, "--env or --curriculum must be specified."
 
@@ -162,33 +170,31 @@ if len(args.aux_loss) > 0:
     model_name_parts['info'] = '_' + ''.join([info[0].upper() for info in args.aux_loss])
     model_name_parts['coef'] = '_' + '-'.join(map(str, args.aux_loss_coef))
 default_model_name = "{env}_{algo}_{arch}_{instr}_{mem}_seed{seed}{info}{coef}_{suffix}".format(**model_name_parts)
-if args.pretrained_model:
-    default_model_name = args.pretrained_model + '_pretrained_' + default_model_name
-model_name = args.model.format(**model_name_parts) if args.model else default_model_name
+if args.load_model_from:
+    default_model_name = args.load_model_from + '_pretrained_' + default_model_name
+model_name = args.store_model_to.format(**model_name_parts) if args.store_model_to else default_model_name
 
 utils.configure_logging(model_name)
+logger = logging.getLogger(__name__)
 
 # Define obss preprocessor
 if 'emb' in args.arch:
-    obss_preprocessor = utils.IntObssPreprocessor(args.pretrained_model or model_name, envs[0].observation_space)
+    obss_preprocessor = utils.IntObssPreprocessor(args.load_model_from or model_name, envs[0].observation_space)
 else:
-    obss_preprocessor = utils.ObssPreprocessor(args.pretrained_model or model_name, envs[0].observation_space)
+    obss_preprocessor = utils.ObssPreprocessor(args.load_model_from or model_name, envs[0].observation_space)
 
 # Define actor-critic model
 
-if args.pretrained_model:
+if args.load_model_from:
     utils.change_preprocessor_model_name(obss_preprocessor, model_name)
     obss_preprocessor.vocab.save()
-    acmodel = utils.load_model(args.pretrained_model)
-    utils.save_model(acmodel, model_name)
+    acmodel = utils.load_model(args.load_model_from)
 else:
-    acmodel = utils.load_model(model_name, raise_not_found=False)
-
-if acmodel is None:
     acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
                       args.image_dim, args.memory_dim,
                       not args.no_instr, args.instr_arch, not args.no_mem, args.arch, args.aux_loss)
-    utils.save_model(acmodel, model_name)
+utils.save_model(acmodel, model_name)
+
 if torch.cuda.is_available():
     acmodel.cuda()
 if len(args.aux_loss) > 0:
@@ -227,7 +233,6 @@ if os.path.exists(status_path):
 
 # Define logger and Tensorboard writer and CSV writer
 
-logger = logging.getLogger(__name__)
 header = (["update", "frames", "FPS", "duration"]
           + ["return_" + stat for stat in ['mean', 'std', 'min', 'max']]
           + ["success_rate"]

@@ -134,10 +134,12 @@ class BotAgent:
 
 
 def load_agent(args, env):
-    if args.model == 'BOT':
+    if not args.model_name:
+        args.model_name = args.model
+    if args.model_name == 'BOT':
         return BotAgent(env)
-    elif args.model is not None:
-        obss_preprocessor = utils.ObssPreprocessor(args.model, env.observation_space)
-        return ModelAgent(args.model, obss_preprocessor, args.argmax)
+    elif args.model_name is not None:
+        obss_preprocessor = utils.ObssPreprocessor(args.model_name, env.observation_space)
+        return ModelAgent(args.model_name, obss_preprocessor, args.argmax)
     elif args.demos_origin is not None or args.demos is not None:
         return DemoAgent(demos=args.demos, env_name=args.env, origin=args.demos_origin)
