@@ -81,12 +81,13 @@ def main(args):
     if args.model:
         args.load_model_from = args.model
         args.store_model_to = args.model
-        # TODO: The logger is define a bit later (needs the model name) - change this to a log message ?
-        print("WARNING: --model is DEPRECATED, please ue --load-model-from and --store-model-to instead")
 
     args.model_name = args.store_model_to or ImitationLearning.default_model_name(args)
     utils.configure_logging(args.model_name)
     logger = logging.getLogger(__name__)
+    if args.model:
+        logger.info("WARNING: --model is DEPRECATED, please use --load-model-from and --store-model-to instead")
+
     il_learn = ImitationLearning(args)
 
     # Define logger and Tensorboard writer

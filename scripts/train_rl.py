@@ -118,8 +118,6 @@ args = parser.parse_args()
 if args.model:
     args.load_model_from = args.model
     args.store_model_to = args.model
-    # TODO: The logger is define a bit later (needs the model name) - change this to a log message ?
-    print("WARNING: --model is DEPRECATED, please ue --load-model-from and --store-model-to instead")
 
 assert args.env is not None or args.curriculum is not None, "--env or --curriculum must be specified."
 
@@ -176,6 +174,10 @@ model_name = args.store_model_to.format(**model_name_parts) if args.store_model_
 
 utils.configure_logging(model_name)
 logger = logging.getLogger(__name__)
+
+if args.model:
+    logger.info("WARNING: --model is DEPRECATED, please use --load-model-from and --store-model-to instead")
+
 
 # Define obss preprocessor
 if 'emb' in args.arch:
