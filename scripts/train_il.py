@@ -79,8 +79,8 @@ parser.add_argument("--memory-dim", type=int, default=128,
 
 def main(args):
     if args.model:
-        args.load_model_from = args.model
-        args.store_model_to = args.model
+        args.load_model_from = args.load_model_from or args.model
+        args.store_model_to = args.store_model_to or args.model
 
     args.model_name = args.store_model_to or ImitationLearning.default_model_name(args)
     utils.configure_logging(args.model_name)

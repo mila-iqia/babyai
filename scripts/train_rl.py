@@ -116,8 +116,8 @@ parser.add_argument("--test-episodes", type=int, default=200,
 args = parser.parse_args()
 
 if args.model:
-    args.load_model_from = args.model
-    args.store_model_to = args.model
+    args.load_model_from = args.load_model_from or args.model
+    args.store_model_to = args.store_model_to or args.model
 
 assert args.env is not None or args.curriculum is not None, "--env or --curriculum must be specified."
 
