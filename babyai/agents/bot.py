@@ -10,7 +10,7 @@ class Bot:
     Heuristic-based level solver
     """
 
-    def __init__(self, mission, forget_time=math.inf, timeout=10000):
+    def __init__(self, mission, forget=False, timeout=10000):
         # Mission to be solved
         self.mission = mission
 
@@ -19,18 +19,14 @@ class Bot:
         # Grid containing what has been mapped out
         self.grid = Grid(grid_size, grid_size)
 
-        # Time a given grid cell was last seen
-        self.last_seen = np.full(shape=(grid_size, grid_size), dtype=np.float, fill_value=-math.inf)
-
         # Visibility mask. True for explored/seen, false for unexplored.
         self.vis_mask = np.zeros(shape=(grid_size, grid_size), dtype=np.bool)
 
         # Number of environment steps
         self.step_count = 0
 
-        # Time visible cells can be remembered (number of env steps)
-        assert forget_time > 0
-        self.forget_time = forget_time
+        # Forget the visibility mask after each subgoal is completed
+        self.forget = forget
 
         # Number of compute iterations performed
         self.itr_count = 0
@@ -55,10 +51,12 @@ class Bot:
         """
 
         if isinstance(instr, GoToInstr):
+            self.stack.append(('Forget', None))
             self.stack.append(('GoToObj', instr.desc))
             return
 
         if isinstance(instr, OpenInstr):
+            self.stack.append(('Forget', None))
             self.stack.append(('Open', instr.desc))
             self.stack.append(('GoToObj', instr.desc))
             return
@@ -66,12 +64,14 @@ class Bot:
         if isinstance(instr, PickupInstr):
             # We pick up and immediately drop so
             # that we may carry other objects
+            self.stack.append(('Forget', None))
             self.stack.append(('Drop', None))
             self.stack.append(('Pickup', instr.desc))
             self.stack.append(('GoToObj', instr.desc))
             return
 
         if isinstance(instr, PutNextInstr):
+            self.stack.append(('Forget', None))
             self.stack.append(('Drop', None))
             self.stack.append(('GoToAdjPos', instr.desc_fixed))
             self.stack.append(('Pickup', None))
@@ -133,6 +133,14 @@ class Bot:
 
         #print(subgoal, datum)
         #print('pos:', pos)
+
+        # Forget after a subgoal is completed
+        if subgoal == 'Forget':
+            if self.forget:
+                self.vis_mask = np.zeros(shape=self.vis_mask.shape, dtype=np.bool)
+                self.process_obs()
+            self.stack.pop()
+            return None
 
         # Open a door
         if subgoal == 'Open':
@@ -431,10 +439,7 @@ class Bot:
                 if abs_j < 0 or abs_j >= self.vis_mask.shape[1]:
                     continue
 
-                self.last_seen[abs_i, abs_j] = self.step_count
-
-        # Recompute the visibility mask
-        self.vis_mask = np.less(self.step_count - self.last_seen, self.forget_time)
+                self.vis_mask[abs_i, abs_j] = True
 
     def find_obj_pos(self, obj_desc):
         """
