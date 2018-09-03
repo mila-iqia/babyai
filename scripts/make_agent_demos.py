@@ -64,7 +64,7 @@ def generate_demos(n_episodes, valid, seed, shift=0):
     for i in range(shift):
         env.reset()
 
-    agent = utils.load_agent(args, env)
+    agent = utils.load_agent(env, args.model, args.demos, args.demos_origin, args.argmax, args.env)
 
     demos_path = utils.get_demos_path(args.demos, args.env, 'agent', valid)
 

@@ -12,10 +12,6 @@ def get_vocab_path(model_name):
     return os.path.join(utils.get_model_dir(model_name), "vocab.json")
 
 
-def change_preprocessor_model_name(preprocessor, model_name):
-    preprocessor.instr_preproc.vocab.path = get_vocab_path(model_name)
-
-
 class Vocabulary:
     def __init__(self, model_name):
         self.path = get_vocab_path(model_name)
@@ -25,7 +21,7 @@ class Vocabulary:
             self.vocab = json.load(open(self.path))
 
     def __getitem__(self, token):
-        if not(token in self.vocab.keys()):
+        if not (token in self.vocab.keys()):
             if len(self.vocab) >= self.max_size:
                 raise ValueError("Maximum vocabulary capacity reached")
             self.vocab[token] = len(self.vocab) + 1
@@ -83,9 +79,9 @@ class IntImagePreprocessor(object):
 
 
 class ObssPreprocessor:
-    def __init__(self, model_name, obs_space):
+    def __init__(self, model_name, obs_space, load_vocab_from=None):
         self.image_preproc = RawImagePreprocessor()
-        self.instr_preproc = InstructionsPreprocessor(model_name)
+        self.instr_preproc = InstructionsPreprocessor(load_vocab_from or model_name)
         self.vocab = self.instr_preproc.vocab
         self.obs_space = {
             "image": 147,
@@ -105,11 +101,11 @@ class ObssPreprocessor:
 
 
 class IntObssPreprocessor(object):
-    def __init__(self, model_name, obs_space):
+    def __init__(self, model_name, obs_space, load_vocab_from=None):
         image_obs_space = obs_space.spaces["image"]
         self.image_preproc = IntImagePreprocessor(image_obs_space.shape[-1],
-            max_high=image_obs_space.high.max())
-        self.instr_preproc = InstructionsPreprocessor(model_name)
+                                                  max_high=image_obs_space.high.max())
+        self.instr_preproc = InstructionsPreprocessor(load_vocab_from or model_name)
         self.vocab = self.instr_preproc.vocab
         self.obs_space = {
             "image": self.image_preproc.max_size,

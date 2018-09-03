@@ -58,21 +58,18 @@ class ImitationLearning(object):
             observation_space = self.env.observation_space
             action_space = self.env.action_space
 
-        self.model_name = args.model_name
-
-        self.obss_preprocessor = utils.ObssPreprocessor(args.load_model_from or self.model_name, observation_space)
+        self.obss_preprocessor = utils.ObssPreprocessor(args.store_model_to, observation_space, args.load_model_from)
 
         # Define actor-critic model
 
         if args.load_model_from:
-            utils.change_preprocessor_model_name(self.obss_preprocessor, self.model_name)
-            self.obss_preprocessor.vocab.save()
             self.acmodel = utils.load_model(args.load_model_from)
             logger.info("model loaded")
         else:
             self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space, args.image_dim, args.memory_dim,
                                    not self.args.no_instr, self.args.instr_arch, not self.args.no_mem, self.args.arch)
-        utils.save_model(self.acmodel, self.model_name)
+        self.obss_preprocessor.vocab.save()
+        utils.save_model(self.acmodel, args.store_model_to)
 
         self.acmodel.train()
         if torch.cuda.is_available():
@@ -231,12 +228,12 @@ class ImitationLearning(object):
     def validate(self, verbose=True):
         # Seed needs to be reset for each validation, to ensure consistency
         utils.seed(self.args.val_seed)
-        self.args.argmax = True
+
         if verbose:
             logger.info("Validating the model")
 
         envs = self.env if type(self.env) == list else [self.env]
-        agent = utils.load_agent(self.args, envs[0])
+        agent = utils.load_agent(envs[0], model_name=self.args.store_model_to, argmax=True)
         agent.model = self.acmodel
 
         # because ModelAgent places inputs on CPU, we have to move the model
@@ -276,7 +273,7 @@ class ImitationLearning(object):
             logger.info("Batch size too high. Setting it to the number of train demos ({})".format(len(train_demos)))
 
         # Model saved initially to avoid "Model not found Exception" during first validation step
-        utils.save_model(self.acmodel, self.model_name)
+        utils.save_model(self.acmodel, self.args.store_model_to)
 
         # best mean return to keep track of performance on validation set
         best_mean_return, patience, i = 0, 0, 0
@@ -360,7 +357,7 @@ class ImitationLearning(object):
                     self.obss_preprocessor.vocab.save()
                     if torch.cuda.is_available():
                         self.acmodel.cpu()
-                    utils.save_model(self.acmodel, self.model_name)
+                    utils.save_model(self.acmodel, self.args.store_model_to)
                     if torch.cuda.is_available():
                         self.acmodel.cuda()
                 else:

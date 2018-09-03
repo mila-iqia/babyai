@@ -82,8 +82,8 @@ class ModelAgent(Agent):
 class DemoAgent(Agent):
     """A demonstration-based agent. This agent behaves using demonstrations."""
 
-    def __init__(self, demos, env_name, origin):
-        self.demos_path = utils.get_demos_path(demos, env_name, origin, valid=False)
+    def __init__(self, demos_name, env_name, origin):
+        self.demos_path = utils.get_demos_path(demos_name, env_name, origin, valid=False)
         self.demos = utils.load_demos(self.demos_path)
         self.demo_id = 0
         self.step_id = 0
@@ -133,13 +133,12 @@ class BotAgent:
         pass
 
 
-def load_agent(args, env):
-    if not args.model_name:
-        args.model_name = args.model
-    if args.model_name == 'BOT':
+def load_agent(env, model_name, demos_name=None, demos_origin=None, argmax=True, env_name=None):
+    # env_name needs to be specified for demo agents
+    if model_name == 'BOT':
         return BotAgent(env)
-    elif args.model_name is not None:
-        obss_preprocessor = utils.ObssPreprocessor(args.model_name, env.observation_space)
-        return ModelAgent(args.model_name, obss_preprocessor, args.argmax)
-    elif args.demos_origin is not None or args.demos is not None:
-        return DemoAgent(demos=args.demos, env_name=args.env, origin=args.demos_origin)
+    elif model_name is not None:
+        obss_preprocessor = utils.ObssPreprocessor(model_name, env.observation_space)
+        return ModelAgent(model_name, obss_preprocessor, argmax)
+    elif demos_origin is not None or demos_name is not None:
+        return DemoAgent(demos_name=demos_name, env_name=env_name, origin=demos_origin)

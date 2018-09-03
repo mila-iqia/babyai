@@ -62,7 +62,7 @@ obs = env.reset()
 print("Mission: {}".format(obs["mission"]))
 
 # Define agent
-agent = utils.load_agent(args, env)
+agent = utils.load_agent(env, args.model, args.demos, args.demos_origin, args.argmax, args.env)
 
 # Run the agent
 

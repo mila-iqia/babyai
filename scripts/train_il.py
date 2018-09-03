@@ -82,8 +82,8 @@ def main(args):
         args.load_model_from = args.load_model_from or args.model
         args.store_model_to = args.store_model_to or args.model
 
-    args.model_name = args.store_model_to or ImitationLearning.default_model_name(args)
-    utils.configure_logging(args.model_name)
+    args.store_model_to = args.store_model_to or ImitationLearning.default_model_name(args)
+    utils.configure_logging(args.store_model_to)
     logger = logging.getLogger(__name__)
     if args.model:
         logger.info("WARNING: --model is DEPRECATED, please use --load-model-from and --store-model-to instead")
@@ -101,7 +101,7 @@ def main(args):
     # Define csv writer
     csv_writer = None
     if args.csv:
-        csv_path = os.path.join(utils.get_log_dir(args.model_name), 'log.csv')
+        csv_path = os.path.join(utils.get_log_dir(args.store_model_to), 'log.csv')
         first_created = not os.path.exists(csv_path)
         # we don't buffer data going in the csv log, cause we assume
         # that one update will take much longer that one write to the log
@@ -110,7 +110,7 @@ def main(args):
             csv_writer.writerow(header)
 
     # Get the status path
-    status_path = os.path.join(utils.get_log_dir(args.model_name), 'status.json')
+    status_path = os.path.join(utils.get_log_dir(args.store_model_to), 'status.json')
 
     # Log command, availability of CUDA, and model
     logger.info(args)
