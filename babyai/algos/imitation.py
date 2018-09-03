@@ -32,12 +32,8 @@ class ImitationLearning(object):
             self.train_demos = [utils.load_demos(utils.get_demos_path(demo_file, env, demos_origin, valid=False))[:episodes]
                                 for env, demo_file, demos_origin, episodes in self.args.env]
 
-            self.train_demos = [[demo[0] for demo in demos] for demos in self.train_demos]
             self.val_demos = [utils.load_demos(utils.get_demos_path(demo_file, env, demos_origin, valid=True))[:self.args.val_episodes]
                               for env, demo_file, demos_origin, _ in self.args.env]
-
-            self.val_demos = [[demo[0] for demo in demos] for demos in self.val_demos]
-
 
             # Environment created for calculating the mean reward during validation
             self.env = [gym.make(item[0]) for item in self.args.env]
@@ -108,7 +104,6 @@ class ImitationLearning(object):
         if args.load_model_from:
             default_model_name = args.load_model_from + '_pretrained_' + default_model_name
         return default_model_name
-
 
     def starting_indexes(self, num_frames):
         if num_frames % self.args.recurrence == 0:

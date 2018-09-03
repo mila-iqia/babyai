@@ -74,9 +74,13 @@ curriculums = {
 }
 
 imitation_curriculums = {
-    "GoToLocal" : [
-        ("BabyAI-GoToObj-v0", 'GoToObj-bot-100k','bot', 200),
-        ("BabyAI-GoToLocal-v0", 'GoToLocal-bot-100k','bot', 1000)
+    "PutNext-PutNextLocal-100000" : [
+        ("BabyAI-PutNextLocal-v0", "PutNextLocal-bot-1m", "bot", 100000),
+        ("BabyAI-PutNext-v0", "PutNext-bot-1m", "bot", 100000)
+    ],
+    "PutNext-PutNextLocal-1m" : [
+        ("BabyAI-PutNextLocal-v0", "PutNextLocal-bot-1m", "bot", 1000000),
+        ("BabyAI-PutNext-v0", "PutNext-bot-1m", "bot", 1000000)
     ]
 }
 
