@@ -38,7 +38,7 @@ class InstructionsPreprocessor(object):
         self.vocab = Vocabulary(model_name)
         if load_vocab_from:
             old_vocab = Vocabulary(load_vocab_from)
-            self.vocab.vocab = {k: v for k, v in old_vocab.items()}
+            self.vocab.vocab = {k: v for k, v in old_vocab.vocab.items()}
 
     def __call__(self, obss, device=None):
         raw_instrs = []
