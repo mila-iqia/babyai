@@ -136,6 +136,8 @@ class BotAgent:
 def load_agent(args, env):
     if args.model == 'BOT':
         return BotAgent(env)
+    elif args.model == 'FORGET_BOT':
+        return BotAgent(env, forget=True)
     elif args.model is not None:
         obss_preprocessor = utils.ObssPreprocessor(args.model, env.observation_space)
         return ModelAgent(args.model, obss_preprocessor, args.argmax)

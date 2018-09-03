@@ -19,6 +19,7 @@ def evaluate(agent, env, episodes, model_agent=True, offsets=None):
                 count += 1
 
         obs = env.reset()
+        agent.on_reset()
         done = False
 
         num_frames = 0

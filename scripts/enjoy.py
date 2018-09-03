@@ -106,6 +106,8 @@ while True:
             dist_str = ", ".join("{:.4f}".format(float(p)) for p in dist.probs[0])
             print("step: {}, mission: {}, dist: {}, entropy: {:.2f}, value: {:.2f}".format(
                 step, obs["mission"], dist_str, float(dist.entropy()), float(value)))
+        else:
+            print("step: {}, mission: {}".format(step, obs['mission']))
         if done:
             print("Reward:", reward)
             obs = env.reset()
