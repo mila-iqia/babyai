@@ -33,9 +33,12 @@ class Vocabulary:
 
 
 class InstructionsPreprocessor(object):
-    def __init__(self, model_name):
+    def __init__(self, model_name, load_vocab_from=None):
         self.model_name = model_name
         self.vocab = Vocabulary(model_name)
+        if load_vocab_from:
+            old_vocab = Vocabulary(load_vocab_from)
+            self.vocab.vocab = {k: v for k, v in old_vocab.items()}
 
     def __call__(self, obss, device=None):
         raw_instrs = []
@@ -81,7 +84,7 @@ class IntImagePreprocessor(object):
 class ObssPreprocessor:
     def __init__(self, model_name, obs_space, load_vocab_from=None):
         self.image_preproc = RawImagePreprocessor()
-        self.instr_preproc = InstructionsPreprocessor(load_vocab_from or model_name)
+        self.instr_preproc = InstructionsPreprocessor(model_name, load_vocab_from)
         self.vocab = self.instr_preproc.vocab
         self.obs_space = {
             "image": 147,
