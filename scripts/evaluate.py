@@ -40,7 +40,7 @@ def main(args, seed, episodes):
         episodes = len(agent.demos)
 
     # Evaluate
-    if args.model:
+    if isinstance(agent, utils.ModelAgent):
         logs = batch_evaluate(agent, args.env, seed, episodes)
     else:
         logs = evaluate(agent, env, episodes, False)

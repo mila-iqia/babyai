@@ -137,6 +137,8 @@ def load_agent(env, model_name, demos_name=None, demos_origin=None, argmax=True,
     # env_name needs to be specified for demo agents
     if model_name == 'BOT':
         return BotAgent(env)
+    elif model_name == 'FORGET_BOT':
+        return BotAgent(env, forget=True)
     elif model_name is not None:
         obss_preprocessor = utils.ObssPreprocessor(model_name, env.observation_space)
         return ModelAgent(model_name, obss_preprocessor, argmax)
