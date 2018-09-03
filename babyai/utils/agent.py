@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 import torch
-
 from .. import utils
 from babyai.agents.bot import Bot
 
@@ -118,13 +117,14 @@ class DemoAgent(Agent):
 
 
 class BotAgent:
-    def __init__(self, env):
+    def __init__(self, env, forget=False):
         """An agent based on a GOFAI bot."""
         self.env = env
+        self.forget = forget
         self.on_reset()
 
     def on_reset(self):
-        self.bot = Bot(self.env)
+        self.bot = Bot(self.env, forget=self.forget)
 
     def act(self, *args, **kwargs):
         return {'action': self.bot.step()}

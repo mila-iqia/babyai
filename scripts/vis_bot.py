@@ -26,9 +26,8 @@ def test():
         action='store_true'
     )
     parser.add_option(
-        "--forget-time",
-        type="int",
-        default=5000000
+        "--forget",
+        action='store_true'
     )
     (options, args) = parser.parse_args()
 
@@ -51,7 +50,7 @@ def test():
             seed = rng.randint(0, 0xFFFFFF)
 
         mission = level(seed=seed)
-        expert = Bot(mission, forget_time=options.forget_time)
+        expert = Bot(mission, forget=options.forget)
 
         print('seed=%d' % seed)
         print(mission.surface)

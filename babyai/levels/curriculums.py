@@ -73,6 +73,13 @@ curriculums = {
     ]
 }
 
+imitation_curriculums = {
+    "GoToLocal" : [
+        ("BabyAI-GoToObj-v0", 'GoToObj-bot-100k','bot', 200),
+        ("BabyAI-GoToLocal-v0", 'GoToLocal-bot-100k','bot', 1000)
+    ]
+}
+
 def create_menvs(curriculum, num_procs, seed):
     """Creates X multi-environments with 1 multi-environment head where X
     is given by `num_procs`. Each multi-environment can simulate all the

@@ -4,11 +4,13 @@ import time
 import datetime
 import numpy as np
 import sys
+import itertools
 import torch
-from babyai.evaluate import evaluate, batch_evaluate
+from babyai.evaluate import batch_evaluate
 import babyai.utils as utils
 from babyai.rl import DictList
 from babyai.model import ACModel
+import multiprocessing
 import os
 import json
 import logging
@@ -23,15 +25,22 @@ class ImitationLearning(object):
 
         utils.seed(self.args.seed)
 
+        # args.env is a list in curriculum learning.
         if type(self.args.env) == list:
             self.env = [gym.make(item[0]) for item in self.args.env]
 
-            self.train_demos = [utils.load_demos(utils.get_demos_path(env=env, origin=demos_origin))[:episodes]
-                                for env, demos_origin, episodes in self.args.env]
+            self.train_demos = [utils.load_demos(utils.get_demos_path(demo_file, env, demos_origin, valid=False))[:episodes]
+                                for env, demo_file, demos_origin, episodes in self.args.env]
 
-            self.val_demos = [utils.load_demos(utils.get_demos_path(env=env, origin=demos_origin, valid=True))[:1]
-                              for env, demos_origin, _ in self.args.env]
+            self.train_demos = [[demo[0] for demo in demos] for demos in self.train_demos]
+            self.val_demos = [utils.load_demos(utils.get_demos_path(demo_file, env, demos_origin, valid=True))[:self.args.val_episodes]
+                              for env, demo_file, demos_origin, _ in self.args.env]
 
+            self.val_demos = [[demo[0] for demo in demos] for demos in self.val_demos]
+
+
+            # Environment created for calculating the mean reward during validation
+            self.env = [gym.make(item[0]) for item in self.args.env]
             observation_space = self.env[0].observation_space
             action_space = self.env[0].action_space
 
@@ -53,7 +62,6 @@ class ImitationLearning(object):
             if args.val_episodes > len(self.val_demos):
                 logger.info('Using all the available {} demos to evaluate valid. accuracy'.format(len(self.val_demos)))
             self.val_demos = self.val_demos[:self.args.val_episodes]
-
 
             observation_space = self.env.observation_space
             action_space = self.env.action_space
@@ -225,35 +233,37 @@ class ImitationLearning(object):
 
         return log
 
-    def validate(self, verbose=True):
+    def validate(self, episodes, verbose=True):
         # Seed needs to be reset for each validation, to ensure consistency
         utils.seed(self.args.val_seed)
 
         if verbose:
             logger.info("Validating the model")
+        if type(self.env) == list:
+            agent = utils.load_agent(self.env[0], model_name=self.args.store_model_to, argmax=True)
+        else:
+            agent = utils.load_agent(self.env, model_name=self.args.store_model_to, argmax=True)
 
-        envs = self.env if type(self.env) == list else [self.env]
-        agent = utils.load_agent(envs[0], model_name=self.args.store_model_to, argmax=True)
+        # Setting the agent model to the current model
         agent.model = self.acmodel
 
-        # because ModelAgent places inputs on CPU, we have to move the model
         agent.model.eval()
         logs = []
-        for env_name in ([self.args.env] if isinstance(self.args.env, str) else self.args.env):
-            logs += [batch_evaluate(agent, env_name, self.args.val_seed, self.args.val_episodes)]
+
+        for env_name in ([self.args.env] if isinstance(self.args.env, str) else list(zip(*self.args.env))[0]):
+            logs += [batch_evaluate(agent, env_name, self.args.val_seed, episodes)]
         agent.model.train()
 
-        val_log = self.run_epoch_recurrence(self.val_demos)
-        validation_accuracy = np.mean(val_log["accuracy"])
-
-        if type(self.env) != list:
+        if type(self.args.env) != list:
             assert len(logs) == 1
-            return logs[0], validation_accuracy
+            return logs[0]
 
-        return logs, validation_accuracy
+        return logs
 
     def collect_returns(self):
-        return np.mean(self.validate(False)['return_per_episode'])
+        logs = self.validate(episodes= self.args.eval_episodes, verbose=False)
+        mean_return = {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
+        return mean_return
 
     def train(self, train_demos, writer, csv_writer, status_path, header):
         # Load the status
@@ -331,9 +341,13 @@ class ImitationLearning(object):
                         json.dump(status, dst)
 
             if status['i'] % self.args.validation_interval == 0:
-                valid_log, validation_accuracy = self.validate()
+
+                valid_log = self.validate(self.args.val_episodes)
                 mean_return = np.mean(valid_log['return_per_episode'])
                 success_rate = np.mean([1 if r > 0 else 0 for r in valid_log['return_per_episode']])
+
+                val_log = self.run_epoch_recurrence(self.val_demos)
+                validation_accuracy = np.mean(val_log["accuracy"])
 
                 if status['i'] % self.args.log_interval == 0:
                     validation_data = [validation_accuracy, mean_return, success_rate]
