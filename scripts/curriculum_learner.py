@@ -3,6 +3,12 @@
 """
 Uses Teacher Student Curriculum for imitation learning of multiple environments
 ([Matiisen et al., 2017](https://arxiv.org/abs/1707.00183))
+
+Usage:
+python3 -m scripts.curriculum_learner --curriculum CurriculumName
+
+Example:
+python3 -m scripts.curriculum_learner --curriculum PutNext-PutNextLocal-100000
 """
 
 import numpy as np
@@ -24,6 +30,7 @@ from babyai.multienv.dist_computer import *
 from babyai.multienv.return_history import *
 from babyai.batchsampler import BatchSampler
 from babyai.levels import imitation_curriculums
+import logging
 
 
 parser = argparse.ArgumentParser()
@@ -31,8 +38,8 @@ parser.add_argument("--lr", type=float, default=7e-4,
                     help="learning rate (default: 7e-4)")
 parser.add_argument("--curriculum", required=True,
                     help="the curriculum to train using imitation learning")
-parser.add_argument("--entropy-coef", type=float, default=0.01,
-                    help="entropy term coefficient (default: 0.01)")
+parser.add_argument("--entropy-coef", type=float, default=0.0,
+                    help="entropy term coefficient (default: 0.0)")
 parser.add_argument("--recurrence", type=int, default=20,
                     help="number of timesteps gradient is backpropagated (default: 1)")
 parser.add_argument("--optim-eps", type=float, default=1e-5,
@@ -123,11 +130,16 @@ def main(args, graphs):
     }[args.dist_cp]
 
     args.env = graphs
+    args.model = args.model or ImitationLearning.default_model_name(args)
+
+    # Define logger
+    utils.configure_logging(args.model)
+    logger = logging.getLogger(__name__)
+
     il_learn = ImitationLearning(args)
     utils.save_model(il_learn.acmodel, il_learn.model_name)
 
-    # Define logger
-    logger = utils.get_logger(il_learn.model_name)
+
     header = (["update", "frames", "FPS", "duration", "entropy", "policy_loss", "train_accuracy"]
               + ["validation_accuracy", "validation_return", "validation_success_rate"])
     if args.csv:
@@ -152,10 +164,6 @@ def main(args, graphs):
     for env in graphs:
         header.append("proba/{}".format(env[0]))
         header.append("return/{}".format(env[0]))
-
-
-
-
 
     # Log command, availability of CUDA, and model
     logger.info(args)

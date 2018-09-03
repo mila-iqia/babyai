@@ -31,12 +31,8 @@ class ImitationLearning(object):
             self.train_demos = [utils.load_demos(utils.get_demos_path(demo_file, env, demos_origin, valid=False))[:episodes]
                                 for env, demo_file, demos_origin, episodes in self.args.env]
 
-            self.train_demos = [[demo[0] for demo in demos] for demos in self.train_demos]
             self.val_demos = [utils.load_demos(utils.get_demos_path(demo_file, env, demos_origin, valid=True))[:self.args.val_episodes]
                               for env, demo_file, demos_origin, _ in self.args.env]
-
-            self.val_demos = [[demo[0] for demo in demos] for demos in self.val_demos]
-
 
             # Environment created for calculating the mean reward during validation
             self.env = [gym.make(item[0]) for item in self.args.env]
@@ -65,6 +61,8 @@ class ImitationLearning(object):
             observation_space = self.env.observation_space
             action_space = self.env.action_space
 
+        self.model_name = args.model
+
         self.obss_preprocessor = utils.ObssPreprocessor(args.model, observation_space)
 
         # Define actor-critic model
@@ -84,6 +82,7 @@ class ImitationLearning(object):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
     @staticmethod
     def default_model_name(args):
         if type(args.env) == list:
@@ -101,6 +100,8 @@ class ImitationLearning(object):
             'seed': args.seed,
             'suffix': suffix}
         return  "{envs}_IL_{arch}_{instr}_seed{seed}_{suffix}".format(**model_name_parts)
+
+
 
     def starting_indexes(self, num_frames):
         if num_frames % self.args.recurrence == 0:
