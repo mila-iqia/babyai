@@ -2,7 +2,7 @@ import random
 from collections import OrderedDict
 from copy import deepcopy
 import gym
-from .roomgrid import RoomGrid
+from gym_minigrid.roomgrid import RoomGrid
 from .verifier import *
 
 
