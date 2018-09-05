@@ -93,6 +93,8 @@ parser.add_argument("--image-dim", type=int, default=128,
                     help="dimensionality of the image embedding")
 parser.add_argument("--memory-dim", type=int, default=128,
                     help="dimensionality of the memory LSTM")
+parser.add_argument("--instr-dim", type=int, default=128,
+                    help="dimensionality of the instruction embedder")
 parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs of the sub-IL tasks(default: 1)")
 

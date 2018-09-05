@@ -88,6 +88,8 @@ parser.add_argument("--image-dim", type=int, default=128,
                     help="dimensionality of the image embedding")
 parser.add_argument("--memory-dim", type=int, default=128,
                     help="dimensionality of the memory LSTM")
+parser.add_argument("--instr-dim", type=int, default=128,
+                    help="dimensionality of the memory LSTM")
 parser.add_argument("--no-instr", action="store_true", default=False,
                     help="don't use instructions in the model")
 parser.add_argument("--instr-arch", default="gru",
@@ -183,7 +185,7 @@ else:
 
 if acmodel is None:
     acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
-                      args.image_dim, args.memory_dim,
+                      args.image_dim, args.memory_dim, args.instr_dim,
                       not args.no_instr, args.instr_arch, not args.no_mem, args.arch, args.aux_loss)
     utils.save_model(acmodel, model_name)
 if torch.cuda.is_available():

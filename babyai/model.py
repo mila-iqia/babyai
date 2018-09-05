@@ -78,7 +78,8 @@ class ImageBOWEmbedding(nn.Module):
 
 class ACModel(nn.Module, babyai.rl.RecurrentACModel):
     def __init__(self, obs_space, action_space,
-                 image_dim=128, memory_dim=128,  use_instr=False, lang_model="gru", use_memory=False, arch="cnn1",
+                 image_dim=128, memory_dim=128, instr_dim=128,
+                 use_instr=False, lang_model="gru", use_memory=False, arch="cnn1",
                  aux_info=None):
         super().__init__()
 
@@ -90,6 +91,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         self.aux_info = aux_info
         self.image_dim = image_dim
         self.memory_dim = memory_dim
+        self.instr_dim = instr_dim
 
         self.obs_space = obs_space
 
@@ -157,30 +159,34 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
         # Define instruction embedding
         if self.use_instr:
-            if self.lang_model == 'gru' or self.lang_model == 'conv' or self.lang_model == 'bigru':
-                self.word_embedding_size = 128
-                self.word_embedding = nn.Embedding(obs_space["instr"], self.word_embedding_size)
-                if self.lang_model == 'gru' or self.lang_model == 'bigru':
-                    self.instr_embedding_size = 128
-                    instr_embedding_size = self.instr_embedding_size
-                    if self.lang_model == 'bigru':
-                        instr_embedding_size = instr_embedding_size // 2
-                    self.instr_rnn = nn.GRU(self.word_embedding_size, instr_embedding_size, batch_first=True,
-                                            bidirectional=(self.lang_model == 'bigru'))
+            if self.lang_model in ['gru', 'conv', 'bigru', 'attgru']:
+                self.word_embedding = nn.Embedding(obs_space["instr"], self.instr_dim)
+                if self.lang_model in ['gru', 'bigru', 'attgru']:
+                    gru_dim = self.instr_dim
+                    if self.lang_model in ['bigru', 'attgru']:
+                        gru_dim //= 2
+                    self.instr_rnn = nn.GRU(
+                        self.instr_dim, gru_dim, batch_first=True,
+                        bidirectional=(self.lang_model in ['bigru', 'attgru']))
+                    self.final_instr_dim = self.instr_dim
                 else:
                     kernel_dim = 64
                     kernel_sizes = [3, 4]
-                    self.instr_convs = nn.ModuleList([nn.Conv2d(1, kernel_dim, (K, self.word_embedding_size)) for K in kernel_sizes])
-                    self.instr_embedding_size = kernel_dim * len(kernel_sizes)
+                    self.instr_convs = nn.ModuleList([
+                        nn.Conv2d(1, kernel_dim, (K, self.instr_dim)) for K in kernel_sizes])
+                    self.final_instr_dim = kernel_dim * len(kernel_sizes)
 
             elif self.lang_model == 'bow':
-                self.instr_embedding_size = 128
-                hidden_units = [obs_space["instr"], 128, self.instr_embedding_size]
+                hidden_units = [obs_space["instr"], self.instr_dim, self.instr_dim]
                 layers = []
                 for n_in, n_out in zip(hidden_units, hidden_units[1:]):
                     layers.append(nn.Linear(n_in, n_out))
                     layers.append(nn.ReLU())
                 self.instr_bow = nn.Sequential(*layers)
+                self.final_instr_dim = instr_dim
+
+            if self.lang_model == 'attgru':
+                self.memory2key = nn.Linear(self.memory_size, self.final_instr_dim)
 
         # Define memory
         if self.use_memory:
@@ -189,14 +195,14 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         # Resize image embedding
         self.embedding_size = self.semi_memory_size
         if self.use_instr and arch != "filmcnn" and not arch.startswith("expert_filmcnn"):
-            self.embedding_size += self.instr_embedding_size
+            self.embedding_size += self.final_instr_dim
 
         if arch == "filmcnn":
             self.controller_1 = AgentControllerFiLM(
-                in_features=self.instr_embedding_size, out_features=64,
+                in_features=self.final_instr_dim, out_features=64,
                 in_channels=3, imm_channels=16)
             self.controller_2 = AgentControllerFiLM(
-                in_features=self.instr_embedding_size,
+                in_features=self.final_instr_dim,
                 out_features=64, in_channels=32, imm_channels=32)
 
         if arch.startswith("expert_filmcnn"):
@@ -208,11 +214,11 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             for ni in range(num_module):
                 if ni < num_module-1:
                     mod = ExpertControllerFiLM(
-                        in_features=self.instr_embedding_size,
+                        in_features=self.final_instr_dim,
                         out_features=128, in_channels=128, imm_channels=128)
                 else:
                     mod = ExpertControllerFiLM(
-                        in_features=self.instr_embedding_size, out_features=self.image_dim,
+                        in_features=self.final_instr_dim, out_features=self.image_dim,
                         in_channels=128, imm_channels=128)
                 self.controllers.append(mod)
                 self.add_module('FiLM_Controler_' + str(ni), mod)
@@ -286,21 +292,27 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
     def forward(self, obs, memory):
         if self.use_instr:
-            embed_instr = self._get_embed_instr(obs.instr)
-            if type(embed_instr) == tuple:
-                whole_context, embed_instr, mask_context = embed_instr
+            instr_embedding = self._get_instr_embedding(obs.instr)
+            if type(instr_embedding) == tuple:
+                outputs, instr_embedding, mask = instr_embedding
+            if self.lang_model == "attgru":
+                # outputs: B x L x D
+                # memory: B x M
+                keys = self.memory2key(memory)
+                attention = F.softmax((keys[:, None, :] * outputs).sum(2), dim=1)
+                instr_embedding = (outputs * attention[:, :, None]).sum(1)
 
         x = torch.transpose(torch.transpose(obs.image, 1, 3), 2, 3)
 
         if self.arch == "filmcnn":
-            x = self.controller_1(x, embed_instr)
+            x = self.controller_1(x, instr_embedding)
             x = self.image_conv_1(x)
-            x = self.controller_2(x, embed_instr)
+            x = self.controller_2(x, instr_embedding)
             x = self.image_conv_2(x)
         elif self.arch.startswith("expert_filmcnn"):
             x = self.image_conv(x)
             for controler in self.controllers:
-                x = controler(x, embed_instr)
+                x = controler(x, instr_embedding)
             x = F.relu(self.film_pool(x))
         else:
             x = self.image_conv(x)
@@ -316,7 +328,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             embedding = x
 
         if self.use_instr and self.arch != "filmcnn" and not self.arch.startswith("expert_filmcnn"):
-            embedding = torch.cat((embedding, embed_instr), dim=1)
+            embedding = torch.cat((embedding, instr_embedding), dim=1)
 
         if hasattr(self, 'aux_info') and self.aux_info:
             extra_predictions = {info: self.extra_heads[info](embedding) for info in self.extra_heads}
@@ -331,12 +343,12 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
         return {'dist': dist, 'value': value, 'memory': memory, 'extra_predictions': extra_predictions}
 
-    def _get_embed_instr(self, instr):
+    def _get_instr_embedding(self, instr):
         if self.lang_model == 'gru':
             _, hidden = self.instr_rnn(self.word_embedding(instr))
             return hidden[-1]
 
-        elif self.lang_model == 'bigru':
+        elif self.lang_model in ['bigru', 'attgru']:
             lengths = (instr != 0).sum(1).long()
             masks = (instr != 0).float()
 
@@ -352,24 +364,24 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
                 inputs = pack_padded_sequence(inputs, seq_lengths.data.cpu().numpy(), batch_first=True)
 
-                outputs, h_n = self.instr_rnn(inputs)
+                outputs, final_states = self.instr_rnn(inputs)
             else:
                 instr = instr[:, 0:lengths[0]]
-                outputs, h_n = self.instr_rnn(self.word_embedding(instr))
+                outputs, final_states = self.instr_rnn(self.word_embedding(instr))
                 iperm_idx = None
-            h_n = h_n.transpose(0, 1).contiguous()
-            h_n = h_n.view(h_n.shape[0], -1)
+            final_states = final_states.transpose(0, 1).contiguous()
+            final_states = final_states.view(final_states.shape[0], -1)
             if iperm_idx is not None:
                 outputs, _ = pad_packed_sequence(outputs, batch_first=True)
                 outputs = outputs[iperm_idx]
-                hidden = h_n[iperm_idx]
-            else:
-                hidden = h_n
+                final_states = final_states[iperm_idx]
 
             if outputs.shape[1] < masks.shape[1]:
-                masks = masks[:, :(outputs.shape[1]-masks.shape[1])] #The packing truncate the original length so we need to change mask to fit it
+                masks = masks[:, :(outputs.shape[1]-masks.shape[1])] 
+                # the packing truncated the original length 
+                # so we need to change mask to fit it
 
-            return outputs, hidden, masks
+            return outputs, final_states, masks
 
         elif self.lang_model == 'conv':
             inputs = self.word_embedding(instr).unsqueeze(1)  # (B,1,T,D)
