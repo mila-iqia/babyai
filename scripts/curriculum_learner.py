@@ -98,6 +98,8 @@ parser.add_argument("--image-dim", type=int, default=128,
                     help="dimensionality of the image embedding")
 parser.add_argument("--memory-dim", type=int, default=128,
                     help="dimensionality of the memory LSTM")
+parser.add_argument("--instr-dim", type=int, default=128,
+                    help="dimensionality of the instruction embedder")
 parser.add_argument("--csv", action="store_true", default=False,
                     help="log in a csv file")
 

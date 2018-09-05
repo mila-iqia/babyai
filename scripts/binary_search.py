@@ -77,6 +77,8 @@ parser.add_argument("--image-dim", type=int, default=128,
                     help="dimensionality of the image embedding")
 parser.add_argument("--memory-dim", type=int, default=128,
                     help="dimensionality of the memory LSTM")
+parser.add_argument("--instr-dim", type=int, default=128,
+                    help="dimensionality of the instruction embedded")
 
 args = parser.parse_args()
 seeds = [1, 2, 3, 4, 5]

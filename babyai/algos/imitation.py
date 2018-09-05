@@ -71,7 +71,8 @@ class ImitationLearning(object):
             if args.pretrained_model:
                 self.acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
             else:
-                self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space, args.image_dim, args.memory_dim,
+                self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space,
+                                   args.image_dim, args.memory_dim, args.instr_dim,
                                        not self.args.no_instr, self.args.instr_arch,
                                        not self.args.no_mem, self.args.arch)
         self.obss_preprocessor.vocab.save()

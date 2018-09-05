@@ -90,6 +90,8 @@ parser.add_argument("--image-dim", type=int, default=128,
                     help="dimensionality of the image embedding")
 parser.add_argument("--memory-dim", type=int, default=128,
                     help="dimensionality of the memory LSTM")
+parser.add_argument("--instr-dim", type=int, default=128,
+                    help="dimensionality of the memory LSTM")
 parser.add_argument("--no-instr", action="store_true", default=False,
                     help="don't use instructions in the model")
 parser.add_argument("--instr-arch", default="gru",
@@ -110,6 +112,8 @@ parser.add_argument("--test-seed", type=int, default=0,
                     help="random seed for testing (default: 0)")
 parser.add_argument("--test-episodes", type=int, default=200,
                     help="Number of episodes to use for testing (default: 200)")
+parser.add_argument("--pretrained-model", default=None,
+                    help='If you\'re using a pre-trained model and want the fine-tuned one to have a new name')
 
 args = parser.parse_args()
 
@@ -182,12 +186,11 @@ if acmodel is None:
         acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
     else:
         acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
-                          args.image_dim, args.memory_dim,
+                          args.image_dim, args.memory_dim, args.instr_dim,
                           not args.no_instr, args.instr_arch, not args.no_mem, args.arch, args.aux_loss)
 
 obss_preprocessor.vocab.save()
 utils.save_model(acmodel, args.model)
-
 if torch.cuda.is_available():
     acmodel.cuda()
 if len(args.aux_loss) > 0:

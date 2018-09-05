@@ -71,6 +71,8 @@ parser.add_argument("--val-seed", type=int, default=0,
                     help="seed for environment used for validation (default: 0)")
 parser.add_argument("--image-dim", type=int, default=128,
                     help="dimensionality of the image embedding")
+parser.add_argument("--instr-dim", type=int, default=128,
+                    help="dimensionality of the image embedding")
 parser.add_argument("--memory-dim", type=int, default=128,
                     help="dimensionality of the memory LSTM")
 
