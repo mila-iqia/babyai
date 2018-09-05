@@ -164,19 +164,19 @@ if len(args.aux_loss) > 0:
 default_model_name = "{env}_{algo}_{arch}_{instr}_{mem}_seed{seed}{info}{coef}_{suffix}".format(**model_name_parts)
 if args.pretrained_model:
     default_model_name = args.pretrained_model + '_pretrained_' + default_model_name
-model_name = args.model.format(**model_name_parts) if args.model else default_model_name
+args.model = args.model.format(**model_name_parts) if args.model else default_model_name
 
-utils.configure_logging(model_name)
+utils.configure_logging(args.model)
 logger = logging.getLogger(__name__)
 
 # Define obss preprocessor
 if 'emb' in args.arch:
-    obss_preprocessor = utils.IntObssPreprocessor(model_name, envs[0].observation_space, args.pretrained_model)
+    obss_preprocessor = utils.IntObssPreprocessor(args.model, envs[0].observation_space, args.pretrained_model)
 else:
-    obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space, args.pretrained_model)
+    obss_preprocessor = utils.ObssPreprocessor(args.model, envs[0].observation_space, args.pretrained_model)
 
 # Define actor-critic model
-acmodel = utils.load_model(model_name, raise_not_found=False)
+acmodel = utils.load_model(args.model, raise_not_found=False)
 if acmodel is None:
     if args.pretrained_model:
         acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
@@ -186,7 +186,7 @@ if acmodel is None:
                           not args.no_instr, args.instr_arch, not args.no_mem, args.arch, args.aux_loss)
 
 obss_preprocessor.vocab.save()
-utils.save_model(acmodel, model_name)
+utils.save_model(acmodel, args.model)
 
 if torch.cuda.is_available():
     acmodel.cuda()
@@ -217,7 +217,7 @@ utils.seed(args.seed)
 
 # Restore training status
 
-status_path = os.path.join(utils.get_log_dir(model_name), 'status.json')
+status_path = os.path.join(utils.get_log_dir(args.model), 'status.json')
 if os.path.exists(status_path):
     with open(status_path, 'r') as src:
         status = json.load(src)
@@ -241,9 +241,9 @@ if args.curriculum is not None:
 if args.tb:
     from tensorboardX import SummaryWriter
 
-    writer = SummaryWriter(utils.get_log_dir(model_name))
+    writer = SummaryWriter(utils.get_log_dir(args.model))
 if args.csv:
-    csv_path = os.path.join(utils.get_log_dir(model_name), 'log.csv')
+    csv_path = os.path.join(utils.get_log_dir(args.model), 'log.csv')
     first_created = not os.path.exists(csv_path)
     # we don't buffer data going in the csv log, cause we assume
     # that one update will take much longer that one write to the log
@@ -349,7 +349,7 @@ while status['num_frames'] < args.frames:
         obss_preprocessor.vocab.save()
 
         # Testing the model before saving
-        agent = ModelAgent(model_name, obss_preprocessor, argmax=True)
+        agent = ModelAgent(args.model, obss_preprocessor, argmax=True)
         agent.model = acmodel
         agent.model.eval()
         logs = batch_evaluate(agent, test_env_name, args.test_seed, args.test_episodes)
@@ -357,7 +357,7 @@ while status['num_frames'] < args.frames:
         mean_return = np.mean(logs["return_per_episode"])
         if mean_return > best_mean_return:
             best_mean_return = mean_return
-            utils.save_model(acmodel, model_name)
+            utils.save_model(acmodel, args.model)
             logger.info("Return {: .2f}; best model is saved".format(mean_return))
         else:
             logger.info("Return {: .2f}; not the best model; not saved".format(mean_return))

@@ -357,7 +357,7 @@ class ImitationLearning(object):
                     if self.args.csv:
                         csv_writer.writerow(train_data + validation_data)
 
-                if mean_return >= best_mean_return:
+                if mean_return > best_mean_return:
                     best_mean_return = mean_return
                     status['patience'] = 0
                     with open(status_path, 'w') as dst:
