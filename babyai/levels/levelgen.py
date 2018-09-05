@@ -153,6 +153,18 @@ class RoomGridLevel(RoomGrid):
             nb = self.num_navs_needed(instr.instr_b)
             return na + nb
 
+    def open_all_doors(self):
+        """
+        Open all the doors in the maze
+        """
+
+        for i in range(self.num_rows):
+            for j in range(self.num_cols):
+                room = self.get_room(i, j)
+                for door in room.doors:
+                    if door:
+                        door.is_open = True
+
     def check_objs_reachable(self, raise_exc=True):
         """
         Check that all objects are reachable from the agent's starting
