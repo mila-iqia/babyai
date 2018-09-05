@@ -13,11 +13,11 @@ def get_vocab_path(model_name):
 
 
 class Vocabulary:
-    def __init__(self, path=None):
-        self.path = path
+    def __init__(self, model_name):
+        self.path = get_vocab_path(model_name)
         self.max_size = 100
-        if path is not None:
-            self.vocab = json.load(open(path))
+        if os.path.exists(self.path):
+            self.vocab = json.load(open(self.path))
         else:
             self.vocab = {}
 
@@ -29,28 +29,30 @@ class Vocabulary:
         return self.vocab[token]
 
     def save(self):
-        if self.path is None:
-            raise FileNotFoundError("Vocab path never specified")
         utils.create_folders_if_necessary(self.path)
         json.dump(self.vocab, open(self.path, "w"))
+
+    def copy_vocab_from(self, other):
+        '''
+        Copy the vocabulary of another Vocabulary object to the current object.
+        '''
+        self.vocab.update(other.vocab)
 
 
 class InstructionsPreprocessor(object):
     def __init__(self, model_name, load_vocab_from=None):
         self.model_name = model_name
+        self.vocab = Vocabulary(model_name)
+
         path = get_vocab_path(model_name)
-        if os.path.exists(path):
-            self.vocab = Vocabulary(path)
-        elif load_vocab_from is not None:
+        if not os.path.exists(path) and load_vocab_from is not None:
+            # self.vocab.vocab should be an empty dict
             secondary_path = get_vocab_path(load_vocab_from)
             if os.path.exists(secondary_path):
-                self.vocab = Vocabulary(secondary_path)
-                self.vocab.path = path
+                old_vocab = Vocabulary(load_vocab_from)
+                self.vocab.copy_vocab_from(old_vocab)
             else:
                 raise FileNotFoundError('No pre-trained model under the specified name')
-        else:
-            self.vocab = Vocabulary()
-            self.vocab.path = path
 
     def __call__(self, obss, device=None):
         raw_instrs = []
