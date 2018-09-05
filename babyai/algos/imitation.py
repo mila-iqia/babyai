@@ -20,9 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class ImitationLearning(object):
-    def __init__(self, args, model_name):
+    def __init__(self, args):
         self.args = args
-        self.model_name = model_name
 
         utils.seed(self.args.seed)
 
@@ -63,10 +62,11 @@ class ImitationLearning(object):
             observation_space = self.env.observation_space
             action_space = self.env.action_space
 
-        self.obss_preprocessor = utils.ObssPreprocessor(self.model_name, observation_space, args.pretrained_model)
+        self.obss_preprocessor = utils.ObssPreprocessor(args.model, observation_space, args.pretrained_model)
+        print(self.obss_preprocessor.vocab.vocab)
 
         # Define actor-critic model
-        self.acmodel = utils.load_model(self.model_name, raise_not_found=False)
+        self.acmodel = utils.load_model(args.model, raise_not_found=False)
         if self.acmodel is None:
             if args.pretrained_model:
                 self.acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
@@ -75,7 +75,7 @@ class ImitationLearning(object):
                                        not self.args.no_instr, self.args.instr_arch,
                                        not self.args.no_mem, self.args.arch)
         self.obss_preprocessor.vocab.save()
-        utils.save_model(self.acmodel, self.model_name)
+        utils.save_model(self.acmodel, args.model)
 
         self.acmodel.train()
         if torch.cuda.is_available():
@@ -237,9 +237,9 @@ class ImitationLearning(object):
         if verbose:
             logger.info("Validating the model")
         if type(self.env) == list:
-            agent = utils.load_agent(self.env[0], model_name=self.model_name, argmax=True)
+            agent = utils.load_agent(self.env[0], model_name=self.args.model, argmax=True)
         else:
-            agent = utils.load_agent(self.env, model_name=self.model_name, argmax=True)
+            agent = utils.load_agent(self.env, model_name=self.args.model, argmax=True)
 
         # Setting the agent model to the current model
         agent.model = self.acmodel
@@ -280,7 +280,7 @@ class ImitationLearning(object):
             logger.info("Batch size too high. Setting it to the number of train demos ({})".format(len(train_demos)))
 
         # Model saved initially to avoid "Model not found Exception" during first validation step
-        utils.save_model(self.acmodel, self.model_name)
+        utils.save_model(self.acmodel, self.args.model)
 
         # best mean return to keep track of performance on validation set
         best_mean_return, patience, i = 0, 0, 0
@@ -357,7 +357,7 @@ class ImitationLearning(object):
                     if self.args.csv:
                         csv_writer.writerow(train_data + validation_data)
 
-                if mean_return > best_mean_return:
+                if mean_return >= best_mean_return:
                     best_mean_return = mean_return
                     status['patience'] = 0
                     with open(status_path, 'w') as dst:
@@ -368,7 +368,7 @@ class ImitationLearning(object):
                     self.obss_preprocessor.vocab.save()
                     if torch.cuda.is_available():
                         self.acmodel.cpu()
-                    utils.save_model(self.acmodel, self.model_name)
+                    utils.save_model(self.acmodel, self.args.model)
                     if torch.cuda.is_available():
                         self.acmodel.cuda()
                 else:
