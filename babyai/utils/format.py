@@ -13,17 +13,11 @@ def get_vocab_path(model_name):
 
 
 class Vocabulary:
-    def __init__(self, model_name, load_vocab_from=None):
-        self.path = get_vocab_path(model_name)
+    def __init__(self, path=None):
+        self.path = path
         self.max_size = 100
-        if os.path.exists(self.path):
-            self.vocab = json.load(open(self.path))
-        elif load_vocab_from is not None:
-            self.secondary_path = get_vocab_path(load_vocab_from)
-            if os.path.exists(self.secondary_path):
-                self.vocab = json.load(open(self.secondary_path))
-            else:
-                raise FileNotFoundError('No pre-trained model under the specified name')
+        if path is not None:
+            self.vocab = json.load(open(path))
         else:
             self.vocab = {}
 
@@ -35,6 +29,8 @@ class Vocabulary:
         return self.vocab[token]
 
     def save(self):
+        if self.path is None:
+            raise FileNotFoundError("Vocab path never specified")
         utils.create_folders_if_necessary(self.path)
         json.dump(self.vocab, open(self.path, "w"))
 
@@ -42,7 +38,19 @@ class Vocabulary:
 class InstructionsPreprocessor(object):
     def __init__(self, model_name, load_vocab_from=None):
         self.model_name = model_name
-        self.vocab = Vocabulary(model_name, load_vocab_from)
+        path = get_vocab_path(model_name)
+        if os.path.exists(path):
+            self.vocab = Vocabulary(path)
+        elif load_vocab_from is not None:
+            secondary_path = get_vocab_path(load_vocab_from)
+            if os.path.exists(secondary_path):
+                self.vocab = Vocabulary(secondary_path)
+                self.vocab.path = path
+            else:
+                raise FileNotFoundError('No pre-trained model under the specified name')
+        else:
+            self.vocab = Vocabulary()
+            self.vocab.path = path
 
     def __call__(self, obss, device=None):
         raw_instrs = []
