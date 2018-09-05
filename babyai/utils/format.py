@@ -13,12 +13,19 @@ def get_vocab_path(model_name):
 
 
 class Vocabulary:
-    def __init__(self, model_name):
+    def __init__(self, model_name, load_vocab_from=None):
         self.path = get_vocab_path(model_name)
         self.max_size = 100
-        self.vocab = {}
         if os.path.exists(self.path):
             self.vocab = json.load(open(self.path))
+        elif load_vocab_from is not None:
+            self.secondary_path = get_vocab_path(load_vocab_from)
+            if os.path.exists(self.secondary_path):
+                self.vocab = json.load(open(self.secondary_path))
+            else:
+                raise FileNotFoundError('No pre-trained model under the specified name')
+        else:
+            self.vocab = {}
 
     def __getitem__(self, token):
         if not (token in self.vocab.keys()):
@@ -35,10 +42,7 @@ class Vocabulary:
 class InstructionsPreprocessor(object):
     def __init__(self, model_name, load_vocab_from=None):
         self.model_name = model_name
-        self.vocab = Vocabulary(model_name)
-        if load_vocab_from:
-            old_vocab = Vocabulary(load_vocab_from)
-            self.vocab.vocab = {k: v for k, v in old_vocab.vocab.items()}
+        self.vocab = Vocabulary(model_name, load_vocab_from)
 
     def __call__(self, obss, device=None):
         raw_instrs = []

@@ -34,12 +34,10 @@ parser.add_argument("--env", default=None,
                     help="name of the environment to train on (REQUIRED or --curriculum REQUIRED)")
 parser.add_argument("--curriculum", default=None,
                     help="name of the curriculum to train on (REQUIRED or --env REQUIRED)")
-parser.add_argument("--load-model-from", default=None,
-                    help='To specify if you want to use a pretrained model')
-parser.add_argument("--store-model-to", default=None,
-                    help="To specify if you want to save the model under a specific name")
 parser.add_argument("--model", default=None,
-                    help="DEPRECATED: plays the role of both '--store-model-to' and '--load-model-from'")
+                    help="name of the model (default: ENV_ALGO_TIME)")
+parser.add_argument("--pretrained-model", default=None,
+                    help='If you\'re using a pre-trained model and want the fine-tuned one to have a new name')
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed; if 0, a random random seed will be used  (default: 1)")
 parser.add_argument("--task-id-seed", action='store_true',
@@ -115,10 +113,6 @@ parser.add_argument("--test-episodes", type=int, default=200,
 
 args = parser.parse_args()
 
-if args.model:
-    args.load_model_from = args.load_model_from or args.model
-    args.store_model_to = args.store_model_to or args.model
-
 assert args.env is not None or args.curriculum is not None, "--env or --curriculum must be specified."
 
 if len(args.aux_loss_coef) == 0:
@@ -168,33 +162,31 @@ if len(args.aux_loss) > 0:
     model_name_parts['info'] = '_' + ''.join([info[0].upper() for info in args.aux_loss])
     model_name_parts['coef'] = '_' + '-'.join(map(str, args.aux_loss_coef))
 default_model_name = "{env}_{algo}_{arch}_{instr}_{mem}_seed{seed}{info}{coef}_{suffix}".format(**model_name_parts)
-if args.load_model_from:
-    default_model_name = args.load_model_from + '_pretrained_' + default_model_name
-args.store_model_to = args.store_model_to.format(**model_name_parts) if args.store_model_to else default_model_name
+if args.pretrained_model:
+    default_model_name = args.pretrained_model + '_pretrained_' + default_model_name
+model_name = args.model.format(**model_name_parts) if args.model else default_model_name
 
-utils.configure_logging(args.store_model_to)
+utils.configure_logging(model_name)
 logger = logging.getLogger(__name__)
-
-if args.model:
-    logger.info("WARNING: --model is DEPRECATED, please use --load-model-from and --store-model-to instead")
-
 
 # Define obss preprocessor
 if 'emb' in args.arch:
-    obss_preprocessor = utils.IntObssPreprocessor(args.store_model_to, envs[0].observation_space, args.load_model_from)
+    obss_preprocessor = utils.IntObssPreprocessor(model_name, envs[0].observation_space, args.pretrained_model)
 else:
-    obss_preprocessor = utils.ObssPreprocessor(args.store_model_to, envs[0].observation_space, args.load_model_from)
+    obss_preprocessor = utils.ObssPreprocessor(model_name, envs[0].observation_space, args.pretrained_model)
 
 # Define actor-critic model
+acmodel = utils.load_model(model_name, raise_not_found=False)
+if acmodel is None:
+    if args.pretrained_model:
+        acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
+    else:
+        acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
+                          args.image_dim, args.memory_dim,
+                          not args.no_instr, args.instr_arch, not args.no_mem, args.arch, args.aux_loss)
 
-if args.load_model_from:
-    acmodel = utils.load_model(args.load_model_from)
-else:
-    acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
-                      args.image_dim, args.memory_dim,
-                      not args.no_instr, args.instr_arch, not args.no_mem, args.arch, args.aux_loss)
 obss_preprocessor.vocab.save()
-utils.save_model(acmodel, args.store_model_to)
+utils.save_model(acmodel, model_name)
 
 if torch.cuda.is_available():
     acmodel.cuda()
@@ -206,13 +198,14 @@ if len(args.aux_loss) > 0:
 reshape_reward = lambda _0, _1, reward, _2: args.reward_scale * reward
 if args.algo == "a2c":
     algo = babyai.rl.A2CAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.gae_lambda,
-                            args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
-                            args.optim_alpha, args.optim_eps, obss_preprocessor, reshape_reward)
+                             args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
+                             args.optim_alpha, args.optim_eps, obss_preprocessor, reshape_reward)
 elif args.algo == "ppo":
-    algo = babyai.rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.beta1, args.beta2, args.gae_lambda,
-                            args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
-                            args.optim_eps, args.clip_eps, args.epochs, args.batch_size, obss_preprocessor,
-                            reshape_reward, args.aux_loss, args.aux_loss_coef)
+    algo = babyai.rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.beta1, args.beta2,
+                             args.gae_lambda,
+                             args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
+                             args.optim_eps, args.clip_eps, args.epochs, args.batch_size, obss_preprocessor,
+                             reshape_reward, args.aux_loss, args.aux_loss_coef)
 else:
     raise ValueError("Incorrect algorithm name: {}".format(args.algo))
 
@@ -222,15 +215,15 @@ else:
 
 utils.seed(args.seed)
 
-
 # Restore training status
 
-status_path = os.path.join(utils.get_log_dir(args.store_model_to), 'status.json')
-status = {'i': 0,
-          'num_frames': 0}
+status_path = os.path.join(utils.get_log_dir(model_name), 'status.json')
 if os.path.exists(status_path):
     with open(status_path, 'r') as src:
         status = json.load(src)
+else:
+    status = {'i': 0,
+              'num_frames': 0}
 
 # Define logger and Tensorboard writer and CSV writer
 
@@ -247,9 +240,10 @@ if args.curriculum is not None:
         header.append("return/{}".format(env_key))
 if args.tb:
     from tensorboardX import SummaryWriter
-    writer = SummaryWriter(utils.get_log_dir(args.store_model_to))
+
+    writer = SummaryWriter(utils.get_log_dir(model_name))
 if args.csv:
-    csv_path = os.path.join(utils.get_log_dir(args.store_model_to), 'log.csv')
+    csv_path = os.path.join(utils.get_log_dir(model_name), 'log.csv')
     first_created = not os.path.exists(csv_path)
     # we don't buffer data going in the csv log, cause we assume
     # that one update will take much longer that one write to the log
@@ -301,7 +295,7 @@ while status['num_frames'] < args.frames:
 
     if status['i'] % args.log_interval == 0:
         total_ellapsed_time = int(time.time() - total_start_time)
-        fps = logs["num_frames"]/(update_end_time - update_start_time)
+        fps = logs["num_frames"] / (update_end_time - update_start_time)
         duration = datetime.timedelta(seconds=total_ellapsed_time)
         return_per_episode = utils.synthesize(logs["return_per_episode"])
         success_per_episode = utils.synthesize(
@@ -355,7 +349,7 @@ while status['num_frames'] < args.frames:
         obss_preprocessor.vocab.save()
 
         # Testing the model before saving
-        agent = ModelAgent(args.store_model_to, obss_preprocessor, argmax=True)
+        agent = ModelAgent(model_name, obss_preprocessor, argmax=True)
         agent.model = acmodel
         agent.model.eval()
         logs = batch_evaluate(agent, test_env_name, args.test_seed, args.test_episodes)
@@ -363,7 +357,7 @@ while status['num_frames'] < args.frames:
         mean_return = np.mean(logs["return_per_episode"])
         if mean_return > best_mean_return:
             best_mean_return = mean_return
-            utils.save_model(acmodel, args.store_model_to)
+            utils.save_model(acmodel, model_name)
             logger.info("Return {: .2f}; best model is saved".format(mean_return))
         else:
             logger.info("Return {: .2f}; not the best model; not saved".format(mean_return))
