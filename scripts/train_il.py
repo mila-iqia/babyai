@@ -26,12 +26,10 @@ parser.add_argument("--demos", default=None,
                     help="demos filename (REQUIRED or demos-origin required)")
 parser.add_argument("--demos-origin", required=False,
                     help="origin of the demonstrations: human | agent (REQUIRED or demos required)")
-parser.add_argument("--load-model-from", default=None,
-                    help='To specify if you want to use a pretrained model')
-parser.add_argument("--store-model-to", default=None,
-                    help="To specify if you want to save the model under a specific name")
 parser.add_argument("--model", default=None,
-                    help="DEPRECATED: plays the role of both '--store-model-to' and '--load-model-from'")
+                    help="name of the model (default: ENV_ALGO_TIME)")
+parser.add_argument("--pretrained-model", default=None,
+                    help='If you\'re using a pre-trained model and want the fine-tuned one to have a new name')
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
 parser.add_argument("--episodes", type=int, default=0,
@@ -78,17 +76,11 @@ parser.add_argument("--memory-dim", type=int, default=128,
 
 
 def main(args):
-    if args.model:
-        args.load_model_from = args.load_model_from or args.model
-        args.store_model_to = args.store_model_to or args.model
-
-    args.store_model_to = args.store_model_to or ImitationLearning.default_model_name(args)
-    utils.configure_logging(args.store_model_to)
+    model_name = args.model or ImitationLearning.default_model_name(args)
+    utils.configure_logging(model_name)
     logger = logging.getLogger(__name__)
-    if args.model:
-        logger.info("WARNING: --model is DEPRECATED, please use --load-model-from and --store-model-to instead")
 
-    il_learn = ImitationLearning(args)
+    il_learn = ImitationLearning(args, model_name)
 
     # Define logger and Tensorboard writer
     header = (["update", "frames", "FPS", "duration", "entropy", "policy_loss", "train_accuracy"]
@@ -96,12 +88,12 @@ def main(args):
     writer = None
     if args.tb:
         from tensorboardX import SummaryWriter
-        writer = SummaryWriter(utils.get_log_dir(args.model))
+        writer = SummaryWriter(utils.get_log_dir(model_name))
 
     # Define csv writer
     csv_writer = None
     if args.csv:
-        csv_path = os.path.join(utils.get_log_dir(args.store_model_to), 'log.csv')
+        csv_path = os.path.join(utils.get_log_dir(model_name), 'log.csv')
         first_created = not os.path.exists(csv_path)
         # we don't buffer data going in the csv log, cause we assume
         # that one update will take much longer that one write to the log
@@ -110,7 +102,7 @@ def main(args):
             csv_writer.writerow(header)
 
     # Get the status path
-    status_path = os.path.join(utils.get_log_dir(args.store_model_to), 'status.json')
+    status_path = os.path.join(utils.get_log_dir(model_name), 'status.json')
 
     # Log command, availability of CUDA, and model
     logger.info(args)
