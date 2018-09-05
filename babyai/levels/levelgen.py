@@ -2,7 +2,7 @@ import random
 from collections import OrderedDict
 from copy import deepcopy
 import gym
-from .roomgrid import RoomGrid
+from gym_minigrid.roomgrid import RoomGrid
 from .verifier import *
 
 
@@ -152,6 +152,18 @@ class RoomGridLevel(RoomGrid):
             na = self.num_navs_needed(instr.instr_a)
             nb = self.num_navs_needed(instr.instr_b)
             return na + nb
+
+    def open_all_doors(self):
+        """
+        Open all the doors in the maze
+        """
+
+        for i in range(self.num_rows):
+            for j in range(self.num_cols):
+                room = self.get_room(i, j)
+                for door in room.doors:
+                    if door:
+                        door.is_open = True
 
     def check_objs_reachable(self, raise_exc=True):
         """

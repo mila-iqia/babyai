@@ -107,28 +107,16 @@ class Level_GoTo(RoomGridLevel):
     Go to an object, the object may be in another room. Many distractors.
     """
 
-    def gen_mission(self):
-        self.place_agent()
-        self.connect_all()
-        objs = self.add_distractors(num_distractors=18, all_unique=False)
-        self.check_objs_reachable()
-        obj = self._rand_elem(objs)
-        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
-
-
-class Level_GoToObjMaze(RoomGridLevel):
-    """
-    Go to an object, the object may be in another room. No distractors.
-    """
-
     def __init__(
         self,
         room_size=8,
         num_rows=3,
         num_cols=3,
+        num_dists=18,
         doors_open=False,
         seed=None
     ):
+        self.num_dists = num_dists
         self.doors_open = doors_open
         super().__init__(
             num_rows=num_rows,
@@ -140,49 +128,58 @@ class Level_GoToObjMaze(RoomGridLevel):
     def gen_mission(self):
         self.place_agent()
         self.connect_all()
-        objs = self.add_distractors(num_distractors=1, all_unique=False)
+        objs = self.add_distractors(num_distractors=self.num_dists, all_unique=False)
         self.check_objs_reachable()
-        obj = objs[0]
+        obj = self._rand_elem(objs)
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
         # If requested, open all the doors
         if self.doors_open:
-            for i in range(self.num_rows):
-                for j in range(self.num_cols):
-                    room = self.get_room(i, j)
-                    for door in room.doors:
-                        if door:
-                            door.is_open = True
+            self.open_all_doors()
 
 
-class Level_GoToObjMazeOpen(Level_GoToObjMaze):
+class Level_GoToOpen(Level_GoTo):
     def __init__(self, seed=None):
         super().__init__(doors_open=True, seed=seed)
 
 
-class Level_GoToObjMazeS4R2(Level_GoToObjMaze):
+class Level_GoToObjMaze(Level_GoTo):
+    """
+    Go to an object, the object may be in another room. No distractors.
+    """
+
     def __init__(self, seed=None):
-        super().__init__(room_size=4, num_rows=2, num_cols=2, seed=seed)
+        super().__init__(num_dists=1, doors_open=False, seed=seed)
 
 
-class Level_GoToObjMazeS4(Level_GoToObjMaze):
+class Level_GoToObjMazeOpen(Level_GoTo):
     def __init__(self, seed=None):
-        super().__init__(room_size=4, seed=seed)
+        super().__init__(num_dists=1, doors_open=True, seed=seed)
 
 
-class Level_GoToObjMazeS5(Level_GoToObjMaze):
+class Level_GoToObjMazeS4R2(Level_GoTo):
     def __init__(self, seed=None):
-        super().__init__(room_size=5, seed=seed)
+        super().__init__(num_dists=1, room_size=4, num_rows=2, num_cols=2, seed=seed)
 
 
-class Level_GoToObjMazeS6(Level_GoToObjMaze):
+class Level_GoToObjMazeS4(Level_GoTo):
     def __init__(self, seed=None):
-        super().__init__(room_size=6, seed=seed)
+        super().__init__(num_dists=1, room_size=4, seed=seed)
 
 
-class Level_GoToObjMazeS7(Level_GoToObjMaze):
+class Level_GoToObjMazeS5(Level_GoTo):
     def __init__(self, seed=None):
-        super().__init__(room_size=7, seed=seed)
+        super().__init__(num_dists=1, room_size=5, seed=seed)
+
+
+class Level_GoToObjMazeS6(Level_GoTo):
+    def __init__(self, seed=None):
+        super().__init__(num_dists=1, room_size=6, seed=seed)
+
+
+class Level_GoToObjMazeS7(Level_GoTo):
+    def __init__(self, seed=None):
+        super().__init__(num_dists=1, room_size=7, seed=seed)
 
 
 class Level_GoToImpUnlock(RoomGridLevel):
