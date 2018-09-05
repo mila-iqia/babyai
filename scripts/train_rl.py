@@ -112,8 +112,6 @@ parser.add_argument("--test-seed", type=int, default=0,
                     help="random seed for testing (default: 0)")
 parser.add_argument("--test-episodes", type=int, default=200,
                     help="Number of episodes to use for testing (default: 200)")
-parser.add_argument("--pretrained-model", default=None,
-                    help='If you\'re using a pre-trained model and want the fine-tuned one to have a new name')
 
 args = parser.parse_args()
 
