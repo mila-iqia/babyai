@@ -73,7 +73,7 @@ class ImitationLearning(object):
         # Define actor-critic model
         self.acmodel = utils.load_model(args.model, raise_not_found=False)
         if self.acmodel is None:
-            if hasattr(args, 'pretrained_model') and args.pretrained_model:
+            if hasattr(args, 'pretrained_model') and args.pretrained_model is not None:
                 self.acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
             else:
                 self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space,
@@ -109,7 +109,7 @@ class ImitationLearning(object):
             'seed': args.seed,
             'suffix': suffix}
         default_model_name = "{envs}_IL_{arch}_{instr}_seed{seed}_{suffix}".format(**model_name_parts)
-        if args.pretrained_model:
+        if hasattr(args, "pretrained_model") and args.pretrained_model is not None:
             default_model_name = args.pretrained_model + '_pretrained_' + default_model_name
         return default_model_name
 
