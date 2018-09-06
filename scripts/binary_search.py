@@ -173,7 +173,7 @@ def run(num_demos, first_run=False):
         logger.info('Training finished. Evaluating the model on {} episodes now.'.format(args.test_episodes))
         env = gym.make(args.env)
         utils.seed(args.test_seed)
-        agent = utils.load_agent(args, env)
+        agent = utils.load_agent(env, args.model, args.demos, args.demos_origin, args.argmax, args.env)
         env.seed(args.test_seed)
 
         logs = evaluate(agent, env, args.test_episodes)

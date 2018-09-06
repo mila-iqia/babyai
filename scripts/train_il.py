@@ -27,7 +27,9 @@ parser.add_argument("--demos", default=None,
 parser.add_argument("--demos-origin", required=False,
                     help="origin of the demonstrations: human | agent (REQUIRED or demos required)")
 parser.add_argument("--model", default=None,
-                    help="name of the model (default: ENV_ORIGIN_il)")
+                    help="name of the model (default: ENV_ALGO_TIME)")
+parser.add_argument("--pretrained-model", default=None,
+                    help='If you\'re using a pre-trained model and want the fine-tuned one to have a new name')
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed (default: 1)")
 parser.add_argument("--episodes", type=int, default=0,
@@ -79,6 +81,7 @@ def main(args):
     args.model = args.model or ImitationLearning.default_model_name(args)
     utils.configure_logging(args.model)
     logger = logging.getLogger(__name__)
+
     il_learn = ImitationLearning(args)
 
     # Define logger and Tensorboard writer

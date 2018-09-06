@@ -18,6 +18,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class ImitationLearning(object):
     def __init__(self, args):
         self.args = args
@@ -61,18 +62,21 @@ class ImitationLearning(object):
             observation_space = self.env.observation_space
             action_space = self.env.action_space
 
-        self.model_name = args.model
-
-        self.obss_preprocessor = utils.ObssPreprocessor(args.model, observation_space)
+        self.obss_preprocessor = utils.ObssPreprocessor(args.model, observation_space, args.pretrained_model)
+        print(self.obss_preprocessor.vocab.vocab)
 
         # Define actor-critic model
         self.acmodel = utils.load_model(args.model, raise_not_found=False)
         if self.acmodel is None:
-            self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space, 
+            if args.pretrained_model:
+                self.acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
+            else:
+                self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space,
                                    args.image_dim, args.memory_dim, args.instr_dim,
-                                   not self.args.no_instr, self.args.instr_arch, not self.args.no_mem, self.args.arch)
-        else:
-            logger.info("model loaded")
+                                       not self.args.no_instr, self.args.instr_arch,
+                                       not self.args.no_mem, self.args.arch)
+        self.obss_preprocessor.vocab.save()
+        utils.save_model(self.acmodel, args.model)
 
         self.acmodel.train()
         if torch.cuda.is_available():
@@ -82,7 +86,6 @@ class ImitationLearning(object):
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=100, gamma=0.9)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
     @staticmethod
     def default_model_name(args):
@@ -100,9 +103,10 @@ class ImitationLearning(object):
             'instr': instr,
             'seed': args.seed,
             'suffix': suffix}
-        return  "{envs}_IL_{arch}_{instr}_seed{seed}_{suffix}".format(**model_name_parts)
-
-
+        default_model_name = "{envs}_IL_{arch}_{instr}_seed{seed}_{suffix}".format(**model_name_parts)
+        if args.pretrained_model:
+            default_model_name = args.pretrained_model + '_pretrained_' + default_model_name
+        return default_model_name
 
     def starting_indexes(self, num_frames):
         if num_frames % self.args.recurrence == 0:
@@ -230,13 +234,13 @@ class ImitationLearning(object):
     def validate(self, episodes, verbose=True):
         # Seed needs to be reset for each validation, to ensure consistency
         utils.seed(self.args.val_seed)
-        self.args.argmax = True
+
         if verbose:
             logger.info("Validating the model")
         if type(self.env) == list:
-            agent = utils.load_agent(self.args, self.env[0])
+            agent = utils.load_agent(self.env[0], model_name=self.args.model, argmax=True)
         else:
-            agent = utils.load_agent(self.args, self.env)
+            agent = utils.load_agent(self.env, model_name=self.args.model, argmax=True)
 
         # Setting the agent model to the current model
         agent.model = self.acmodel
@@ -284,6 +288,8 @@ class ImitationLearning(object):
         total_start_time = time.time()
 
         while True:
+            if 'patience' not in status:  # if for some reason you're finetuining with IL an RL pretrained agent
+                status['patience'] = 0
             # Do not learn if using a pre-trained model that already lost patience
             if status['patience'] > self.args.patience:
                 break
