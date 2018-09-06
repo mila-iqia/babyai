@@ -1,6 +1,7 @@
 import numpy as np
 import gym
 
+
 # Returns the performance of the agent on the environment for a particular number of episodes.
 def evaluate(agent, env, episodes, model_agent=True, offsets=None):
     # Initialize logs
