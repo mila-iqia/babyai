@@ -62,13 +62,18 @@ class ImitationLearning(object):
             observation_space = self.env.observation_space
             action_space = self.env.action_space
 
-        self.obss_preprocessor = utils.ObssPreprocessor(args.model, observation_space, args.pretrained_model)
+        if hasattr(args, 'pretrained_model'):
+            pretrained_model = args.pretrained_model
+        else:
+            pretrained_model = None
+
+        self.obss_preprocessor = utils.ObssPreprocessor(args.model, observation_space, pretrained_model)
         print(self.obss_preprocessor.vocab.vocab)
 
         # Define actor-critic model
         self.acmodel = utils.load_model(args.model, raise_not_found=False)
         if self.acmodel is None:
-            if args.pretrained_model:
+            if hasattr(args, 'pretrained_model') and args.pretrained_model:
                 self.acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
             else:
                 self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space,
