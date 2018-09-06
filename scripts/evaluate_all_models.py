@@ -1,3 +1,10 @@
+"""Evaluate all models in a storage directory.
+
+In order to use this script make sure to add baby-ai-game/scripts to the $PATH
+environment variable.
+
+"""
+
 import os
 from subprocess import call
 import sys
@@ -16,7 +23,13 @@ folder = os.path.join(utils.storage_dir(), "models")
 for model in sorted(os.listdir(folder)):
     if model.startswith('.'):
         continue
-    env = args.env or model.split("_")[0]
+    env = args.env
+    if not env and '_' in model:
+        env = model.split("_")[0]
+    if not env and '-' in model:
+        env = model.split('-')[0]
+    if not env.startswith('BabyAI'):
+        env = 'BabyAI-{}-v0'.format(env)
     print("> Env: {} > Model: {}".format(env, model))
-    command = ["python evaluate.py --env {} --model {} --episodes {}".format(env, model, args.episodes)] + sys.argv[1:]
+    command = ["evaluate.py --env {} --model {} --episodes {}".format(env, model, args.episodes)] + sys.argv[1:]
     call(" ".join(command), shell=True)
