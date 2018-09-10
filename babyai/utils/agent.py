@@ -84,6 +84,7 @@ class DemoAgent(Agent):
     def __init__(self, demos_name, env_name, origin):
         self.demos_path = utils.get_demos_path(demos_name, env_name, origin, valid=False)
         self.demos = utils.load_demos(self.demos_path)
+        self.demos = utils.demos.transform_demos(self.demos)
         self.demo_id = 0
         self.step_id = 0
 
@@ -103,10 +104,10 @@ class DemoAgent(Agent):
     def act(self, obs):
         if self.demo_id >= len(self.demos):
             raise ValueError("No demonstration remaining")
-        expected_obs = self.demos[self.demo_id][0][self.step_id][0]
+        expected_obs = self.demos[self.demo_id][self.step_id][0]
         assert DemoAgent.check_obss_equality(obs, expected_obs), "The observations do not match"
 
-        return {'action': self.demos[self.demo_id][0][self.step_id][1]}
+        return {'action': self.demos[self.demo_id][self.step_id][1]}
 
     def analyze_feedback(self, reward, done):
         self.step_id += 1

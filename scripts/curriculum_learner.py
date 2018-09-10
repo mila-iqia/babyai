@@ -139,14 +139,14 @@ def main(args, graphs):
     logger = logging.getLogger(__name__)
 
     il_learn = ImitationLearning(args)
-    utils.save_model(il_learn.acmodel, il_learn.model_name)
+    utils.save_model(il_learn.acmodel, il_learn.args.model)
 
 
     header = (["update", "frames", "FPS", "duration", "entropy", "policy_loss", "train_accuracy"]
               + ["validation_accuracy", "validation_return", "validation_success_rate"])
     if args.csv:
 
-        csv_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'log.csv')
+        csv_path = os.path.join(utils.get_log_dir(il_learn.args.model), 'log.csv')
         first_created = not os.path.exists(csv_path)
         # we don't buffer data going in the csv log, cause we assume
         # that one update will take much longer that one write to the log
@@ -154,7 +154,7 @@ def main(args, graphs):
         if first_created:
             csv_writer.writerow(header)
 
-    status_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'status.json')
+    status_path = os.path.join(utils.get_log_dir(il_learn.args.model), 'status.json')
     status = {'i': 0,
               'num_frames': 0,
               'patience' : 0}
@@ -189,7 +189,7 @@ def main(args, graphs):
 
     if args.tb:
         from tensorboardX import SummaryWriter
-        writer = SummaryWriter(utils.get_log_dir(il_learn.model_name))
+        writer = SummaryWriter(utils.get_log_dir(il_learn.args.model))
 
     while True:
         if status['patience'] > args.patience:
@@ -310,7 +310,7 @@ def main(args, graphs):
                     il_learn.obss_preprocessor.vocab.save()
                     if torch.cuda.is_available():
                         il_learn.acmodel.cpu()
-                    utils.save_model(il_learn.acmodel, il_learn.model_name)
+                    utils.save_model(il_learn.acmodel, il_learn.args.model)
                     if torch.cuda.is_available():
                         il_learn.acmodel.cuda()
                 else:
