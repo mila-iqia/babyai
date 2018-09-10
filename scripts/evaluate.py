@@ -24,7 +24,8 @@ parser.add_argument("--seed", type=int, default=None,
                     help="random seed (default: 0 if model agent, 1 if demo agent) -- needs to be set to 0 if valid")
 parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected for model agent")
-
+parser.add_argument("--contiguous-episodes", action="store_true", default=False,
+                    help="Make sure episodes on which evaluation is done are contiguous")
 
 def main(args, seed, episodes):
     # Set seed for all randomness sources
@@ -40,7 +41,7 @@ def main(args, seed, episodes):
         episodes = len(agent.demos)
 
     # Evaluate
-    if isinstance(agent, utils.ModelAgent):
+    if isinstance(agent, utils.ModelAgent) and not args.contiguous_episodes:
         logs = batch_evaluate(agent, args.env, seed, episodes)
     else:
         logs = evaluate(agent, env, episodes, False)
