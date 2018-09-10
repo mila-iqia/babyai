@@ -290,17 +290,18 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
     def semi_memory_size(self):
         return self.memory_dim
 
-    def forward(self, obs, memory):
-        if self.use_instr:
+    def forward(self, obs, memory, instr_embedding=None):
+        if self.use_instr and instr_embedding is None:
             instr_embedding = self._get_instr_embedding(obs.instr)
-            if type(instr_embedding) == tuple:
-                outputs, instr_embedding, mask = instr_embedding
-            if self.lang_model == "attgru":
-                # outputs: B x L x D
-                # memory: B x M
-                keys = self.memory2key(memory)
-                attention = F.softmax((keys[:, None, :] * outputs).sum(2), dim=1)
-                instr_embedding = (outputs * attention[:, :, None]).sum(1)
+        if self.use_instr and self.lang_model == "attgru":
+            # outputs: B x L x D
+            # memory: B x M
+            mask = (obs.instr != 0).float()
+            instr_embedding = instr_embedding[:, :mask.shape[1]]
+            keys = self.memory2key(memory)
+            pre_softmax = (keys[:, None, :] * instr_embedding).sum(2) + 1000 * mask
+            attention = F.softmax(pre_softmax, dim=1)
+            instr_embedding = (instr_embedding * attention[:, :, None]).sum(1)
 
         x = torch.transpose(torch.transpose(obs.image, 1, 3), 2, 3)
 
@@ -381,7 +382,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 # the packing truncated the original length 
                 # so we need to change mask to fit it
 
-            return outputs, final_states, masks
+            return outputs if self.lang_model == 'attgru' else final_states
 
         elif self.lang_model == 'conv':
             inputs = self.word_embedding(instr).unsqueeze(1)  # (B,1,T,D)

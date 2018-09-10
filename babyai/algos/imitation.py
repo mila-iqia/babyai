@@ -168,7 +168,11 @@ class ImitationLearning(object):
 
         # Memory to be stored
         memories = torch.zeros([len(flat_batch), self.acmodel.memory_size], device=self.device)
-        memory = torch.zeros([self.args.batch_size, self.acmodel.memory_size], device=self.device)
+        episode_ids = np.zeros(len(flat_batch))
+        memory = torch.zeros([len(batch), self.acmodel.memory_size], device=self.device)
+
+        preprocessed_first_obs = self.obss_preprocessor(obss[inds], device=self.device)
+        instr_embedding = self.acmodel._get_instr_embedding(preprocessed_first_obs.instr)
 
         # Loop terminates when every observation in the flat_batch has been handled
         while True:
@@ -177,14 +181,14 @@ class ImitationLearning(object):
             done_step = done[inds]
             preprocessed_obs = self.obss_preprocessor(obs, device=self.device)
             with torch.no_grad():
-                # taking the memory till the length of time_step_inds, as demos beyond that have already finished
-                new_memory = self.acmodel(preprocessed_obs, memory[:len(inds), :])['memory']
+                # taking the memory till len(inds), as demos beyond that have already finished
+                new_memory = self.acmodel(
+                    preprocessed_obs,
+                    memory[:len(inds), :], instr_embedding[:len(inds)])['memory']
 
-            for i in range(len(inds)):
-                # Copying to the memories at the corresponding locations
-                memories[inds[i], :] = memory[i, :]
-
+            memories[inds, :] = memory[:len(inds), :]
             memory[:len(inds), :] = new_memory
+            episode_ids[inds] = range(len(inds))
 
             # Updating inds, by removing those indices corresponding to which the demonstrations have finished
             inds = inds[:len(inds) - sum(done_step)]
@@ -207,9 +211,10 @@ class ImitationLearning(object):
             preprocessed_obs = self.obss_preprocessor(obs, device=self.device)
             action_step = action_true[indexes]
             mask_step = mask[indexes]
-            model_results = self.acmodel(preprocessed_obs, memory * mask_step)
+            model_results = self.acmodel(
+                preprocessed_obs, memory * mask_step,
+                instr_embedding[episode_ids[indexes]])
             dist = model_results['dist']
-            value = model_results['value']
             memory = model_results['memory']
 
             entropy = dist.entropy().mean()
