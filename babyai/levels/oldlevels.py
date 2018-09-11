@@ -111,13 +111,6 @@ class Level_OpenDoorLoc(Level_OpenDoor):
         )
 
 
-#class Level_OpenDoorLocDebug(Level_OpenDoorLoc, Level_OpenDoorDebug):
-    """
-    Same as OpenDoorLoc but the level stops when any door is opened
-    """
-    #pass
-
-
 class Level_GoToDoor(RoomGridLevel):
     """
     Go to a door
