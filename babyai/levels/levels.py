@@ -534,6 +534,13 @@ class Level_MiniBossLevel(LevelGen):
 class Level_BossLevel(LevelGen):
     def __init__(self, seed=None):
         super().__init__(
+            seed=seed
+        )
+
+
+class Level_BossLevelNoUnlock(LevelGen):
+    def __init__(self, seed=None):
+        super().__init__(
             seed=seed,
             locked_room_prob=0,
             implicit_unlock=False
