@@ -39,8 +39,6 @@ parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs (default: 1)")
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log into Tensorboard")
-parser.add_argument("--csv", action="store_true", default=False,
-                    help="log in a csv file")
 parser.add_argument("--lr", type=float, default=1e-4,
                     help="learning rate (default: 1e-4)")
 parser.add_argument("--entropy-coef", type=float, default=0.0,
@@ -94,14 +92,13 @@ def main(args):
 
     # Define csv writer
     csv_writer = None
-    if args.csv:
-        csv_path = os.path.join(utils.get_log_dir(args.model), 'log.csv')
-        first_created = not os.path.exists(csv_path)
-        # we don't buffer data going in the csv log, cause we assume
-        # that one update will take much longer that one write to the log
-        csv_writer = csv.writer(open(csv_path, 'a', 1))
-        if first_created:
-            csv_writer.writerow(header)
+    csv_path = os.path.join(utils.get_log_dir(args.model), 'log.csv')
+    first_created = not os.path.exists(csv_path)
+    # we don't buffer data going in the csv log, cause we assume
+    # that one update will take much longer that one write to the log
+    csv_writer = csv.writer(open(csv_path, 'a', 1))
+    if first_created:
+        csv_writer.writerow(header)
 
     # Get the status path
     status_path = os.path.join(utils.get_log_dir(args.model), 'status.json')

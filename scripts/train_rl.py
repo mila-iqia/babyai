@@ -50,8 +50,6 @@ parser.add_argument("--log-interval", type=int, default=10,
                     help="number of updates between two logs (default: 1)")
 parser.add_argument("--save-interval", type=int, default=1000,
                     help="number of updates between two saves (default: 0, 0 means no saving)")
-parser.add_argument("--csv", action="store_true", default=False,
-                    help="log in a csv file")
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log into Tensorboard")
 parser.add_argument("--frames-per-proc", type=int, default=20,
@@ -243,14 +241,13 @@ if args.tb:
     from tensorboardX import SummaryWriter
 
     writer = SummaryWriter(utils.get_log_dir(args.model))
-if args.csv:
-    csv_path = os.path.join(utils.get_log_dir(args.model), 'log.csv')
-    first_created = not os.path.exists(csv_path)
-    # we don't buffer data going in the csv log, cause we assume
-    # that one update will take much longer that one write to the log
-    csv_writer = csv.writer(open(csv_path, 'a', 1))
-    if first_created:
-        csv_writer.writerow(header)
+csv_path = os.path.join(utils.get_log_dir(args.model), 'log.csv')
+first_created = not os.path.exists(csv_path)
+# we don't buffer data going in the csv log, cause we assume
+# that one update will take much longer that one write to the log
+csv_writer = csv.writer(open(csv_path, 'a', 1))
+if first_created:
+    csv_writer.writerow(header)
 
 # Log code state, command, availability of CUDA and model
 
@@ -338,8 +335,7 @@ while status['num_frames'] < args.frames:
                     if env_id in menv_head.synthesized_returns.keys():
                         writer.add_scalar("return/{}".format(env_key),
                                           menv_head.synthesized_returns[env_id], status['num_frames'])
-        if args.csv:
-            csv_writer.writerow(data)
+        csv_writer.writerow(data)
 
         with open(status_path, 'w') as dst:
             json.dump(status, dst)

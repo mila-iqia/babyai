@@ -100,8 +100,6 @@ parser.add_argument("--memory-dim", type=int, default=128,
                     help="dimensionality of the memory LSTM")
 parser.add_argument("--instr-dim", type=int, default=128,
                     help="dimensionality of the instruction embedder")
-parser.add_argument("--csv", action="store_true", default=False,
-                    help="log in a csv file")
 
 
 
@@ -144,15 +142,13 @@ def main(args, graphs):
 
     header = (["update", "frames", "FPS", "duration", "entropy", "policy_loss", "train_accuracy"]
               + ["validation_accuracy", "validation_return", "validation_success_rate"])
-    if args.csv:
-
-        csv_path = os.path.join(utils.get_log_dir(il_learn.args.model), 'log.csv')
-        first_created = not os.path.exists(csv_path)
-        # we don't buffer data going in the csv log, cause we assume
-        # that one update will take much longer that one write to the log
-        csv_writer = csv.writer(open(csv_path, 'a', 1))
-        if first_created:
-            csv_writer.writerow(header)
+    csv_path = os.path.join(utils.get_log_dir(il_learn.args.model), 'log.csv')
+    first_created = not os.path.exists(csv_path)
+    # we don't buffer data going in the csv log, cause we assume
+    # that one update will take much longer that one write to the log
+    csv_writer = csv.writer(open(csv_path, 'a', 1))
+    if first_created:
+        csv_writer.writerow(header)
 
     status_path = os.path.join(utils.get_log_dir(il_learn.args.model), 'status.json')
     status = {'i': 0,
@@ -247,8 +243,7 @@ def main(args, graphs):
                     if args.tb:
                         for key, value in zip(header, train_data):
                             writer.add_scalar(key, float(value), status['num_frames'])
-                    if args.csv:
-                        csv_writer.writerow(train_data + validation_data + proba_data + return_data)
+                    csv_writer.writerow(train_data + validation_data + proba_data + return_data)
                     with open(status_path, 'w') as dst:
                         json.dump(status, dst)
 
@@ -296,8 +291,7 @@ def main(args, graphs):
                 if args.tb:
                     for key, value in zip(header, train_data + validation_data + rest_data):
                         writer.add_scalar(key, float(value), status['num_frames'])
-                if args.csv:
-                    csv_writer.writerow(train_data + validation_data + rest_data)
+                csv_writer.writerow(train_data + validation_data + rest_data)
 
 
                 if mean_return_all_task > best_mean_return:

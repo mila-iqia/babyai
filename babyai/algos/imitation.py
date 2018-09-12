@@ -342,8 +342,7 @@ class ImitationLearning(object):
                     if self.args.tb:
                         for key, value in zip(header, train_data):
                             writer.add_scalar(key, float(value), status['num_frames'])
-                    if self.args.csv:
-                        csv_writer.writerow(train_data + validation_data)
+                    csv_writer.writerow(train_data + validation_data)
 
                     with open(status_path, 'w') as dst:
                         json.dump(status, dst)
@@ -365,8 +364,7 @@ class ImitationLearning(object):
                     if self.args.tb:
                         for key, value in zip(header, train_data + validation_data):
                             writer.add_scalar(key, float(value), status['num_frames'])
-                    if self.args.csv:
-                        csv_writer.writerow(train_data + validation_data)
+                    csv_writer.writerow(train_data + validation_data)
 
                 if mean_return > best_mean_return:
                     best_mean_return = mean_return

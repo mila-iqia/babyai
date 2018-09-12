@@ -71,8 +71,6 @@ parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs of the sub-IL tasks(default: 1)")
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log the sub IL tasks into Tensorboard")
-parser.add_argument("--csv", action="store_true", default=False,
-                    help="log the sub IL tasks in a csv file. The current BS task is logged by default.")
 parser.add_argument("--image-dim", type=int, default=128,
                     help="dimensionality of the image embedding")
 parser.add_argument("--memory-dim", type=int, default=128,
@@ -150,14 +148,13 @@ def run(num_demos, first_run=False):
 
         # Define csv writer for sub-IL tasks
         csv_writer = None
-        if args.csv:
-            csv_path = os.path.join(utils.get_log_dir(args.model), 'log.csv')
-            first_created = not os.path.exists(csv_path)
-            # we don't buffer data going in the csv log, cause we assume
-            # that one update will take much longer that one write to the log
-            csv_writer = csv.writer(open(csv_path, 'a', 1))
-            if first_created:
-                csv_writer.writerow(header)
+        csv_path = os.path.join(utils.get_log_dir(args.model), 'log.csv')
+        first_created = not os.path.exists(csv_path)
+        # we don't buffer data going in the csv log, cause we assume
+        # that one update will take much longer that one write to the log
+        csv_writer = csv.writer(open(csv_path, 'a', 1))
+        if first_created:
+            csv_writer.writerow(header)
 
         # Get the status path
         status_path = os.path.join(utils.get_log_dir(args.model), 'status.json')

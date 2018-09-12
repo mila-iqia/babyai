@@ -75,8 +75,6 @@ parser.add_argument("--val-episodes", type=int, default=500,
                     help="number of episodes used to evaluate the agent, and to evaluate validation accuracy")
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log the sub IL tasks into Tensorboard")
-parser.add_argument("--csv", action="store_true", default=False,
-                    help="log the sub IL tasks in a csv file.")
 parser.add_argument("--instr-arch", default="gru",
                     help="arch to encode instructions, possible values: gru, conv, bow (default: gru)")
 parser.add_argument("--expert-model", default=None,
@@ -324,14 +322,13 @@ def main(args):
 
         # Define csv writer for sub-IL tasks
         csv_writer = None
-        if args.csv:
-            csv_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'log.csv')
-            first_created = not os.path.exists(csv_path)
-            # we don't buffer data going in the csv log, cause we assume
-            # that one update will take much longer that one write to the log
-            csv_writer = csv.writer(open(csv_path, 'a', 1))
-            if first_created:
-                csv_writer.writerow(header)
+        csv_path = os.path.join(utils.get_log_dir(il_learn.model_name), 'log.csv')
+        first_created = not os.path.exists(csv_path)
+        # we don't buffer data going in the csv log, cause we assume
+        # that one update will take much longer that one write to the log
+        csv_writer = csv.writer(open(csv_path, 'a', 1))
+        if first_created:
+            csv_writer.writerow(header)
 
         logger.info("Training with %d demos" % len(train_demos))
 
