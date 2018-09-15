@@ -2,34 +2,45 @@
 
 In order to use this script make sure to add baby-ai-game/scripts to the $PATH
 environment variable.
+Example of usage: evaluate_all_models.py --episodes 200 --argmax
 
 """
 
 import os
 from subprocess import call
 import sys
-import argparse
 
 import babyai.utils as utils
+from babyai.levels import level_dict
+import re
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--episodes", type=int, default=1000,
-                    help="number of episodes of evaluation (default: 1000)")
-parser.add_argument("--env", required=False,
-                    help="if specified, all models will be evaluated on this level")
-args = parser.parse_args()
+# List of all levels ordered by length of the level name from longest to shortest
+LEVELS = sorted(list(level_dict.keys()), key=len)[::-1]
+
+
+def get_levels_from_model_name(model):
+    levels = []
+    # Assume that our model names are separated with _ or -
+    model_name_parts = re.split('_|-', model)
+    for part in model_name_parts:
+        # Assume that each part contains at most one level name.
+        # Sorting LEVELS using length of level name is to avoid scenarios like
+        # extracting 'GoTo' from the model name 'GoToLocal-model'
+        for level in LEVELS:
+            if level in part:
+                levels.append('BabyAI-{}-v0'.format(level))
+                break
+    return list(set(levels))
+
 
 folder = os.path.join(utils.storage_dir(), "models")
+
 for model in sorted(os.listdir(folder)):
     if model.startswith('.'):
         continue
-    env = args.env
-    if not env and '_' in model:
-        env = model.split("_")[0]
-    if not env and '-' in model:
-        env = model.split('-')[0]
-    if not env.startswith('BabyAI'):
-        env = 'BabyAI-{}-v0'.format(env)
-    print("> Env: {} > Model: {}".format(env, model))
-    command = ["evaluate.py --env {} --model {} --episodes {}".format(env, model, args.episodes)] + sys.argv[1:]
-    call(" ".join(command), shell=True)
+    envs = get_levels_from_model_name(model)
+    print("> Envs: {} > Model: {}".format(envs, model))
+    for env in envs:
+        command = ["evaluate.py --env {} --model {}".format(env, model)] + sys.argv[1:]
+        print("Command: {}".format(" ".join(command)))
+        call(" ".join(command), shell=True)
