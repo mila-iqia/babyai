@@ -4,16 +4,24 @@ jobs:
     docker:
       - image: circleci/python:3.5
     steps:
+
       # Install the BabyAI package
       - checkout
       - run: pip3 install --user --process-dependency-links --editable .
+
       # Check the source code for obvious errors
       - run: pip3 install --user flake8
       - run: python3 -m flake8 . --count --show-source --statistics --select=E901,E999,F821,F822,F823
+
       # Test the BabyAI levels
       - run: ./run_tests.py
+
       # Quickly exercise the RL training code
       - run: time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --save-interval 100 --frames 300 --arch cnn1
+
+      # Quickly test the generation of bot demos
+      - run: python3 -m scripts.make_agent_demos --env BabyAI-GoToRedBallObs-v0 --episodes 100 --valid-episodes 32
+
 workflows:
   version: 2
   build_and_test:
