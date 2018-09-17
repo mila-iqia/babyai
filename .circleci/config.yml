@@ -20,7 +20,7 @@ jobs:
       - run: time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --save-interval 100 --frames 300 --arch cnn1
 
       # Check that the bot works on a simple level
-      - run: python3 -m scripts.eval_bot --level PutNextLocal --num_runs 100 | grep "100%"
+      - run: python3 -m scripts.eval_bot --level PutNextLocal --num_runs 100 | grep "100.0%"
 
       # Quickly test the generation of bot demos
       - run: python3 -m scripts.make_agent_demos --env BabyAI-GoToRedBallObs-v0 --episodes 100 --valid-episodes 32
