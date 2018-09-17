@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class ImitationLearning(object):
-    def __init__(self, args):
+    def __init__(self, args, ):
         self.args = args
 
         utils.seed(self.args.seed)
@@ -126,6 +126,9 @@ class ImitationLearning(object):
         batch_size = min(self.args.batch_size, len(demos))
         offset = 0
 
+        if not is_training:
+            self.acmodel.eval()
+
         # Log dictionary
         log = {"entropy": [], "policy_loss": [], "accuracy": []}
 
@@ -140,6 +143,9 @@ class ImitationLearning(object):
             log["accuracy"].append(_log["accuracy"])
 
             offset += batch_size
+
+        if not is_training:
+            self.acmodel.train()
 
         return log
 
@@ -273,7 +279,7 @@ class ImitationLearning(object):
         mean_return = {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
         return mean_return
 
-    def train(self, train_demos, writer, csv_writer, status_path, header):
+    def train(self, train_demos, writer, csv_writer, status_path, header, reset_patience=False):
         # Load the status
         status = {'i': 0,
                   'num_frames': 0,
@@ -281,6 +287,8 @@ class ImitationLearning(object):
         if os.path.exists(status_path):
             with open(status_path, 'r') as src:
                 status = json.load(src)
+            if reset_patience:
+                status['patience'] = 0
         elif not os.path.exists(os.path.dirname(status_path)):
             # Ensure that the status directory exists
             os.makedirs(os.path.dirname(status_path))
@@ -381,8 +389,7 @@ class ImitationLearning(object):
                     if torch.cuda.is_available():
                         self.acmodel.cuda()
                 else:
-                    logger.info("Losing Patience")
-
                     status['patience'] += 1
+                    logger.info("Losing patience, new value={}, limit={}".format(status['patience'], self.args.patience))
                     with open(status_path, 'w') as dst:
                         json.dump(status, dst)

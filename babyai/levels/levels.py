@@ -33,6 +33,36 @@ class Level_GoToObjS6(Level_GoToObj):
         super().__init__(room_size=6, seed=seed)
 
 
+class Level_GoToRedBallObs(RoomGridLevel):
+    """
+    Go to the red ball, single room, with obstacles.
+    The obstacles/distractors are all the same, to eliminate
+    perceptual complexity.
+    """
+
+    def __init__(self, room_size=8, num_dists=7, seed=None):
+        self.num_dists = num_dists
+        super().__init__(
+            num_rows=1,
+            num_cols=1,
+            room_size=room_size,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.place_agent()
+        obj, _ = self.add_object(0, 0, 'ball', 'red')
+
+        for i in range(self.num_dists):
+            self.add_object(0, 0, 'box', 'grey')
+
+        #from gym_minigrid.minigrid import Wall
+        #for i in range(self.num_dists):
+        #    self.place_obj(Wall())
+
+        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
+
+
 class Level_GoToRedBall(RoomGridLevel):
     """
     Go to the red ball, single room, with distractors.
@@ -82,14 +112,64 @@ class Level_GoToLocal(RoomGridLevel):
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
 
-class Level_GoToLocalS5(Level_GoToLocal):
+class Level_GoToLocalS5N2(Level_GoToLocal):
     def __init__(self, seed=None):
-        super().__init__(room_size=5, num_dists=3, seed=seed)
+        super().__init__(room_size=5, num_dists=2, seed=seed)
 
 
-class Level_GoToLocalS6(Level_GoToLocal):
+class Level_GoToLocalS6N2(Level_GoToLocal):
+    def __init__(self, seed=None):
+        super().__init__(room_size=6, num_dists=2, seed=seed)
+
+
+class Level_GoToLocalS6N3(Level_GoToLocal):
+    def __init__(self, seed=None):
+        super().__init__(room_size=6, num_dists=3, seed=seed)
+
+
+class Level_GoToLocalS6N4(Level_GoToLocal):
     def __init__(self, seed=None):
         super().__init__(room_size=6, num_dists=4, seed=seed)
+
+
+class Level_GoToLocalS7N4(Level_GoToLocal):
+    def __init__(self, seed=None):
+        super().__init__(room_size=7, num_dists=4, seed=seed)
+
+
+class Level_GoToLocalS7N5(Level_GoToLocal):
+    def __init__(self, seed=None):
+        super().__init__(room_size=7, num_dists=5, seed=seed)
+
+
+class Level_GoToLocalS8N2(Level_GoToLocal):
+    def __init__(self, seed=None):
+        super().__init__(room_size=8, num_dists=2, seed=seed)
+
+
+class Level_GoToLocalS8N3(Level_GoToLocal):
+    def __init__(self, seed=None):
+        super().__init__(room_size=8, num_dists=3, seed=seed)
+
+
+class Level_GoToLocalS8N4(Level_GoToLocal):
+    def __init__(self, seed=None):
+        super().__init__(room_size=8, num_dists=4, seed=seed)
+
+
+class Level_GoToLocalS8N5(Level_GoToLocal):
+    def __init__(self, seed=None):
+        super().__init__(room_size=8, num_dists=5, seed=seed)
+
+
+class Level_GoToLocalS8N6(Level_GoToLocal):
+    def __init__(self, seed=None):
+        super().__init__(room_size=8, num_dists=6, seed=seed)
+
+
+class Level_GoToLocalS8N7(Level_GoToLocal):
+    def __init__(self, seed=None):
+        super().__init__(room_size=8, num_dists=7, seed=seed)
 
 
 class Level_PutNextLocal(RoomGridLevel):
