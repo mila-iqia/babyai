@@ -255,8 +255,7 @@ def grow_training_set(il_learn, train_demos, grow_factor, eval_seed, dagger=Fals
     logger.info("Generating {} new demos for {}".format(num_new_demos, il_learn.args.env))
 
     # TODO: auto-adjust this parameter in function of success rate
-    # TODO: make this higher after tests pass
-    num_eval_demos = 10
+    num_eval_demos = 1000
 
     # Add new demos until we rearch the new target size
     while len(train_demos) < new_train_set_size:
