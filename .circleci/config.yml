@@ -22,6 +22,9 @@ jobs:
       # Quickly test the generation of bot demos
       - run: python3 -m scripts.make_agent_demos --env BabyAI-GoToRedBallObs-v0 --episodes 100 --valid-episodes 32
 
+      # Quick test for imitation learning
+      - run : python3 -m scripts.train_il --env BabyAI-GoToRedBallObs-v0 --demos BabyAI-GoToRedBallObs-v0_agent --validation-interval 1 --patience 0 --episodes 100 --val-episodes 50
+
 workflows:
   version: 2
   build_and_test:
