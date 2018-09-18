@@ -23,7 +23,7 @@ import logging
 import babyai.utils as utils
 from babyai.algos.imitation import ImitationLearning
 from babyai.evaluate import batch_evaluate, evaluate
-from babyai.utils.agent import BotAgent
+from babyai.utils.agent import BotAgent, BotAdvisorAgent
 import torch
 import blosc
 
@@ -143,7 +143,7 @@ def evaluate_agent(il_learn, eval_seed, num_eval_demos, return_obss_actions=Fals
 
 def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions):
     env = gym.make(env_name)
-    agent = BotAgent(env)
+    agent = BotAdvisorAgent(env)
     demos = []
 
     i = 0
@@ -162,6 +162,8 @@ def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions):
                 mission = obs['mission']
                 # TODO: seems like calling agent.act might mess with the bot's stack. FIX THIS as not all demos are generated
                 action = agent.act(obs)['action']
+                # TODO: implement this
+                _ = agent.bot.take_action(fail_actions[i][j])
                 new_obs, reward, done, _ = env.step(fail_actions[i][j])
                 assert (not done or reward == 0), "The baby's actions shouldn't solve the task"
                 actions.append(action)
