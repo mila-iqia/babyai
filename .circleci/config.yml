@@ -2,31 +2,35 @@ version: 2
 jobs:
   test:
     docker:
-      - image: circleci/python:3.5
+        - image: circleci/python:3.5
     steps:
 
-      # Install the BabyAI package
-      - checkout
-      - run: pip3 install --user --process-dependency-links --editable .
+        # Install the BabyAI package
+        - checkout
+        - run: pip3 install --user --process-dependency-links --editable .
 
-      # Check the source code for obvious errors
-      - run: pip3 install --user flake8
-      - run: python3 -m flake8 . --count --show-source --statistics --select=E901,E999,F821,F822,F823
+        # Check the source code for obvious errors
+        - run: pip3 install --user flake8
+        - run: python3 -m flake8 . --count --show-source --statistics --select=E901,E999,F821,F822,F823
 
-      # Test the BabyAI levels
-      - run: ./run_tests.py
+        # Test the BabyAI levels
+        - run: ./run_tests.py
 
-      # Quickly exercise the RL training code
-      - run: time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --save-interval 100 --frames 300 --arch cnn1
+        # Quickly exercise the RL training code
+        - run: time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --save-interval 100 --frames 300 --arch cnn1
 
-      # Check that the bot works on a simple level
-      - run: python3 -m scripts.eval_bot --level PutNextLocal --num_runs 100 | grep "100.0%"
+        # Check that the bot works on a simple level
+        - run: python3 -m scripts.eval_bot --level PutNextLocal --num_runs 100 | grep "100.0%"
 
-      # Quickly test the generation of bot demos
-      - run: python3 -m scripts.make_agent_demos --env BabyAI-GoToRedBallObs-v0 --episodes 100 --valid-episodes 32
+        # Quickly test the generation of bot demos
+        - run: python3 -m scripts.make_agent_demos --env BabyAI-GoToRedBallObs-v0 --episodes 100 --valid-episodes 32
 
-      # Quick test for imitation learning
-      - run : python3 -m scripts.train_il --env BabyAI-GoToRedBallObs-v0 --demos BabyAI-GoToRedBallObs-v0_agent --validation-interval 1 --patience 0 --episodes 100 --val-episodes 50
+        # Quick test for imitation learning
+        - run: python3 -m scripts.train_il --env BabyAI-GoToRedBallObs-v0 --demos BabyAI-GoToRedBallObs-v0_agent --validation-interval 1 --patience 0 --episodes 100 --val-episodes 50
+
+        # Test job launch scripts
+        - run: scripts/launch_max_jobs.py --test
+        - run: scripts/launch_demo_count.py --test --env BabyAI-GoToLocal-v0 --demos GoToLocal-bot-1m
 
 workflows:
   version: 2
