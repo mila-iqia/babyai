@@ -160,10 +160,8 @@ def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions):
             for j in range(len(fail_obss[i])):
                 obs = fail_obss[i][j]
                 mission = obs['mission']
-                # TODO: seems like calling agent.act might mess with the bot's stack. FIX THIS as not all demos are generated
                 action = agent.act(obs)['action']
-                # TODO: implement this
-                _ = agent.bot.take_action(fail_actions[i][j], action)
+                _ = agent.bot.take_action(fail_actions[i][j])
                 new_obs, reward, done, _ = env.step(fail_actions[i][j])
                 assert (not done or reward == 0), "The baby's actions shouldn't solve the task"
                 actions.append(action)
