@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import torch
 from .. import utils
-from babyai.agents.bot import Bot
+from babyai.agents.bot import Bot, BotAdvisor
 
 
 class Agent(ABC):
@@ -129,6 +129,22 @@ class BotAgent:
 
     def act(self, *args, **kwargs):
         return {'action': self.bot.step()}
+
+    def analyze_feedback(self, reward, done):
+        pass
+
+class BotAdvisorAgent:
+    def __init__(self, env, forget=False):
+        """An agent based on a GOFAI bot."""
+        self.env = env
+        self.forget = forget
+        self.on_reset()
+
+    def on_reset(self):
+        self.bot = BotAdvisor(self.env, forget=self.forget)
+
+    def act(self, *args, **kwargs):
+        return {'action': self.bot.get_action()}
 
     def analyze_feedback(self, reward, done):
         pass
