@@ -17,7 +17,7 @@ jobs:
         - run: ./run_tests.py
 
         # Quickly exercise the RL training code
-        - run: time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --procs 4 --batch-size 80 --log-interval 1 --save-interval 2 --test-episodes 10 --frames 300 --arch cnn1
+        - run: time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --procs 4 --batch-size 80 --log-interval 1 --save-interval 2 --test-episodes 10 --frames 300 --arch cnn1 --instr-dim 16 --image-dim 16 --memory-dim 16
 
         # Check that the bot works on some basic levels
         - run: python3 -m scripts.eval_bot --level PutNextLocal --num_runs 100 | grep "100.0%"
