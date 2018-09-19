@@ -182,17 +182,11 @@ In naming the levels we adhere to the following convention:
 
 ### Unlock
 
-- Environment: The agent is placed in a room with a key and a locked door. The room has either no distractors in `Unlock` or 3 distractors in `UnlockDist`.
-- Instruction: Open the door
-- Evaluate: image understanding, memory in `UnlockDist`
+- Environment: Maze environment where the agent has to retrieve a key to open a locked door.
+- Instruction: Open the <color> door
+- Evaluate: image understanding, navigation, memory.
 - Level id:
     - `BabyAI-Unlock-v0`
-    - `BabyAI-UnlockDist-v0`
-
-<p align="center">
-    <img src="media/Unlock.png" width="250">
-    <img src="media/UnlockDist.png" width="250">
-</p>
 
 ### UnlockPickup
 
