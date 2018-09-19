@@ -7,25 +7,25 @@ from babyai.levels import level_dict
 from babyai.agents.bot import Bot, BotAdvisor
 
 level_list = [
-    # 'OpenRedDoor',
-    # 'GoToLocal',
-    # 'PutNextLocal',
-    #
-    # 'GoToObjMaze',
-    # 'GoTo',
-    # 'Open',
-    # 'Pickup',
-    # 'PickupLoc',
-    # 'PutNext',
-    #
-    # 'Unlock',
-    # 'GoToImpUnlock',
-    # 'UnblockPickup',
-    #
-    # 'GoToSeq',
-    # 'Synth',
-    # 'SynthLoc',
-    # 'SynthSeq',
+    'OpenRedDoor',
+    'GoToLocal',
+    'PutNextLocal',
+
+    'GoToObjMaze',
+    'GoTo',
+    'Open',
+    'Pickup',
+    'PickupLoc',
+    'PutNext',
+
+    'Unlock',
+    'GoToImpUnlock',
+    'UnblockPickup',
+
+    'GoToSeq',
+    'Synth',
+    'SynthLoc',
+    'SynthSeq',
      'BossLevel',
 ]
 
@@ -82,26 +82,26 @@ for level_name in level_list:
         if options.verbose:
             print('%s/%s: %s, seed=%d' % (run_no+1, options.num_runs, mission.surface, mission_seed))
 
-        # try:
-        while True:
-            if options.advisor:
-                action = expert.get_action()
-                expert.take_action(action)
-            else:
-                action = expert.step()
-            obs, reward, done, info = mission.step(action)
+        try:
+            while True:
+                if options.advisor:
+                    action = expert.get_action()
+                    expert.take_action(action)
+                else:
+                    action = expert.step()
+                obs, reward, done, info = mission.step(action)
 
-            total_reward += reward
+                total_reward += reward
 
-            if done == True:
-                if reward > 0:
-                    num_success += 1
-                if reward <= 0:
-                    print('FAILURE on %s, seed %d' % (level_name, mission_seed))
-                break
-        # except Exception as e:
-        #     print('FAILURE on %s, seed %d' % (level_name, mission_seed))
-        #     print(e)
+                if done:
+                    if reward > 0:
+                        num_success += 1
+                    if reward <= 0:
+                        print('FAILURE on %s, seed %d' % (level_name, mission_seed))
+                    break
+        except Exception as e:
+            print('FAILURE on %s, seed %d' % (level_name, mission_seed))
+            print(e)
 
     success_rate = 100 * num_success / options.num_runs
     mean_reward = total_reward / options.num_runs

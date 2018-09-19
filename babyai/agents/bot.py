@@ -179,6 +179,7 @@ class Bot:
                         self.stack.append(('GoNextTo', drop_pos_cur))
 
                         # Go back to the door and open it
+                        self.stack.append(('UpdateObjsPoss', None))
                         self.stack.append(('Open', None))
                         self.stack.append(('GoNextTo', tuple(fwd_pos)))
 
@@ -191,6 +192,9 @@ class Bot:
                         self.stack.append(('Drop', None))
                         self.stack.append(('GoNextTo', drop_pos_cur))
                     else:
+                        self.stack.pop()
+                        self.stack.append(('UpdateObjsPoss', None))
+                        self.stack.append(('Open', None))
                         self.stack.append(('GoNextTo', tuple(fwd_pos)))
                         self.stack.append(('Pickup', key_desc))
                         self.stack.append(('GoToObj', key_desc))
@@ -358,7 +362,10 @@ class Bot:
                 else:
                     return actions.forward
 
-            self.stack.pop()
+            if np.array_equal(adj_pos, fwd_pos):
+                self.stack.pop()
+                return None
+
             self.stack.append(('GoNextTo', adj_pos))
             return None
 

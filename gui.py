@@ -394,7 +394,7 @@ def main(argv):
 
     # Load the gym environment
     env = gym.make(options.env_name)
-    env.seed(327)
+    env.seed(805)
 
     # Create the application window
     app = QApplication(sys.argv)
