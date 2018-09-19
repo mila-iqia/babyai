@@ -75,6 +75,7 @@ class Bot:
             # We pick up and immediately drop so
             # that we may carry other objects
             self.stack.append(('Forget', None))
+            self.stack.append(('UpdateObjsPoss', None))
             self.stack.append(('Drop', None))
             self.stack.append(('Pickup', instr.desc))
             self.stack.append(('GoToObj', instr.desc))
@@ -82,6 +83,7 @@ class Bot:
 
         if isinstance(instr, PutNextInstr):
             self.stack.append(('Forget', None))
+            self.stack.append(('UpdateObjsPoss', None))
             self.stack.append(('Drop', None))
             self.stack.append(('GoToAdjPos', instr.desc_fixed))
             self.stack.append(('Pickup', None))
@@ -185,6 +187,7 @@ class Bot:
                         self.stack.append(('GoToObj', key_desc))
 
                         # Drop the object being carried
+                        self.stack.append(('UpdateObjsPoss', None))
                         self.stack.append(('Drop', None))
                         self.stack.append(('GoNextTo', drop_pos_cur))
                     else:
@@ -295,6 +298,7 @@ class Bot:
                         self.stack.append(('GoNextTo', fwd_pos))
 
                         # Drop the object being carried
+                        self.stack.append(('UpdateObjsPoss', None))
                         self.stack.append(('Drop', None))
                         self.stack.append(('GoNextTo', drop_pos_cur))
 
@@ -799,6 +803,10 @@ class BotAdvisor(Bot):
                 return actions.right
             return actions.left
 
+        if subgoal == 'UpdateObjsPoss':
+            self.update_objs_poss()
+            return None
+
         # Go to next to a position adjacent to an object
         if subgoal == 'GoToAdjPos':
             # Do we know where any one of these objects are?
@@ -1217,6 +1225,11 @@ class BotAdvisor(Bot):
                 if action in (actions.drop, actions.pickup, actions.toggle):
                     drop_or_pickup_or_open_something_while_exploring()
                 return True
+
+        if subgoal == 'UpdateObjsPoss':
+            self.stack.pop()
+            self.update_objs_poss()
+            return False
 
         # Go to next to a position adjacent to an object
         if subgoal == 'GoToAdjPos':
