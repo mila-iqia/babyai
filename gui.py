@@ -17,6 +17,7 @@ from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 import gym
 import gym_minigrid
 from gym_minigrid import minigrid
+from babyai.utils.agent import BotAdvisorAgent
 
 import babyai
 
@@ -326,6 +327,7 @@ class AIGameWindow(QMainWindow):
 
     def resetEnv(self):
         obs = self.env.reset()
+        self.agent = BotAdvisorAgent(self.env)
         self.lastObs = obs
         self.showEnv(obs)
 
@@ -341,9 +343,12 @@ class AIGameWindow(QMainWindow):
         obsPixmap = unwrapped.get_obs_render(image)
         self.obsImgLabel.setPixmap(obsPixmap)
 
+        # BotAgent text
+        stack = self.agent.bot.stack
+        action = self.agent.act()
         # Update the mission text
         mission = obs['mission']
-        self.missionBox.setPlainText(mission)
+        self.missionBox.setPlainText(mission + '\n{}\nOptimal Action{}'.format(stack, action))
 
         # Set the steps remaining
         stepsRem = unwrapped.steps_remaining
@@ -353,7 +358,7 @@ class AIGameWindow(QMainWindow):
         # If no manual action was specified by the user
         if action == None:
             action = random.randint(0, self.env.action_space.n - 1)
-
+        self.agent.bot.take_action(action)
         obs, reward, done, info = self.env.step(action)
 
         self.showEnv(obs)
@@ -373,6 +378,7 @@ def main(argv):
 
     # Load the gym environment
     env = gym.make(options.env_name)
+    env.seed(0)
 
     # Create the application window
     app = QApplication(sys.argv)

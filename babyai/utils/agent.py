@@ -133,15 +133,15 @@ class BotAgent:
     def analyze_feedback(self, reward, done):
         pass
 
+
 class BotAdvisorAgent:
-    def __init__(self, env, forget=False):
+    def __init__(self, env):
         """An agent based on a GOFAI bot."""
         self.env = env
-        self.forget = forget
         self.on_reset()
 
     def on_reset(self):
-        self.bot = BotAdvisor(self.env, forget=self.forget)
+        self.bot = BotAdvisor(self.env)
 
     def act(self, *args, **kwargs):
         return {'action': self.bot.get_action()}

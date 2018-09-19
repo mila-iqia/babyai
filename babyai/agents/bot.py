@@ -639,10 +639,14 @@ class BotAdvisor(Bot):
 
         return action
 
-    def get_action_from_subgoal(self, subgoal, datum=None, alternative=None):
+    def get_action_from_subgoal(self, subgoal, datum=None, alternative=(None, None)):
         # alternative is a tuple (subgoal, datum) that should be used if the actual subgoal
         # is satisfied already and requires no action taking
         # It is useful for GoToObj and GoNextTo subgoals
+        if subgoal is None:
+            self.stack.pop()
+            subgoal, datum = self.stack[-1]
+
 
         if self.itr_count >= self.timeout:
             raise TimeoutError('bot timed out')
@@ -663,7 +667,7 @@ class BotAdvisor(Bot):
         if subgoal == 'Forget':
             # BotAdvisor cannot be forgetful
             self.stack.pop()
-            return self.get_action_from_subgoal(*self.stack[-1])
+            return self.get_action_from_subgoal(*self.stack[-1]) if self.stack else None
 
         # Open a door
         if subgoal == 'Open':
@@ -961,6 +965,7 @@ class BotAdvisor(Bot):
             raise TimeoutError('bot timed out')
 
         self.itr_count += 1
+        print(self.itr_count)
 
         pos = self.mission.agent_pos
         dir_vec = self.mission.dir_vec
@@ -1025,7 +1030,7 @@ class BotAdvisor(Bot):
 
             # If nothing is returned so far, it means that the door is openable with a simple toggle
 
-            if action == actions.toggle():
+            if action == actions.toggle:
                 self.stack.pop()
             if action in (actions.left, actions.right):
                 # Go back to the door to open it
@@ -1059,29 +1064,26 @@ class BotAdvisor(Bot):
             return True
 
         def drop_or_pickup_or_open_something_while_exploring():
+            print(carrying, new_carrying)
             if action == actions.drop and carrying != new_carrying:
                 # get that thing back
                 new_fwd_cell = self.mission.grid.get(*new_fwd_pos)  # technically new_fwd_cell = fwd_cell given that it's a drop action
                 assert new_fwd_cell.type in ('key', 'box', 'ball')
                 # Hopefully the bot would pickup THIS object and not something similar to it
                 self.stack.append(('Pickup', None))
-                return True
-
             elif action == actions.pickup and carrying != new_carrying:
                 # drop that thing where you found it
                 fwd_cell = self.mission.grid.get(*fwd_pos)
                 assert fwd_cell.type in ('key', 'box', 'ball')
                 self.stack.append(('Drop', None))
-                return True
 
             elif action == actions.toggle:
                 fwd_cell = self.mission.grid.get(*fwd_pos)
-                if fwd_cell.type == 'door' and fwd_cell.is_open:
+                if fwd_cell and fwd_cell.type == 'door' and fwd_cell.is_open:
                     # i.e. the agent decided to close the door
                     # need to open it
                     self.stack.append(('Open', None))
-                return True
-            return False
+            return True
 
 
         # Go to an object
@@ -1099,9 +1101,8 @@ class BotAdvisor(Bot):
                 if action in (actions.forward, actions.left, actions.right) and np.array_equal(obj_pos, new_fwd_pos):
                     # stack will be popped at next step
                     return True
-                elif action in (actions.drop, actions.pickup, actions.open):
-                    if drop_or_pickup_or_open_something_while_exploring():
-                        return True
+                elif action in (actions.drop, actions.pickup, actions.toggle):
+                    return drop_or_pickup_or_open_something_while_exploring()
                 else:
                     path, _ = self.shortest_path(
                         lambda pos, cell: pos == obj_pos
@@ -1116,25 +1117,27 @@ class BotAdvisor(Bot):
                     if path:
                         # New subgoal: go next to the object
                         self.stack.append(('GoNextTo', obj_pos))
-                    else:
-                        # Explore the world
-                        self.stack.append(('Explore', None))
-                    return True
+            else:
+                # Explore the world
+                self.stack.append(('Explore', None))
+            return True
 
         # Go to a given location
         if subgoal == 'GoNextTo':
+            print(subgoal)
             assert pos is not datum
+            print(datum, pos, fwd_pos)
 
             # If we are facing the target cell, subgoal completed
             if np.array_equal(datum, fwd_pos):
+
                 self.stack.pop()
                 return False
             if action in (actions.forward, actions.left, actions.right) and np.array_equal(datum, new_fwd_pos):
                 # stack will be popped at next step anyway
                 return True
-            elif action in (actions.drop, actions.pickup, actions.open):
-                if drop_or_pickup_or_open_something_while_exploring():
-                    return True
+            elif action in (actions.drop, actions.pickup, actions.toggle):
+                return drop_or_pickup_or_open_something_while_exploring()
             else:
                 # Basically the taken action doesn't change the state
                 # Try to find a path
@@ -1185,7 +1188,7 @@ class BotAdvisor(Bot):
                             drop_pos = self.find_drop_pos()
                             self.stack.append(('Drop', None))
                             self.stack.append(('GoNextTo', drop_pos))
-                    return False
+                    return True
                 return True
 
         # Go to next to a position adjacent to an object
@@ -1193,9 +1196,8 @@ class BotAdvisor(Bot):
             # Do we know where any one of these objects are?
             obj_pos = self.find_obj_pos(datum)
 
-            if action in (actions.drop, actions.pickup, actions.open):
-                if drop_or_pickup_or_open_something_while_exploring():
-                    return True
+            if action in (actions.drop, actions.pickup, actions.toggle):
+                return drop_or_pickup_or_open_something_while_exploring()
             else:
                 if not obj_pos:
                     self.stack.append(('Explore', None))
@@ -1231,9 +1233,8 @@ class BotAdvisor(Bot):
             _, unseen_pos = self.shortest_path(
                 lambda pos, cell: not self.vis_mask[pos]
             )
-            if action in (actions.drop, actions.pickup, actions.open):
-                if drop_or_pickup_or_open_something_while_exploring():
-                    return True
+            if action in (actions.drop, actions.pickup, actions.toggle):
+                return drop_or_pickup_or_open_something_while_exploring()
 
             if not unseen_pos:
                 _, unseen_pos = self.shortest_path(
