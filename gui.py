@@ -17,7 +17,7 @@ from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 import gym
 import gym_minigrid
 from gym_minigrid import minigrid
-from babyai.utils.agent import BotAdvisorAgent
+from babyai.utils.agent import BotAdvisorAgent, BotAgent
 
 import babyai
 
@@ -185,6 +185,8 @@ class AIGameWindow(QMainWindow):
             self.stepEnv(actions.toggle)
         elif e.key() == Qt.Key_Return:
             self.stepEnv(actions.done)
+        elif e.key() == Qt.Key_Shift:
+            self.stepEnv()
 
         elif e.key() == Qt.Key_Backspace:
             self.resetEnv()
@@ -327,6 +329,7 @@ class AIGameWindow(QMainWindow):
 
     def resetEnv(self):
         obs = self.env.reset()
+        self.agent0 = BotAgent(self.env)
         self.agent = BotAdvisorAgent(self.env)
         self.lastObs = obs
         self.showEnv(obs)
@@ -345,19 +348,30 @@ class AIGameWindow(QMainWindow):
 
         # BotAgent text
         stack = self.agent.bot.stack
+        stack0 = self.agent0.bot.stack
         action = self.agent.act()
+
+        #assert stack[-1] == stack0[-1]
+
         # Update the mission text
         mission = obs['mission']
-        self.missionBox.setPlainText(mission + '\n{}\nOptimal Action{}'.format(stack, action))
-
+        self.missionBox.setPlainText(mission + '\nStack0 {}\nStack {}\nOptimal Action {}'.format(stack0, stack, action))
+        action0 = self.agent0.act()
+        stack0 = self.agent0.bot.stack
+        print(action, action0)
+        assert action['action'] == action0['action'] or action['action'] is None or action0['action'] is None
+        self.missionBox.append('Upon playing the suggested action {}, Bot0 stack would be {}'.format(action0, stack0))
         # Set the steps remaining
         stepsRem = unwrapped.steps_remaining
         self.stepsLabel.setText(str(stepsRem))
 
     def stepEnv(self, action=None):
         # If no manual action was specified by the user
+        botoptim = self.agent.act()['action']
+        print(botoptim)
         if action == None:
             action = random.randint(0, self.env.action_space.n - 1)
+            action = botoptim
         self.agent.bot.take_action(action)
         obs, reward, done, info = self.env.step(action)
 
@@ -378,7 +392,7 @@ def main(argv):
 
     # Load the gym environment
     env = gym.make(options.env_name)
-    env.seed(0)
+    env.seed(100)
 
     # Create the application window
     app = QApplication(sys.argv)

@@ -208,6 +208,7 @@ class Bot:
         if subgoal == 'GoToObj':
             # Do we know where any one of these objects are?
             obj_pos = self.find_obj_pos(datum)
+            print('datum0{} obj_pos0 {}'.format(datum, obj_pos))
 
             # Go to the location of this object
             if obj_pos:
@@ -331,6 +332,7 @@ class Bot:
             # If we are on the target position,
             # Randomly navigate away from this position
             if np.array_equal(pos, adj_pos):
+                return actions.left
                 if np.random.randint(0, 2) == 0:
                     return actions.left
                 else:
@@ -643,10 +645,9 @@ class BotAdvisor(Bot):
         # alternative is a tuple (subgoal, datum) that should be used if the actual subgoal
         # is satisfied already and requires no action taking
         # It is useful for GoToObj and GoNextTo subgoals
-        if subgoal is None:
+        while subgoal is None:
             self.stack.pop()
             subgoal, datum = self.stack[-1]
-
 
         if self.itr_count >= self.timeout:
             raise TimeoutError('bot timed out')
@@ -769,7 +770,6 @@ class BotAdvisor(Bot):
                 if fwd_cell and not fwd_cell.type.endswith('door'):
                     if carrying:
                         drop_pos_cur = self.find_drop_pos()
-                        drop_pos_block = self.find_drop_pos(drop_pos_cur)
                         # Drop the object being carried
                         return self.get_action_from_subgoal('GoNextTo', drop_pos_cur, ('Drop', None))
 
@@ -809,6 +809,7 @@ class BotAdvisor(Bot):
             # If we are on the target position,
             # Randomly navigate away from this position
             if np.array_equal(pos, adj_pos):
+                return actions.left
                 if np.random.randint(0, 2) == 0:
                     return actions.left
                 else:
@@ -921,7 +922,7 @@ class BotAdvisor(Bot):
             pass
 
         # Done action (not used by default)
-        elif action == self.actions.done:
+        elif action == actions.done:
             pass
 
         else:
@@ -969,6 +970,7 @@ class BotAdvisor(Bot):
 
         pos = self.mission.agent_pos
         dir_vec = self.mission.dir_vec
+        print(dir_vec)
         right_vec = self.mission.right_vec
         fwd_pos = pos + dir_vec
 
@@ -1090,6 +1092,7 @@ class BotAdvisor(Bot):
         if subgoal == 'GoToObj':
             # Do we know where any one of these objects are?
             obj_pos = self.find_obj_pos(datum)
+            print('datum{} obj_pos {}'.format(datum, obj_pos))
 
             # Go to the location of this object
             if obj_pos:
@@ -1117,10 +1120,10 @@ class BotAdvisor(Bot):
                     if path:
                         # New subgoal: go next to the object
                         self.stack.append(('GoNextTo', obj_pos))
-            else:
-                # Explore the world
-                self.stack.append(('Explore', None))
-            return True
+                        return True
+            # Explore the world
+            self.stack.append(('Explore', None))
+            return False
 
         # Go to a given location
         if subgoal == 'GoNextTo':
@@ -1216,7 +1219,7 @@ class BotAdvisor(Bot):
 
                 if not adj_pos:
                     self.stack.append(('Explore', None))
-                    return True
+                    return False
 
                 # FIXME: h4xx ??
                 # If we are on the target position,
