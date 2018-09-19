@@ -61,6 +61,9 @@ class ObjDesc:
         # Set of initial object positions
         self.obj_poss = []
 
+    def __repr__(self):
+        return "{} {} {}".format(self.color, self.type, self.loc)
+
     def surface(self, env):
         """
         Generate a natural language representation of the object description
@@ -93,7 +96,7 @@ class ObjDesc:
 
         return s
 
-    def find_matching_objs(self, env):
+    def find_matching_objs(self, env, use_location=True):
         """
         Find the set of objects matching the description and their positions
         """
@@ -123,7 +126,7 @@ class ObjDesc:
                     continue
 
                 # Check if object's position matches description
-                if self.loc in ["left", "right", "front", "behind"]:
+                if use_location and self.loc in ["left", "right", "front", "behind"]:
                     # Locations apply only to objects in the same room
                     # the agent starts in
                     if not agent_room.pos_inside(i, j):
@@ -183,6 +186,16 @@ class Instr:
         """
 
         raise NotImplementedError
+
+    def update_objs_poss(self):
+        """
+        Update the position of objects present in the instruction if needed
+        """
+        potential_objects = ('desc', 'desc_move', 'desc_fixed')
+        for attr in potential_objects:
+            if hasattr(self, attr):
+                getattr(self, attr).find_matching_objs(self.env, use_location=False)
+
 
 
 class ActionInstr(Instr):

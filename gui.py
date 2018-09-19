@@ -357,6 +357,7 @@ class AIGameWindow(QMainWindow):
         mission = obs['mission']
         self.missionBox.setPlainText(mission + '\nStack0 {}\nStack1 {}\nOptimal Action {}'.format(stack0, stack, action))
         action0 = self.agent0.act()
+        self.action0 = action0
         stack0 = self.agent0.bot.stack
         print(action, action0)
         #assert action['action'] == action0['action'] or action['action'] is None or action0['action'] is None
@@ -372,6 +373,7 @@ class AIGameWindow(QMainWindow):
         if action == None:
             action = random.randint(0, self.env.action_space.n - 1)
             action = botoptim
+            action = self.action0['action']
         self.agent.bot.take_action(action)
         obs, reward, done, info = self.env.step(action)
 
@@ -392,7 +394,7 @@ def main(argv):
 
     # Load the gym environment
     env = gym.make(options.env_name)
-    env.seed(100)
+    env.seed(135)
 
     # Create the application window
     app = QApplication(sys.argv)

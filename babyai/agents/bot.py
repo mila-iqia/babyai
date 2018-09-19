@@ -46,6 +46,14 @@ class Bot:
         #    print(subgoal)
         #    if datum:
         #        print(datum.surface(self.mission))
+    def update_objs_poss(self, instr=None):
+        if instr is None:
+            instr = self.mission.instrs
+        if isinstance(instr, BeforeInstr) or isinstance(instr, AndInstr) or isinstance(instr, AfterInstr):
+            self.update_objs_poss(instr.instr_a)
+            self.update_objs_poss(instr.instr_b)
+        else:
+            instr.update_objs_poss()
 
     def process_instr(self, instr):
         """
@@ -208,7 +216,6 @@ class Bot:
         if subgoal == 'GoToObj':
             # Do we know where any one of these objects are?
             obj_pos = self.find_obj_pos(datum)
-            print('datum0{} obj_pos0 {}'.format(datum, obj_pos))
 
             # Go to the location of this object
             if obj_pos:
@@ -239,7 +246,7 @@ class Bot:
 
         # Go to a given location
         if subgoal == 'GoNextTo':
-            assert tuple(pos) != datum
+            assert pos is not datum
 
             # If we are facing the target cell, subgoal completed
             if np.array_equal(datum, fwd_pos):
@@ -281,6 +288,7 @@ class Bot:
                         self.stack.append(('GoNextTo', drop_pos_cur))
 
                         # Pick up the blocking object and drop it
+                        self.stack.append(('UpdateObjsPoss', None))
                         self.stack.append(('Drop', None))
                         self.stack.append(('GoNextTo', drop_pos_block))
                         self.stack.append(('Pickup', None))
@@ -290,12 +298,15 @@ class Bot:
                         self.stack.append(('Drop', None))
                         self.stack.append(('GoNextTo', drop_pos_cur))
 
-                        return None
                     else:
-                        drop_pos = self.find_drop_pos()
+                        drop_pos_block = self.find_drop_pos()
+                        self.stack.append(('UpdateObjsPoss', None))
                         self.stack.append(('Drop', None))
-                        self.stack.append(('GoNextTo', drop_pos))
-                        return actions.pickup
+                        self.stack.append(('GoNextTo', drop_pos_block))
+                        self.stack.append(('Pickup', None))
+                        self.stack.append(('GoNextTo', fwd_pos))
+
+                    return None
 
                 return actions.forward
 
@@ -303,6 +314,11 @@ class Bot:
             if np.array_equal(next_cell - pos, right_vec):
                 return actions.right
             return actions.left
+
+        if subgoal == 'UpdateObjsPoss':
+            self.stack.pop()
+            self.update_objs_poss()
+            return None
 
         # Go to next to a position adjacent to an object
         if subgoal == 'GoToAdjPos':
@@ -332,7 +348,7 @@ class Bot:
             # If we are on the target position,
             # Randomly navigate away from this position
             if np.array_equal(pos, adj_pos):
-                return actions.left
+                #return actions.left
                 if np.random.randint(0, 2) == 0:
                     return actions.left
                 else:
@@ -966,11 +982,11 @@ class BotAdvisor(Bot):
             raise TimeoutError('bot timed out')
 
         self.itr_count += 1
-        print(self.itr_count)
+        #print(self.itr_count)
 
         pos = self.mission.agent_pos
         dir_vec = self.mission.dir_vec
-        print(dir_vec)
+        #print(dir_vec)
         right_vec = self.mission.right_vec
         fwd_pos = pos + dir_vec
 
@@ -1066,7 +1082,7 @@ class BotAdvisor(Bot):
             return True
 
         def drop_or_pickup_or_open_something_while_exploring():
-            print(carrying, new_carrying)
+            #print(carrying, new_carrying)
             # A bit too conservative here:
             # If you pick up an object when you shouldn't have, you should drop it back in the same position
             # If you drop an object when you shouldn't have, you should pick that one up, and not one similar to it
@@ -1088,14 +1104,14 @@ class BotAdvisor(Bot):
                     # i.e. the agent decided to close the door
                     # need to open it
                     self.stack.append(('Open', None))
-            return True
+
 
 
         # Go to an object
         if subgoal == 'GoToObj':
             # Do we know where any one of these objects are?
             obj_pos = self.find_obj_pos(datum)
-            print('datum{} obj_pos {}'.format(datum, obj_pos))
+            #print('datum{} obj_pos {}'.format(datum, obj_pos))
 
             # Go to the location of this object
             if obj_pos:
@@ -1108,7 +1124,8 @@ class BotAdvisor(Bot):
                     # stack will be popped at next step
                     return True
                 elif action in (actions.drop, actions.pickup, actions.toggle):
-                    return drop_or_pickup_or_open_something_while_exploring()
+                    drop_or_pickup_or_open_something_while_exploring()
+                    return True
                 else:
                     path, _ = self.shortest_path(
                         lambda pos, cell: pos == obj_pos
@@ -1130,9 +1147,12 @@ class BotAdvisor(Bot):
 
         # Go to a given location
         if subgoal == 'GoNextTo':
-            print(subgoal)
-            if tuple(pos) == datum:
-                return True
+            #print(subgoal)
+            try:
+                if tuple(pos) == tuple(datum):
+                    return True
+            except ValueError:
+                print(tuple(pos), datum)
 
             # If we are facing the target cell, subgoal completed
             if np.array_equal(datum, fwd_pos):
@@ -1142,8 +1162,6 @@ class BotAdvisor(Bot):
             if action in (actions.forward, actions.left, actions.right) and np.array_equal(datum, new_fwd_pos):
                 # stack will be popped at next step anyway
                 return True
-            elif action in (actions.drop, actions.pickup, actions.toggle):
-                return drop_or_pickup_or_open_something_while_exploring()
             else:
                 # Try to find a path
                 path, _ = self.shortest_path(
@@ -1193,7 +1211,11 @@ class BotAdvisor(Bot):
                             drop_pos = self.find_drop_pos()
                             self.stack.append(('Drop', None))
                             self.stack.append(('GoNextTo', drop_pos))
-                    return True
+                            if action == actions.pickup:
+                                return True
+                    # If there is nothing blocking us and we drop/pickup/toggle something for no reason
+                if action in (actions.drop, actions.pickup, actions.toggle):
+                    drop_or_pickup_or_open_something_while_exploring()
                 return True
 
         # Go to next to a position adjacent to an object
@@ -1202,7 +1224,8 @@ class BotAdvisor(Bot):
             obj_pos = self.find_obj_pos(datum)
 
             if action in (actions.drop, actions.pickup, actions.toggle):
-                return drop_or_pickup_or_open_something_while_exploring()
+                drop_or_pickup_or_open_something_while_exploring()
+                return True
             else:
                 if not obj_pos:
                     self.stack.append(('Explore', None))
@@ -1221,7 +1244,7 @@ class BotAdvisor(Bot):
 
                 if not adj_pos:
                     self.stack.append(('Explore', None))
-                    return False
+                    return True
 
                 # FIXME: h4xx ??
                 # If we are on the target position,
@@ -1239,7 +1262,8 @@ class BotAdvisor(Bot):
                 lambda pos, cell: not self.vis_mask[pos]
             )
             if action in (actions.drop, actions.pickup, actions.toggle):
-                return drop_or_pickup_or_open_something_while_exploring()
+                drop_or_pickup_or_open_something_while_exploring()
+                return True
 
             if not unseen_pos:
                 _, unseen_pos = self.shortest_path(
