@@ -355,11 +355,11 @@ class AIGameWindow(QMainWindow):
 
         # Update the mission text
         mission = obs['mission']
-        self.missionBox.setPlainText(mission + '\nStack0 {}\nStack {}\nOptimal Action {}'.format(stack0, stack, action))
+        self.missionBox.setPlainText(mission + '\nStack0 {}\nStack1 {}\nOptimal Action {}'.format(stack0, stack, action))
         action0 = self.agent0.act()
         stack0 = self.agent0.bot.stack
         print(action, action0)
-        assert action['action'] == action0['action'] or action['action'] is None or action0['action'] is None
+        #assert action['action'] == action0['action'] or action['action'] is None or action0['action'] is None
         self.missionBox.append('Upon playing the suggested action {}, Bot0 stack would be {}'.format(action0, stack0))
         # Set the steps remaining
         stepsRem = unwrapped.steps_remaining

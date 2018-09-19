@@ -239,7 +239,7 @@ class Bot:
 
         # Go to a given location
         if subgoal == 'GoNextTo':
-            assert pos is not datum
+            assert tuple(pos) != datum
 
             # If we are facing the target cell, subgoal completed
             if np.array_equal(datum, fwd_pos):
@@ -1067,9 +1067,12 @@ class BotAdvisor(Bot):
 
         def drop_or_pickup_or_open_something_while_exploring():
             print(carrying, new_carrying)
+            # A bit too conservative here:
+            # If you pick up an object when you shouldn't have, you should drop it back in the same position
+            # If you drop an object when you shouldn't have, you should pick that one up, and not one similar to it
             if action == actions.drop and carrying != new_carrying:
                 # get that thing back
-                new_fwd_cell = self.mission.grid.get(*new_fwd_pos)  # technically new_fwd_cell = fwd_cell given that it's a drop action
+                new_fwd_cell = carrying
                 assert new_fwd_cell.type in ('key', 'box', 'ball')
                 # Hopefully the bot would pickup THIS object and not something similar to it
                 self.stack.append(('Pickup', None))
@@ -1128,8 +1131,8 @@ class BotAdvisor(Bot):
         # Go to a given location
         if subgoal == 'GoNextTo':
             print(subgoal)
-            assert pos is not datum
-            print(datum, pos, fwd_pos)
+            if tuple(pos) == datum:
+                return True
 
             # If we are facing the target cell, subgoal completed
             if np.array_equal(datum, fwd_pos):
@@ -1142,7 +1145,6 @@ class BotAdvisor(Bot):
             elif action in (actions.drop, actions.pickup, actions.toggle):
                 return drop_or_pickup_or_open_something_while_exploring()
             else:
-                # Basically the taken action doesn't change the state
                 # Try to find a path
                 path, _ = self.shortest_path(
                     lambda pos, cell: np.array_equal(pos, datum)
