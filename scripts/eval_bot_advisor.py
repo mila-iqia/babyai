@@ -4,7 +4,8 @@ import random
 import time
 from optparse import OptionParser
 from babyai.levels import level_dict
-from babyai.agents.bot import Bot, BotAdvisor
+from babyai.agents.bot import BotAdvisor
+import numpy as np
 
 level_list = [
     'OpenRedDoor',
@@ -26,7 +27,7 @@ level_list = [
     'Synth',
     'SynthLoc',
     'SynthSeq',
-    # 'BossLevel',
+    #'BossLevel',
 ]
 
 parser = OptionParser()
@@ -45,12 +46,14 @@ parser.add_option(
     default=500
 )
 parser.add_option(
-    "--forget",
-    action='store_true'
+    "--random",
+    type="float",
+    default=0.
 )
 parser.add_option(
-    "--advisor",
-    action='store_true'
+    "--non_optimal_steps",
+    type=int,
+    default=20
 )
 parser.add_option(
     "--verbose",
@@ -73,28 +76,31 @@ for level_name in level_list:
 
         mission_seed = options.seed + run_no
         mission = level(seed=mission_seed)
-        if not options.advisor:
-            expert = Bot(mission, forget=options.forget)
-        if options.advisor:
-            assert not options.forget, "Cannot use the forget option for BotAdvisors"
-            expert = BotAdvisor(mission)
+        expert = BotAdvisor(mission)
+        np.random.seed(mission_seed)
 
         if options.verbose:
             print('%s/%s: %s, seed=%d' % (run_no+1, options.num_runs, mission.surface, mission_seed))
-
+        random_actions = []
         try:
-            print(mission)
+            #print(mission)
+            step = 0
             while True:
-                print(expert.stack)
-                if options.advisor:
-                    action = expert.get_action()
-                    action = 0
-                    print(action)
+                action = expert.get_action()
+                if step < options.non_optimal_steps and random.random() < options.random:
+                    print(expert.stack)
+                    action = np.random.randint(0, 6)
+                    print('random action {}'.format(action))
+                    random_actions.append(action)
                     expert.take_action(action)
+                    print(expert.stack)
+                    print('\n')
                 else:
-                    action = expert.step()
-                print(expert.stack)
-                print('\n')
+                    #print(expert.stack)
+                    #print('actual action {}'.format(action))
+                    expert.take_action(action)
+                    #print(expert.stack)
+                    #print('\n')
                 obs, reward, done, info = mission.step(action)
 
                 total_reward += reward
@@ -105,9 +111,11 @@ for level_name in level_list:
                     if reward <= 0:
                         print('FAILURE on %s, seed %d' % (level_name, mission_seed))
                     break
+                step += 1
         except Exception as e:
             print('FAILURE on %s, seed %d' % (level_name, mission_seed))
             print(e)
+        print(random_actions)
 
     success_rate = 100 * num_success / options.num_runs
     mean_reward = total_reward / options.num_runs

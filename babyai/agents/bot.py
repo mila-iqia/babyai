@@ -770,7 +770,18 @@ class BotAdvisor(Bot):
 
         # Go to a given location
         if subgoal == 'GoNextTo':
-            assert pos is not datum
+            if tuple(pos) == tuple(datum):
+                # move away from it
+                rand = np.random.randint(0, 3)
+                if rand == 0:
+                    return actions.left
+                elif rand == 1:
+                    return actions.forward
+                else:
+                    return actions.right
+
+            #print('here')
+            #print(pos, datum, alternative)
 
             # If we are facing the target cell, subgoal completed
             if np.array_equal(datum, fwd_pos):
@@ -1117,8 +1128,10 @@ class BotAdvisor(Bot):
                 self.stack.pop()
             # these are the only actions that can change your state (you are already carrying something, and there is nothing in front of you !)
             elif action in (actions.left, actions.right, actions.forward):
+                #print('here')
                 # Go back to where you were to drop what you got
                 self.stack.append(('GoNextTo', tuple(fwd_pos)))
+                #print(self.stack)
             return True
 
         def drop_or_pickup_or_open_something_while_exploring():
@@ -1171,7 +1184,7 @@ class BotAdvisor(Bot):
                     return True
                 fwd_cell = self.mission.grid.get(*fwd_pos)
                 # If there is a blocking object in front of us
-                if fwd_cell and not fwd_cell.type.endswith('door') and action == action.pickup:
+                if fwd_cell and not fwd_cell.type.endswith('door') and action == actions.pickup:
                     #print('DIS')
                     self.stack.append(('GoNextTo', obj_pos))
                     return False
@@ -1207,6 +1220,8 @@ class BotAdvisor(Bot):
             #print(subgoal)
             try:
                 if tuple(pos) == tuple(datum):
+                    return True
+                if tuple(new_pos) == tuple(datum):
                     return True
             except ValueError:
                 print(tuple(pos), datum)

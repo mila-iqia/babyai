@@ -6,6 +6,7 @@ import threading
 import copy
 import random
 from optparse import OptionParser
+import numpy as np
 
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QInputDialog
@@ -361,7 +362,10 @@ class AIGameWindow(QMainWindow):
         stack0 = self.agent0.bot.stack
         #print(action, action0)
         #assert action['action'] == action0['action'] or action['action'] is None or action0['action'] is None
+
         self.missionBox.append('Upon playing the suggested action {}, Bot0 stack would be {}'.format(action0, stack0))
+        self.randomact = np.random.randint(0, 6)
+        self.missionBox.append('\n\nrandom {}'.format(self.randomact))
         # Set the steps remaining
         stepsRem = unwrapped.steps_remaining
         self.stepsLabel.setText(str(stepsRem))
@@ -374,6 +378,8 @@ class AIGameWindow(QMainWindow):
             action = random.randint(0, self.env.action_space.n - 1)
             action = botoptim
             #action = self.action0['action']
+            action = self.randomact
+        print(action)
         self.agent.bot.take_action(action)
         obs, reward, done, info = self.env.step(action)
 
@@ -394,12 +400,14 @@ def main(argv):
 
     # Load the gym environment
     env = gym.make(options.env_name)
-    env.seed(45)
+    env.seed(8)
+    #np.random.seed(55)
 
     # Create the application window
     app = QApplication(sys.argv)
-    window = AIGameWindow(env)
 
+    window = AIGameWindow(env)
+    print(env)
     # Run the application
     sys.exit(app.exec_())
 
