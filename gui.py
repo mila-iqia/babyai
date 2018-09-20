@@ -359,7 +359,7 @@ class AIGameWindow(QMainWindow):
         action0 = self.agent0.act()
         self.action0 = action0
         stack0 = self.agent0.bot.stack
-        print(action, action0)
+        #print(action, action0)
         #assert action['action'] == action0['action'] or action['action'] is None or action0['action'] is None
         self.missionBox.append('Upon playing the suggested action {}, Bot0 stack would be {}'.format(action0, stack0))
         # Set the steps remaining
@@ -369,11 +369,11 @@ class AIGameWindow(QMainWindow):
     def stepEnv(self, action=None):
         # If no manual action was specified by the user
         botoptim = self.agent.act()['action']
-        print(botoptim)
+        #print(botoptim)
         if action == None:
             action = random.randint(0, self.env.action_space.n - 1)
             action = botoptim
-            action = self.action0['action']
+            #action = self.action0['action']
         self.agent.bot.take_action(action)
         obs, reward, done, info = self.env.step(action)
 
@@ -394,7 +394,7 @@ def main(argv):
 
     # Load the gym environment
     env = gym.make(options.env_name)
-    env.seed(805)
+    env.seed(45)
 
     # Create the application window
     app = QApplication(sys.argv)

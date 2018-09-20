@@ -106,7 +106,7 @@ for level_name in level_list:
     success_rate = 100 * num_success / options.num_runs
     mean_reward = total_reward / options.num_runs
 
-    print('%16s: %.1f%%, r=%.2f' % (level_name, success_rate, mean_reward))
+    print('%16s: %.1f%%, r=%.3f' % (level_name, success_rate, mean_reward))
 
 end_time = time.time()
 total_time = end_time - start_time
