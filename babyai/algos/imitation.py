@@ -68,7 +68,6 @@ class ImitationLearning(object):
             pretrained_model = None
 
         self.obss_preprocessor = utils.ObssPreprocessor(args.model, observation_space, pretrained_model)
-        print(self.obss_preprocessor.vocab.vocab)
 
         # Define actor-critic model
         self.acmodel = utils.load_model(args.model, raise_not_found=False)
