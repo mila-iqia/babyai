@@ -1229,6 +1229,8 @@ class BotAdvisor(Bot):
             #print(subgoal)
             try:
                 if tuple(pos) == tuple(datum):
+                    if action in (actions.drop, actions.pickup, actions.toggle):
+                        drop_or_pickup_or_open_something_while_exploring()
                     return True
                 if tuple(new_pos) == tuple(datum):
                     return True
