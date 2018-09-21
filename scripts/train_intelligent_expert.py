@@ -93,8 +93,6 @@ parser.add_argument("--finetune", action="store_true", default=False,
                     help="fine-tune the model at every phase instead of retraining")
 parser.add_argument("--dagger", action="store_true", default=False,
                     help="Use DaGGER to add demos")
-parser.add_argument("--episodes-to-evaluate-mean", type=int, default=100,
-                    help="Number of episodes to use to evaluate the mean number of steps it takes to solve the task")
 
 logger = logging.getLogger(__name__)
 
@@ -171,8 +169,8 @@ def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions):
             demos.append((mission, blosc.pack_array(np.array(images)), directions, actions))
             logger.info("Demo added")
 
-        except Exception:
-            logger.exception("error while generating demo #{}".format(len(demos)))
+        except Exception as e:
+            logger.exception("error while generating demo #{}: {}".format(len(demos), e))
             continue
 
     return demos
