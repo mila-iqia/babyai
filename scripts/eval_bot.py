@@ -26,7 +26,7 @@ level_list = [
     'Synth',
     'SynthLoc',
     'SynthSeq',
-    # 'BossLevel',
+    'BossLevel',
 ]
 
 parser = OptionParser()
@@ -85,16 +85,11 @@ for level_name in level_list:
         try:
             print(mission)
             while True:
-                print(expert.stack)
                 if options.advisor:
                     action = expert.get_action()
                     action = 0
-                    print(action)
-                    expert.take_action(action)
                 else:
                     action = expert.step()
-                print(expert.stack)
-                print('\n')
                 obs, reward, done, info = mission.step(action)
 
                 total_reward += reward
