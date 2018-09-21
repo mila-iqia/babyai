@@ -2,18 +2,37 @@ version: 2
 jobs:
   test:
     docker:
-      - image: circleci/python:3.5
+        - image: circleci/python:3.5
     steps:
-      # Install the BabyAI package
-      - checkout
-      - run: pip3 install --user --process-dependency-links --editable .
-      # Check the source code for obvious errors
-      - run: pip3 install --user flake8
-      - run: python3 -m flake8 . --count --show-source --statistics --select=E901,E999,F821,F822,F823
-      # Test the BabyAI levels
-      - run: ./run_tests.py
-      # Quickly exercise the RL training code
-      - run: time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --save-interval 100 --frames 300 --arch cnn1
+
+        # Install the BabyAI package
+        - checkout
+        - run: pip3 install --user --process-dependency-links --editable .
+
+        # Check the source code for obvious errors
+        - run: pip3 install --user flake8
+        - run: python3 -m flake8 . --count --show-source --statistics --select=E901,E999,F821,F822,F823
+
+        # Test the BabyAI levels
+        - run: ./run_tests.py
+
+        # Quickly exercise the RL training code
+        - run: time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --procs 4 --batch-size 80 --log-interval 1 --save-interval 2 --test-episodes 10 --frames 300 --arch cnn1 --instr-dim 16 --image-dim 16 --memory-dim 16
+
+        # Check that the bot works on some basic levels
+        - run: python3 -m scripts.eval_bot --level PutNextLocal --num_runs 100 | grep "100.0%"
+        - run: python3 -m scripts.eval_bot --level SynthLoc --num_runs 100 | grep "100.0%"
+
+        # Quickly test the generation of bot demos
+        - run: python3 -m scripts.make_agent_demos --env BabyAI-GoToRedBallObs-v0 --episodes 100 --valid-episodes 32
+
+        # Quick test for imitation learning
+        - run: python3 -m scripts.train_il --env BabyAI-GoToRedBallObs-v0 --demos BabyAI-GoToRedBallObs-v0_agent --validation-interval 1 --patience 0 --episodes 100 --val-episodes 50
+
+        # Test job launch scripts
+        - run: scripts/launch_max_experiments.py --test
+        - run: scripts/launch_demo_count.py --test --env BabyAI-GoToLocal-v0 --demos GoToLocal-bot-1m
+
 workflows:
   version: 2
   build_and_test:

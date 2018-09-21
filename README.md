@@ -1,8 +1,8 @@
 # Baby AI Game
 
-[![CircleCI](https://circleci.com/gh/maximecb/baby-ai-game.svg?style=svg&circle-token=ed2191e1bb0206a2f3f2e22f45f1369f7b8115a9)](https://circleci.com/gh/maximecb/baby-ai-game)
+[![CircleCI](https://circleci.com/gh/mila-udem/babyai.svg?style=svg&circle-token=ed2191e1bb0206a2f3f2e22f45f1369f7b8115a9)](https://circleci.com/gh/mila-udem/babyai)
 
-Prototype of a game where a reinforcement learning agent is trained through natural language instructions. This is a research project based at [MILA](https://mila.quebec/en/).
+Prototype of a game where a reinforcement learning agent is trained through natural language instructions. This is a research project based at [Mila](https://mila.quebec/en/).
 
 ## Installation
 
@@ -19,11 +19,10 @@ for installation instructions specific to your platform.
 Then, clone this repository and install the other dependencies with `pip3`:
 
 ```
-git clone https://github.com/maximecb/baby-ai-game.git
-cd baby-ai-game
+git clone https://github.com/mila-udem/babyai.git
+cd babyai
 pip3 install --process-dependency-links --editable .
 ```
-
 
 ### Installation using Conda (Alternative Method)
 
@@ -33,7 +32,7 @@ If you are using conda, you can create a `babyai` environment with all the depen
 conda env create -f environment.yaml
 ```
 
-Having done that, you can either add `baby-ai-game` and `gym-minigrid` in your `$PYTHONPATH` or install them in the development mode as suggested above.
+Having done that, you can either add `babyai` and `gym-minigrid` in your `$PYTHONPATH` or install them in the development mode as suggested above.
 
 ## Structure of the Codebase
 
@@ -80,7 +79,7 @@ The level being run can be selected with the `--env-name` option, eg:
 
 To see the available levels, please have [here](#the-levels)
 
-### Usage at MILA
+### Usage at Mila
 
 If you connect to the lab machines by ssh-ing, make sure to use `ssh -X` in order to see the game window. This will work even for a chain of ssh connections, as long as you use `ssh -X` at all intermediate steps. If you use screen, set `$DISPLAY` variable manually inside each of your screen terminals. You can find the right value for `$DISPLAY` by detaching from you screen first (`Ctrl+A+D`) and then running `echo $DISPLAY`.
 
@@ -88,7 +87,7 @@ The code does not work in conda, install everything with `pip install --user`.
 
 ### Troubleshooting
 
-If you run into error messages relating to OpenAI gym or PyQT, it may be that the version of those libraries that you have installed is incompatible. You can try upgrading specific libraries with pip3, eg: `pip3 install --upgrade gym`. If the problem persists, please [open an issue](https://github.com/maximecb/baby-ai-game/issues) on this repository and paste a *complete* error message, along with some information about your platform (are you running Windows, Mac, Linux? Are you running this on a MILA machine?).
+If you run into error messages relating to OpenAI gym or PyQT, it may be that the version of those libraries that you have installed is incompatible. You can try upgrading specific libraries with pip3, eg: `pip3 install --upgrade gym`. If the problem persists, please [open an issue](https://github.com/maximecb/baby-ai-game/issues) on this repository and paste a *complete* error message, along with some information about your platform (are you running Windows, Mac, Linux? Are you running this on a Mila machine?).
 
 ## About this Project
 
@@ -182,17 +181,11 @@ In naming the levels we adhere to the following convention:
 
 ### Unlock
 
-- Environment: The agent is placed in a room with a key and a locked door. The room has either no distractors in `Unlock` or 3 distractors in `UnlockDist`.
-- Instruction: Open the door
-- Evaluate: image understanding, memory in `UnlockDist`
+- Environment: Maze environment where the agent has to retrieve a key to open a locked door.
+- Instruction: Open the <color> door
+- Evaluate: image understanding, navigation, memory.
 - Level id:
     - `BabyAI-Unlock-v0`
-    - `BabyAI-UnlockDist-v0`
-
-<p align="center">
-    <img src="media/Unlock.png" width="250">
-    <img src="media/UnlockDist.png" width="250">
-</p>
 
 ### UnlockPickup
 
