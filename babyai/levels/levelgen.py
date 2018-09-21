@@ -48,6 +48,8 @@ class RoomGridLevel(RoomGrid):
 
     def step(self, action):
         obs, reward, done, info = super().step(action)
+        if action == self.actions.drop:
+            self.update_objs_poss()
 
         # If we've successfully completed the mission
         status = self.instrs.verify(action)
@@ -60,6 +62,15 @@ class RoomGridLevel(RoomGrid):
             reward = 0
 
         return obs, reward, done, info
+
+    def update_objs_poss(self, instr=None):
+        if instr is None:
+            instr = self.instrs
+        if isinstance(instr, BeforeInstr) or isinstance(instr, AndInstr) or isinstance(instr, AfterInstr):
+            self.update_objs_poss(instr.instr_a)
+            self.update_objs_poss(instr.instr_b)
+        else:
+            instr.update_objs_poss()
 
     def _gen_grid(self, width, height):
         # We catch RecursionError to deal with rare cases where
