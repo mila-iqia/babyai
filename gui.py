@@ -48,6 +48,8 @@ class AIGameWindow(QMainWindow):
 
         self.resetEnv()
 
+        self.step = 0
+
         self.stepTimer = QTimer()
         self.stepTimer.setInterval(0)
         self.stepTimer.setSingleShot(False)
@@ -373,21 +375,24 @@ class AIGameWindow(QMainWindow):
     def stepEnv(self, action=None):
         # If no manual action was specified by the user
         botoptim = self.agent.act()['action']
-        #print(botoptim)
+        actions = [1, 0, 4, 2, 0, 2, 2, 1, 2, 0, 0, 0, 5, 5, 3, 2, 4, 1, 4, 1, 5]
         if action == None:
             action = random.randint(0, self.env.action_space.n - 1)
             action = botoptim
             #action = self.action0['action']
-            action = self.randomact
+            action = actions[self.step]
+        self.step += 1
         print(action)
         self.agent.bot.take_action(action)
         obs, reward, done, info = self.env.step(action)
+        print(reward)
 
         self.showEnv(obs)
         self.lastObs = obs
 
         if done:
             self.resetEnv()
+
 
 def main(argv):
     parser = OptionParser()
@@ -400,14 +405,16 @@ def main(argv):
 
     # Load the gym environment
     env = gym.make(options.env_name)
-    env.seed(8)
-    #np.random.seed(55)
+    env.seed(31)
 
     # Create the application window
     app = QApplication(sys.argv)
 
     window = AIGameWindow(env)
     print(env)
+    actions = []
+    for action in actions[:-1]:
+        window.stepEnv(action)
     # Run the application
     sys.exit(app.exec_())
 
