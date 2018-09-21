@@ -380,7 +380,7 @@ class AIGameWindow(QMainWindow):
             action = random.randint(0, self.env.action_space.n - 1)
             action = botoptim
             #action = self.action0['action']
-            action = actions[self.step]
+            #action = actions[self.step]
         self.step += 1
         print(action)
         self.agent.bot.take_action(action)
@@ -405,7 +405,7 @@ def main(argv):
 
     # Load the gym environment
     env = gym.make(options.env_name)
-    env.seed(31)
+    env.seed(2302)
 
     # Create the application window
     app = QApplication(sys.argv)
