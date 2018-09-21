@@ -96,7 +96,7 @@ class IntImagePreprocessor(object):
 
 
 class ObssPreprocessor:
-    def __init__(self, model_name, obs_space, load_vocab_from=None):
+    def __init__(self, model_name, obs_space=None, load_vocab_from=None):
         self.image_preproc = RawImagePreprocessor()
         self.instr_preproc = InstructionsPreprocessor(model_name, load_vocab_from)
         self.vocab = self.instr_preproc.vocab

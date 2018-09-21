@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import torch
 from .. import utils
 from babyai.agents.bot import Bot, BotAdvisor
+from babyai.model import ACModel
 
 
 class Agent(ABC):
@@ -32,6 +33,9 @@ class ModelAgent(Agent):
     """A model-based agent. This agent behaves using a model."""
 
     def __init__(self, model_or_name, obss_preprocessor, argmax):
+        if obss_preprocessor is None:
+            assert isinstance(model_or_name, str)
+            obss_preprocessor = utils.ObssPreprocessor(model_or_name)
         self.obss_preprocessor = obss_preprocessor
         if isinstance(model_or_name, str):
             self.model = utils.load_model(model_or_name)
@@ -77,6 +81,18 @@ class ModelAgent(Agent):
         else:
             self.memory *= (1 - done)
 
+
+class RandomAgent(ModelAgent):
+    """A newly initialized model-based agent."""
+
+    def __init__(self, seed, env):
+        utils.seed(seed)
+        model_name = 'RandomAgent_seed{}'.format(seed)
+        obss_preprocessor = utils.ObssPreprocessor(model_name)
+        model = utils.load_model(model_name, raise_not_found=False)
+        if model is None:
+            model = ACModel(obss_preprocessor.obs_space, env.action_space)
+        super().__init__(model, obss_preprocessor, argmax=False)
 
 class DemoAgent(Agent):
     """A demonstration-based agent. This agent behaves using demonstrations."""
