@@ -657,6 +657,13 @@ class BotActionInfoWrapper(gym.Wrapper):
         return obs
 
 
+class DisappearedBoxError(Exception):
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
 class BotAdvisor(Bot):
     def get_action(self):
         """
@@ -1013,6 +1020,13 @@ class BotAdvisor(Bot):
         actions = self.mission.actions
         carrying = self.mission.carrying
 
+        if action == actions.toggle and self.mission.grid.get(*fwd_pos) is not None and self.mission.grid.get(*fwd_pos).type == 'box':
+            # basically the foolish agent opens the box that he had to pickup, the box doesn't exist anymore (MAGIC !)
+            # just loop until timeout and abandon. Bot can't help the agent after such a mistake
+            # TODO: give the agent another chance by looking for a similar box still unopened, or not care if the box is irrelevant (need to update stack for example if that box was moved and bot advises to put it back to its position after it has been opened by mistake)
+            # return False
+            raise DisappearedBoxError('A box that should have been picked up was opened, too bad !')
+
         if len(self.stack) == 0:
             # Is this right?
             if action != actions.done:
@@ -1115,11 +1129,6 @@ class BotAdvisor(Bot):
             elif action in (actions.left, actions.right):
                 # Go back to where you were to pickup what was in front of you
                 self.stack.append(('GoNextTo', tuple(fwd_pos)))
-            elif action == actions.toggle and self.mission.grid.get(*fwd_pos).type == 'box':
-                # basically the foolish agent opens the box that he had to pickup, the box doesn't exist anymore (MAGIC !)
-                # just loop until timeout and abandon. Bot can't help the agent after such a mistake
-                # TODO: give the agent another chance by looking for a similar box still unopened
-                return False
             return True
 
         # Drop an object
@@ -1436,7 +1445,7 @@ class BotAdvisor(Bot):
                 self.stack.append(('GoNextTo', unseen_pos))
                 return False
 
-            print(self.stack)
+            #print(self.stack)
             assert False, "1nothing left to explore"
 
         assert False, 'invalid subgoal "%s"' % subgoal
