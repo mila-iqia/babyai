@@ -83,7 +83,6 @@ for level_name in level_list:
             print('%s/%s: %s, seed=%d' % (run_no+1, options.num_runs, mission.surface, mission_seed))
 
         try:
-            print(mission)
             while True:
                 if options.advisor:
                     action = expert.get_action()
