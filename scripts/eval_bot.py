@@ -86,7 +86,7 @@ for level_name in level_list:
             while True:
                 if options.advisor:
                     action = expert.get_action()
-                    action = 0
+                    expert.take_action(action)
                 else:
                     action = expert.step()
                 obs, reward, done, info = mission.step(action)
@@ -97,7 +97,7 @@ for level_name in level_list:
                     if reward > 0:
                         num_success += 1
                     if reward <= 0:
-                        print('FAILURE on %s, seed %d' % (level_name, mission_seed))
+                        print('FAILURE on %s, seed %d, reward %.2f' % (level_name, mission_seed, reward))
                     break
         except Exception as e:
             print('FAILURE on %s, seed %d' % (level_name, mission_seed))
