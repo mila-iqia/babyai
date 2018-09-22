@@ -46,9 +46,9 @@ class AIGameWindow(QMainWindow):
         self.env = env
         self.lastObs = None
 
-        self.resetEnv()
-
         self.step = 0
+
+        self.resetEnv()
 
         self.stepTimer = QTimer()
         self.stepTimer.setInterval(0)
@@ -364,9 +364,9 @@ class AIGameWindow(QMainWindow):
         stack0 = self.agent0.bot.stack
         #print(action, action0)
         #assert action['action'] == action0['action'] or action['action'] is None or action0['action'] is None
-
+        self.actions = [0, 0, 2, 0, 0, 0, 1, 2, 2, 0, 0, 0, 2, 2, 0, 0, 2, 2, 2, 0, 0, 0, 0, 1, 0, 2, 0, 2, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 0, 1, 2, 1, 2, 2, 2, 2, 2, 2, 1, 0, 2, 0, 0, 2, 3, 1, 2, 1, 0, 4, 2, 2, 4, 1, 2, 4, 1, 0, 4, 2, 2, 4, 2, 4, 2, 4, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
         self.missionBox.append('Upon playing the suggested action {}, Bot0 stack would be {}'.format(action0, stack0))
-        self.randomact = np.random.randint(0, 6)
+        self.randomact = 0#self.actions[self.step]
         self.missionBox.append('\n\nrandom {}'.format(self.randomact))
         # Set the steps remaining
         stepsRem = unwrapped.steps_remaining
@@ -375,17 +375,17 @@ class AIGameWindow(QMainWindow):
     def stepEnv(self, action=None):
         # If no manual action was specified by the user
         botoptim = self.agent.act()['action']
-        actions = [1, 0, 4, 2, 0, 2, 2, 1, 2, 0, 0, 0, 5, 5, 3, 2, 4, 1, 4, 1, 5]
         if action == None:
-            action = random.randint(0, self.env.action_space.n - 1)
             action = botoptim
+
+            #action = self.randomact
             #action = self.action0['action']
             #action = actions[self.step]
         self.step += 1
-        print(action)
         self.agent.bot.take_action(action)
         obs, reward, done, info = self.env.step(action)
-        print(reward)
+        if done:
+            print("reward: " + str(reward))
 
         self.showEnv(obs)
         self.lastObs = obs
@@ -399,7 +399,7 @@ def main(argv):
     parser.add_option(
         "--env-name",
         help="gym environment to load",
-        default='MiniGrid-MultiRoom-N6-v0'
+        default='BabyAI-BossLevel-v0'
     )
     (options, args) = parser.parse_args()
 
