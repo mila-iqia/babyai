@@ -94,6 +94,7 @@ class RandomAgent(ModelAgent):
             model = ACModel(obss_preprocessor.obs_space, env.action_space)
         super().__init__(model, obss_preprocessor, argmax=False)
 
+
 class DemoAgent(Agent):
     """A demonstration-based agent. This agent behaves using demonstrations."""
 
