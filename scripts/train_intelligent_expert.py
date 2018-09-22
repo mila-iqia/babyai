@@ -26,6 +26,7 @@ from babyai.evaluate import batch_evaluate, evaluate
 from babyai.utils.agent import BotAgent, BotAdvisorAgent
 import torch
 import blosc
+from babyai.utils.agent import DemoAgent
 
 
 # Parse arguments
@@ -98,6 +99,8 @@ parser.add_argument("--episodes-to-evaluate-mean", type=int, default=100,
 
 logger = logging.getLogger(__name__)
 
+check_obss_equality = DemoAgent.check_obss_equality
+
 
 def evaluate_agent(il_learn, eval_seed, num_eval_demos, return_obss_actions=False):
     """
@@ -105,7 +108,7 @@ def evaluate_agent(il_learn, eval_seed, num_eval_demos, return_obss_actions=Fals
     episodes the agent performed the worst on.
     """
 
-    logger.info("Evaluating agent on {}".format(il_learn.args.env))
+    logger.info("Evaluating agent on {} using {} demos".format(il_learn.args.env, num_eval_demos))
 
     agent = utils.load_agent(il_learn.env, il_learn.args.model)
 
@@ -135,6 +138,8 @@ def evaluate_agent(il_learn, eval_seed, num_eval_demos, return_obss_actions=Fals
                 fail_obss.append(logs["observations_per_episode"][idx])
                 fail_actions.append(logs["actions_per_episode"][idx])
 
+    logger.info("{} fails".format(len(fail_seeds)))
+
     if not return_obss_actions:
         return success_rate, fail_seeds
     else:
@@ -146,33 +151,34 @@ def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions, mean_steps):
     agent = BotAdvisorAgent(env)
     demos = []
 
-    i = 0
     for i in range(len(fail_obss)):
         # Run the expert for one episode
         env.seed(int(seeds[i]))
+        env0_str = env.__str__()
         agent.on_reset()
+
+        new_obs = env.reset()
 
         actions = []
         images = []
         directions = []
-
         try:
-            for j in range(min(2 * mean_steps, len(fail_obss[i]) - 1)):
+            for j in range(min(200 * mean_steps, len(fail_obss[i]))):
                 obs = fail_obss[i][j]
+                assert check_obss_equality(obs, new_obs), "Observations {} of seed {} don't match".format(j ,seeds[i])
                 mission = obs['mission']
                 action = agent.act(obs)['action']
                 _ = agent.bot.take_action(fail_actions[i][j])
                 new_obs, reward, done, _ = env.step(fail_actions[i][j])
-                if done and reward >0:
-                    raise ValueError("The baby's actions shouldn't solve the task. Seed {}, actions {}.".format(
-                        int(seeds[i]), fail_actions[i]
+                if done and reward > 0:
+                    raise ValueError("The baby's actions shouldn't solve the task. Env0 {}, Env9{}, Seed {}, actions {}.".format(
+                        env0_str, env.__str__(), int(seeds[i]), fail_actions[i]
                     ))
                 actions.append(action)
                 images.append(obs['image'])
                 directions.append(obs['direction'])
 
             demos.append((mission, blosc.pack_array(np.array(images)), directions, actions))
-            logger.info("Demo added")
 
         except Exception as e:
             logger.exception("error while generating demo #{}: {}".format(len(demos), e))
@@ -183,9 +189,7 @@ def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions, mean_steps):
 
 def generate_demos(env_name, seeds):
     env = gym.make(env_name)
-    print(0)
     agent = BotAgent(env)
-    print(1)
     demos = []
 
     for seed in seeds:
@@ -194,9 +198,7 @@ def generate_demos(env_name, seeds):
 
         env.seed(int(seed))
         obs = env.reset()
-        print(2)
         agent.on_reset()
-        print(3)
 
         actions = []
         mission = obs["mission"]
@@ -205,11 +207,8 @@ def generate_demos(env_name, seeds):
 
         try:
             while not done:
-                print(4)
                 action = agent.act(obs)['action']
-                print(5)
                 new_obs, reward, done, _ = env.step(action)
-                print(6)
                 agent.analyze_feedback(reward, done)
 
                 actions.append(action)
@@ -219,11 +218,7 @@ def generate_demos(env_name, seeds):
                 obs = new_obs
 
             if reward > 0:
-                print(7)
-                print(np.array(images))
-                print(blosc.pack_array(np.array(images)))
                 demos.append((mission, blosc.pack_array(np.array(images)), directions, actions))
-                print(8)
             if reward == 0:
                 logger.info("failed to accomplish the mission")
 
@@ -317,12 +312,10 @@ def main(args):
     logger.info(args)
     logger.info("CUDA available: {}".format(torch.cuda.is_available()))
     logger.info(il_learn.acmodel)
-    print(0)
     train_demos = []
 
     # Generate the initial set of training demos
     train_demos += generate_demos(args.env, range(args.seed, args.seed + args.start_demos))
-    print(1)
     # Seed at which evaluation will begin
     eval_seed = args.seed + args.start_demos
 
@@ -332,7 +325,6 @@ def main(args):
         mean_steps = get_bot_mean(args.env, args.episodes_to_evaluate_mean, args.seed)
     else:
         mean_steps = None
-    print(2)
     for phase_no in range(0, 1000000):
         logger.info("Starting phase {} with {} demos".format(phase_no, len(train_demos)))
 
