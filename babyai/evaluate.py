@@ -91,7 +91,7 @@ def batch_evaluate(agent, env_name, seed, episodes, seed_shift=1e9, return_obss_
     }
 
     for i in range((episodes + num_envs - 1) // num_envs):
-        seeds = range(seed + i * num_envs, seed+ (i+1) * num_envs)
+        seeds = range(seed + i * num_envs, seed + (i + 1) * num_envs)
         env.seed(seeds)
 
         many_obs = env.reset()
@@ -101,15 +101,15 @@ def batch_evaluate(agent, env_name, seed, episodes, seed_shift=1e9, return_obss_
         returns = np.zeros((num_envs,))
         already_done = np.zeros((num_envs,), dtype='bool')
         if return_obss_actions:
-            obss = [[]] * num_envs
-            actions = [[]] * num_envs
+            obss = [[] for _ in range(num_envs)]
+            actions = [[] for _ in range(num_envs)]
         while (num_frames == 0).any():
             action = agent.act_batch(many_obs)['action']
             if return_obss_actions:
                 for _ in range(num_envs):
                     if not already_done[_]:
                         obss[_].append(many_obs[_])
-                        actions[_].append(action[_])
+                        actions[_].append(action[_].item())
             many_obs, reward, done, _ = env.step(action)
             agent.analyze_feedback(reward, done)
             done = np.array(done)
