@@ -94,6 +94,8 @@ parser.add_argument("--finetune", action="store_true", default=False,
                     help="fine-tune the model at every phase instead of retraining")
 parser.add_argument("--dagger", action="store_true", default=False,
                     help="Use DaGGER to add demos")
+parser.add_argument("--dagger-trim-coef", type=int, default=2,
+                    help="Trim agent's trajectories at this number multiplied by the bot mean number of steps")
 parser.add_argument("--episodes-to-evaluate-mean", type=int, default=100,
                     help="Number of episodes to use to evaluate the mean number of steps it takes to solve the task")
 
@@ -164,12 +166,11 @@ def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions, mean_steps):
         images = []
         directions = []
         try:
-            for j in range(min(2 * mean_steps, len(fail_obss[i]) - 1)):
+            for j in range(min(args.dagger_trim_coef * mean_steps, len(fail_obss[i]) - 1)):
                 obs = fail_obss[i][j]
                 assert check_obss_equality(obs, new_obs), "Observations {} of seed {} don't match".format(j ,seeds[i])
                 mission = obs['mission']
                 action = agent.act()['action']
-                print(env, action, fail_actions[i][j])
                 _ = agent.bot.take_action(fail_actions[i][j])
                 new_obs, reward, done, _ = env.step(fail_actions[i][j])
                 if done and reward > 0:
@@ -246,7 +247,7 @@ def grow_training_set(il_learn, train_demos, grow_factor, eval_seed, dagger=Fals
     logger.info("Generating {} new demos for {}".format(num_new_demos, il_learn.args.env))
 
     # TODO: auto-adjust this parameter in function of success rate
-    num_eval_demos = 16
+    num_eval_demos = 1024
 
     # Add new demos until we rearch the new target size
     while len(train_demos) < new_train_set_size:
