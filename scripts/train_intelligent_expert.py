@@ -155,19 +155,21 @@ def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions, mean_steps):
         # Run the expert for one episode
         env.seed(int(seeds[i]))
         env0_str = env.__str__()
-        agent.on_reset()
+
 
         new_obs = env.reset()
+        agent.on_reset()
 
         actions = []
         images = []
         directions = []
         try:
-            for j in range(min(200 * mean_steps, len(fail_obss[i]))):
+            for j in range(min(2 * mean_steps, len(fail_obss[i]) - 1)):
                 obs = fail_obss[i][j]
                 assert check_obss_equality(obs, new_obs), "Observations {} of seed {} don't match".format(j ,seeds[i])
                 mission = obs['mission']
-                action = agent.act(obs)['action']
+                action = agent.act()['action']
+                print(env, action, fail_actions[i][j])
                 _ = agent.bot.take_action(fail_actions[i][j])
                 new_obs, reward, done, _ = env.step(fail_actions[i][j])
                 if done and reward > 0:
@@ -181,7 +183,8 @@ def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions, mean_steps):
             demos.append((mission, blosc.pack_array(np.array(images)), directions, actions))
 
         except Exception as e:
-            logger.exception("error while generating demo #{}: {}".format(len(demos), e))
+            logger.exception("error while generating demo #{}: {}. Env0 {}, Env9{}, Seed {}, actions {}.".format(
+                len(demos), e, env0_str, env.__str__(), int(seeds[i]), fail_actions[i]))
             continue
 
     return demos
@@ -243,7 +246,7 @@ def grow_training_set(il_learn, train_demos, grow_factor, eval_seed, dagger=Fals
     logger.info("Generating {} new demos for {}".format(num_new_demos, il_learn.args.env))
 
     # TODO: auto-adjust this parameter in function of success rate
-    num_eval_demos = 10
+    num_eval_demos = 16
 
     # Add new demos until we rearch the new target size
     while len(train_demos) < new_train_set_size:
