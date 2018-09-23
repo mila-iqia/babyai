@@ -370,7 +370,13 @@ def main(argv):
     parser.add_option(
         "--env-name",
         help="gym environment to load",
-        default='MiniGrid-MultiRoom-N6-v0'
+        default='BabyAI-BossLevel-v0'
+    )
+    parser.add_option(
+        "--seed",
+        type=int,
+        help="gym environment seed",
+        default=0
     )
     (options, args) = parser.parse_args()
 
