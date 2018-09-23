@@ -101,7 +101,10 @@ class ObjDesc:
         Find the set of objects matching the description and their positions
         """
 
-        self.obj_set = []
+        if use_location:
+            self.obj_set = []
+            # otherwise we keep the same obj_set
+
         self.obj_poss = []
 
         agent_room = env.room_from_pos(*env.start_pos)
@@ -109,8 +112,14 @@ class ObjDesc:
         for i in range(env.grid.width):
             for j in range(env.grid.height):
                 cell = env.grid.get(i, j)
-                if cell == None:
+                if cell is None:
                     continue
+
+                if not use_location:
+                    # we should keep tracking the same objects initially tracked
+                    already_tracked = any([cell is obj for obj in self.obj_set])
+                    if not already_tracked:
+                        continue
 
                 if cell.type == "locked_door":
                     type = "door"
@@ -118,17 +127,17 @@ class ObjDesc:
                     type = cell.type
 
                 # Check if object's type matches description
-                if self.type != None and type != self.type:
+                if self.type is not None and type != self.type:
                     continue
 
                 # Check if object's color matches description
-                if self.color != None and cell.color != self.color:
+                if self.color is not None and cell.color != self.color:
                     continue
 
                 # Check if object's position matches description
                 if use_location and self.loc in ["left", "right", "front", "behind"]:
                     # Locations apply only to objects in the same room
-                    # the agent starts in
+                    # the agent starts in2
                     if not agent_room.pos_inside(i, j):
                         continue
 
@@ -150,7 +159,8 @@ class ObjDesc:
                     if not(pos_matches[self.loc]):
                         continue
 
-                self.obj_set.append(cell)
+                if use_location:
+                    self.obj_set.append(cell)
                 self.obj_poss.append((i, j))
 
         return self.obj_set, self.obj_poss
@@ -195,7 +205,6 @@ class Instr:
         for attr in potential_objects:
             if hasattr(self, attr):
                 getattr(self, attr).find_matching_objs(self.env, use_location=False)
-
 
 
 class ActionInstr(Instr):
