@@ -6,7 +6,6 @@ import threading
 import copy
 import random
 from optparse import OptionParser
-import numpy as np
 
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QInputDialog
@@ -18,9 +17,9 @@ from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 import gym
 import gym_minigrid
 from gym_minigrid import minigrid
-from babyai.utils.agent import BotAdvisorAgent, BotAgent
 
 import babyai
+
 
 class ImgWidget(QLabel):
     """
@@ -32,6 +31,7 @@ class ImgWidget(QLabel):
 
     def mousePressEvent(self, event):
         self.window.imageClick(event.x(), event.y())
+
 
 class AIGameWindow(QMainWindow):
     """Application window for the baby AI game"""
@@ -45,8 +45,6 @@ class AIGameWindow(QMainWindow):
 
         self.env = env
         self.lastObs = None
-
-        self.step = 0
 
         self.resetEnv()
 
@@ -188,8 +186,6 @@ class AIGameWindow(QMainWindow):
             self.stepEnv(actions.toggle)
         elif e.key() == Qt.Key_Return:
             self.stepEnv(actions.done)
-        elif e.key() == Qt.Key_Shift:
-            self.stepEnv()
 
         elif e.key() == Qt.Key_Backspace:
             self.resetEnv()
@@ -332,8 +328,6 @@ class AIGameWindow(QMainWindow):
 
     def resetEnv(self):
         obs = self.env.reset()
-        self.agent0 = BotAgent(self.env)
-        self.agent = BotAdvisorAgent(self.env)
         self.lastObs = obs
         self.showEnv(obs)
 
@@ -349,43 +343,20 @@ class AIGameWindow(QMainWindow):
         obsPixmap = unwrapped.get_obs_render(image)
         self.obsImgLabel.setPixmap(obsPixmap)
 
-        # BotAgent text
-        stack = self.agent.bot.stack
-        stack0 = self.agent0.bot.stack
-        action = self.agent.act()
-
-        #assert stack[-1] == stack0[-1]
-
         # Update the mission text
         mission = obs['mission']
-        self.missionBox.setPlainText(mission + '\nStack0 {}\nStack1 {}\nOptimal Action {}'.format(stack0, stack, action))
-        action0 = self.agent0.act()
-        self.action0 = action0
-        stack0 = self.agent0.bot.stack
-        #print(action, action0)
-        #assert action['action'] == action0['action'] or action['action'] is None or action0['action'] is None
-        self.actions = [0, 0, 2, 0, 0, 0, 1, 2, 2, 0, 0, 0, 2, 2, 0, 0, 2, 2, 2, 0, 0, 0, 0, 1, 0, 2, 0, 2, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 0, 1, 2, 1, 2, 2, 2, 2, 2, 2, 1, 0, 2, 0, 0, 2, 3, 1, 2, 1, 0, 4, 2, 2, 4, 1, 2, 4, 1, 0, 4, 2, 2, 4, 2, 4, 2, 4, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]
-        self.missionBox.append('Upon playing the suggested action {}, Bot0 stack would be {}'.format(action0, stack0))
-        self.randomact = 0#self.actions[self.step]
-        self.missionBox.append('\n\nrandom {}'.format(self.randomact))
+        self.missionBox.setPlainText(mission)
+
         # Set the steps remaining
         stepsRem = unwrapped.steps_remaining
         self.stepsLabel.setText(str(stepsRem))
 
     def stepEnv(self, action=None):
         # If no manual action was specified by the user
-        botoptim = self.agent.act()['action']
         if action == None:
-            action = botoptim
+            action = random.randint(0, self.env.action_space.n - 1)
 
-            #action = self.randomact
-            #action = self.action0['action']
-            #action = actions[self.step]
-        self.step += 1
-        self.agent.bot.take_action(action)
         obs, reward, done, info = self.env.step(action)
-        if done:
-            print("reward: " + str(reward))
 
         self.showEnv(obs)
         self.lastObs = obs
@@ -399,24 +370,21 @@ def main(argv):
     parser.add_option(
         "--env-name",
         help="gym environment to load",
-        default='BabyAI-BossLevel-v0'
+        default='MiniGrid-MultiRoom-N6-v0'
     )
     (options, args) = parser.parse_args()
 
     # Load the gym environment
     env = gym.make(options.env_name)
-    env.seed(2302)
+    env.seed(options.seed)
 
     # Create the application window
     app = QApplication(sys.argv)
-
     window = AIGameWindow(env)
-    print(env)
-    actions = []
-    for action in actions[:-1]:
-        window.stepEnv(action)
+
     # Run the application
     sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     main(sys.argv)
