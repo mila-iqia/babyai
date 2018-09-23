@@ -94,6 +94,8 @@ parser.add_argument("--finetune", action="store_true", default=False,
                     help="fine-tune the model at every phase instead of retraining")
 parser.add_argument("--dagger", action="store_true", default=False,
                     help="Use DaGGER to add demos")
+parser.add_argument("--continue-dagger", action="store_true", default=False,
+                    help='Complete DaGGER trajectories to target')
 parser.add_argument("--dagger-trim-coef", type=int, default=2,
                     help="Trim agent's trajectories at this number multiplied by the bot mean number of steps")
 parser.add_argument("--episodes-to-evaluate-mean", type=int, default=100,
@@ -180,6 +182,16 @@ def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions, mean_steps):
                 actions.append(action)
                 images.append(obs['image'])
                 directions.append(obs['direction'])
+            if args.continue_dagger:
+                obs = new_obs
+                while not done:
+                    action = agent.act(obs)['action']
+                    new_obs, reward, done, _ = env.step(action)
+                    agent.analyze_feedback(reward, done)
+                    actions.append(action)
+                    images.append(obs['image'])
+                    directions.append(obs['direction'])
+
 
             demos.append((mission, blosc.pack_array(np.array(images)), directions, actions))
 
