@@ -43,6 +43,8 @@ parser.add_argument("--seed", type=int, default=1,
 parser.add_argument("--episodes", type=int, default=0,
                     help="number of episodes of demonstrations to use"
                          "(default: 0, meaning all demos)")
+parser.add_argument("--epochs", type=int, default=1000000,
+                    help="maximum number of epochs")
 parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs (default: 1)")
 parser.add_argument("--tb", action="store_true", default=False,
@@ -253,7 +255,7 @@ def main(args):
             il_learn = ImitationLearning(args)
 
         # Train the imitation learning agent
-        il_learn.train(train_demos, writer, csv_writer, status_path, header, reset_patience=True)
+        il_learn.train(train_demos, writer, csv_writer, status_path, header, reset_status=True)
 
         # Stopping criterion
         valid_log = il_learn.validate(args.val_episodes)

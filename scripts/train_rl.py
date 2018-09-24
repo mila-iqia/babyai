@@ -44,7 +44,7 @@ parser.add_argument("--task-id-seed", action='store_true',
                     help="use the task id within a Slurm job array as the seed")
 parser.add_argument("--procs", type=int, default=64,
                     help="number of processes (default: 64)")
-parser.add_argument("--frames", type=int, default=int(5e7),
+parser.add_argument("--frames", type=int, default=int(5e8),
                     help="number of frames of training (default: 10e7)")
 parser.add_argument("--log-interval", type=int, default=10,
                     help="number of updates between two logs (default: 1)")
@@ -52,8 +52,8 @@ parser.add_argument("--save-interval", type=int, default=1000,
                     help="number of updates between two saves (default: 0, 0 means no saving)")
 parser.add_argument("--tb", action="store_true", default=False,
                     help="log into Tensorboard")
-parser.add_argument("--frames-per-proc", type=int, default=20,
-                    help="number of frames per process before update (default: 20)")
+parser.add_argument("--frames-per-proc", type=int, default=40,
+                    help="number of frames per process before update (default: 40)")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
 parser.add_argument("--lr", type=float, default=1e-4,
@@ -62,7 +62,7 @@ parser.add_argument("--beta1", type=float, default=0.9,
                     help="beta1 for Adam (default: 0.9)")
 parser.add_argument("--beta2", type=float, default=0.999,
                     help="beta2 for Adam (default: 0.999)")
-parser.add_argument("--reward-scale", type=float, default=40.,
+parser.add_argument("--reward-scale", type=float, default=20.,
                     help="Reward scale multiplier")
 parser.add_argument("--gae-lambda", type=float, default=0.99,
                     help="lambda coefficient in GAE formula (default: 0.99, 1 means no gae)")
@@ -187,6 +187,7 @@ if acmodel is None:
 
 obss_preprocessor.vocab.save()
 utils.save_model(acmodel, args.model)
+
 if torch.cuda.is_available():
     acmodel.cuda()
 if len(args.aux_loss) > 0:
@@ -218,11 +219,12 @@ if os.path.exists(status_path):
         status = json.load(src)
 else:
     status = {'i': 0,
+              'num_episodes': 0,
               'num_frames': 0}
 
 # Define logger and Tensorboard writer and CSV writer
 
-header = (["update", "frames", "FPS", "duration"]
+header = (["update", "episodes", "frames", "FPS", "duration"]
           + ["return_" + stat for stat in ['mean', 'std', 'min', 'max']]
           + ["success_rate"]
           + ["num_frames_" + stat for stat in ['mean', 'std', 'min', 'max']]
@@ -283,6 +285,7 @@ while status['num_frames'] < args.frames:
     update_end_time = time.time()
 
     status['num_frames'] += logs["num_frames"]
+    status['num_episodes'] += logs['episodes_done']
     status['i'] += 1
 
     # Print logs
@@ -296,14 +299,15 @@ while status['num_frames'] < args.frames:
             [1 if r > 0 else 0 for r in logs["return_per_episode"]])
         num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
-        data = [status['i'], status['num_frames'], fps, total_ellapsed_time,
+        data = [status['i'], status['num_episodes'], status['num_frames'], 
+                fps, total_ellapsed_time,
                 *return_per_episode.values(),
                 success_per_episode['mean'],
                 *num_frames_per_episode.values(),
                 logs["entropy"], logs["value"], logs["policy_loss"], logs["value_loss"],
                 logs["loss"], logs["grad_norm"]]
 
-        format_str = ("U {} | F {:06} | FPS {:04.0f} | D {} | R:xsmM {: .2f} {: .2f} {: .2f} {: .2f} | "
+        format_str = ("U {} | E {} | F {:06} | FPS {:04.0f} | D {} | R:xsmM {: .2f} {: .2f} {: .2f} {: .2f} | "
                       "S {:.2f} | F:xsmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | "
                       "pL {: .3f} | vL {:.3f} | L {:.3f} | gN {:.3f} | ")
         if args.aux_loss:
@@ -333,13 +337,13 @@ while status['num_frames'] < args.frames:
                                           menv_head.synthesized_returns[env_id], status['num_frames'])
         csv_writer.writerow(data)
 
-        with open(status_path, 'w') as dst:
-            json.dump(status, dst)
-
     # Save obss preprocessor vocabulary and model
 
     if args.save_interval > 0 and status['i'] % args.save_interval == 0:
         obss_preprocessor.vocab.save()
+        with open(status_path, 'w') as dst:
+            json.dump(status, dst)
+            utils.save_model(acmodel, args.model)
 
         # Testing the model before saving
         agent = ModelAgent(args.model, obss_preprocessor, argmax=True)
@@ -350,7 +354,7 @@ while status['num_frames'] < args.frames:
         mean_return = np.mean(logs["return_per_episode"])
         if mean_return > best_mean_return:
             best_mean_return = mean_return
-            utils.save_model(acmodel, args.model)
+            utils.save_model(acmodel, args.model + '_best')
             logger.info("Return {: .2f}; best model is saved".format(mean_return))
         else:
             logger.info("Return {: .2f}; not the best model; not saved".format(mean_return))

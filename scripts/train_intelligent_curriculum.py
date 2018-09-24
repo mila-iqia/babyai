@@ -154,7 +154,7 @@ def main(args):
             logger.info("Training on {} with {} demos".format(env_name, len(train_demos)))
 
             # Train the imitation learning agent
-            il_learn.train(train_demos, writer, csv_writer, status_path, header, reset_patience=True)
+            il_learn.train(train_demos, writer, csv_writer, status_path, header, reset_status=True)
 
             valid_log = il_learn.validate(args.val_episodes)
             success_rate = np.mean([1 if r > 0 else 0 for r in valid_log['return_per_episode']])

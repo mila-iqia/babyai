@@ -132,9 +132,13 @@ class ImitationLearning(object):
         # Log dictionary
         log = {"entropy": [], "policy_loss": [], "accuracy": []}
 
+        start_time = time.time()
+        frames = 0
         for batch_index in range(len(indices) // batch_size):
-            logger.info("batch {}".format(batch_index))
+            logger.info("batch {}, FPS so far {}".format(
+                batch_index, frames / (time.time() - start_time) if frames else 0))
             batch = [demos[i] for i in indices[offset: offset + batch_size]]
+            frames += sum([len(demo[3]) for demo in batch])
 
             _log = self.run_epoch_recurrence_one_batch(batch, is_training=is_training)
 
@@ -279,16 +283,16 @@ class ImitationLearning(object):
         mean_return = {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
         return mean_return
 
-    def train(self, train_demos, writer, csv_writer, status_path, header, reset_patience=False):
+    def train(self, train_demos, writer, csv_writer, status_path, header, reset_status=False):
         # Load the status
-        status = {'i': 0,
-                  'num_frames': 0,
-                  'patience': 0}
-        if os.path.exists(status_path):
+        def initial_status():
+            return {'i': 0,
+                    'num_frames': 0,
+                    'patience': 0}
+        status = initial_status()
+        if os.path.exists(status_path) and not reset_status:
             with open(status_path, 'r') as src:
                 status = json.load(src)
-            if reset_patience:
-                status['patience'] = 0
         elif not os.path.exists(os.path.dirname(status_path)):
             # Ensure that the status directory exists
             os.makedirs(os.path.dirname(status_path))
@@ -305,7 +309,7 @@ class ImitationLearning(object):
         best_mean_return, patience, i = 0, 0, 0
         total_start_time = time.time()
 
-        while True:
+        while status['i'] < getattr(self.args, 'epochs', int(1e9)):
             if 'patience' not in status:  # if for some reason you're finetuining with IL an RL pretrained agent
                 status['patience'] = 0
             # Do not learn if using a pre-trained model that already lost patience
@@ -352,9 +356,6 @@ class ImitationLearning(object):
                             writer.add_scalar(key, float(value), status['num_frames'])
                     csv_writer.writerow(train_data + validation_data)
 
-                    with open(status_path, 'w') as dst:
-                        json.dump(status, dst)
-
             if status['i'] % self.args.validation_interval == 0:
 
                 valid_log = self.validate(self.args.val_episodes)
@@ -385,11 +386,17 @@ class ImitationLearning(object):
                     self.obss_preprocessor.vocab.save()
                     if torch.cuda.is_available():
                         self.acmodel.cpu()
-                    utils.save_model(self.acmodel, self.args.model)
+                    utils.save_model(self.acmodel, self.args.model + "_best")
                     if torch.cuda.is_available():
                         self.acmodel.cuda()
                 else:
                     status['patience'] += 1
                     logger.info("Losing patience, new value={}, limit={}".format(status['patience'], self.args.patience))
-                    with open(status_path, 'w') as dst:
-                        json.dump(status, dst)
+
+                if torch.cuda.is_available():
+                    self.acmodel.cpu()
+                utils.save_model(self.acmodel, self.args.model)
+                if torch.cuda.is_available():
+                    self.acmodel.cuda()
+                with open(status_path, 'w') as dst:
+                    json.dump(status, dst)
