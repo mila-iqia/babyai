@@ -1020,12 +1020,6 @@ class BotAdvisor(Bot):
         actions = self.mission.actions
         carrying = self.mission.carrying
 
-        if action == actions.toggle and self.mission.grid.get(*fwd_pos) is not None and self.mission.grid.get(*fwd_pos).type == 'box':
-            # basically the foolish agent opens the box that he had to pickup, the box doesn't exist anymore (MAGIC !)
-            # just loop until timeout and abandon. Bot can't help the agent after such a mistake
-            # TODO: give the agent another chance by looking for a similar box still unopened, or not care if the box is irrelevant (need to update stack for example if that box was moved and bot advises to put it back to its position after it has been opened by mistake)
-            # return False
-            raise DisappearedBoxError('A box that should have been picked up was opened, too bad !')
 
         if len(self.stack) == 0:
             # Is this right?
@@ -1036,10 +1030,15 @@ class BotAdvisor(Bot):
 
         # Get the topmost instruction on the stack
         subgoal, datum = self.stack[-1]
-        #print('step {} act subgoal {} {}'.format(self.step_count, subgoal, datum))
 
-        #print(subgoal, datum)
-        #print('pos:', pos)
+        # AS OF 25/09/2018, this subgoal doesn't exist ! Just thinking about the future if we have a mission with such a subgoal !
+        if subgoal != 'OpenBox':
+            if action == actions.toggle and self.mission.grid.get(*fwd_pos) is not None and self.mission.grid.get(*fwd_pos).type == 'box':
+                # basically the foolish agent opens the box, the box doesn't exist anymore (MAGIC !)
+                # throw exception and consider the instance unsolvable
+                # TODO: give the agent another chance by looking for a similar box still unopened, or not care if the box is irrelevant (need to update stack for example if that box was moved and bot advises to put it back to its position after it has been opened by mistake)
+                # return False
+                raise DisappearedBoxError('A box was opened, too bad !')
 
         while subgoal == 'Forget':
             self.stack.pop()
