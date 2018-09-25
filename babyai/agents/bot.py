@@ -553,6 +553,7 @@ class Bot:
                         continue
 
             # Visit each neighbor cell
+            # TODO: I want this to be "for positions that are one action away and that would make the state change (e.g. if position changes or if carrying changes) instead of one cell away. If there are no one action away positions that change the state, check "2 action away things" then "3 action away things", that is the maximum we should tolerate (e.g. left left forward/pickup/drop or right right forward/pickup/drop)
             for k, l in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
                 next_pos = (i+k, j+l)
                 queue.append((*next_pos, path + [next_pos]))
@@ -663,6 +664,7 @@ class DisappearedBoxError(Exception):
 
     def __str__(self):
         return repr(self.value)
+
 
 class BotAdvisor(Bot):
     def get_action(self):
@@ -1009,6 +1011,31 @@ class BotAdvisor(Bot):
         while not finished_updating:
             finished_updating = self.take_action_iterate(action)
 
+    def _is_action_good(self, action, path=None, new_pos=None, datum=None):
+        #return True
+        subgoal, datum = self.stack[-1]
+        actions = self.mission.actions
+        if subgoal == 'GoNextTo':
+            # TODO: IS THERE ANY SUBGOAL FOR WHICH WE SHOULD CONSDIER THAT SOME ACTIONS THAT ARE DIFFERENT FROM WHAT THE BOT SUGGESTS ARE OKAY ?
+            # If we take another path, then maybe it's ok !
+            # If I pickup something, and it's a blocker, and now I unblock stuff, then that's ok or even more than ok
+            if path is not None:
+                assert new_pos is not None and datum is not None
+                new_path, _ = self.shortest_path(
+                    lambda pos, cell: np.array_equal(new_pos, datum)
+                )
+
+                # If we failed to find a path, try again while ignoring blockers
+                if not new_path:
+                    new_path, _ = self.shortest_path(
+                        lambda pos, cell: np.array_equal(new_pos, datum),
+                        ignore_blockers=True
+                    )
+                if new_path:
+                    if action in (actions.forward, actions.left, actions.right) and len(new_path) <= len(path):
+                        # TODO: Ideally, we should compare the length of the paths in terms of actions necessary to go there. That is closely related to the TODO of the shortest_path function
+                        return True
+
     def take_action_iterate(self, action):
         # TODO: make this work with done action ?
         pos = self.mission.agent_pos
@@ -1019,7 +1046,6 @@ class BotAdvisor(Bot):
 
         actions = self.mission.actions
         carrying = self.mission.carrying
-
 
         if len(self.stack) == 0:
             # Is this right?
@@ -1050,7 +1076,6 @@ class BotAdvisor(Bot):
 
         self.itr_count += 1
         #print(self.itr_count)
-
 
         new_pos, new_dir_vec, new_right_vec, new_fwd_pos, new_carrying = self.simulate_step(action)
 
@@ -1258,6 +1283,11 @@ class BotAdvisor(Bot):
                         ignore_blockers=True
                     )
 
+                # If we found a path, let's check if the taken action doesn't make the path longer
+                if path:
+                    # Determine if the action taken is a good action, even if different from the "optimal" action
+                    good_action = self._is_action_good(action, path, new_pos, datum)
+
                 # No path found, explore the world
                 if not path:
                     # Explore the world
@@ -1305,8 +1335,13 @@ class BotAdvisor(Bot):
                                 self.stack.append(('GoNextTo', fwd_pos))
                                 return True
                     #if action == actions.pikcup:
-
-                    # If there is nothing blocking us and we drop/pickup/toggle something for no reason
+                    # TODO: what if I drop a blocker not in drop_pos ? Can I make drop_pos a list ? Please be the case !
+                else:
+                    # the forward position is not the next cell we are supposed to go to, but it's something we pick up. Is it a blocker and picking-it up unblocks us ? :)
+                    fwd_cell = self.mission.grid.get(*fwd_pos)
+                    if fwd_cell and not fwd_cell.type.endswith('door'):
+                        pass
+                # If there is nothing blocking us and we drop/pickup/toggle something for no reason
                 if action in (actions.drop, actions.pickup, actions.toggle):
                     drop_or_pickup_or_open_something_while_exploring()
                 return True
