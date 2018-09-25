@@ -60,9 +60,32 @@ class Level_GoToRedBallObs(RoomGridLevel):
         for i in range(self.num_dists):
             self.add_object(0, 0, 'box', 'grey')
 
-        #from gym_minigrid.minigrid import Wall
-        #for i in range(self.num_dists):
-        #    self.place_obj(Wall())
+        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
+
+
+class Level_GoToRedBallObs2(RoomGridLevel):
+    """
+    Go to the red ball, single room, with obstacles.
+    The obstacles/distractors are all the same, to eliminate
+    perceptual complexity. No unblocking required.
+    """
+
+    def __init__(self, room_size=8, num_dists=7, seed=None):
+        self.num_dists = num_dists
+        super().__init__(
+            num_rows=1,
+            num_cols=1,
+            room_size=room_size,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.place_agent()
+        obj, _ = self.add_object(0, 0, 'ball', 'red')
+
+        for i in range(self.num_dists):
+            self.add_object(0, 0, 'box', 'grey')
+        self.check_objs_reachable()
 
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
