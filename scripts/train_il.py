@@ -65,6 +65,8 @@ parser.add_argument("--val-episodes", type=int, default=500,
                     help="number of episodes used to evaluate the agent, and to evaluate validation accuracy")
 parser.add_argument("--patience", type=int, default=100,
                     help="patience for early stopping (default: 100)")
+parser.add_argument("--epochs", type=int, default=1000000,
+                    help="maximum number of epochs")
 parser.add_argument("--val-seed", type=int, default=0,
                     help="seed for environment used for validation (default: 0)")
 parser.add_argument("--image-dim", type=int, default=128,

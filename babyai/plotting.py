@@ -21,6 +21,7 @@ Note:
 
 import os
 import re
+import numpy as np
 from matplotlib import pyplot
 import pandas
 
@@ -46,44 +47,52 @@ def load_logs(root):
     return dfs
 
 
-def plot_average(df, regexps, quantity='return_mean', window=1, agg='mean'):
+def plot_average_impl(df, regexps, y_value='return_mean', window=1, agg='mean', 
+                      x_value='frames'):
     """Plot averages over groups of runs  defined by regular expressions."""
-    pyplot.figure(figsize=(15, 5))
+    df = df.dropna(subset=[y_value])
 
     unique_models = df['model'].unique()
     model_groups = [[m for m in unique_models if re.match(regex, m)]
                      for regex in regexps]
 
-    all_values = []
     for regex, models in zip(regexps, model_groups):
         df_re = df[df['model'].isin(models)]
         # the average doesn't make sense if most models are not included,
         # so we only for the period of training that has been done by all models
-        num_frames_per_model = [df_model['frames'].max()
+        num_frames_per_model = [df_model[x_value].max()
                                for _, df_model in df_re.groupby('model')]
         median_progress = sorted(num_frames_per_model)[(len(num_frames_per_model) - 1) // 2]
-        df_re = df_re[df_re['frames'] <= median_progress]
+        mean_duration = np.mean([
+            df_model['duration'].max() for _, df_model in df_re.groupby('model')])
+        df_re = df_re[df_re[x_value] <= median_progress]
 
         # smooth
         parts = []
         for _, df_model in df_re.groupby('model'):
             df_model = df_model.copy()
-            df_model.loc[:, quantity] = df_model[quantity].rolling(window).mean()
+            df_model.loc[:, y_value] = df_model[y_value].rolling(window).mean()
             parts.append(df_model)
         df_re = pandas.concat(parts)
 
-        df_agg = df_re.groupby(['frames']).agg([agg])
-        values = df_agg[quantity][agg]
+        df_agg = df_re.groupby([x_value]).agg([agg])
+        values = df_agg[y_value][agg]
         pyplot.plot(df_agg.index, values, label=regex)
-        print(regex, median_progress)
-        all_values.append(values)
+        print(regex, median_progress, mean_duration / 86400.0, values.iloc[-1])
 
+
+def plot_average(*args, **kwargs):
+    """Plot averages over groups of runs  defined by regular expressions."""
+    pyplot.figure(figsize=(15, 5))
+    plot_average_impl(*args, **kwargs)
     pyplot.legend()
 
 
-def plot_all_runs(df, regex, quantity='return_mean', window=1, color=None):
+def plot_all_runs(df, regex, quantity='return_mean', x_axis='frames', window=1, color=None):
     """Plot a group of runs defined by a regex."""
     pyplot.figure(figsize=(15, 5))
+
+    df = df.dropna(subset=[quantity])
 
     kwargs = {}
     if color:
@@ -94,10 +103,10 @@ def plot_all_runs(df, regex, quantity='return_mean', window=1, color=None):
     for model, df_model in df_re.groupby('model'):
         values = df_model[quantity]
         values = values.rolling(window).mean()
-        pyplot.plot(df_model['frames'],
+        pyplot.plot(df_model[x_axis],
                     values,
                     label=model,
                     **kwargs)
-        print(model, df_model['frames'].max())
+        print(model, df_model[x_axis].max())
 
     pyplot.legend()
