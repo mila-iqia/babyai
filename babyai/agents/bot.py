@@ -687,6 +687,7 @@ class BotAdvisor(Bot):
         # is satisfied already and requires no action taking
         # It is useful for GoToObj and GoNextTo subgoals
         #print('step {} get subgoal {} {}'.format(self.step_count, subgoal, datum))
+        #print("{}: {}".format(self.step_count, subgoal))
         if len(self.stack) == 0:
             return self.mission.actions.done
 
@@ -829,6 +830,7 @@ class BotAdvisor(Bot):
                         return actions.pickup
                 return actions.forward
 
+            #print(path, next_cell)
             # Turn towards the direction we need to go
             if np.array_equal(next_cell - pos, right_vec):
                 return actions.right
@@ -1012,32 +1014,8 @@ class BotAdvisor(Bot):
         while not finished_updating:
             finished_updating = self.take_action_iterate(action)
 
-    def _is_action_good(self, action, path=None, new_pos=None, datum=None):
-        #return True
-        subgoal, datum = self.stack[-1]
-        actions = self.mission.actions
-        if subgoal == 'GoNextTo':
-            # TODO: IS THERE ANY SUBGOAL FOR WHICH WE SHOULD CONSDIER THAT SOME ACTIONS THAT ARE DIFFERENT FROM WHAT THE BOT SUGGESTS ARE OKAY ?
-            # If we take another path, then maybe it's ok !
-            # If I pickup something, and it's a blocker, and now I unblock stuff, then that's ok or even more than ok
-            if path is not None:
-                assert new_pos is not None and datum is not None
-                new_path, _ = self.shortest_path(
-                    lambda pos, cell: np.array_equal(new_pos, datum)
-                )
-
-                # If we failed to find a path, try again while ignoring blockers
-                if not new_path:
-                    new_path, _ = self.shortest_path(
-                        lambda pos, cell: np.array_equal(new_pos, datum),
-                        ignore_blockers=True
-                    )
-                if new_path:
-                    if action in (actions.forward, actions.left, actions.right) and len(new_path) <= len(path):
-                        # TODO: Ideally, we should compare the length of the paths in terms of actions necessary to go there. That is closely related to the TODO of the shortest_path function
-                        return True
-
     def take_action_iterate(self, action):
+        #print('{}: {}, direction {}'.format(self.step_count, self.stack, self.mission.dir_vec))
         # TODO: make this work with done action ?
         pos = self.mission.agent_pos
         dir_vec = self.mission.dir_vec
@@ -1284,10 +1262,6 @@ class BotAdvisor(Bot):
                         ignore_blockers=True
                     )
 
-                # If we found a path, let's check if the taken action doesn't make the path longer
-                if path:
-                    # Determine if the action taken is a good action, even if different from the "optimal" action
-                    good_action = self._is_action_good(action, path, new_pos, datum)
 
                 # No path found, explore the world
                 if not path:
@@ -1337,11 +1311,7 @@ class BotAdvisor(Bot):
                                 return True
                     #if action == actions.pikcup:
                     # TODO: what if I drop a blocker not in drop_pos ? Can I make drop_pos a list ? Please be the case !
-                else:
-                    # the forward position is not the next cell we are supposed to go to, but it's something we pick up. Is it a blocker and picking-it up unblocks us ? :)
-                    fwd_cell = self.mission.grid.get(*fwd_pos)
-                    if fwd_cell and not fwd_cell.type.endswith('door'):
-                        pass
+                    # TODO: what if I pickup another blocker (and that's good)
                 # If there is nothing blocking us and we drop/pickup/toggle something for no reason
                 if action in (actions.drop, actions.pickup, actions.toggle):
                     drop_or_pickup_or_open_something_while_exploring()
