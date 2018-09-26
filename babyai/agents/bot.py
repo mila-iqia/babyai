@@ -510,11 +510,11 @@ class Bot:
         queue = []
 
         # Start visiting from the agent's position
-        queue.append((*self.mission.agent_pos, []))
+        queue.append((*self.mission.agent_pos, *self.mission.dir_vec, []))
 
         # Until we are done
         while len(queue) > 0:
-            i, j, path = queue[0]
+            i, j, di, dj, path = queue[0]
 
             queue = queue[1:]
 
@@ -554,9 +554,10 @@ class Bot:
 
             # Visit each neighbor cell
             # TODO: I want this to be "for positions that are one action away and that would make the state change (e.g. if position changes or if carrying changes) instead of one cell away. If there are no one action away positions that change the state, check "2 action away things" then "3 action away things", that is the maximum we should tolerate (e.g. left left forward/pickup/drop or right right forward/pickup/drop)
-            for k, l in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+            for k, l in [(di, dj), (dj, di), (- dj, - di), (- di, - dj)]:
                 next_pos = (i+k, j+l)
-                queue.append((*next_pos, path + [next_pos]))
+                next_dir_vec = (k, l)
+                queue.append((*next_pos, *next_dir_vec, path + [next_pos]))
 
         # Path not found
         return None, None
