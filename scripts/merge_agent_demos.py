@@ -140,7 +140,7 @@ for i in range(args.jobs):
 all_demos = []
 for demos in job_demos:
     all_demos.extend(demos)
-logger.info("Total demos: {}".format(len(demos)))
+logger.info("Total demos: {}".format(len(all_demos)))
 
 demos_path = utils.get_demos_path(args.demos, args.env, 'agent')
 utils.save_demos(all_demos, demos_path)
