@@ -125,16 +125,16 @@ logger.info(args)
 
 
 
+demos_per_job = args.episodes // args.jobs
+job_demo_names = [args.demos + '_shard{}'.format(i)
+                 for i in range(args.jobs)]
+
 job_demos = [None] * args.jobs
 
 for i in range(args.jobs):
     logger.info("Trying to load shard {}".format(i))
     job_demos[i] = utils.load_demos(utils.get_demos_path(job_demo_names[i]))
     logger.info("{} demos ready in shard {}".format(len(job_demos[i]), i))
-
-
-
-
 
 # Training demos
 all_demos = []
