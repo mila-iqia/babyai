@@ -43,6 +43,12 @@ parser.add_argument("--filter-steps", type=int, default=0,
 args = parser.parse_args()
 logger = logging.getLogger(__name__)
 
+
+def print_demo_lengths(demos):
+    num_frames_per_episode = [len(demo[0]) for demo in demos]
+    logger.info('Demo num frames: {}'.format(num_frames_per_episode))
+
+
 def generate_demos(n_episodes, valid, seed, shift=0):
     utils.seed(seed)
 
