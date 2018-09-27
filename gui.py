@@ -187,7 +187,8 @@ class AIGameWindow(QMainWindow):
             self.stepEnv(actions.toggle)
         elif e.key() == Qt.Key_Return:
             self.stepEnv(actions.done)
-
+        elif e.key() == Qt.Key_Shift:
+            self.stepEnv(None)
         elif e.key() == Qt.Key_Backspace:
             self.resetEnv()
         elif e.key() == Qt.Key_Escape:
@@ -347,13 +348,13 @@ class AIGameWindow(QMainWindow):
         obsPixmap = unwrapped.get_obs_render(image)
         self.obsImgLabel.setPixmap(obsPixmap)
 
-        action = self.agent.act()
+        self.bot_action = self.agent.act()['action']
 
         # Update the mission text
         mission = obs['mission']
         self.missionBox.setPlainText(mission)
 
-        self.missionBox.append('\nOptimal Action: {}'.format(action))
+        self.missionBox.append('\nOptimal Action: {}'.format(self.bot_action))
 
 
         # Set the steps remaining
@@ -364,6 +365,7 @@ class AIGameWindow(QMainWindow):
         # If no manual action was specified by the user
         if action == None:
             action = random.randint(0, self.env.action_space.n - 1)
+            action = self.bot_action
 
         self.agent.bot.take_action(action)
         obs, reward, done, info = self.env.step(action)
