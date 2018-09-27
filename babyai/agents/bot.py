@@ -237,10 +237,16 @@ class Bot:
                 )
 
                 if not path:
-                    path, _ = self.shortest_path(
-                        lambda pos, cell: pos == obj_pos,
-                        ignore_blockers=True
-                    )
+                    next_search_dist = 999
+                    while next_search_dist is not None:
+                        suggested_path, _, next_search_dist = self.shortest_path(
+                            lambda pos, cell: pos == obj_pos,
+                            ignore_blockers=True,
+                            blocker_fn=lambda pos: self.blocker_fn(pos, obj_pos, next_search_dist),
+                            distance_fn=lambda pos: self.distance(pos, obj_pos)
+                        )
+                        if suggested_path:
+                            path = [elem for elem in suggested_path]
 
                 if path:
                     # New subgoal: go next to the object
@@ -267,10 +273,16 @@ class Bot:
 
             # If we failed to find a path, try again while ignoring blockers
             if not path:
-                path, _ = self.shortest_path(
-                    lambda pos, cell: np.array_equal(pos, datum),
-                    ignore_blockers=True
-                )
+                next_search_dist = 999
+                while next_search_dist is not None:
+                    suggested_path, _, next_search_dist = self.shortest_path(
+                        lambda pos, cell: np.array_equal(pos, datum),
+                        ignore_blockers=True,
+                        blocker_fn=lambda pos: self.blocker_fn(pos, datum, next_search_dist),
+                        distance_fn=lambda pos: self.distance(pos, datum)
+                    )
+                    if suggested_path:
+                        path = [elem for elem in suggested_path]
 
             # No path found, explore the world
             if not path:
@@ -347,8 +359,7 @@ class Bot:
             if not adj_pos:
                 path, adj_pos = self.shortest_path(
                     lambda pos, cell: not cell and pos_next_to(pos, obj_pos),
-                    ignore_blockers=True
-                )
+                    ignore_blockers=True)
 
             if not adj_pos:
                 self.stack.append(('Explore', None))
@@ -489,10 +500,20 @@ class Bot:
 
         return None
 
+    def distance(self, pos, target):
+        return np.abs(target[0] - pos[0]) + np.abs(target[1] - pos[1])
+
+    def blocker_fn(self, pos, target, n_steps):
+        # Useful to define a function that blockers need to satisfy when looking for shortest path
+        # target and pos are tuples or arrays of 2 elements
+        return  self.distance(pos, target) <= n_steps
+
     def shortest_path(
         self,
         accept_fn,
-        ignore_blockers=False
+        ignore_blockers=False,
+        blocker_fn=None,
+        distance_fn=None
     ):
         """
         Perform a Breadth-First Search (BFS) starting from the agent position,
@@ -511,6 +532,8 @@ class Bot:
 
         # Start visiting from the agent's position
         queue.append((*self.mission.agent_pos, *self.mission.dir_vec, []))
+
+        distance_of_first_blocking_obj_to_target = None
 
         # Until we are done
         while len(queue) > 0:
@@ -531,7 +554,10 @@ class Bot:
 
             # If we reached a position satisfying the acceptance condition
             if accept_fn((i, j), cell):
-                return path, (i,j)
+                if distance_fn is None:
+                    return path, (i, j)
+                else:
+                    return path, (i, j), distance_of_first_blocking_obj_to_target - 1
 
             # If this cell was not visually observed, don't visit neighbors
             if not self.vis_mask[i, j]:
@@ -548,9 +574,16 @@ class Bot:
                     if not cell.is_open:
                         continue
                 else:
+                    if blocker_fn is None:
+                        def blocker_fn(pos):
+                            return True
                     # This is a blocking object, don't visit neighbors
-                    if not ignore_blockers:
+                    if not ignore_blockers or not blocker_fn((i, j)):
                         continue
+                    else:
+                        if distance_fn is not None and distance_of_first_blocking_obj_to_target is None:
+                            distance_of_first_blocking_obj_to_target = distance_fn((i, j))
+                            #print('first blocker path contains a blocker of distance {} to target'.format(distance_of_first_blocking_obj_to_target))
 
             # Visit each neighbor cell
             # TODO: I want this to be "for positions that are one action away and that would make the state change (e.g. if position changes or if carrying changes) instead of one cell away. If there are no one action away positions that change the state, check "2 action away things" then "3 action away things", that is the maximum we should tolerate (e.g. left left forward/pickup/drop or right right forward/pickup/drop)
@@ -560,7 +593,10 @@ class Bot:
                 queue.append((*next_pos, *next_dir_vec, path + [next_pos]))
 
         # Path not found
-        return None, None
+        if distance_fn is None:
+            return None, None
+        else:
+            return None, None, None
 
     def find_drop_pos(self, except_pos=None):
         """
@@ -672,14 +708,14 @@ class BotAdvisor(Bot):
         """
         Produce the optimal action at the current state
         """
-        #print(self.stack)
+       # print(self.stack)
         # Process the current observation
         self.process_obs()
         if len(self.stack) == 0:
             return self.mission.actions.done
         subgoal, datum = self.stack[-1]
         action = self.get_action_from_subgoal(subgoal, datum)
-
+       # print(action)
         return action
 
     def get_action_from_subgoal(self, subgoal, datum=None, alternative=(None, None)):
@@ -704,6 +740,7 @@ class BotAdvisor(Bot):
         dir_vec = self.mission.dir_vec
         right_vec = self.mission.right_vec
         fwd_pos = pos + dir_vec
+        fwd_cell = self.mission.grid.get(*fwd_pos)
 
         actions = self.mission.actions
         carrying = self.mission.carrying
@@ -731,6 +768,7 @@ class BotAdvisor(Bot):
 
                         # Find a location to drop what we're already carrying
                         drop_pos_cur = self.find_drop_pos()
+                       # print('yooo')
                         return self.get_action_from_subgoal('GoNextTo', drop_pos_cur, ('Drop', None))
                     else:
                         # Go To the key
@@ -739,7 +777,7 @@ class BotAdvisor(Bot):
             # If the door is already open, close it so we can open it again
             if fwd_cell.type == 'door' and fwd_cell.is_open:
                 return actions.toggle
-
+           # print('open1')
             return actions.toggle
 
         # Pick up an object
@@ -767,29 +805,52 @@ class BotAdvisor(Bot):
                 )
 
                 if not path:
-                    path, _ = self.shortest_path(
-                        lambda pos, cell: pos == obj_pos,
-                        ignore_blockers=True
-                    )
+                    next_search_dist = 999
+                    while next_search_dist is not None:
+                        suggested_path, _, next_search_dist = self.shortest_path(
+                            lambda pos, cell: pos == obj_pos,
+                            ignore_blockers=True,
+                            blocker_fn=lambda pos: self.blocker_fn(pos, obj_pos, next_search_dist),
+                            distance_fn=lambda pos: self.distance(pos, obj_pos)
+                        )
+                        if suggested_path:
+                            path = [elem for elem in suggested_path]
 
                 if path:
                     # New subgoal: go next to the object
                     return self.get_action_from_subgoal('GoNextTo', obj_pos, alternative)
 
             # Explore the world
+            #print('exp')
             return self.get_action_from_subgoal('Explore', None)
 
         # Go to a given location
         if subgoal == 'GoNextTo':
+            no_reexplore = False
+            no_door_in_path = True
+            if isinstance(datum, dict):
+                if 'no_reexplore' in datum.keys():
+                    no_reexplore = datum['no_reexplore']
+                if 'no_door_in_path' in datum.keys():
+                    no_door_in_path = datum['no_door_in_path']
+                datum = datum['dest']
+            #print(datum)
             if tuple(pos) == tuple(datum):
                 # move away from it
-                rand = np.random.randint(0, 3)
-                if rand == 0:
-                    return actions.left
-                elif rand == 1:
+                if fwd_cell is None:
                     return actions.forward
-                else:
+                if self.mission.grid.get(*(pos + right_vec)) is None:
                     return actions.right
+                if self.mission.grid.get(*(pos - right_vec)) is None:
+                    return actions.left
+                return actions.left
+                # rand = np.random.randint(0, 3)
+                # if rand == 0:
+                #     return actions.left
+                # elif rand == 1:
+                #     return actions.forward
+                # else:
+                #     return actions.right
 
             #print('here')
             #print(pos, datum, alternative)
@@ -802,13 +863,31 @@ class BotAdvisor(Bot):
             path, _ = self.shortest_path(
                 lambda pos, cell: np.array_equal(pos, datum)
             )
+            blocked_path = False
+
+            # Before checking if there is a path with blockers, maybe we should explore a bit to see if a non blocker path exists
+
+            if not no_reexplore and not path and no_door_in_path:
+                try:
+                   # print('gcv')
+                    return self.get_action_from_subgoal('Explore', 'no_reexplore')
+                except (DisappearedBoxError, AssertionError) as e:
+                    pass
 
             # If we failed to find a path, try again while ignoring blockers
             if not path:
-                path, _ = self.shortest_path(
-                    lambda pos, cell: np.array_equal(pos, datum),
-                    ignore_blockers=True
-                )
+                next_search_dist = 999
+                while next_search_dist is not None:
+                    suggested_path, _, next_search_dist = self.shortest_path(
+                        lambda pos, cell: np.array_equal(pos, datum),
+                        ignore_blockers=True,
+                        blocker_fn=lambda pos: self.blocker_fn(pos, datum, next_search_dist),
+                        distance_fn=lambda pos: self.distance(pos, datum)
+                    )
+                    if suggested_path:
+                        path = [elem for elem in suggested_path]
+                       # print('found it')
+                blocked_path = True
 
             # No path found, explore the world
             if not path:
@@ -825,16 +904,43 @@ class BotAdvisor(Bot):
                     if carrying:
                         drop_pos_cur = self.find_drop_pos()
                         # Drop the object being carried
+                       # print('yoooo {}'.format(drop_pos_cur))
                         return self.get_action_from_subgoal('GoNextTo', drop_pos_cur, ('Drop', None))
                     else:
                         return actions.pickup
+                #print("that's why you're going forward, path {}".format(path))
                 return actions.forward
 
             #print(path, next_cell)
             # Turn towards the direction we need to go
-            if np.array_equal(next_cell - pos, right_vec):
+            else:
+                def closest_walldoor_given_dir(position, direction):
+                    distance = 1
+                    while True:
+                        position_to_try = position + distance * direction
+                        cell = self.mission.grid.get(*position_to_try)
+                        if cell and (cell.type.endswith('door') or cell.type == 'wall'):
+                            return distance
+                        distance += 1
+
+                if np.array_equal(next_cell - pos, right_vec):
+                    return actions.right
+                elif np.array_equal(next_cell - pos, - right_vec):
+                    return actions.left
+                # well then the cell is behind us, instead of choosing left or right randomly, let's do something that might be useful
+                # Because when we're GoingNextTo for the purpose of exploring, things might change while on the way to the position we're going to
+                # let's pick this right or left wisely
+                # The simplest thing we should do is: pick the one that doesn't lead you to face a non empty cell
+                # We can do better of course
+                # if not self.mission.grid.get(*(pos + right_vec)):
+                #    return actions.right
+                # One better thing would be to go to the direction where the closest wall/door is the furthese
+                distance_right = closest_walldoor_given_dir(pos, right_vec)
+                distance_left = closest_walldoor_given_dir(pos, - right_vec)
+                if distance_left > distance_right:
+                    return actions.left
                 return actions.right
-            return actions.left
+
 
         if subgoal == 'UpdateObjsPoss':
             self.update_objs_poss()
@@ -899,7 +1005,16 @@ class BotAdvisor(Bot):
                 )
 
             if unseen_pos:
-                return self.get_action_from_subgoal('GoNextTo', unseen_pos)
+
+                #print(unseen_pos)
+
+                return self.get_action_from_subgoal('GoNextTo', {'dest': unseen_pos,
+                                                                 'no_reexplore': datum == 'no_reexplore'}
+                                                    )
+
+            # don't open a door before checking if the target is accessible via a blocked path
+            if datum == 'no_reexplore':
+                raise DisappearedBoxError('not really a disappeared box error but yeah, let\'s change later')
 
             # Find the closest unlocked unopened door
             def unopened_unlocked_door(pos, cell):
@@ -932,7 +1047,11 @@ class BotAdvisor(Bot):
             # Open the door
             if door_pos:
                 door = self.mission.grid.get(*door_pos)
-                return self.get_action_from_subgoal('GoNextTo', door_pos, ('Open', None))
+               # print('fsdfsd {}'.format(door_pos))
+                return self.get_action_from_subgoal('GoNextTo', {'dest': door_pos,
+                                                                 'no_reexplore': True,
+                                                                 'no_door_in_path': False}
+                                                    , ('Open', None))
 
             # Find the closest unseen position, ignoring blocking objects
             path, unseen_pos = self.shortest_path(
@@ -943,7 +1062,7 @@ class BotAdvisor(Bot):
             if unseen_pos:
                 return self.get_action_from_subgoal('GoNextTo', unseen_pos)
 
-            # print(self.stack)
+            ### print(self.stack)
             assert False, "0nothing left to explore"
 
         assert False, 'invalid subgoal "%s"' % subgoal
@@ -1009,13 +1128,16 @@ class BotAdvisor(Bot):
         """
 
         self.step_count += 1
+       # print('before {}: {}, direction {}'.format(self.step_count, self.stack, self.mission.dir_vec))
 
         finished_updating = False
         while not finished_updating:
             finished_updating = self.take_action_iterate(action)
 
+       # print('after {}: {}, direction {}'.format(self.step_count, self.stack, self.mission.dir_vec))
+
     def take_action_iterate(self, action):
-        #print('{}: {}, direction {}'.format(self.step_count, self.stack, self.mission.dir_vec))
+       # print('{}: {}, direction {}'.format(self.step_count, self.stack, self.mission.dir_vec))
         # TODO: make this work with done action ?
         pos = self.mission.agent_pos
         dir_vec = self.mission.dir_vec
@@ -1212,10 +1334,16 @@ class BotAdvisor(Bot):
 
                     if not path:
                         #print(6)
-                        path, _ = self.shortest_path(
+                        next_search_dist = 999
+                        while next_search_dist is not None:
+                            suggested_path, _, next_search_dist = self.shortest_path(
                             lambda pos, cell: pos == obj_pos,
-                            ignore_blockers=True
-                        )
+                            ignore_blockers=True,
+                            blocker_fn=lambda pos: self.blocker_fn(pos, obj_pos, next_search_dist),
+                            distance_fn=lambda pos: self.distance(pos, obj_pos)
+                            )
+                            if suggested_path:
+                                path = [elem for elem in suggested_path]
 
                     if path:
                         #print(7)
@@ -1224,11 +1352,20 @@ class BotAdvisor(Bot):
                         return True
             #print('{} HEEERE'.format(self.step_count))
             # Explore the world
+            #print('takeexp')
             self.stack.append(('Explore', None))
             return False
 
         # Go to a given location
         if subgoal == 'GoNextTo':
+            why = None  # Reason why whe're going next to something
+            blocker = False
+            if isinstance(datum, dict):
+                if 'why' in datum.keys():
+                    why = datum['why']
+                if 'blocker' in datum.keys():
+                    blocker = datum['blocker']
+                datum = datum['dest']
             #print(subgoal)
             try:
                 if tuple(pos) == tuple(datum):
@@ -1257,10 +1394,16 @@ class BotAdvisor(Bot):
 
                 # If we failed to find a path, try again while ignoring blockers
                 if not path:
-                    path, _ = self.shortest_path(
-                        lambda pos, cell: np.array_equal(pos, datum),
-                        ignore_blockers=True
-                    )
+                    next_search_dist = 999
+                    while next_search_dist is not None:
+                        suggested_path, _, next_search_dist = self.shortest_path(
+                            lambda pos, cell: np.array_equal(pos, datum),
+                            ignore_blockers=True,
+                            blocker_fn=lambda pos: self.blocker_fn(pos, datum, next_search_dist),
+                            distance_fn=lambda pos: self.distance(pos, datum)
+                        )
+                        if suggested_path:
+                            path = [elem for elem in suggested_path]
 
 
                 # No path found, explore the world
@@ -1277,7 +1420,8 @@ class BotAdvisor(Bot):
 
                     # If there is a blocking object in front of us
                     if fwd_cell and not fwd_cell.type.endswith('door'):
-                        #print('that\'s what im doin')
+                       # print('that\'s what im doin')
+
                         if carrying:
                             drop_pos_cur = self.find_drop_pos()
                             drop_pos_block = self.find_drop_pos(drop_pos_cur)
@@ -1297,7 +1441,7 @@ class BotAdvisor(Bot):
                             self.stack.append(('UpdateObjsPoss', None))
                             self.stack.append(('Drop', None))
                             self.stack.append(('GoNextTo', drop_pos_cur))
-
+                            return True
                         else:
                             drop_pos = self.find_drop_pos()
                             self.stack.append(('UpdateObjsPoss', None))
@@ -1315,6 +1459,15 @@ class BotAdvisor(Bot):
                 # If there is nothing blocking us and we drop/pickup/toggle something for no reason
                 if action in (actions.drop, actions.pickup, actions.toggle):
                     drop_or_pickup_or_open_something_while_exploring()
+                if why == 'exploring':
+                    if not blocker:
+                       # print('?HERE !')
+                        self.stack.pop()
+                    else:
+                       # print('!HERE ?')
+                        if self.vis_mask[datum]:
+                           # print('!HERE2 ?')
+                            self.stack.pop()
                 return True
 
         if subgoal == 'UpdateObjsPoss':
@@ -1392,6 +1545,14 @@ class BotAdvisor(Bot):
             )
             #print('unseen {}'.format(unseen_pos))
 
+            if unseen_pos:
+                #print('did this')
+                self.stack.pop()
+                self.stack.append(('GoNextTo', {'dest': unseen_pos,
+                                                'why': 'exploring',
+                                                'blocker': False}))
+                return False
+
             if not unseen_pos:
                 _, unseen_pos = self.shortest_path(
                     lambda pos, cell: not self.vis_mask[pos],
@@ -1401,7 +1562,9 @@ class BotAdvisor(Bot):
             if unseen_pos:
                 #print('did this')
                 self.stack.pop()
-                self.stack.append(('GoNextTo', unseen_pos))
+                self.stack.append(('GoNextTo', {'dest': unseen_pos,
+                                                'why': 'exploring',
+                                                'blocker': True}))
                 return False
 
             # Find the closest unlocked unopened door
@@ -1449,7 +1612,9 @@ class BotAdvisor(Bot):
 
             if unseen_pos:
                 self.stack.pop()
-                self.stack.append(('GoNextTo', unseen_pos))
+                self.stack.append(('GoNextTo', {'dest': unseen_pos,
+                                                'why': 'exploring',
+                                                'blocker': True}))
                 return False
 
             #print(self.stack)
