@@ -97,7 +97,7 @@ parser.add_argument("--dagger", action="store_true", default=False,
                     help="Use DaGGER to add demos")
 parser.add_argument("--continue-dagger", action="store_true", default=False,
                     help='Complete DaGGER trajectories to target')
-parser.add_argument("--dagger-trim-coef", type=int, default=2,
+parser.add_argument("--dagger-trim-coef", type=float, default=2.,
                     help="Trim agent's trajectories at this number multiplied by the bot mean number of steps")
 parser.add_argument("--episodes-to-evaluate-mean", type=int, default=100,
                     help="Number of episodes to use to evaluate the mean number of steps it takes to solve the task")
@@ -174,7 +174,7 @@ def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions, mean_steps):
         directions = []
         debug_info = {'seed': [int(seeds[i])], 'actions': []}
         try:
-            for j in range(min(args.dagger_trim_coef * mean_steps, len(fail_obss[i]) - 1)):
+            for j in range(min(int(args.dagger_trim_coef * mean_steps), len(fail_obss[i]) - 1)):
                 obs = fail_obss[i][j]
                 assert check_obss_equality(obs, new_obs), "Observations {} of seed {} don't match".format(j, seeds[i])
                 mission = obs['mission']
@@ -308,7 +308,7 @@ def get_bot_mean(env_name, episodes_to_evaluate_mean, seed):
     logs = evaluate(agent, env, episodes_to_evaluate_mean, model_agent=False)
     average_number_of_steps = np.mean(logs["num_frames_per_episode"])
     logger.info("Average number of steps: {}".format(average_number_of_steps))
-    return int(average_number_of_steps)
+    return average_number_of_steps
 
 
 def main(args):
