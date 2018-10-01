@@ -64,20 +64,19 @@ on this repository. For bug reports, please paste complete error messages and de
 
 ## Usage
 
-To run the interactive UI application:
+To run the interactive GUI application:
 
 ```
-./main.py
+./gui.py
 ```
 
 The level being run can be selected with the `--env-name` option, eg:
 
 ```
-./main.py --env-name BabyAI-UnlockPickup-v0
+./gui.py --env-name BabyAI-UnlockPickup-v0
 ```
 
-
-To see the available levels, please have [here](#the-levels)
+To see the available levels, please read [this](#the-levels)
 
 ### Usage at Mila
 
