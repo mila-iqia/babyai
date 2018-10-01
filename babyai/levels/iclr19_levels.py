@@ -85,6 +85,8 @@ class Level_GoToRedBallObs2(RoomGridLevel):
 
         for i in range(self.num_dists):
             self.add_object(0, 0, 'box', 'grey')
+
+        # Make sure no unblocking is required
         self.check_objs_reachable()
 
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
@@ -109,6 +111,10 @@ class Level_GoToRedBall(RoomGridLevel):
         self.place_agent()
         obj, _ = self.add_object(0, 0, 'ball', 'red')
         self.add_distractors(num_distractors=self.num_dists, all_unique=False)
+
+        # Make sure no unblocking is required
+        self.check_objs_reachable()
+
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
 
