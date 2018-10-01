@@ -175,7 +175,7 @@ def main(args, graphs):
 
     total_start_time = time.time()
 
-    best_mean_return, patience = 0, 0
+    best_success_rate, patience = 0, 0
     current_num_evaluate, total_len, current_number_batch, fps = 0, 1, 0, []
 
     # Log dictionary
@@ -294,8 +294,8 @@ def main(args, graphs):
                 csv_writer.writerow(train_data + validation_data + rest_data)
 
 
-                if mean_return_all_task > best_mean_return:
-                    best_mean_return = mean_return_all_task
+                if success_rate_all_task > best_success_rate:
+                    best_success_rate = success_rate_all_task
                     status['patience'] = 0
                     with open(status_path, 'w') as dst:
                         json.dump(status, dst)
