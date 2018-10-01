@@ -306,7 +306,7 @@ class ImitationLearning(object):
         utils.save_model(self.acmodel, self.args.model)
 
         # best mean return to keep track of performance on validation set
-        best_mean_return, patience, i = 0, 0, 0
+        best_success_rate, patience, i = 0, 0, 0
         total_start_time = time.time()
 
         while status['i'] < getattr(self.args, 'epochs', int(1e9)):
@@ -375,8 +375,8 @@ class ImitationLearning(object):
                             writer.add_scalar(key, float(value), status['num_frames'])
                     csv_writer.writerow(train_data + validation_data)
 
-                if mean_return > best_mean_return:
-                    best_mean_return = mean_return
+                if success_rate > best_success_rate:
+                    best_success_rate = success_rate
                     status['patience'] = 0
                     with open(status_path, 'w') as dst:
                         json.dump(status, dst)

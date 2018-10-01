@@ -273,7 +273,7 @@ logger.info(acmodel)
 # Train model
 
 total_start_time = time.time()
-best_mean_return = 0
+best_success_rate = 0
 test_env_name = args.env if args.env is not None else curriculum[-1]
 while status['num_frames'] < args.frames:
     # Update parameters
@@ -299,7 +299,7 @@ while status['num_frames'] < args.frames:
             [1 if r > 0 else 0 for r in logs["return_per_episode"]])
         num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
-        data = [status['i'], status['num_episodes'], status['num_frames'], 
+        data = [status['i'], status['num_episodes'], status['num_frames'],
                 fps, total_ellapsed_time,
                 *return_per_episode.values(),
                 success_per_episode['mean'],
@@ -352,8 +352,9 @@ while status['num_frames'] < args.frames:
         logs = batch_evaluate(agent, test_env_name, args.test_seed, args.test_episodes)
         agent.model.train()
         mean_return = np.mean(logs["return_per_episode"])
-        if mean_return > best_mean_return:
-            best_mean_return = mean_return
+        success_rate = np.mean([1 if r > 0 else 0 for r in logs['return_per_episode']])
+        if success_rate > best_success_rate:
+            best_success_rate = success_rate
             utils.save_model(acmodel, args.model + '_best')
             logger.info("Return {: .2f}; best model is saved".format(mean_return))
         else:
