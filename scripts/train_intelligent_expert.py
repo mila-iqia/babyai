@@ -45,6 +45,8 @@ parser.add_argument("--episodes", type=int, default=0,
                          "(default: 0, meaning all demos)")
 parser.add_argument("--epochs", type=int, default=1000000,
                     help="maximum number of epochs")
+parser.add_argument("--frames", type=int, default=1000000000,
+                    help="maximum number of frames")
 parser.add_argument("--log-interval", type=int, default=1,
                     help="number of updates between two logs (default: 1)")
 parser.add_argument("--tb", action="store_true", default=False,

@@ -315,6 +315,8 @@ class ImitationLearning(object):
             # Do not learn if using a pre-trained model that already lost patience
             if status['patience'] > self.args.patience:
                 break
+            if status['num_frames'] > self.args.frames:
+                break
 
             status['i'] += 1
             i = status['i']
