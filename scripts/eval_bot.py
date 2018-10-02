@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+"""
+Evaluate the success rate of the bot
+This script is used for testing/debugging purposes
+"""
+
 import random
 import time
 from optparse import OptionParser

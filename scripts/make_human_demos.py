@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Generate a set of human demonstrations
+"""
+
 import sys
 import copy
 import random

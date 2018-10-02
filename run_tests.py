@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+"""
+Run basic BabyAI level tests
+Note: there are other automated tests in .circleci/config.yml
+"""
+
 import babyai
 from babyai import levels
 from babyai import agents
