@@ -30,8 +30,8 @@ jobs:
         - run: python3 -m scripts.train_il --env BabyAI-GoToRedBallObs-v0 --demos BabyAI-GoToRedBallObs-v0_agent --validation-interval 1 --patience 0 --episodes 100 --val-episodes 50
 
         # Test job launch scripts
-        - run: scripts/launch_max_experiments.py --test
-        - run: scripts/launch_demo_count.py --test --env BabyAI-GoToLocal-v0 --demos GoToLocal-bot-1m
+        #- run: scripts/launch_max_experiments.py --test
+        #- run: scripts/launch_demo_count.py --test --env BabyAI-GoToLocal-v0 --demos GoToLocal-bot-1m
 
 workflows:
   version: 2
