@@ -84,12 +84,12 @@ If you connect to the lab machines by ssh-ing, make sure to use `ssh -X` in orde
 
 The code does not work in conda, install everything with `pip install --user`.
 
-### The levels
+### The Levels
 
 Documentation for the ICLR19 levels can be found in
 [docs/iclr19_levels.md](docs/iclr19_levels.md).
 There are also older levels documented in
-[docs/bonus_levels.md](docs/iclr19_levels.md).
+[docs/bonus_levels.md](docs/bonus_levels.md).
 
 ### Troubleshooting
 
