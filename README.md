@@ -1,4 +1,4 @@
-# Baby AI Game
+# Baby AI Platform
 
 [![CircleCI](https://circleci.com/gh/mila-udem/babyai.svg?style=svg&circle-token=ed2191e1bb0206a2f3f2e22f45f1369f7b8115a9)](https://circleci.com/gh/mila-udem/babyai)
 
