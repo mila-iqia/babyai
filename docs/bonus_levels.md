@@ -23,7 +23,7 @@ In naming the levels we adhere to the following convention:
 - Evaluate: image understanding
 - Level id: `BabyAI-OpenRedDoor-v0`
 
-<p align="center"><img src="media/OpenRedDoor.png" width="250"></p>
+<p align="center"><img src="/media/OpenRedDoor.png" width="250"></p>
 
 ## OpenDoor
 
@@ -41,7 +41,7 @@ In naming the levels we adhere to the following convention:
     - `BabyAI-OpenDoorLoc-v0`
     - `BabyAI-OpenDoorLocDebug-v0`
 
-<p align="center"><img src="media/OpenDoor.png" width="250"></p>
+<p align="center"><img src="/media/OpenDoor.png" width="250"></p>
 
 ## GoToDoor
 
@@ -57,7 +57,7 @@ In naming the levels we adhere to the following convention:
 - Evaluate: image & text understanding
 - Level id: `BabyAI-GoToObjDoor-v0`
 
-<p align="center"><img src="media/GoToObjDoor.png" width="250"></p>
+<p align="center"><img src="/media/GoToObjDoor.png" width="250"></p>
 
 ## ActionObjDoor
 
@@ -66,7 +66,7 @@ In naming the levels we adhere to the following convention:
 - Evaluate: image & text understanding
 - Level id: `BabyAI-ActionObjDoor-v0`
 
-<p align="center"><img src="media/ActionObjDoor.png" width="250"></p>
+<p align="center"><img src="/media/ActionObjDoor.png" width="250"></p>
 
 ## UnlockPickup
 
@@ -76,8 +76,8 @@ In naming the levels we adhere to the following convention:
 - Level id: `BabyAI-UnlockPickup-v0`, `BabyAI-UnlockPickupDist-v0`
 
 <p align="center">
-    <img src="media/UnlockPickup.png" width="250">
-    <img src="media/UnlockPickupDist.png" width="250">
+    <img src="/media/UnlockPickup.png" width="250">
+    <img src="/media/UnlockPickupDist.png" width="250">
 </p>
 
 ## BlockedUnlockPickup
@@ -87,7 +87,7 @@ In naming the levels we adhere to the following convention:
 - Evaluate: image understanding
 - Level id: `BabyAI-BlockedUnlockPickup-v0`
 
-<p align="center"><img src="media/BlockedUnlockPickup.png" width="250"></p>
+<p align="center"><img src="/media/BlockedUnlockPickup.png" width="250"></p>
 
 ## UnlockToUnlock
 
@@ -96,7 +96,7 @@ In naming the levels we adhere to the following convention:
 - Evaluate: image understanding
 - Level id: `BabyAI-UnlockToUnlock-v0`
 
-<p align="center"><img src="media/UnlockToUnlock.png" width="250"></p>
+<p align="center"><img src="/media/UnlockToUnlock.png" width="250"></p>
 
 ## KeyInBox
 
@@ -105,7 +105,7 @@ In naming the levels we adhere to the following convention:
 - Evaluate: image understanding
 - Level id: `BabyAI-KeyInBox-v0`
 
-<p align="center"><img src="media/KeyInBox.png" width="250"></p>
+<p align="center"><img src="/media/KeyInBox.png" width="250"></p>
 
 ## PickupDist
 
@@ -116,7 +116,7 @@ In naming the levels we adhere to the following convention:
     - `BabyAI-PickupDist-v0`
     - `BabyAI-PickupDistDebug-v0`
 
-<p align="center"><img src="media/PickupDist.png" width="250"></p>
+<p align="center"><img src="/media/PickupDist.png" width="250"></p>
 
 ## PickupAbove
 
@@ -125,7 +125,7 @@ In naming the levels we adhere to the following convention:
 - Evaluate: image & text understanding, memory
 - Level id: `BabyAI-PickupAbove-v0`
 
-<p align="center"><img src="media/PickupAbove.png" width="250"></p>
+<p align="center"><img src="/media/PickupAbove.png" width="250"></p>
 
 ## OpenRedBlueDoors
 
@@ -136,7 +136,7 @@ In naming the levels we adhere to the following convention:
     - `BabyAI-OpenRedBlueDoors-v0`
     - `BabyAI-OpenRedBlueDoorsDebug-v0`
 
-<p align="center"><img src="media/OpenRedBlueDoors.png" width="250"></p>
+<p align="center"><img src="/media/OpenRedBlueDoors.png" width="250"></p>
 
 ## OpenTwoDoors
 
@@ -147,7 +147,7 @@ In naming the levels we adhere to the following convention:
     - `BabyAI-OpenTwoDoors-v0`
     - `BabyAI-OpenTwoDoorsDebug-v0`
 
-<p align="center"><img src="media/OpenTwoDoors.png" width="250"></p>
+<p align="center"><img src="/media/OpenTwoDoors.png" width="250"></p>
 
 ## FindObj
 
@@ -160,9 +160,9 @@ In naming the levels we adhere to the following convention:
     - `BabyAI-FindObjS7-v0`
 
 <p align="center">
-    <img src="media/FindObjS5.png" width="250">
-    <img src="media/FindObjS6.png" width="250">
-    <img src="media/FindObjS7.png" width="250">
+    <img src="/media/FindObjS5.png" width="250">
+    <img src="/media/FindObjS6.png" width="250">
+    <img src="/media/FindObjS7.png" width="250">
 </p>
 
 ## FourObjs
@@ -176,9 +176,9 @@ In naming the levels we adhere to the following convention:
     - `BabyAI-FourObjsS7-v0`
 
 <p align="center">
-    <img src="media/FourObjsS5.png" width="250">
-    <img src="media/FourObjsS6.png" width="250">
-    <img src="media/FourObjsS7.png" width="250">
+    <img src="/media/FourObjsS5.png" width="250">
+    <img src="/media/FourObjsS6.png" width="250">
+    <img src="/media/FourObjsS7.png" width="250">
 </p>
 
 ## KeyCorridor
@@ -195,12 +195,12 @@ In naming the levels we adhere to the following convention:
   - `BabyAI-KeyCorridorS6R3-v0`
 
 <p align="center">
-    <img src="media/KeyCorridorS3R1.png" width="250">
-    <img src="media/KeyCorridorS3R2.png" width="250">
-    <img src="media/KeyCorridorS3R3.png" width="250">
-    <img src="media/KeyCorridorS4R3.png" width="250">
-    <img src="media/KeyCorridorS5R3.png" width="250">
-    <img src="media/KeyCorridorS6R3.png" width="250">
+    <img src="/media/KeyCorridorS3R1.png" width="250">
+    <img src="/media/KeyCorridorS3R2.png" width="250">
+    <img src="/media/KeyCorridorS3R3.png" width="250">
+    <img src="/media/KeyCorridorS4R3.png" width="250">
+    <img src="/media/KeyCorridorS5R3.png" width="250">
+    <img src="/media/KeyCorridorS6R3.png" width="250">
 </p>
 
 ## 1Room
@@ -215,10 +215,10 @@ In naming the levels we adhere to the following convention:
   - `BabyAI-1RoomS20-v0`
 
 <p align="center">
-    <img src="media/1RoomS8.png" width="250">
-    <img src="media/1RoomS12.png" width="250">
-    <img src="media/1RoomS16.png" width="250">
-    <img src="media/1RoomS20.png" width="250">
+    <img src="/media/1RoomS8.png" width="250">
+    <img src="/media/1RoomS12.png" width="250">
+    <img src="/media/1RoomS16.png" width="250">
+    <img src="/media/1RoomS20.png" width="250">
 </p>
 
 ## OpenDoorsOrder
