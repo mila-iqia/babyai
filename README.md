@@ -53,15 +53,6 @@ In `scripts`:
 
 The `gui.py` script implements a template of a user interface for interactive human teaching. The version found in the master branch allows you to control the agent manually with the arrow keys, but it is not currently connected to any model or teaching code. Currently, most experiments are done offline, without a user interface.
 
-## Instructions for Committers
-
-To contribute to this project, you should first create your own fork, and remember to periodically [sync changes from this repository](https://stackoverflow.com/questions/7244321/how-do-i-update-a-github-forked-repository). You can then create [pull requests](https://yangsu.github.io/pull-request-tutorial/) for modifications you have made. Your changes will be tested and reviewed before they are merged into this repository. If you are not familiar with forks and pull requests, I recommend doing a Google or YouTube search to find many useful tutorials on the issue. Knowing how to use git and GitHub effectively are valuable skills for any programmer.
-
-If you have found a bug, or would like to request a change or improvement
-to the grid world environment or user interface, please
-[open an issue](https://github.com/maximecb/baby-ai-game/issues)
-on this repository. For bug reports, please paste complete error messages and describe your system configuration (are you running on Mac, Linux?).
-
 ## Usage
 
 To run the interactive GUI application:
@@ -121,3 +112,12 @@ gestures in combination with language may be key.
 You can find here a presentation of the project: [Baby AI Summary](https://docs.google.com/document/d/1WXY0HLHizxuZl0GMGY0j3FEqLaK1oX-66v-4PyZIvdU)
 
 A work-in-progress review of related work can be found [here](https://www.overleaf.com/13480997qqsxybgstxhg#/52042269/)
+
+## Instructions for Committers
+
+To contribute to this project, you should first create your own fork, and remember to periodically [sync changes from this repository](https://stackoverflow.com/questions/7244321/how-do-i-update-a-github-forked-repository). You can then create [pull requests](https://yangsu.github.io/pull-request-tutorial/) for modifications you have made. Your changes will be tested and reviewed before they are merged into this repository. If you are not familiar with forks and pull requests, I recommend doing a Google or YouTube search to find many useful tutorials on the issue. Knowing how to use git and GitHub effectively are valuable skills for any programmer.
+
+If you have found a bug, or would like to request a change or improvement
+to the grid world environment or user interface, please
+[open an issue](https://github.com/maximecb/baby-ai-game/issues)
+on this repository. For bug reports, please paste complete error messages and describe your system configuration (are you running on Mac, Linux?).
