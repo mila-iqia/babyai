@@ -405,8 +405,8 @@ class Level_Open(RoomGridLevel):
 class Level_Unlock(RoomGridLevel):
     """
     Unlock a door.
-    Competencies: Maze, Open, Unlock
-    No unblocking.
+
+    Competencies: Maze, Open, Unlock. No unblocking.
     """
 
     def gen_mission(self):
@@ -472,9 +472,10 @@ class Level_PutNext(RoomGridLevel):
 
 class Level_PickupLoc(LevelGen):
     """
-    Competencies: PickUp, Loc
-    One single room.
-    No unblocking.
+    Pick up an object which may be described using its location. This is a
+    single room environment.
+
+    Competencies: PickUp, Loc. No unblocking.
     """
 
     def __init__(self, seed=None):
@@ -495,6 +496,8 @@ class Level_PickupLoc(LevelGen):
 
 class Level_GoToSeq(LevelGen):
     """
+    Sequencing of go-to-object commands.
+
     Competencies: Maze, GoTo, Seq
     No locked room.
     No locations.
@@ -529,10 +532,11 @@ class Level_GoToSeqS5R2(Level_GoToSeq):
 
 class Level_Synth(LevelGen):
     """
-    Competencies: Maze, Unblock, Unlock, GoTo, PickUp, PutNext, Open
     Union of all instructions from PutNext, Open, Goto and PickUp. The agent
     may need to move objects around. The agent may have to unlock the door,
     but only if it is explicitly referred by the instruction.
+
+    Competencies: Maze, Unblock, Unlock, GoTo, PickUp, PutNext, Open
     """
 
     def __init__(
@@ -571,9 +575,10 @@ class Level_SynthS5R2(Level_Synth):
 
 class Level_SynthLoc(LevelGen):
     """
+    Like Synth, but a significant share of object descriptions involves
+    location language like in PickUpLoc. No implicit unlocking.
+
     Competencies: Maze, Unblock, Unlock, GoTo, PickUp, PutNext, Open, Loc
-    Like Synth, but a significant share of object descriptions involves location language like in PickUpLoc.
-    No implicit unlocking.
     """
 
     def __init__(self, seed=None):
@@ -590,9 +595,10 @@ class Level_SynthLoc(LevelGen):
 
 class Level_SynthSeq(LevelGen):
     """
-    Competencies: Maze, Unblock, Unlock, GoTo, PickUp, PutNext, Open, Loc, Seq
     Like SynthLoc, but now with multiple commands, combined just like in GoToSeq.
     No implicit unlocking.
+
+    Competencies: Maze, Unblock, Unlock, GoTo, PickUp, PutNext, Open, Loc, Seq
     """
 
     def __init__(self, seed=None):

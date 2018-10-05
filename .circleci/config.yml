@@ -24,10 +24,10 @@ jobs:
         - run: python3 -m scripts.eval_bot --level SynthLoc --num_runs 100 | grep "100.0%"
 
         # Quickly test the generation of bot demos
-        - run: python3 -m scripts.make_agent_demos --env BabyAI-GoToRedBallObs-v0 --episodes 100 --valid-episodes 32
+        - run: python3 -m scripts.make_agent_demos --env BabyAI-GoToRedBallGrey-v0 --episodes 100 --valid-episodes 32
 
         # Quick test for imitation learning
-        - run: python3 -m scripts.train_il --env BabyAI-GoToRedBallObs-v0 --demos BabyAI-GoToRedBallObs-v0_agent --validation-interval 1 --patience 0 --episodes 100 --val-episodes 50
+        - run: python3 -m scripts.train_il --env BabyAI-GoToRedBallGrey-v0 --demos BabyAI-GoToRedBallGrey-v0_agent --validation-interval 1 --patience 0 --episodes 100 --val-episodes 50
 
         # Test job launch scripts
         #- run: scripts/launch_max_experiments.py --test
