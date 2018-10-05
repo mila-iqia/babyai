@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 
 """
-Train an agent using an intelligent expert
+Train an agent using an intelligent expert.
 
+The procedure starts with a small set of training demonstrations, and
+iteratively grows the training set by some percentage. At every step, the new
+demos used to grow the training set are demos the agent is currently failing
+on. A new model is trained from scratch at every step.
+
+Sample usage:
 scripts/train_intelligent_expert.py --env BabyAI-GoToObj-v0 --demos GoToObj-bot-100k --validation-interval 5
 
 Vanilla imitation learning:

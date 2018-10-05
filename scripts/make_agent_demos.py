@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+"""
+Generate a set of agent demonstrations.
+
+The agent can either be a trained model or the heuristic expert (bot)
+"""
+
 import argparse
 import gym
 import logging

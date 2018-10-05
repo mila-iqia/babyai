@@ -1,9 +1,11 @@
-"""Evaluate all models in a storage directory.
+"""
+Evaluate all models in a storage directory.
 
 In order to use this script make sure to add baby-ai-game/scripts to the $PATH
 environment variable.
-Example of usage: evaluate_all_models.py --episodes 200 --argmax
 
+Sample usage:
+evaluate_all_models.py --episodes 200 --argmax
 """
 
 import os

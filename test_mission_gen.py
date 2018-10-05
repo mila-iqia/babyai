@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+Test the level/mission generation code.
+
+This script allows users to visualize generated missions for a given
+level and control the agent manually. The instruction string for the
+current mission is printed in the console.
+"""
+
 import random
 import time
 from optparse import OptionParser

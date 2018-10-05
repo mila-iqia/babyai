@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Compute the number of possible instructions in the BabyAI grammar.
+"""
+
 from gym_minigrid.minigrid import COLOR_NAMES
 
 def count_Sent():

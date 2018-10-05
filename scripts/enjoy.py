@@ -3,6 +3,7 @@
 """
 Visualize the performance of a model on a given environment.
 """
+
 import argparse
 import gym
 import time

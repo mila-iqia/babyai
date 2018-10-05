@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Sample GUI application to interact with BabyAI levels
+"""
+
 import time
 import sys
 import threading

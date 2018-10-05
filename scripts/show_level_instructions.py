@@ -1,4 +1,6 @@
-"""Randomly sample instructions from a level."""
+"""
+Randomly sample and print out instructions from a level.
+"""
 
 import argparse
 
