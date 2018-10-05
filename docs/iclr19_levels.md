@@ -5,11 +5,23 @@ These form a curriculum that is subdivided according to specific competencies.
 
 ## GoToObj
 
+Go to an object, inside a single room with no doors, no distractors
+
 ## GoToRedBall
+
+Go to the red ball, single room, with obstacles.
+The obstacles/distractors are all the same, to eliminate
+perceptual complexity.
 
 ## GoToRedBallGrey
 
+Go to the red ball, single room, with obstacles.
+The obstacles/distractors are all grey boxes, to eliminate
+perceptual complexity. No unblocking required.
+
 ## GoToLocal
+
+Go to an object, inside a single room with no doors, no distractors.
 
 ## PutNextLocal
 
