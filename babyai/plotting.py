@@ -40,7 +40,7 @@ def load_log(dir_):
 
 def load_logs(root):
     dfs = []
-    for root, dirs, files in os.walk(root):
+    for root, dirs, files in os.walk(root, followlinks=True):
         for file_ in files:
             if file_ == 'log.csv':
                 dfs.append(load_log(root))
