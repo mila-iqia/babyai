@@ -47,7 +47,7 @@ Go to an object, the object may be in another room. Many distractors.
 
 Pick up an object, the object may be in another room.
 
-## PickupUnblock
+## UnblockPickup
 
 Pick up an object, the object may be in another room. The path may
 be blocked by one or more obstructors.
