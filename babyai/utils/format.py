@@ -28,9 +28,11 @@ class Vocabulary:
             self.vocab[token] = len(self.vocab) + 1
         return self.vocab[token]
 
-    def save(self):
-        utils.create_folders_if_necessary(self.path)
-        json.dump(self.vocab, open(self.path, "w"))
+    def save(self, path=None):
+        if path is None:
+            path = self.path
+        utils.create_folders_if_necessary(path)
+        json.dump(self.vocab, open(path, "w"))
 
     def copy_vocab_from(self, other):
         '''

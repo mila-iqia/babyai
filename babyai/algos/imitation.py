@@ -385,10 +385,10 @@ class ImitationLearning(object):
                     # Saving the model
                     logger.info("Saving best model")
 
-                    self.obss_preprocessor.vocab.save()
                     if torch.cuda.is_available():
                         self.acmodel.cpu()
                     utils.save_model(self.acmodel, self.args.model + "_best")
+                    self.obss_preprocessor.vocab.save(utils.get_vocab_path(self.args.model + "_best"))
                     if torch.cuda.is_available():
                         self.acmodel.cuda()
                 else:

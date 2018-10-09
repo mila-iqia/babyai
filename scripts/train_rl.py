@@ -356,6 +356,7 @@ while status['num_frames'] < args.frames:
         if success_rate > best_success_rate:
             best_success_rate = success_rate
             utils.save_model(acmodel, args.model + '_best')
+            obss_preprocessor.vocab.save(utils.get_vocab_path(args.model + '_best'))
             logger.info("Return {: .2f}; best model is saved".format(mean_return))
         else:
             logger.info("Return {: .2f}; not the best model; not saved".format(mean_return))
