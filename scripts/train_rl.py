@@ -8,7 +8,6 @@ import os
 import logging
 import csv
 import json
-import argparse
 import gym
 import time
 import datetime
@@ -19,102 +18,35 @@ import subprocess
 import babyai
 import babyai.utils as utils
 import babyai.rl
+from babyai.arguments import ArgumentParser
 from babyai.model import ACModel
 from babyai.evaluate import batch_evaluate
 from babyai.utils.agent import ModelAgent
 
-# Parse arguments
 
-parser = argparse.ArgumentParser()
+# Parse arguments
+parser = ArgumentParser()
 parser.add_argument("--algo", default='ppo',
                     help="algorithm to use (default: ppo)")
-parser.add_argument("--env", default=None,
-                    help="name of the environment to train on (REQUIRED)")
-parser.add_argument("--model", default=None,
-                    help="name of the model (default: ENV_ALGO_TIME)")
-parser.add_argument("--pretrained-model", default=None,
-                    help='If you\'re using a pre-trained model and want the fine-tuned one to have a new name')
-parser.add_argument("--seed", type=int, default=1,
-                    help="random seed; if 0, a random random seed will be used  (default: 1)")
-parser.add_argument("--task-id-seed", action='store_true',
-                    help="use the task id within a Slurm job array as the seed")
-parser.add_argument("--procs", type=int, default=64,
-                    help="number of processes (default: 64)")
-parser.add_argument("--frames", type=int, default=int(5e8),
-                    help="number of frames of training (default: 10e7)")
-parser.add_argument("--log-interval", type=int, default=10,
-                    help="number of updates between two logs (default: 1)")
-parser.add_argument("--save-interval", type=int, default=1000,
-                    help="number of updates between two saves (default: 0, 0 means no saving)")
-parser.add_argument("--tb", action="store_true", default=False,
-                    help="log into Tensorboard")
-parser.add_argument("--frames-per-proc", type=int, default=40,
-                    help="number of frames per process before update (default: 40)")
 parser.add_argument("--discount", type=float, default=0.99,
                     help="discount factor (default: 0.99)")
-parser.add_argument("--lr", type=float, default=1e-4,
-                    help="learning rate (default: 1e-4)")
-parser.add_argument("--beta1", type=float, default=0.9,
-                    help="beta1 for Adam (default: 0.9)")
-parser.add_argument("--beta2", type=float, default=0.999,
-                    help="beta2 for Adam (default: 0.999)")
 parser.add_argument("--reward-scale", type=float, default=20.,
                     help="Reward scale multiplier")
 parser.add_argument("--gae-lambda", type=float, default=0.99,
                     help="lambda coefficient in GAE formula (default: 0.99, 1 means no gae)")
-parser.add_argument("--entropy-coef", type=float, default=0.01,
-                    help="entropy term coefficient (default: 0.01)")
 parser.add_argument("--value-loss-coef", type=float, default=0.5,
                     help="value loss term coefficient (default: 0.5)")
 parser.add_argument("--max-grad-norm", type=float, default=0.5,
                     help="maximum norm of gradient (default: 0.5)")
-parser.add_argument("--recurrence", type=int, default=20,
-                    help="number of timesteps gradient is backpropagated (default: 20)")
-parser.add_argument("--optim-eps", type=float, default=1e-5,
-                    help="Adam and RMSprop optimizer epsilon (default: 1e-5)")
-parser.add_argument("--optim-alpha", type=float, default=0.99,
-                    help="RMSprop optimizer apha (default: 0.99)")
 parser.add_argument("--clip-eps", type=float, default=0.2,
                     help="clipping epsilon for PPO (default: 0.2)")
-parser.add_argument("--epochs", type=int, default=4,
+parser.add_argument("--ppo-epochs", type=int, default=4,
                     help="number of epochs for PPO (default: 4)")
-parser.add_argument("--batch-size", type=int, default=1280,
-                    help="batch size for PPO (default: 1280)")
-parser.add_argument("--image-dim", type=int, default=128,
-                    help="dimensionality of the image embedding")
-parser.add_argument("--memory-dim", type=int, default=128,
-                    help="dimensionality of the memory LSTM")
-parser.add_argument("--instr-dim", type=int, default=128,
-                    help="dimensionality of the memory LSTM")
-parser.add_argument("--no-instr", action="store_true", default=False,
-                    help="don't use instructions in the model")
-parser.add_argument("--instr-arch", default="gru",
-                    help="arch to encode instructions, possible values: gru, bigru, conv, bow (default: gru)")
-parser.add_argument("--no-mem", action="store_true", default=False,
-                    help="don't use memory in the model")
-parser.add_argument("--arch", default='expert_filmcnn',
-                    help="image embedding architecture")
-parser.add_argument("--test-seed", type=int, default=0,
-                    help="random seed for testing (default: 0)")
-parser.add_argument("--test-episodes", type=int, default=200,
-                    help="Number of episodes to use for testing (default: 200)")
-
 args = parser.parse_args()
-
-assert args.env is not None 
-
-# Set seed for all randomness sources
-
-if args.seed == 0:
-    args.seed = np.random.randint(10000)
-if args.task_id_seed:
-    args.seed = int(os.environ['SLURM_ARRAY_TASK_ID'])
-    print('set seed to {}'.format(args.seed))
 
 utils.seed(args.seed)
 
 # Generate environments
-
 envs = []
 for i in range(args.procs):
     env = gym.make(args.env)
@@ -122,7 +54,6 @@ for i in range(args.procs):
     envs.append(env)
 
 # Define model name
-
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
 instr = args.instr_arch if args.instr_arch else "noinstr"
 mem = "mem" if not args.no_mem else "nomem"
@@ -173,7 +104,7 @@ if args.algo == "ppo":
     algo = babyai.rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.beta1, args.beta2,
                              args.gae_lambda,
                              args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
-                             args.optim_eps, args.clip_eps, args.epochs, args.batch_size, obss_preprocessor,
+                             args.optim_eps, args.clip_eps, args.ppo_epochs, args.batch_size, obss_preprocessor,
                              reshape_reward)
 else:
     raise ValueError("Incorrect algorithm name: {}".format(args.algo))
@@ -241,7 +172,7 @@ logger.info(acmodel)
 
 total_start_time = time.time()
 best_success_rate = 0
-test_env_name = args.env 
+test_env_name = args.env
 while status['num_frames'] < args.frames:
     # Update parameters
 
@@ -296,7 +227,7 @@ while status['num_frames'] < args.frames:
         agent = ModelAgent(args.model, obss_preprocessor, argmax=True)
         agent.model = acmodel
         agent.model.eval()
-        logs = batch_evaluate(agent, test_env_name, args.test_seed, args.test_episodes)
+        logs = batch_evaluate(agent, test_env_name, args.val_seed, args.val_episodes)
         agent.model.train()
         mean_return = np.mean(logs["return_per_episode"])
         success_rate = np.mean([1 if r > 0 else 0 for r in logs['return_per_episode']])
