@@ -4,7 +4,7 @@ Common arguments for BabyAI training scripts
 
 import os
 import argparse
-
+import numpy as np
 
 class ArgumentParser(argparse.ArgumentParser):
 
