@@ -2,8 +2,9 @@ import numpy
 import torch
 import torch.nn.functional as F
 
+
 from babyai.rl.algos.base import BaseAlgo
-from babyai.rl.utils.supervised_losses import SupervisedLossUpdater
+
 
 class PPOAlgo(BaseAlgo):
     """The class for the Proximal Policy Optimization algorithm
@@ -13,7 +14,7 @@ class PPOAlgo(BaseAlgo):
                  gae_lambda=0.95,
                  entropy_coef=0.01, value_loss_coef=0.5, max_grad_norm=0.5, recurrence=4,
                  adam_eps=1e-5, clip_eps=0.2, epochs=4, batch_size=256, preprocess_obss=None,
-                 reshape_reward=None, aux_info=None, supervised_loss_coef=None):
+                 reshape_reward=None, aux_info=None):
         num_frames_per_proc = num_frames_per_proc or 128
 
         super().__init__(envs, acmodel, num_frames_per_proc, discount, lr, gae_lambda, entropy_coef,
@@ -23,9 +24,6 @@ class PPOAlgo(BaseAlgo):
         self.clip_eps = clip_eps
         self.epochs = epochs
         self.batch_size = batch_size
-        self.supervised_loss_coef = supervised_loss_coef
-
-        self.supervised_loss_updater = SupervisedLossUpdater(aux_info, supervised_loss_coef, recurrence, self.device)
 
         assert self.batch_size % self.recurrence == 0
 
@@ -59,8 +57,6 @@ class PPOAlgo(BaseAlgo):
             log_grad_norms = []
 
             log_losses = []
-            if self.aux_info:
-                self.supervised_loss_updater.init_epoch()
 
             '''
             For each epoch, we create int(total_frames / batch_size + 1) batches, each of size batch_size (except 
@@ -79,8 +75,6 @@ class PPOAlgo(BaseAlgo):
                 batch_policy_loss = 0
                 batch_value_loss = 0
                 batch_loss = 0
-                if self.aux_info:
-                    self.supervised_loss_updater.init_batch()
 
                 # Initialize memory
 
@@ -112,10 +106,6 @@ class PPOAlgo(BaseAlgo):
 
                     loss = policy_loss - self.entropy_coef * entropy + self.value_loss_coef * value_loss
 
-                    if self.aux_info:
-                        supervised_loss = self.supervised_loss_updater.eval_subbatch(extra_predictions, sb)
-                        loss += supervised_loss
-
                     # Update batch values
 
                     batch_entropy += entropy.item()
@@ -136,8 +126,6 @@ class PPOAlgo(BaseAlgo):
                 batch_policy_loss /= self.recurrence
                 batch_value_loss /= self.recurrence
                 batch_loss /= self.recurrence
-                if self.aux_info:
-                    self.supervised_loss_updater.update_batch_values()
 
                 # Update actor-critic
 
@@ -155,8 +143,6 @@ class PPOAlgo(BaseAlgo):
                 log_value_losses.append(batch_value_loss)
                 log_grad_norms.append(grad_norm)
                 log_losses.append(batch_loss.item())
-                if self.aux_info:
-                    self.supervised_loss_updater.update_epoch_logs()
 
         # Log some values
 
@@ -166,8 +152,6 @@ class PPOAlgo(BaseAlgo):
         logs["value_loss"] = numpy.mean(log_value_losses)
         logs["grad_norm"] = numpy.mean(log_grad_norms)
         logs["loss"] = numpy.mean(log_losses)
-        if self.aux_info:
-            logs = self.supervised_loss_updater.end_training(logs)
 
         return logs
 

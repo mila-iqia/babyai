@@ -20,8 +20,6 @@ import babyai
 import babyai.utils as utils
 import babyai.rl
 from babyai.model import ACModel
-from babyai.levels import curriculums, create_menvs
-from babyai.levels.supervised_losses import wrap_env
 from babyai.evaluate import batch_evaluate
 from babyai.utils.agent import ModelAgent
 
@@ -31,9 +29,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--algo", default='ppo',
                     help="algorithm to use (default: ppo)")
 parser.add_argument("--env", default=None,
-                    help="name of the environment to train on (REQUIRED or --curriculum REQUIRED)")
-parser.add_argument("--curriculum", default=None,
-                    help="name of the curriculum to train on (REQUIRED or --env REQUIRED)")
+                    help="name of the environment to train on (REQUIRED)")
 parser.add_argument("--model", default=None,
                     help="name of the model (default: ENV_ALGO_TIME)")
 parser.add_argument("--pretrained-model", default=None,
@@ -98,14 +94,6 @@ parser.add_argument("--no-mem", action="store_true", default=False,
                     help="don't use memory in the model")
 parser.add_argument("--arch", default='expert_filmcnn',
                     help="image embedding architecture")
-parser.add_argument("--aux-loss", nargs='*', default=[],
-                    help="List of extra information that the environment yields at each step"
-                         "The agent tries to learn that using a supervised loss. If not specified, no info is used"
-                         "Possible infos: seen_state, see_door, see_obj, in_front_of_what, visit_proportion, "
-                         "obj_in_instr, bot_action")
-parser.add_argument("--aux-loss-coef", nargs='*', type=float, default=[],
-                    help="Coefficients for the auxiliary supervised loss. There should be as many as extra infos"
-                         "If not specified, they will all be set to 1")
 parser.add_argument("--test-seed", type=int, default=0,
                     help="random seed for testing (default: 0)")
 parser.add_argument("--test-episodes", type=int, default=200,
@@ -113,11 +101,7 @@ parser.add_argument("--test-episodes", type=int, default=200,
 
 args = parser.parse_args()
 
-assert args.env is not None or args.curriculum is not None, "--env or --curriculum must be specified."
-
-if len(args.aux_loss_coef) == 0:
-    args.aux_loss_coef = [1.] * len(args.aux_loss)
-assert len(args.aux_loss) == len(args.aux_loss_coef)
+assert args.env is not None 
 
 # Set seed for all randomness sources
 
@@ -131,17 +115,11 @@ utils.seed(args.seed)
 
 # Generate environments
 
-if args.env is not None:
-    envs = []
-    for i in range(args.procs):
-        env = gym.make(args.env)
-        if args.aux_loss:
-            env = wrap_env(env, args.aux_loss)
-        env.seed(100 * args.seed + i)
-        envs.append(env)
-else:
-    curriculum = curriculums[args.curriculum]
-    menv_head, envs = create_menvs(curriculum, args.procs, args.seed)
+envs = []
+for i in range(args.procs):
+    env = gym.make(args.env)
+    env.seed(100 * args.seed + i)
+    envs.append(env)
 
 # Define model name
 
@@ -149,7 +127,7 @@ suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
 instr = args.instr_arch if args.instr_arch else "noinstr"
 mem = "mem" if not args.no_mem else "nomem"
 model_name_parts = {
-    'env': args.env or args.curriculum,
+    'env': args.env,
     'algo': args.algo,
     'arch': args.arch,
     'instr': instr,
@@ -158,9 +136,6 @@ model_name_parts = {
     'info': '',
     'coef': '',
     'suffix': suffix}
-if len(args.aux_loss) > 0:
-    model_name_parts['info'] = '_' + ''.join([info[0].upper() for info in args.aux_loss])
-    model_name_parts['coef'] = '_' + '-'.join(map(str, args.aux_loss_coef))
 default_model_name = "{env}_{algo}_{arch}_{instr}_{mem}_seed{seed}{info}{coef}_{suffix}".format(**model_name_parts)
 if args.pretrained_model:
     default_model_name = args.pretrained_model + '_pretrained_' + default_model_name
@@ -183,15 +158,13 @@ if acmodel is None:
     else:
         acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
                           args.image_dim, args.memory_dim, args.instr_dim,
-                          not args.no_instr, args.instr_arch, not args.no_mem, args.arch, args.aux_loss)
+                          not args.no_instr, args.instr_arch, not args.no_mem, args.arch)
 
 obss_preprocessor.vocab.save()
 utils.save_model(acmodel, args.model)
 
 if torch.cuda.is_available():
     acmodel.cuda()
-if len(args.aux_loss) > 0:
-    acmodel.add_extra_heads_if_necessary(args.aux_loss)
 
 # Define actor-critic algo
 
@@ -201,7 +174,7 @@ if args.algo == "ppo":
                              args.gae_lambda,
                              args.entropy_coef, args.value_loss_coef, args.max_grad_norm, args.recurrence,
                              args.optim_eps, args.clip_eps, args.epochs, args.batch_size, obss_preprocessor,
-                             reshape_reward, args.aux_loss, args.aux_loss_coef)
+                             reshape_reward)
 else:
     raise ValueError("Incorrect algorithm name: {}".format(args.algo))
 
@@ -229,12 +202,6 @@ header = (["update", "episodes", "frames", "FPS", "duration"]
           + ["success_rate"]
           + ["num_frames_" + stat for stat in ['mean', 'std', 'min', 'max']]
           + ["entropy", "value", "policy_loss", "value_loss", "loss", "grad_norm"])
-if args.aux_loss:
-    header += ["supervised_loss", "supervised_accuracy", "supervised_L2_loss", "supervised_prevalence"]
-if args.curriculum is not None:
-    for env_key in curriculum:
-        header.append("proba/{}".format(env_key))
-        header.append("return/{}".format(env_key))
 if args.tb:
     from tensorboardX import SummaryWriter
 
@@ -274,14 +241,12 @@ logger.info(acmodel)
 
 total_start_time = time.time()
 best_success_rate = 0
-test_env_name = args.env if args.env is not None else curriculum[-1]
+test_env_name = args.env 
 while status['num_frames'] < args.frames:
     # Update parameters
 
     update_start_time = time.time()
     logs = algo.update_parameters()
-    if args.curriculum is not None:
-        menv_head.update_dist()
     update_end_time = time.time()
 
     status['num_frames'] += logs["num_frames"]
@@ -310,16 +275,6 @@ while status['num_frames'] < args.frames:
         format_str = ("U {} | E {} | F {:06} | FPS {:04.0f} | D {} | R:xsmM {: .2f} {: .2f} {: .2f} {: .2f} | "
                       "S {:.2f} | F:xsmM {:.1f} {:.1f} {} {} | H {:.3f} | V {:.3f} | "
                       "pL {: .3f} | vL {:.3f} | L {:.3f} | gN {:.3f} | ")
-        if args.aux_loss:
-            data += [logs["supervised_loss"], logs["supervised_accuracy"], logs["supervised_L2_loss"],
-                     logs["supervised_prevalence"]]
-            format_str += "sL {: .3f} | sA {:.3f} | sL2 {: .3f} | sP {: .3f} | "
-        if args.curriculum is not None:
-            for env_id, _ in enumerate(curriculum):
-                data.append(menv_head.dist[env_id])
-                data.append(menv_head.synthesized_returns.get(env_id, np.NaN))
-                format_str += "pr{} {:.2f} | ".format(env_id, menv_head.dist[env_id])
-                format_str += "R{} {:.2f} | ".format(env_id, menv_head.synthesized_returns.get(env_id, np.NaN))
 
         logger.info(format_str.format(*data))
         if args.tb:
@@ -327,14 +282,6 @@ while status['num_frames'] < args.frames:
             for key, value in zip(header, data):
                 writer.add_scalar(key, float(value), status['num_frames'])
 
-            # TODO: CSV logging for curriculum
-            if args.curriculum is not None:
-                for env_id, env_key in enumerate(curriculum):
-                    writer.add_scalar("proba/{}".format(env_key),
-                                      menv_head.dist[env_id], status['num_frames'])
-                    if env_id in menv_head.synthesized_returns.keys():
-                        writer.add_scalar("return/{}".format(env_key),
-                                          menv_head.synthesized_returns[env_id], status['num_frames'])
         csv_writer.writerow(data)
 
     # Save obss preprocessor vocabulary and model

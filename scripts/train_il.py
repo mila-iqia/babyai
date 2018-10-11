@@ -15,7 +15,7 @@ import numpy as np
 import sys
 import logging
 import babyai.utils as utils
-from babyai.algos.imitation import ImitationLearning
+from babyai.imitation import ImitationLearning
 import torch
 
 

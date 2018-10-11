@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import torch
 from .. import utils
-from babyai.agents.bot import Bot
+from babyai.bot import Bot
 
 
 class Agent(ABC):
