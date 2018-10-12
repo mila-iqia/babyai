@@ -48,13 +48,14 @@ In `scripts`:
 - use `train_rl.py` to train an agent with reinforcement learning
 - use `make_agent_demos.py` to generate demonstrations with the bot or with another agent
 - use `make_human_demos.py` to make and save human demonstrations 
+- use `train_intelligent_expert.py` to train an agent with an interactive imitation learning algorithm that incrementally grows the training set by adding demonstrations for the missions that the agent currently fails
 - use `evaluate.py` to evaluate a trained agent
 - use `enjoy.py` to visualze an agent's behavior
 - use `gui.py` or `test_mission_gen.py` to see example missions from BabyAI levels
 
 ## Usage
 
-To run the interactive GUI application:
+To run the interactive GUI application that illustrates the platform:
 
 ```
 scripts/gui.py
@@ -64,6 +65,45 @@ The level being run can be selected with the `--env-name` option, eg:
 
 ```
 scripts/gui.py --env-name BabyAI-UnlockPickup-v0
+```
+
+### Training
+
+To train an RL agent run e.g.
+
+```
+scripts/train_rl.py --env BabyAI-GoToLocal-v0
+```
+
+Folders `logs/` and `models/` will be created in the current directory. The default name
+for the model is chosen based on the level name, the current time and the other settings (e.g. 
+`BabyAI-GoToLocal-v0_ppo_expert_filmcnn_gru_mem_seed1_18-10-12-12-45-02`). You can also choose the model
+name by setting `--model`. After 5 hours of training you should be getting a success rate of 97-99\%. 
+A machine readable log can be found in `logs/<MODEL>/log.csv`, a human readable in `logs/<MODEL>/log.log`.
+
+To train an agent with imitation learning first make sure that you have your demonstrations in
+`demos/<DEMOS>`. Then run e.g.
+
+```
+scripts/train_il.py --env BabyAI-GoToLocal-v0 --demos <DEMOS>
+```
+
+In the example above we run scripts from the root of the repository, but if you have installed BabyAI as
+described above, you can also run all scripts with commands like `<PATH-TO-BABYAI-REPO>/scripts/train_il.py`.
+
+### Evaluation
+
+In the same directory where you trained your model run e.g.
+
+```
+scripts/evaluate.py --env BabyAI-GoToLocal-v0 --model <MODEL>
+```
+
+to evaluate the performance of your model named `<MODEL>` on 1000 episodes. If you want to see
+your agent performing, run 
+
+```
+scripts/enjoy.py --env BabyAI-GoToLocal-v0 --model <MODEL>
 ```
 
 ### The Levels
