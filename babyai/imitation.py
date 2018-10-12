@@ -25,7 +25,7 @@ class ImitationLearning(object):
         utils.seed(self.args.seed)
 
         # args.env is a list when training on multiple environments
-        if hasattr(args, 'multi_env') and args.multi_env is not None:
+        if getattr(args, 'multi_env', None):
             self.env = [gym.make(item) for item in args.multi_env]
 
             self.train_demos = []
@@ -77,17 +77,13 @@ class ImitationLearning(object):
             observation_space = self.env.observation_space
             action_space = self.env.action_space
 
-        if hasattr(args, 'pretrained_model'):
-            pretrained_model = args.pretrained_model
-        else:
-            pretrained_model = None
-
-        self.obss_preprocessor = utils.ObssPreprocessor(args.model, observation_space, pretrained_model)
+        self.obss_preprocessor = utils.ObssPreprocessor(args.model, observation_space,
+                                                        getattr(self.args, 'pretrained_model', None))
 
         # Define actor-critic model
         self.acmodel = utils.load_model(args.model, raise_not_found=False)
         if self.acmodel is None:
-            if hasattr(args, 'pretrained_model') and args.pretrained_model is not None:
+            if getattr(self.args, 'pretrained_model', None):
                 self.acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
             else:
                 self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space,
@@ -108,7 +104,7 @@ class ImitationLearning(object):
 
     @staticmethod
     def default_model_name(args):
-        if hasattr(args, 'multi_env') and args.multi_env is not None:
+        if getattr(args, 'multi_env', None):
             # It's better to specify one's own model name for this scenario
             named_envs = '-'.join(args.multi_env)
         else:
@@ -124,7 +120,7 @@ class ImitationLearning(object):
             'seed': args.seed,
             'suffix': suffix}
         default_model_name = "{envs}_IL_{arch}_{instr}_seed{seed}_{suffix}".format(**model_name_parts)
-        if hasattr(args, "pretrained_model") and args.pretrained_model is not None:
+        if getattr(args, 'pretrained_model', None):
             default_model_name = args.pretrained_model + '_pretrained_' + default_model_name
         return default_model_name
 
@@ -272,7 +268,7 @@ class ImitationLearning(object):
 
         if verbose:
             logger.info("Validating the model")
-        if hasattr(self.args, 'multi_env') and self.args.multi_env is not None:
+        if getattr(self.args, 'multi_env', None):
             agent = utils.load_agent(self.env[0], model_name=self.args.model, argmax=True)
         else:
             agent = utils.load_agent(self.env, model_name=self.args.model, argmax=True)
@@ -283,7 +279,7 @@ class ImitationLearning(object):
         agent.model.eval()
         logs = []
 
-        for env_name in ([self.args.env] if not hasattr(self.args, 'multi_env') or self.args.multi_env is None
+        for env_name in ([self.args.env] if not getattr(self.args, 'multi_env', None)
                          else self.args.multi_env):
             logs += [batch_evaluate(agent, env_name, self.args.val_seed, episodes)]
         agent.model.train()
