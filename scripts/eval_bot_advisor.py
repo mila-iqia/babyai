@@ -4,7 +4,7 @@ import random
 import time
 from optparse import OptionParser
 from babyai.levels import level_dict
-from babyai.agents.bot import BotAdvisor, DisappearedBoxError
+from babyai.agents.bot_advisor import BotAdvisor, DisappearedBoxError
 import numpy as np
 from babyai.utils.agent import ModelAgent, RandomAgent
 

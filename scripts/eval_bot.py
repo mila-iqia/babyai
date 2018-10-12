@@ -9,7 +9,8 @@ import random
 import time
 from optparse import OptionParser
 from babyai.levels import level_dict
-from babyai.bot import Bot, BotAdvisor
+from babyai.bot import Bot
+from babyai.bot_advisor import BotAdvisor
 
 level_list = [
     'OpenRedDoor',

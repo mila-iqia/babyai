@@ -23,7 +23,7 @@ import gym_minigrid
 from gym_minigrid import minigrid
 
 import babyai
-from babyai.bot import BotAdvisorAgent
+from babyai.utils.agent import BotAdvisorAgent
 
 
 class ImgWidget(QLabel):
