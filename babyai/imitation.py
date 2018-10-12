@@ -46,7 +46,7 @@ class ImitationLearning(object):
                 valid_demos = utils.load_demos(demos_path_valid)
                 logger.info('loaded demos')
                 if episodes > len(valid_demos):
-                    raise ValueError("there are only {} valid demos in {}".format(len(valid_demos), demos))
+                    logger.info('Using all the available {} demos to evaluate valid. accuracy'.format(len(valid_demos)))
                 self.val_demos.extend(valid_demos[:episodes])
                 logger.info('So far, {} valid demos loaded'.format(len(self.val_demos)))
 
