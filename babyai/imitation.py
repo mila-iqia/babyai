@@ -25,18 +25,37 @@ class ImitationLearning(object):
 
         utils.seed(self.args.seed)
 
-        # args.env is a list in curriculum learning.
-        if type(self.args.env) == list:
-            self.env = [gym.make(item[0]) for item in self.args.env]
+        # args.env is a list when training on multiple environments
+        if args.multi_env is not None:
+            self.env = [gym.make(item) for item in args.multi_env]
 
-            self.train_demos = [utils.load_demos(utils.get_demos_path(demo_file, env, demos_origin, valid=False))[:episodes]
-                                for env, demo_file, demos_origin, episodes in self.args.env]
+            self.train_demos = []
+            for demos, episodes in zip(args.multi_demos, args.multi_episodes):
+                demos_path = utils.get_demos_path(demos, None, None, valid=False)
+                logger.info('loading {} of {} demos'.format(episodes, demos))
+                train_demos = utils.load_demos(demos_path)
+                logger.info('loaded demos')
+                if episodes > len(train_demos):
+                    raise ValueError("there are only {} train demos in {}".format(len(self.train_demos), demos))
+                self.train_demos.extend(train_demos[:episodes])
+                logger.info('So far, {} demos loaded'.format(len(self.train_demos)))
+            del train_demos
 
-            self.val_demos = [utils.load_demos(utils.get_demos_path(demo_file, env, demos_origin, valid=True))[:self.args.val_episodes]
-                              for env, demo_file, demos_origin, _ in self.args.env]
+            self.val_demos = []
+            for demos, episodes in zip(args.multi_demos, [args.val_episodes] * len(args.multi_demos)):
+                demos_path_valid = utils.get_demos_path(demos, None, None, valid=True)
+                logger.info('loading {} of {} valid demos'.format(episodes, demos))
+                valid_demos = utils.load_demos(demos_path_valid)
+                logger.info('loaded demos')
+                if episodes > len(valid_demos):
+                    raise ValueError("there are only {} valid demos in {}".format(len(self.train_demos), demos))
+                self.val_demos.extend(valid_demos[:episodes])
+                logger.info('So far, {} valid demos loaded'.format(len(self.val_demos)))
+            del valid_demos
 
-            # Environment created for calculating the mean reward during validation
-            self.env = [gym.make(item[0]) for item in self.args.env]
+            logger.info('Loaded all demos')
+
+
             observation_space = self.env[0].observation_space
             action_space = self.env[0].action_space
 
@@ -94,8 +113,9 @@ class ImitationLearning(object):
 
     @staticmethod
     def default_model_name(args):
-        if type(args.env) == list:
-            named_envs = '_'.join([item[0] for item in args.env])
+        if args.multi_env is not None:
+            # It's better to specify one's own model name for this scenario
+            named_envs = '-'.join(args.multi_env)
         else:
             named_envs = args.env
 
@@ -257,7 +277,7 @@ class ImitationLearning(object):
 
         if verbose:
             logger.info("Validating the model")
-        if type(self.env) == list:
+        if self.args.multi_env is not None:
             agent = utils.load_agent(self.env[0], model_name=self.args.model, argmax=True)
         else:
             agent = utils.load_agent(self.env, model_name=self.args.model, argmax=True)
@@ -268,18 +288,18 @@ class ImitationLearning(object):
         agent.model.eval()
         logs = []
 
-        for env_name in ([self.args.env] if isinstance(self.args.env, str) else list(zip(*self.args.env))[0]):
+        for env_name in ([self.args.env] if self.args.multi_env is None else self.args.multi_env):
             logs += [batch_evaluate(agent, env_name, self.args.val_seed, episodes)]
         agent.model.train()
 
-        if type(self.args.env) != list:
+        if self.args.multi_env is None:
             assert len(logs) == 1
             return logs[0]
 
         return logs
 
     def collect_returns(self):
-        logs = self.validate(episodes= self.args.eval_episodes, verbose=False)
+        logs = self.validate(episodes=self.args.eval_episodes, verbose=False)
         mean_return = {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
         return mean_return
 
@@ -361,14 +381,19 @@ class ImitationLearning(object):
             if status['i'] % self.args.val_interval == 0:
 
                 valid_log = self.validate(self.args.val_episodes)
-                mean_return = np.mean(valid_log['return_per_episode'])
-                success_rate = np.mean([1 if r > 0 else 0 for r in valid_log['return_per_episode']])
+                if self.args.multi_env is not None:
+                    mean_return = [np.mean(log['return_per_episode']) for log in valid_log]
+                    success_rate = [np.mean([1 if r > 0 else 0 for r in log['return_per_episode']]) for log in
+                                    valid_log]
+                else:
+                    mean_return = [np.mean(valid_log['return_per_episode'])]
+                    success_rate = [np.mean([1 if r > 0 else 0 for r in valid_log['return_per_episode']])]
 
                 val_log = self.run_epoch_recurrence(self.val_demos)
                 validation_accuracy = np.mean(val_log["accuracy"])
 
                 if status['i'] % self.args.log_interval == 0:
-                    validation_data = [validation_accuracy, mean_return, success_rate]
+                    validation_data = [validation_accuracy] + mean_return + success_rate
                     logger.info("Validation: A {: .3f} | R {: .3f} | S {: .3f}".format(*validation_data))
 
                     assert len(header) == len(train_data + validation_data)
@@ -377,8 +402,9 @@ class ImitationLearning(object):
                             writer.add_scalar(key, float(value), status['num_frames'])
                     csv_writer.writerow(train_data + validation_data)
 
-                if success_rate > best_success_rate:
-                    best_success_rate = success_rate
+                # In case of a multi-env, the update condition would be "better mean success rate" !
+                if np.mean(success_rate) > best_success_rate:
+                    best_success_rate = np.mean(success_rate)
                     status['patience'] = 0
                     with open(status_path, 'w') as dst:
                         json.dump(status, dst)
