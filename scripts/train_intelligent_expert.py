@@ -57,6 +57,7 @@ parser.add_argument("--phases", type=int, default=1000,
 
 logger = logging.getLogger(__name__)
 
+
 def evaluate_agent(il_learn, eval_seed, num_eval_demos):
     """
     Evaluate the agent on some number of episodes and return the seeds for the
@@ -216,7 +217,7 @@ def main(args):
 
         # Stopping criterion
         valid_log = il_learn.validate(args.val_episodes)
-        success_rate = np.mean([1 if r > 0 else 0 for r in valid_log['return_per_episode']])
+        success_rate = np.mean([1 if r > 0 else 0 for r in valid_log[0]['return_per_episode']])
 
         if success_rate >= 0.99:
             logger.info("Reached target success rate with {} demos, stopping".format(len(train_demos)))
