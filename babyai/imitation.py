@@ -394,7 +394,12 @@ class ImitationLearning(object):
 
                 if status['i'] % self.args.log_interval == 0:
                     validation_data = [validation_accuracy] + mean_return + success_rate
-                    logger.info("Validation: A {: .3f} | R {: .3f} | S {: .3f}".format(*validation_data))
+                    if self.args.multi_env is None:
+                        logger.info("Validation: A {: .3f} | R {: .3f} | S {: .3f}".format(*validation_data))
+                    else:
+                        logger.info(("Validation: A {: .3f} " + ("| R {: .3f} " * len(self.args.multi_env) +
+                                                                 "| S {: .3f} " * len(self.args.multi_env))
+                                     ).format(*validation_data))
 
                     assert len(header) == len(train_data + validation_data)
                     if self.args.tb:
