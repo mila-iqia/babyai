@@ -348,8 +348,8 @@ class ImitationLearning(object):
                     "U {} | F {:06} | FPS {:04.0f} | D {} | H {:.3f} | pL {: .3f} | A {: .3f}".format(*train_data))
 
                 # Log the gathered data only when we don't evaluate the validation metrics. It will be logged anyways
-                # afterwards when status['i'] % self.args.validation_interval == 0
-                if status['i'] % self.args.validation_interval != 0:
+                # afterwards when status['i'] % self.args.val_interval == 0
+                if status['i'] % self.args.val_interval != 0:
                     # instantiate a validation_log with empty strings when no validation is done
                     validation_data = [''] * len([key for key in header if 'valid' in key])
                     assert len(header) == len(train_data + validation_data)
@@ -358,7 +358,7 @@ class ImitationLearning(object):
                             writer.add_scalar(key, float(value), status['num_frames'])
                     csv_writer.writerow(train_data + validation_data)
 
-            if status['i'] % self.args.validation_interval == 0:
+            if status['i'] % self.args.val_interval == 0:
 
                 valid_log = self.validate(self.args.val_episodes)
                 mean_return = np.mean(valid_log['return_per_episode'])
