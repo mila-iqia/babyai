@@ -12,7 +12,6 @@ class Bot:
     """
 
     def __init__(self, mission, forget=False, timeout=10000):
-        # BotAdvisor agent doesn't work as a ForgetBot
         # Mission to be solved
         self.mission = mission
 
