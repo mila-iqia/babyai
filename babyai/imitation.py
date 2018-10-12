@@ -25,7 +25,7 @@ class ImitationLearning(object):
         utils.seed(self.args.seed)
 
         # args.env is a list when training on multiple environments
-        if args.multi_env is not None:
+        if hasattr(args, 'multi_env') and args.multi_env is not None:
             self.env = [gym.make(item) for item in args.multi_env]
 
             self.train_demos = []
@@ -109,7 +109,7 @@ class ImitationLearning(object):
 
     @staticmethod
     def default_model_name(args):
-        if args.multi_env is not None:
+        if hasattr(args, 'multi_env') and args.multi_env is not None:
             # It's better to specify one's own model name for this scenario
             named_envs = '-'.join(args.multi_env)
         else:
@@ -273,7 +273,7 @@ class ImitationLearning(object):
 
         if verbose:
             logger.info("Validating the model")
-        if self.args.multi_env is not None:
+        if hasattr(self.args, 'multi_env') and self.args.multi_env is not None:
             agent = utils.load_agent(self.env[0], model_name=self.args.model, argmax=True)
         else:
             agent = utils.load_agent(self.env, model_name=self.args.model, argmax=True)
@@ -284,7 +284,8 @@ class ImitationLearning(object):
         agent.model.eval()
         logs = []
 
-        for env_name in ([self.args.env] if self.args.multi_env is None else self.args.multi_env):
+        for env_name in ([self.args.env] if not hasattr(self.args, 'multi_env') or self.args.multi_env is None
+                         else self.args.multi_env):
             logs += [batch_evaluate(agent, env_name, self.args.val_seed, episodes)]
         agent.model.train()
 
