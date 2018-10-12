@@ -28,6 +28,8 @@ parser.add_argument("--demos-origin", required=False,
 parser.add_argument("--episodes", type=int, default=0,
                     help="number of episodes of demonstrations to use"
                          "(default: 0, meaning all demos)")
+parser.add_argument("--multi-env", nargs='*', default=None,
+                  help="name of the environments used for validation/model loading")
 parser.add_argument("--multi-demos", nargs='*', default=None,
                     help="demos filenames for envs to train on (REQUIRED when multi-env is specified)")
 parser.add_argument("--multi-episodes", type=int, nargs='*', default=None,

@@ -15,7 +15,6 @@ import os
 import json
 import logging
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -39,7 +38,6 @@ class ImitationLearning(object):
                     raise ValueError("there are only {} train demos in {}".format(len(self.train_demos), demos))
                 self.train_demos.extend(train_demos[:episodes])
                 logger.info('So far, {} demos loaded'.format(len(self.train_demos)))
-            del train_demos
 
             self.val_demos = []
             for demos, episodes in zip(args.multi_demos, [args.val_episodes] * len(args.multi_demos)):
@@ -51,10 +49,8 @@ class ImitationLearning(object):
                     raise ValueError("there are only {} valid demos in {}".format(len(self.train_demos), demos))
                 self.val_demos.extend(valid_demos[:episodes])
                 logger.info('So far, {} valid demos loaded'.format(len(self.val_demos)))
-            del valid_demos
 
             logger.info('Loaded all demos')
-
 
             observation_space = self.env[0].observation_space
             action_space = self.env[0].action_space
@@ -96,7 +92,7 @@ class ImitationLearning(object):
                 self.acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
             else:
                 self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space,
-                                   args.image_dim, args.memory_dim, args.instr_dim,
+                                       args.image_dim, args.memory_dim, args.instr_dim,
                                        not self.args.no_instr, self.args.instr_arch,
                                        not self.args.no_mem, self.args.arch)
         self.obss_preprocessor.vocab.save()
@@ -292,15 +288,11 @@ class ImitationLearning(object):
             logs += [batch_evaluate(agent, env_name, self.args.val_seed, episodes)]
         agent.model.train()
 
-        if self.args.multi_env is None:
-            assert len(logs) == 1
-            return logs[0]
-
         return logs
 
     def collect_returns(self):
         logs = self.validate(episodes=self.args.eval_episodes, verbose=False)
-        mean_return = {tid : np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
+        mean_return = {tid: np.mean(log["return_per_episode"]) for tid, log in enumerate(logs)}
         return mean_return
 
     def train(self, train_demos, writer, csv_writer, status_path, header, reset_status=False):
@@ -309,6 +301,7 @@ class ImitationLearning(object):
             return {'i': 0,
                     'num_frames': 0,
                     'patience': 0}
+
         status = initial_status()
         if os.path.exists(status_path) and not reset_status:
             with open(status_path, 'r') as src:
@@ -381,25 +374,18 @@ class ImitationLearning(object):
             if status['i'] % self.args.val_interval == 0:
 
                 valid_log = self.validate(self.args.val_episodes)
-                if self.args.multi_env is not None:
-                    mean_return = [np.mean(log['return_per_episode']) for log in valid_log]
-                    success_rate = [np.mean([1 if r > 0 else 0 for r in log['return_per_episode']]) for log in
-                                    valid_log]
-                else:
-                    mean_return = [np.mean(valid_log['return_per_episode'])]
-                    success_rate = [np.mean([1 if r > 0 else 0 for r in valid_log['return_per_episode']])]
+                mean_return = [np.mean(log['return_per_episode']) for log in valid_log]
+                success_rate = [np.mean([1 if r > 0 else 0 for r in log['return_per_episode']]) for log in
+                                valid_log]
 
                 val_log = self.run_epoch_recurrence(self.val_demos)
                 validation_accuracy = np.mean(val_log["accuracy"])
 
                 if status['i'] % self.args.log_interval == 0:
                     validation_data = [validation_accuracy] + mean_return + success_rate
-                    if self.args.multi_env is None:
-                        logger.info("Validation: A {: .3f} | R {: .3f} | S {: .3f}".format(*validation_data))
-                    else:
-                        logger.info(("Validation: A {: .3f} " + ("| R {: .3f} " * len(self.args.multi_env) +
-                                                                 "| S {: .3f} " * len(self.args.multi_env))
-                                     ).format(*validation_data))
+                    logger.info(("Validation: A {: .3f} " + ("| R {: .3f} " * len(mean_return) +
+                                                             "| S {: .3f} " * len(success_rate))
+                                 ).format(*validation_data))
 
                     assert len(header) == len(train_data + validation_data)
                     if self.args.tb:
@@ -424,7 +410,8 @@ class ImitationLearning(object):
                         self.acmodel.cuda()
                 else:
                     status['patience'] += 1
-                    logger.info("Losing patience, new value={}, limit={}".format(status['patience'], self.args.patience))
+                    logger.info(
+                        "Losing patience, new value={}, limit={}".format(status['patience'], self.args.patience))
 
                 if torch.cuda.is_available():
                     self.acmodel.cpu()

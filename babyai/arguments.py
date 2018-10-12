@@ -33,8 +33,8 @@ class ArgumentParser(argparse.ArgumentParser):
                             help="number of updates between two logs (default: 10)")
         self.add_argument("--save-interval", type=int, default=1000,
                             help="number of updates between two saves (default: 1000, 0 means no saving)")
-        self.add_argument("--frames", type=int, default=int(5e8),
-                            help="number of frames of training (default: 5e8)")
+        self.add_argument("--frames", type=int, default=int(9e10),
+                            help="number of frames of training (default: 9e10)")
         self.add_argument("--patience", type=int, default=100,
                             help="patience for early stopping (default: 100)")
         self.add_argument("--epochs", type=int, default=1000000,
@@ -82,10 +82,6 @@ class ArgumentParser(argparse.ArgumentParser):
         self.add_argument("--val-episodes", type=int, default=500,
                             help="number of episodes used to evaluate the agent, and to evaluate validation accuracy")
 
-        # Multi-env parameters
-        self.add_argument("--multi-env", nargs='*', default=None,
-                            help="name of the environments used for validation/model loading")
-
     def parse_args(self):
         """
         Parse the arguments and perform some basic validation
@@ -93,7 +89,6 @@ class ArgumentParser(argparse.ArgumentParser):
 
         args = super().parse_args()
 
-        assert args.env is not None or args.multi_env is not None
         # Set seed for all randomness sources
         if args.seed == 0:
             args.seed = np.random.randint(10000)
