@@ -35,7 +35,7 @@ class ImitationLearning(object):
                 train_demos = utils.load_demos(demos_path)
                 logger.info('loaded demos')
                 if episodes > len(train_demos):
-                    raise ValueError("there are only {} train demos in {}".format(len(self.train_demos), demos))
+                    raise ValueError("there are only {} train demos in {}".format(len(train_demos), demos))
                 self.train_demos.extend(train_demos[:episodes])
                 logger.info('So far, {} demos loaded'.format(len(self.train_demos)))
 
@@ -46,7 +46,7 @@ class ImitationLearning(object):
                 valid_demos = utils.load_demos(demos_path_valid)
                 logger.info('loaded demos')
                 if episodes > len(valid_demos):
-                    raise ValueError("there are only {} valid demos in {}".format(len(self.train_demos), demos))
+                    raise ValueError("there are only {} valid demos in {}".format(len(valid_demos), demos))
                 self.val_demos.extend(valid_demos[:episodes])
                 logger.info('So far, {} valid demos loaded'.format(len(self.val_demos)))
 
