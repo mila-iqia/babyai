@@ -6,6 +6,7 @@ import os
 import argparse
 import numpy as np
 
+
 class ArgumentParser(argparse.ArgumentParser):
 
     def __init__(self):
@@ -29,11 +30,11 @@ class ArgumentParser(argparse.ArgumentParser):
 
         # Training arguments
         self.add_argument("--log-interval", type=int, default=10,
-                            help="number of updates between two logs (default: 1)")
+                            help="number of updates between two logs (default: 10)")
         self.add_argument("--save-interval", type=int, default=1000,
-                            help="number of updates between two saves (default: 0, 0 means no saving)")
-        self.add_argument("--frames", type=int, default=int(5e8),
-                            help="number of frames of training (default: 10e7)")
+                            help="number of updates between two saves (default: 1000, 0 means no saving)")
+        self.add_argument("--frames", type=int, default=int(9e10),
+                            help="number of frames of training (default: 9e10)")
         self.add_argument("--patience", type=int, default=100,
                             help="patience for early stopping (default: 100)")
         self.add_argument("--epochs", type=int, default=1000000,
@@ -87,8 +88,6 @@ class ArgumentParser(argparse.ArgumentParser):
         """
 
         args = super().parse_args()
-
-        assert args.env is not None
 
         # Set seed for all randomness sources
         if args.seed == 0:

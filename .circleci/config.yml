@@ -29,6 +29,9 @@ jobs:
         # Quick test for imitation learning
         - run: python3 -m scripts.train_il --env BabyAI-GoToRedBallGrey-v0 --demos BabyAI-GoToRedBallGrey-v0_agent --val-interval 1 --patience 0 --episodes 100 --val-episodes 50
 
+        # Quick test for imitation learning with multi env
+        - run: python3 -m scripts.train_il --multi-env BabyAI-GoToRedBall-v0 BabyAI-GoToRedBallGrey-v0 --multi-demos BabyAI-GoToRedBallGrey-v0_agent BabyAI-GoToRedBallGrey-v0_agent --val-interval 1 --patience 0 --multi-episodes 100 100 --val-episodes 50
+
         # Quick test for train_intelligent_expert
         - run: python3 -m scripts.train_intelligent_expert --env BabyAI-GoToRedBallGrey-v0 --demos BabyAI-GoToRedBallGrey-v0_agent --val-interval 1 --patience 0 --val-episodes 50 --start-demos 10 --num-eval-demos 5 --phases 2
 
