@@ -305,7 +305,7 @@ class ImitationLearning(object):
         utils.save_model(self.acmodel, self.args.model)
 
         # best mean return to keep track of performance on validation set
-        best_mean_return, patience, i = 0, 0, 0
+        best_success_rate, patience, i = 0, 0, 0
         total_start_time = time.time()
 
         while status['i'] < getattr(self.args, 'epochs', int(1e9)):
@@ -313,6 +313,8 @@ class ImitationLearning(object):
                 status['patience'] = 0
             # Do not learn if using a pre-trained model that already lost patience
             if status['patience'] > self.args.patience:
+                break
+            if status['num_frames'] > self.args.frames:
                 break
 
             status['i'] += 1
@@ -345,8 +347,8 @@ class ImitationLearning(object):
                     "U {} | F {:06} | FPS {:04.0f} | D {} | H {:.3f} | pL {: .3f} | A {: .3f}".format(*train_data))
 
                 # Log the gathered data only when we don't evaluate the validation metrics. It will be logged anyways
-                # afterwards when status['i'] % self.args.validation_interval == 0
-                if status['i'] % self.args.validation_interval != 0:
+                # afterwards when status['i'] % self.args.val_interval == 0
+                if status['i'] % self.args.val_interval != 0:
                     # instantiate a validation_log with empty strings when no validation is done
                     validation_data = [''] * len([key for key in header if 'valid' in key])
                     assert len(header) == len(train_data + validation_data)
@@ -355,7 +357,7 @@ class ImitationLearning(object):
                             writer.add_scalar(key, float(value), status['num_frames'])
                     csv_writer.writerow(train_data + validation_data)
 
-            if status['i'] % self.args.validation_interval == 0:
+            if status['i'] % self.args.val_interval == 0:
 
                 valid_log = self.validate(self.args.val_episodes)
                 mean_return = np.mean(valid_log['return_per_episode'])
@@ -374,18 +376,18 @@ class ImitationLearning(object):
                             writer.add_scalar(key, float(value), status['num_frames'])
                     csv_writer.writerow(train_data + validation_data)
 
-                if mean_return > best_mean_return:
-                    best_mean_return = mean_return
+                if success_rate > best_success_rate:
+                    best_success_rate = success_rate
                     status['patience'] = 0
                     with open(status_path, 'w') as dst:
                         json.dump(status, dst)
                     # Saving the model
                     logger.info("Saving best model")
 
-                    self.obss_preprocessor.vocab.save()
                     if torch.cuda.is_available():
                         self.acmodel.cpu()
                     utils.save_model(self.acmodel, self.args.model + "_best")
+                    self.obss_preprocessor.vocab.save(utils.get_vocab_path(self.args.model + "_best"))
                     if torch.cuda.is_available():
                         self.acmodel.cuda()
                 else:

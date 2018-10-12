@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+"""
+Generate a set of agent demonstrations.
+
+The agent can either be a trained model or the heuristic expert (bot)
+"""
+
 import argparse
 import gym
 import logging
@@ -9,6 +15,7 @@ import os
 import time
 import numpy as np
 import blosc
+import torch
 
 import babyai.utils as utils
 
@@ -87,6 +94,8 @@ def generate_demos(n_episodes, valid, seed, shift=0):
         try:
             while not done:
                 action = agent.act(obs)['action']
+                if isinstance(action, torch.Tensor):
+                    action = action.item()
                 new_obs, reward, done, _ = env.step(action)
                 agent.analyze_feedback(reward, done)
 

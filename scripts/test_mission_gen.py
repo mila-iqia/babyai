@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+Test the level/mission generation code.
+
+This script allows users to visualize generated missions for a given
+level and control the agent manually. The instruction string for the
+current mission is printed in the console.
+"""
+
 import random
 import time
 from optparse import OptionParser
@@ -75,6 +83,11 @@ def test():
             action = mission.actions.drop
         elif keyName == 'RETURN':
             action = mission.actions.done
+        elif keyName == 'ALT':
+            screen_path = 'media/' + options.level_name + '.png'
+            print('saving screenshot', screen_path)
+            pixmap = mission.render('pixmap')
+            pixmap.save(screen_path)
         else:
             return
 

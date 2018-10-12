@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 
+"""
+Evaluate the success rate of the bot
+This script is used for testing/debugging purposes
+"""
+
 import random
 import time
 from optparse import OptionParser
 from babyai.levels import level_dict
-from babyai.agents.bot import Bot, BotAdvisor
+from babyai.bot import Bot, BotAdvisor
 
 level_list = [
     'OpenRedDoor',

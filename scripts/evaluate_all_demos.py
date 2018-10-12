@@ -1,7 +1,10 @@
-'''
-Script to evaluate all available demos. It assumes all demos (human and agent, except the "valid" ones)
+"""
+Script to evaluate all available demos.
+
+Assumes all demos (human and agent, except the "valid" ones)
 are generated with seed 1
-'''
+"""
+
 import os
 from subprocess import call
 import sys

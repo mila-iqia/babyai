@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Evaluate a trained model or bot
+"""
+
 import argparse
 import gym
 import time

@@ -5,7 +5,7 @@ import torch
 from babyai.utils.agent import load_agent, ModelAgent
 from babyai.utils.demos import (
     load_demos, save_demos, synthesize_demos, get_demos_path)
-from babyai.utils.format import ObssPreprocessor, IntObssPreprocessor
+from babyai.utils.format import ObssPreprocessor, IntObssPreprocessor, get_vocab_path
 from babyai.utils.log import (
     get_log_path, get_log_dir, synthesize, configure_logging)
 from babyai.utils.model import get_model_dir, load_model, save_model

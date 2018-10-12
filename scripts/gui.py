@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Sample GUI application to interact with BabyAI levels
+"""
+
 import time
 import sys
 import threading
@@ -19,7 +23,7 @@ import gym_minigrid
 from gym_minigrid import minigrid
 
 import babyai
-from babyai.utils.agent import BotAdvisorAgent
+from babyai.bot import BotAdvisorAgent
 
 
 class ImgWidget(QLabel):

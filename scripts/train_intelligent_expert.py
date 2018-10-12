@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 
 """
-Train an agent using an intelligent expert
+Train an agent using an intelligent expert.
 
+The procedure starts with a small set of training demonstrations, and
+iteratively grows the training set by some percentage. At every step, the new
+demos used to grow the training set are demos the agent is currently failing
+on. A new model is trained from scratch at every step.
+
+Sample usage:
 scripts/train_intelligent_expert.py --env BabyAI-GoToObj-v0 --demos GoToObj-bot-100k --validation-interval 5
 
 Vanilla imitation learning:
@@ -11,7 +17,6 @@ GoToLocal, over 60K demos needed
 """
 
 import os
-import argparse
 import csv
 import copy
 import gym
@@ -21,7 +26,8 @@ import numpy as np
 import sys
 import logging
 import babyai.utils as utils
-from babyai.algos.imitation import ImitationLearning
+from babyai.arguments import ArgumentParser
+from babyai.imitation import ImitationLearning
 from babyai.evaluate import batch_evaluate, evaluate
 from babyai.utils.agent import BotAgent, BotAdvisorAgent
 import torch
@@ -29,70 +35,25 @@ import blosc
 from babyai.utils.agent import DemoAgent
 
 # Parse arguments
-parser = argparse.ArgumentParser()
-parser.add_argument("--env", required=True,
-                    help="name of the environment to train on (REQUIRED)")
+parser = ArgumentParser()
 parser.add_argument("--demos", default=None,
                     help="demos filename (REQUIRED or demos-origin required)")
 parser.add_argument("--demos-origin", required=False,
                     help="origin of the demonstrations: human | agent (REQUIRED or demos required)")
-parser.add_argument("--model", default=None,
-                    help="name of the model (default: ENV_ORIGIN_il)")
-parser.add_argument("--seed", type=int, default=1,
-                    help="random seed (default: 1)")
 parser.add_argument("--episodes", type=int, default=0,
                     help="number of episodes of demonstrations to use"
                          "(default: 0, meaning all demos)")
-parser.add_argument("--epochs", type=int, default=1000000,
-                    help="maximum number of epochs")
-parser.add_argument("--log-interval", type=int, default=1,
-                    help="number of updates between two logs (default: 1)")
-parser.add_argument("--tb", action="store_true", default=False,
-                    help="log into Tensorboard")
-parser.add_argument("--csv", action="store_true", default=False,
-                    help="log in a csv file")
-parser.add_argument("--lr", type=float, default=1e-4,
-                    help="learning rate (default: 1e-4)")
-parser.add_argument("--entropy-coef", type=float, default=0.0,
-                    help="entropy term coefficient")
-parser.add_argument("--recurrence", type=int, default=20,
-                    help="number of timesteps gradient is backpropagated (default: 1)")
-parser.add_argument("--optim-eps", type=float, default=1e-5,
-                    help="Adam optimizer epsilon (default: 1e-5)")
-parser.add_argument("--batch-size", type=int, default=256,
-                    help="batch size (In case of memory, the batch size is the number of demos, otherwise, it is the number of frames)(default: 10)")
-parser.add_argument("--no-instr", action="store_true", default=False,
-                    help="don't use instructions in the model")
-parser.add_argument("--instr-arch", default="gru",
-                    help="arch to encode instructions, possible values: gru, bigru, conv, bow (default: gru)")
-parser.add_argument("--no-mem", action="store_true", default=False,
-                    help="don't use memory in the model")
-parser.add_argument("--arch", default='expert_filmcnn',
-                    help="image embedding architecture, possible values: cnn1, cnn2, filmcnn (default: cnn1)")
-parser.add_argument("--discount", type=float, default=0.99,
-                    help="discount factor (default: 0.99)")
-parser.add_argument("--validation-interval", type=int, default=1,
-                    help="number of epochs between two validation checks (default: 1)")
-parser.add_argument("--val-episodes", type=int, default=500,
-                    help="number of episodes used to evaluate the agent, and to evaluate validation accuracy")
-parser.add_argument("--val-seed", type=int, default=0,
-                    help="seed for environment used for validation (default: 0)")
-parser.add_argument("--image-dim", type=int, default=128,
-                    help="dimensionality of the image embedding")
-parser.add_argument("--instr-dim", type=int, default=128,
-                    help="dimensionality of the image embedding")
-parser.add_argument("--memory-dim", type=int, default=128,
-                    help="dimensionality of the memory LSTM")
-
-# TODO: adjust values. These are only small for testing purposes.
-parser.add_argument("--patience", type=int, default=10,
-                    help="patience for early stopping")
 parser.add_argument("--start-demos", type=int, default=5000,
                     help="the starting number of demonstrations")
 parser.add_argument("--demo-grow-factor", type=float, default=1.2,
                     help="number of demos to add to the training set")
+parser.add_argument("--num-eval-demos", type=int, default=1000,
+                    help="number of demos used for evaluation while growing the training set")
 parser.add_argument("--finetune", action="store_true", default=False,
                     help="fine-tune the model at every phase instead of retraining")
+parser.add_argument("--phases", type=int, default=1000,
+                    help="maximum number of phases to train for")
+
 parser.add_argument("--dagger", action="store_true", default=False,
                     help="Use DaGGER to add demos")
 parser.add_argument("--continue-dagger", action="store_true", default=False,
@@ -109,8 +70,6 @@ parser.add_argument("--additive-train-set-size", type=int, default=None,
 logger = logging.getLogger(__name__)
 
 check_obss_equality = DemoAgent.check_obss_equality
-
-
 def evaluate_agent(il_learn, eval_seed, num_eval_demos, return_obss_actions=False):
     """
     Evaluate the agent on some number of episodes and return the seeds for the
@@ -256,7 +215,7 @@ def generate_demos(env_name, seeds):
     return demos
 
 
-def grow_training_set(il_learn, train_demos, grow_factor, eval_seed, dagger=False, mean_steps=None):
+def grow_training_set(il_learn, train_demos, eval_seed, grow_factor, num_eval_demos, dagger=False, mean_steps=None):
     """
     Grow the training set of demonstrations by some factor
     """
@@ -268,9 +227,6 @@ def grow_training_set(il_learn, train_demos, grow_factor, eval_seed, dagger=Fals
     num_new_demos = new_train_set_size - len(train_demos)
 
     logger.info("Generating {} new demos for {}".format(num_new_demos, il_learn.args.env))
-
-    # TODO: auto-adjust this parameter in function of success rate
-    num_eval_demos = 1024
 
     # Add new demos until we rearch the new target size
     while len(train_demos) < new_train_set_size:
@@ -354,7 +310,8 @@ def main(args):
         mean_steps = get_bot_mean(args.env, args.episodes_to_evaluate_mean, args.seed)
     else:
         mean_steps = None
-    for phase_no in range(0, 1000000):
+
+    for phase_no in range(0, args.phases):
         logger.info("Starting phase {} with {} demos".format(phase_no, len(train_demos)))
 
         if not args.finetune:
@@ -362,10 +319,9 @@ def main(args):
             logging.info("Creating new model to be trained from scratch")
             args.model = model_name + ('_phase_%d' % phase_no)
             il_learn = ImitationLearning(args)
-        print([len(actions) for _, _, _, actions in train_demos])
+
         # Train the imitation learning agent
-        if train_demos:
-            print(str(phase_no) + 'st phase')
+        if len(train_demos) > 0:
             il_learn.train(train_demos, writer, csv_writer, status_path, header, reset_status=True)
 
         # Stopping criterion
@@ -376,7 +332,8 @@ def main(args):
             logger.info("Reached target success rate with {} demos, stopping".format(len(train_demos)))
             break
 
-        eval_seed = grow_training_set(il_learn, train_demos, args.demo_grow_factor, eval_seed, args.dagger, mean_steps)
+        eval_seed = grow_training_set(il_learn, train_demos, eval_seed, args.demo_grow_factor, args.num_eval_demos,
+                                      args.dagger, mean_steps)
 
 
 if __name__ == "__main__":
