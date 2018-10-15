@@ -4,7 +4,7 @@ python:
 
 # command to install dependencies
 install:
-    - pip3 install --user --process-dependency-links --editable .
+    - pip3 install --process-dependency-links --editable .
 
 # command to run tests
 script:
