@@ -8,7 +8,7 @@ A platform for simulating language learning with a human in the loop. This is a 
 
 Requirements:
 - Python 3.5+
-- OpenAI gym
+- OpenAI Gym
 - NumPy
 - PyQT5
 - PyTorch 0.4.1+
@@ -33,6 +33,22 @@ conda env create -f environment.yaml
 ```
 
 Having done that, install this repository in the conda environment using the command above.
+
+### Docker Container
+
+A prebuilt docker image is available [on Docker Hub](https://hub.docker.com/r/maximecb/babyai/). You can download this image by executing:
+
+```
+docker pull maximecb/babyai
+```
+
+You should run the image with `nvidia-docker` (which allows you to use CUDA):
+
+```
+nvidia-docker run -it maximecb/babyai bash
+```
+
+Pretrained IL and RL models can be found in the `models` directory of the image.
 
 ## Structure of the Codebase
 
