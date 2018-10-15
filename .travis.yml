@@ -1,0 +1,29 @@
+language: python
+python:
+    - "3.5"
+
+# command to install dependencies
+install:
+    - pip3 install --user --process-dependency-links --editable .
+
+# command to run tests
+script:
+    # Check the source code for obvious errors
+    - pip3 install --user flake8
+    - python3 -m flake8 . --count --show-source --statistics --select=E901,E999,F821,F822,F823
+
+    # Test the BabyAI levels
+    - ./run_tests.py
+
+    # Quickly exercise the RL training code
+    - time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --procs 4 --batch-size 80 --log-interval 1 --save-interval 2 --test-episodes 10 --frames 300 --arch cnn1 --instr-dim 16 --image-dim 16 --memory-dim 16
+
+    # Check that the bot works on some basic levels
+    - python3 -m scripts.eval_bot --level PutNextLocal --num_runs 100 | grep "100.0%"
+    - python3 -m scripts.eval_bot --level SynthLoc --num_runs 100 | grep "100.0%"
+
+    # Quickly test the generation of bot demos
+    - python3 -m scripts.make_agent_demos --env BabyAI-GoToRedBallGrey-v0 --episodes 100 --valid-episodes 32
+
+    # Quick test for imitation learning
+    - python3 -m scripts.train_il --env BabyAI-GoToRedBallGrey-v0 --demos BabyAI-GoToRedBallGrey-v0_agent --validation-interval 1 --patience 0 --episodes 100 --val-episodes 50
