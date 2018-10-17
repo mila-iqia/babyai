@@ -289,10 +289,13 @@ class Bot:
 
                         return None
                     else:
-                        drop_pos = self.find_drop_pos()
+                        drop_pos_block = self.find_drop_pos()
                         self.stack.append(('Drop', None))
-                        self.stack.append(('GoNextTo', drop_pos))
-                        return actions.pickup
+                        self.stack.append(('GoNextTo', drop_pos_block))
+                        self.stack.append(('Pickup', None))
+                        self.stack.append(('GoNextTo', fwd_pos))
+
+                    return None
 
                 return actions.forward
 
