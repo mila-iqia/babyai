@@ -3,6 +3,7 @@ from collections import OrderedDict
 from copy import deepcopy
 import gym
 from gym_minigrid.roomgrid import RoomGrid
+from gym_minigrid.minigrid import LockedDoor
 from .verifier import *
 
 
@@ -120,6 +121,21 @@ class RoomGridLevel(RoomGrid):
             if len(move.obj_set) == 1 and len(fixed.obj_set) == 1:
                 if move.obj_set[0] is fixed.obj_set[0]:
                     raise RejectSampling('cannot move an object next to itself')
+
+            # TODO: maybe relax this a bit ?
+            # Check that the instruction doesn't involve a key that matches the color of a locked door
+            if self.unblocking:
+                colors_of_locked_doors = []
+                for i in range(self.num_rows):
+                    for j in range(self.num_cols):
+                        room = self.get_room(i, j)
+                        for door in room.doors:
+                            if door and isinstance(door, LockedDoor):
+                                colors_of_locked_doors.append(door.color)
+                if move.type == 'key' and move.color in colors_of_locked_doors:
+                    raise RejectSampling('cannot move a key that can be used to open a locked door')
+                if fixed.type == 'key' and fixed.color in colors_of_locked_doors:
+                    raise RejectSampling('cannot move an object next to a key that can be used to open a locked door')
 
             return
 
