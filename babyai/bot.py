@@ -148,6 +148,7 @@ class Bot:
         dir_vec = self.mission.dir_vec
         right_vec = self.mission.right_vec
         fwd_pos = pos + dir_vec
+        fwd_cell = self.mission.grid.get(*fwd_pos)
 
         actions = self.mission.actions
         carrying = self.mission.carrying
@@ -422,13 +423,13 @@ class Bot:
 
             # FIXME: h4xx
             # If we are on the target position,
-            # Randomly navigate away from this position
+            # Navigate away from this position
             if np.array_equal(pos, adj_pos):
-                # TODO: find something better than random
-                if np.random.randint(0, 2) == 0:
-                    return actions.left
-                else:
+                if not fwd_cell:
+                    # Empty cell ahead, go there
                     return actions.forward
+                # TODO: maybe introduce a "closest_wall_or_door_given_dir" function to decide between right and left
+                return actions.left
 
             if np.array_equal(adj_pos, fwd_pos):
                 self.stack.pop()
