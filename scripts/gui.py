@@ -373,10 +373,17 @@ def main(argv):
         help="gym environment to load",
         default='BabyAI-BossLevel-v0'
     )
+    parser.add_option(
+        "--seed",
+        type=int,
+        help="gym environment seed",
+        default=0
+    )
     (options, args) = parser.parse_args()
 
     # Load the gym environment
     env = gym.make(options.env_name)
+    env.seed(options.seed)
 
     # Create the application window
     app = QApplication(sys.argv)
