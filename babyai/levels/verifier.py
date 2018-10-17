@@ -22,7 +22,7 @@ def dot_product(v1, v2):
     Compute the dot product of the vectors v1 and v2.
     """
 
-    return sum([i*j for i, j in zip(v1, v2)])
+    return sum([i * j for i, j in zip(v1, v2)])
 
 
 def pos_next_to(pos_a, pos_b):
@@ -142,7 +142,7 @@ class ObjDesc:
                         continue
 
                     # Direction from the agent to the object
-                    v = (i-env.start_pos[0], j-env.start_pos[1])
+                    v = (i - env.start_pos[0], j - env.start_pos[1])
 
                     # (d1, d2) is an oriented orthonormal basis
                     d1 = DIR_TO_VEC[env.start_dir]
@@ -156,7 +156,7 @@ class ObjDesc:
                         "behind": dot_product(v, d1) < 0
                     }
 
-                    if not(pos_matches[self.loc]):
+                    if not (pos_matches[self.loc]):
                         continue
 
                 if use_location:
@@ -205,7 +205,6 @@ class Instr:
         for attr in potential_objects:
             if hasattr(self, attr):
                 getattr(self, attr).find_matching_objs(self.env, use_location=False)
-
 
 
 class ActionInstr(Instr):
