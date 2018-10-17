@@ -23,6 +23,7 @@ import gym_minigrid
 from gym_minigrid import minigrid
 
 import babyai
+from babyai.utils.agent import BotAgent
 
 
 class ImgWidget(QLabel):
@@ -191,6 +192,8 @@ class AIGameWindow(QMainWindow):
             self.stepEnv(actions.toggle)
         elif e.key() == Qt.Key_Return:
             self.stepEnv(actions.done)
+        elif e.key() == Qt.Key_Shift:
+            self.stepEnv()
 
         elif e.key() == Qt.Key_Backspace:
             self.resetEnv()
@@ -333,6 +336,9 @@ class AIGameWindow(QMainWindow):
 
     def resetEnv(self):
         obs = self.env.reset()
+
+        self.agent = BotAgent(self.env)
+
         self.lastObs = obs
         self.showEnv(obs)
 
@@ -348,6 +354,9 @@ class AIGameWindow(QMainWindow):
         obsPixmap = unwrapped.get_obs_render(image)
         self.obsImgLabel.setPixmap(obsPixmap)
 
+        # Get the optimal action from the bot
+        self.bot_action = self.agent.act()['action']
+
         # Update the mission text
         mission = obs['mission']
         self.missionBox.setPlainText(mission)
@@ -358,8 +367,8 @@ class AIGameWindow(QMainWindow):
 
     def stepEnv(self, action=None):
         # If no manual action was specified by the user
-        if action == None:
-            action = random.randint(0, self.env.action_space.n - 1)
+        if action is None:
+            action = self.bot_action
 
         obs, reward, done, info = self.env.step(action)
 
