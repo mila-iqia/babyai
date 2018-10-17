@@ -68,6 +68,7 @@ for level_name in level_list:
 
     num_success = 0
     total_reward = 0
+    total_steps = 0
 
     for run_no in range(options.num_runs):
         level = level_dict[level_name]
@@ -85,12 +86,13 @@ for level_name in level_list:
                 obs, reward, done, info = mission.step(action)
 
                 total_reward += reward
+                total_steps += 1
 
-                if done == True:
+                if done:
                     if reward > 0:
                         num_success += 1
                     if reward <= 0:
-                        print('FAILURE on %s, seed %d' % (level_name, mission_seed))
+                        print('FAILURE on %s, seed %d, reward %.2f' % (level_name, mission_seed, reward))
                     break
         except Exception as e:
             print('FAILURE on %s, seed %d' % (level_name, mission_seed))
@@ -98,8 +100,9 @@ for level_name in level_list:
 
     success_rate = 100 * num_success / options.num_runs
     mean_reward = total_reward / options.num_runs
+    mean_steps = total_steps / options.num_runs
 
-    print('%16s: %.1f%%, r=%.2f' % (level_name, success_rate, mean_reward))
+    print('%16s: %.1f%%, r=%.3f, s=%.2f' % (level_name, success_rate, mean_reward, mean_steps))
 
 end_time = time.time()
 total_time = end_time - start_time
