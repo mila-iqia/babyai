@@ -107,6 +107,32 @@ class Bot:
             if action is not None:
                 return action
 
+    def same_room_explore(self, datum):
+        """
+        Function called when handling the "Explore" subgoal
+        """
+        # Find the closest unseen position
+        _, unseen_pos, _ = self.shortest_path(
+            lambda pos, cell: not self.vis_mask[pos]
+        )
+        blocker = False
+
+        if not unseen_pos:
+            _, unseen_pos, _ = self.shortest_path(
+                lambda pos, cell: not self.vis_mask[pos],
+                ignore_blockers=True
+            )
+            blocker = True
+
+        if unseen_pos:
+            self.stack.pop()
+            self.stack.append(('GoNextTo', unseen_pos, {'no_reexplore': datum == 'room_only',
+                                                        'why': 'exploring',
+                                                        'blocker': blocker}))
+            return True
+
+        return False
+
     def _iterate(self):
         """
         Perform one iteration of the internal control loop
@@ -246,6 +272,19 @@ class Bot:
         if subgoal == 'GoNextTo':
             assert tuple(pos) != tuple(datum)
 
+            # Retrieve extra information
+            no_reexplore = False
+            subgoal_reason = None
+            blocker = False
+            if len(extra_information) > 1:
+                info_dict = extra_information[1]
+                if 'no_reexplore' in info_dict.keys():
+                    no_reexplore = info_dict['no_reexplore']
+                if 'why' in info_dict.keys():
+                    subgoal_reason = info_dict['why']
+                if 'blocker' in info_dict.keys():
+                    blocker = info_dict['blocker']
+
             # If we are facing the target cell, subgoal completed
             if np.array_equal(datum, fwd_pos):
                 self.stack.pop()
@@ -255,6 +294,13 @@ class Bot:
             path, _, _ = self.shortest_path(
                 lambda pos, cell: np.array_equal(pos, datum)
             )
+
+            # Before checking if there is a path with blockers, maybe we should explore in the same room for a
+            # bit to see if a non-blocker path exists
+            if not path and not no_reexplore:
+                found_unseen_pos = self.same_room_explore(datum='room_only')
+                if found_unseen_pos:
+                    return None
 
             # If we failed to find a path, try again while ignoring blockers
             if not path:
@@ -278,6 +324,7 @@ class Bot:
             next_cell = path[0]
 
             # If the destination is ahead of us
+            action = None
             if np.array_equal(next_cell, fwd_pos):
                 fwd_cell = self.mission.grid.get(*fwd_pos)
 
@@ -311,13 +358,14 @@ class Bot:
 
                     return None
 
-                return actions.forward
+                action = actions.forward
 
             # Turn towards the direction we need to go
-            if np.array_equal(next_cell - pos, right_vec):
-                return actions.right
-            elif np.array_equal(next_cell - pos, - right_vec):
-                return actions.left
+            if action is None and np.array_equal(next_cell - pos, right_vec):
+                action = actions.right
+            elif action is None and np.array_equal(next_cell - pos, - right_vec):
+                action = actions.left
+
             # If we're here, then the cell is behind us, instead of choosing left or right randomly,
             # let's do something that might be useful.
             # One better thing would be to go to the direction where the closest wall/door is the furthest
@@ -334,9 +382,19 @@ class Bot:
 
             distance_right = closest_wall_or_door_given_dir(pos, right_vec)
             distance_left = closest_wall_or_door_given_dir(pos, - right_vec)
-            if distance_left > distance_right:
-                return actions.left
-            return actions.right
+            if action is None and distance_left > distance_right:
+                action = actions.left
+            if action is None:
+                action = actions.right
+
+            if subgoal_reason == 'exploring':
+                if not blocker:
+                    self.stack.pop()
+                else:
+                    if self.vis_mask[datum]:
+                        self.stack.pop()
+
+            return action
 
         # Go to next to a position adjacent to an object
         if subgoal == 'GoToAdjPos':
@@ -381,20 +439,11 @@ class Bot:
 
         # Explore the world, uncover new unseen cells
         if subgoal == 'Explore':
+
             # Find the closest unseen position
-            _, unseen_pos, _ = self.shortest_path(
-                lambda pos, cell: not self.vis_mask[pos]
-            )
+            found_unseen_pos = self.same_room_explore(datum)
 
-            if not unseen_pos:
-                _, unseen_pos, _ = self.shortest_path(
-                    lambda pos, cell: not self.vis_mask[pos],
-                    ignore_blockers=True
-                )
-
-            if unseen_pos:
-                self.stack.pop()
-                self.stack.append(('GoNextTo', unseen_pos))
+            if found_unseen_pos:
                 return None
 
             # Find the closest unlocked unopened door
@@ -430,7 +479,7 @@ class Bot:
                 door = self.mission.grid.get(*door_pos)
                 self.stack.pop()
                 self.stack.append(('Open', None))
-                self.stack.append(('GoNextTo', door_pos))
+                self.stack.append(('GoNextTo', door_pos, {'no_reexplore': True}))
                 return None
 
             # Find the closest unseen position, ignoring blocking objects
@@ -441,7 +490,7 @@ class Bot:
 
             if unseen_pos:
                 self.stack.pop()
-                self.stack.append(('GoNextTo', unseen_pos))
+                self.stack.append(('GoNextTo', unseen_pos, {'why': 'exploring'}))
                 return None
 
             # print(self.stack)
