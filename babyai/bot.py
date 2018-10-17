@@ -130,7 +130,8 @@ class Bot:
             return actions.done
 
         # Get the topmost instruction on the stack
-        subgoal, datum = self.stack[-1]
+        subgoal, *extra_information = self.stack[-1]
+        datum = extra_information[0]
 
         # print(subgoal, datum)
         # print('pos:', pos)
