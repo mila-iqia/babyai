@@ -106,6 +106,15 @@ class RoomGridLevel(RoomGrid):
         """
         Perform some validation on the generated instructions
         """
+        # Gather the colors of locked doors
+        if self.unblocking:
+            self.colors_of_locked_doors = []
+            for i in range(self.num_rows):
+                for j in range(self.num_cols):
+                    room = self.get_room(i, j)
+                    for door in room.doors:
+                        if door and isinstance(door, LockedDoor):
+                            self.colors_of_locked_doors.append(door.color)
 
         if isinstance(instr, PutNextInstr):
             # Resolve the objects referenced by the instruction
@@ -122,25 +131,15 @@ class RoomGridLevel(RoomGrid):
                 if move.obj_set[0] is fixed.obj_set[0]:
                     raise RejectSampling('cannot move an object next to itself')
 
-            # TODO: maybe relax this a bit ?
-            # Check that the instruction doesn't involve a key that matches the color of a locked door
-            if self.unblocking:
-                colors_of_locked_doors = []
-                for i in range(self.num_rows):
-                    for j in range(self.num_cols):
-                        room = self.get_room(i, j)
-                        for door in room.doors:
-                            if door and isinstance(door, LockedDoor):
-                                colors_of_locked_doors.append(door.color)
-                if move.type == 'key' and move.color in colors_of_locked_doors:
-                    raise RejectSampling('cannot move a key that can be used to open a locked door')
-                if fixed.type == 'key' and fixed.color in colors_of_locked_doors:
-                    raise RejectSampling('cannot move an object next to a key that can be used to open a locked door')
-
-            return
-
         if isinstance(instr, ActionInstr):
-            # Nothing to do
+            # TODO: either relax this a bit or make the bot handle this super corner-y scenarios
+            # Check that the instruction doesn't involve a key that matches the color of a locked door
+            potential_objects = ('desc', 'desc_move', 'desc_fixed')
+            for attr in potential_objects:
+                if hasattr(instr, attr):
+                    obj = getattr(instr, attr)
+                    if obj.type == 'key' and obj.color in self.colors_of_locked_doors:
+                        raise RejectSampling('cannot do anything with/to a key that can be used to open a door')
             return
 
         if isinstance(instr, SeqInstr):
