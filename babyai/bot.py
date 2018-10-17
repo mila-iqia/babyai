@@ -5,6 +5,7 @@ import math
 from gym_minigrid.minigrid import *
 from babyai.levels.verifier import *
 
+
 class Bot:
     """
     Heuristic-based level solver
@@ -40,7 +41,7 @@ class Bot:
         # Process/parse the instructions
         self.process_instr(mission.instrs)
 
-        #for subgoal, datum in self.stack:
+        # for subgoal, datum in self.stack:
         #    print(subgoal)
         #    if datum:
         #        print(datum.surface(self.mission))
@@ -131,8 +132,8 @@ class Bot:
         # Get the topmost instruction on the stack
         subgoal, datum = self.stack[-1]
 
-        #print(subgoal, datum)
-        #print('pos:', pos)
+        # print(subgoal, datum)
+        # print('pos:', pos)
 
         # Forget after a subgoal is completed
         if subgoal == 'Forget':
@@ -215,15 +216,21 @@ class Bot:
                     self.stack.pop()
                     return None
 
-                path, _ = self.shortest_path(
+                path, _, _ = self.shortest_path(
                     lambda pos, cell: pos == obj_pos
                 )
 
                 if not path:
-                    path, _ = self.shortest_path(
-                        lambda pos, cell: pos == obj_pos,
-                        ignore_blockers=True
-                    )
+                    next_search_dist = 999
+                    while next_search_dist is not None:
+                        suggested_path, _, next_search_dist = self.shortest_path(
+                            lambda pos, cell: pos == obj_pos,
+                            ignore_blockers=True,
+                            blocker_fn=lambda pos: self.blocker_fn(pos, obj_pos, next_search_dist),
+                            distance_fn=lambda pos: self.distance(pos, obj_pos)
+                        )
+                        if suggested_path:
+                            path = [elem for elem in suggested_path]
 
                 if path:
                     # New subgoal: go next to the object
@@ -244,16 +251,22 @@ class Bot:
                 return None
 
             # Try to find a path
-            path, _ = self.shortest_path(
+            path, _, _ = self.shortest_path(
                 lambda pos, cell: np.array_equal(pos, datum)
             )
 
             # If we failed to find a path, try again while ignoring blockers
             if not path:
-                path, _ = self.shortest_path(
-                    lambda pos, cell: np.array_equal(pos, datum),
-                    ignore_blockers=True
-                )
+                next_search_dist = 999
+                while next_search_dist is not None:
+                    suggested_path, _, next_search_dist = self.shortest_path(
+                        lambda pos, cell: np.array_equal(pos, datum),
+                        ignore_blockers=True,
+                        blocker_fn=lambda pos: self.blocker_fn(pos, datum, next_search_dist),
+                        distance_fn=lambda pos: self.distance(pos, datum)
+                    )
+                    if suggested_path:
+                        path = [elem for elem in suggested_path]
 
             # No path found, explore the world
             if not path:
@@ -314,12 +327,12 @@ class Bot:
                 return None
 
             # Find the closest position adjacent to the object
-            path, adj_pos = self.shortest_path(
+            path, adj_pos, _ = self.shortest_path(
                 lambda pos, cell: not cell and pos_next_to(pos, obj_pos)
             )
 
             if not adj_pos:
-                path, adj_pos = self.shortest_path(
+                path, adj_pos, _ = self.shortest_path(
                     lambda pos, cell: not cell and pos_next_to(pos, obj_pos),
                     ignore_blockers=True
                 )
@@ -337,23 +350,25 @@ class Bot:
                 else:
                     return actions.forward
 
-            self.stack.pop()
+            if np.array_equal(adj_pos, fwd_pos):
+                self.stack.pop()
+                return None
+
             self.stack.append(('GoNextTo', adj_pos))
             return None
 
         # Explore the world, uncover new unseen cells
         if subgoal == 'Explore':
             # Find the closest unseen position
-            _, unseen_pos = self.shortest_path(
+            _, unseen_pos, _ = self.shortest_path(
                 lambda pos, cell: not self.vis_mask[pos]
             )
 
             if not unseen_pos:
-                _, unseen_pos = self.shortest_path(
+                _, unseen_pos, _ = self.shortest_path(
                     lambda pos, cell: not self.vis_mask[pos],
                     ignore_blockers=True
                 )
-
 
             if unseen_pos:
                 self.stack.pop()
@@ -380,13 +395,13 @@ class Bot:
             # We do this because otherwise, opening a locked door as
             # a subgoal may try to open the same door for exploration,
             # resulting in an infinite loop
-            _, door_pos = self.shortest_path(unopened_unlocked_door)
+            _, door_pos, _ = self.shortest_path(unopened_unlocked_door)
             if not door_pos:
-                _, door_pos = self.shortest_path(unopened_unlocked_door, ignore_blockers=True)
+                _, door_pos, _ = self.shortest_path(unopened_unlocked_door, ignore_blockers=True)
             if not door_pos:
-                _, door_pos = self.shortest_path(unopened_door)
+                _, door_pos, _ = self.shortest_path(unopened_door)
             if not door_pos:
-                _, door_pos = self.shortest_path(unopened_door, ignore_blockers=True)
+                _, door_pos, _ = self.shortest_path(unopened_door, ignore_blockers=True)
 
             # Open the door
             if door_pos:
@@ -397,7 +412,7 @@ class Bot:
                 return None
 
             # Find the closest unseen position, ignoring blocking objects
-            path, unseen_pos = self.shortest_path(
+            path, unseen_pos, _ = self.shortest_path(
                 lambda pos, cell: not self.vis_mask[pos],
                 ignore_blockers=True
             )
@@ -407,7 +422,7 @@ class Bot:
                 self.stack.append(('GoNextTo', unseen_pos))
                 return None
 
-            #print(self.stack)
+            # print(self.stack)
             assert False, "nothing left to explore"
 
         assert False, 'invalid subgoal "%s"' % subgoal
@@ -425,7 +440,7 @@ class Bot:
 
         # Compute the absolute coordinates of the top-left corner
         # of the agent's view area
-        top_left = pos + f_vec * (AGENT_VIEW_SIZE-1) - r_vec * (AGENT_VIEW_SIZE // 2)
+        top_left = pos + f_vec * (AGENT_VIEW_SIZE - 1) - r_vec * (AGENT_VIEW_SIZE // 2)
 
         # Mark everything in front of us as visible
         for vis_j in range(0, AGENT_VIEW_SIZE):
@@ -460,10 +475,22 @@ class Bot:
 
         return None
 
+    def distance(self, pos, target):
+        # Function that returns the distance between a position and a target. It is useful to define extra conditions
+        # for the shortest_path function
+        return np.abs(target[0] - pos[0]) + np.abs(target[1] - pos[1])
+
+    def blocker_fn(self, pos, target, n_steps):
+        # Useful to define a function that blockers need to satisfy when looking for shortest path
+        # target and pos are tuples or arrays of 2 elements
+        return self.distance(pos, target) <= n_steps
+
     def shortest_path(
-        self,
-        accept_fn,
-        ignore_blockers=False
+            self,
+            accept_fn,
+            ignore_blockers=False,
+            blocker_fn=None,
+            distance_fn=None
     ):
         """
         Perform a Breadth-First Search (BFS) starting from the agent position,
@@ -481,11 +508,12 @@ class Bot:
         queue = []
 
         # Start visiting from the agent's position
-        queue.append((*self.mission.agent_pos, []))
+        queue.append((*self.mission.agent_pos, *self.mission.dir_vec, []))
+        distance_of_first_blocking_obj_to_target = None
 
         # Until we are done
         while len(queue) > 0:
-            i, j, path = queue[0]
+            i, j, di, dj, path = queue[0]
             queue = queue[1:]
 
             if i < 0 or i >= grid.width or j < 0 or j >= grid.height:
@@ -501,7 +529,10 @@ class Bot:
 
             # If we reached a position satisfying the acceptance condition
             if accept_fn((i, j), cell):
-                return path, (i,j)
+                next_search_dist = None
+                if distance_of_first_blocking_obj_to_target is not None:
+                    next_search_dist = distance_of_first_blocking_obj_to_target - 1
+                return path, (i, j), next_search_dist
 
             # If this cell was not visually observed, don't visit neighbors
             if not self.vis_mask[i, j]:
@@ -518,17 +549,26 @@ class Bot:
                     if not cell.is_open:
                         continue
                 else:
+                    if blocker_fn is None:
+                        def blocker_fn(pos):
+                            return True
                     # This is a blocking object, don't visit neighbors
-                    if not ignore_blockers:
+                    if not ignore_blockers or not blocker_fn((i, j)):
                         continue
+                    else:
+                        if distance_fn is not None and distance_of_first_blocking_obj_to_target is None:
+                            distance_of_first_blocking_obj_to_target = distance_fn((i, j))
 
             # Visit each neighbor cell
             for k, l in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
-                next_pos = (i+k, j+l)
-                queue.append((*next_pos, path + [next_pos]))
+                # TODO: I want this to be "for positions that are one action away and that would make the state change (e.g. if position changes or if carrying changes) instead of one cell away. If there are no one action away positions that change the state, check "2 action away things" then "3 action away things", that is the maximum we should tolerate (e.g. left left forward/pickup/drop or right right forward/pickup/drop)
+                for k, l in [(di, dj), (dj, di), (- dj, - di), (- di, - dj)]:
+                    next_pos = (i + k, j + l)
+                    next_dir_vec = (k, l)
+                    queue.append((*next_pos, *next_dir_vec, path + [next_pos]))
 
         # Path not found
-        return None, None
+        return None, None, None
 
     def find_drop_pos(self, except_pos=None):
         """
@@ -549,7 +589,7 @@ class Bot:
 
             # If the cell or a neighbor was unseen or is occupied, reject
             for k, l in [(0, 0), (0, 1), (0, -1), (1, 0), (-1, 0)]:
-                nb_pos = (i+k, j+l)
+                nb_pos = (i + k, j + l)
                 if not self.vis_mask[nb_pos] or grid.get(*nb_pos):
                     return False
 
@@ -569,16 +609,16 @@ class Bot:
 
             return True
 
-        _, drop_pos = self.shortest_path(match_noadj)
+        _, drop_pos, _ = self.shortest_path(match_noadj)
 
         if not drop_pos:
-            _, drop_pos = self.shortest_path(match_empty)
+            _, drop_pos, _ = self.shortest_path(match_empty)
 
         if not drop_pos:
-            _, drop_pos = self.shortest_path(match_noadj, ignore_blockers=True)
+            _, drop_pos, _ = self.shortest_path(match_noadj, ignore_blockers=True)
 
         if not drop_pos:
-            _, drop_pos = self.shortest_path(match_empty, ignore_blockers=True)
+            _, drop_pos, _ = self.shortest_path(match_empty, ignore_blockers=True)
 
         return drop_pos
 
@@ -600,7 +640,7 @@ class BotRewardWrapper(gym.Wrapper):
         reward *= 1000
 
         if action == expert_action:
-            #reward += 1 / self.unwrapped.max_steps
+            # reward += 1 / self.unwrapped.max_steps
             reward += 1
 
         return obs, reward, done, info
