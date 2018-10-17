@@ -107,7 +107,7 @@ class RoomGridLevel(RoomGrid):
         Perform some validation on the generated instructions
         """
         # Gather the colors of locked doors
-        if self.unblocking:
+        if hasattr(self, 'unblocking') and self.unblocking:
             self.colors_of_locked_doors = []
             for i in range(self.num_rows):
                 for j in range(self.num_cols):
@@ -132,6 +132,8 @@ class RoomGridLevel(RoomGrid):
                     raise RejectSampling('cannot move an object next to itself')
 
         if isinstance(instr, ActionInstr):
+            if not hasattr(self, 'unblocking') or not self.unblocking:
+                return
             # TODO: either relax this a bit or make the bot handle this super corner-y scenarios
             # Check that the instruction doesn't involve a key that matches the color of a locked door
             potential_objects = ('desc', 'desc_move', 'desc_fixed')
