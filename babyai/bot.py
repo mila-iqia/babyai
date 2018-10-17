@@ -315,7 +315,27 @@ class Bot:
             # Turn towards the direction we need to go
             if np.array_equal(next_cell - pos, right_vec):
                 return actions.right
-            return actions.left
+            elif np.array_equal(next_cell - pos, - right_vec):
+                return actions.left
+            # If we're here, then the cell is behind us, instead of choosing left or right randomly,
+            # let's do something that might be useful.
+            # One better thing would be to go to the direction where the closest wall/door is the furthest
+
+            def closest_wall_or_door_given_dir(position, direction):
+                # TODO: using this as is is kind of cheating, as it uses an information that the agent doesn't necessarily have. Change this to only consider walls/doors already seen by the bot.
+                distance = 1
+                while True:
+                    position_to_try = position + distance * direction
+                    cell = self.mission.grid.get(*position_to_try)
+                    if cell and (cell.type.endswith('door') or cell.type == 'wall'):
+                        return distance
+                    distance += 1
+
+            distance_right = closest_wall_or_door_given_dir(pos, right_vec)
+            distance_left = closest_wall_or_door_given_dir(pos, - right_vec)
+            if distance_left > distance_right:
+                return actions.left
+            return actions.right
 
         # Go to next to a position adjacent to an object
         if subgoal == 'GoToAdjPos':
@@ -345,6 +365,7 @@ class Bot:
             # If we are on the target position,
             # Randomly navigate away from this position
             if np.array_equal(pos, adj_pos):
+                # TODO: find something better than random
                 if np.random.randint(0, 2) == 0:
                     return actions.left
                 else:
