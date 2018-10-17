@@ -243,7 +243,7 @@ class Bot:
 
         # Go to a given location
         if subgoal == 'GoNextTo':
-            assert pos is not datum
+            assert tuple(pos) != tuple(datum)
 
             # If we are facing the target cell, subgoal completed
             if np.array_equal(datum, fwd_pos):
