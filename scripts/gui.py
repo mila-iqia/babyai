@@ -361,6 +361,9 @@ class AIGameWindow(QMainWindow):
         mission = obs['mission']
         self.missionBox.setPlainText(mission)
 
+        self.missionBox.append('\nOptimal Action: {}'.format(self.bot_action))
+        self.missionBox.append('\n{}'.format(self.agent.bot.stack))
+
         # Set the steps remaining
         stepsRem = unwrapped.steps_remaining
         self.stepsLabel.setText(str(stepsRem))
