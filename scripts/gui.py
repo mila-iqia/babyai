@@ -23,17 +23,21 @@ import gym_minigrid
 from gym_minigrid import minigrid
 
 import babyai
+from babyai.utils.agent import BotAgent
+
 
 class ImgWidget(QLabel):
     """
     Widget to intercept clicks on the full image view
     """
+
     def __init__(self, window):
         super().__init__()
         self.window = window
 
     def mousePressEvent(self, event):
         self.window.imageClick(event.x(), event.y())
+
 
 class AIGameWindow(QMainWindow):
     """Application window for the baby AI game"""
@@ -188,6 +192,8 @@ class AIGameWindow(QMainWindow):
             self.stepEnv(actions.toggle)
         elif e.key() == Qt.Key_Return:
             self.stepEnv(actions.done)
+        elif e.key() == Qt.Key_Shift:
+            self.stepEnv()
 
         elif e.key() == Qt.Key_Backspace:
             self.resetEnv()
@@ -330,6 +336,9 @@ class AIGameWindow(QMainWindow):
 
     def resetEnv(self):
         obs = self.env.reset()
+
+        self.agent = BotAgent(self.env)
+
         self.lastObs = obs
         self.showEnv(obs)
 
@@ -345,9 +354,14 @@ class AIGameWindow(QMainWindow):
         obsPixmap = unwrapped.get_obs_render(image)
         self.obsImgLabel.setPixmap(obsPixmap)
 
+        # Get the optimal action from the bot
+        self.bot_action = self.agent.act()['action']
+
         # Update the mission text
         mission = obs['mission']
         self.missionBox.setPlainText(mission)
+
+        self.missionBox.append('\nOptimal Action: {}'.format(self.bot_action))
 
         # Set the steps remaining
         stepsRem = unwrapped.steps_remaining
@@ -355,8 +369,8 @@ class AIGameWindow(QMainWindow):
 
     def stepEnv(self, action=None):
         # If no manual action was specified by the user
-        if action == None:
-            action = random.randint(0, self.env.action_space.n - 1)
+        if action is None:
+            action = self.bot_action
 
         obs, reward, done, info = self.env.step(action)
 
@@ -366,6 +380,7 @@ class AIGameWindow(QMainWindow):
         if done:
             self.resetEnv()
 
+
 def main(argv):
     parser = OptionParser()
     parser.add_option(
@@ -373,10 +388,17 @@ def main(argv):
         help="gym environment to load",
         default='BabyAI-BossLevel-v0'
     )
+    parser.add_option(
+        "--seed",
+        type=int,
+        help="gym environment seed",
+        default=0
+    )
     (options, args) = parser.parse_args()
 
     # Load the gym environment
     env = gym.make(options.env_name)
+    env.seed(options.seed)
 
     # Create the application window
     app = QApplication(sys.argv)
@@ -384,6 +406,7 @@ def main(argv):
 
     # Run the application
     sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     main(sys.argv)
