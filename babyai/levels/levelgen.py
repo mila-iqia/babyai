@@ -108,13 +108,13 @@ class RoomGridLevel(RoomGrid):
         """
         # Gather the colors of locked doors
         if hasattr(self, 'unblocking') and self.unblocking:
-            self.colors_of_locked_doors = []
+            colors_of_locked_doors = []
             for i in range(self.num_rows):
                 for j in range(self.num_cols):
                     room = self.get_room(i, j)
                     for door in room.doors:
                         if door and isinstance(door, LockedDoor):
-                            self.colors_of_locked_doors.append(door.color)
+                            colors_of_locked_doors.append(door.color)
 
         if isinstance(instr, PutNextInstr):
             # Resolve the objects referenced by the instruction
@@ -140,7 +140,7 @@ class RoomGridLevel(RoomGrid):
             for attr in potential_objects:
                 if hasattr(instr, attr):
                     obj = getattr(instr, attr)
-                    if obj.type == 'key' and obj.color in self.colors_of_locked_doors:
+                    if obj.type == 'key' and obj.color in colors_of_locked_doors:
                         raise RejectSampling('cannot do anything with/to a key that can be used to open a door')
             return
 

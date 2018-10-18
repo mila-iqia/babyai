@@ -98,7 +98,10 @@ class ObjDesc:
 
     def find_matching_objs(self, env, use_location=True):
         """
-        Find the set of objects matching the description and their positions
+        Find the set of objects matching the description and their positions.
+        When use_location is False, we only update the positions of already tracked objects, without taking into account
+        the location of the object. e.g. A ball that was on "your right" initially will still be tracked as being "on
+        your right" when you move.
         """
 
         if use_location:
