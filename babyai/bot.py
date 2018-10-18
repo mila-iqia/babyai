@@ -376,7 +376,7 @@ class Bot:
                 while True:
                     position_to_try = position + distance * direction
                     # If the current position is outside the field of view, stop everything and return the previous one
-                    if not self.mission.is_in_agent_field_of_view(*position_to_try):
+                    if not self.mission.in_view(*position_to_try):
                         return distance - 1
                     cell = self.mission.grid.get(*position_to_try)
                     if cell and (cell.type.endswith('door') or cell.type == 'wall'):
