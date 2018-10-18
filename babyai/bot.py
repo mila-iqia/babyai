@@ -372,10 +372,12 @@ class Bot:
             # One better thing would be to go to the direction where the closest wall/door is the furthest
 
             def closest_wall_or_door_given_dir(position, direction):
-                # TODO: using this as is is kind of cheating, as it uses an information that the agent doesn't necessarily have. Change this to only consider walls/doors already seen by the bot.
                 distance = 1
                 while True:
                     position_to_try = position + distance * direction
+                    # If the current position is outside the field of view, stop everything and return the previous one
+                    if not self.mission.is_in_agent_field_of_view(*position_to_try):
+                        return distance - 1
                     cell = self.mission.grid.get(*position_to_try)
                     if cell and (cell.type.endswith('door') or cell.type == 'wall'):
                         return distance
