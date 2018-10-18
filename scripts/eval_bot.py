@@ -81,16 +81,18 @@ for level_name in level_list:
             print('%s/%s: %s, seed=%d' % (run_no+1, options.num_runs, mission.surface, mission_seed))
 
         try:
+            episode_steps = 0
             while True:
                 action = expert.step()
                 obs, reward, done, info = mission.step(action)
 
                 total_reward += reward
-                total_steps += 1
+                episode_steps += 1
 
                 if done:
                     if reward > 0:
                         num_success += 1
+                        total_steps += episode_steps
                     if reward <= 0:
                         print('FAILURE on %s, seed %d, reward %.2f' % (level_name, mission_seed, reward))
                     break
