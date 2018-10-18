@@ -27,8 +27,14 @@ script:
     # Quickly test the generation of bot demos
     - python3 -m scripts.make_agent_demos --env BabyAI-GoToRedBallGrey-v0 --episodes 100 --valid-episodes 32
 
+    # Quickly test the evaluation of bot demos
+    - python3 -m scripts.evaluate --env BabyAI-GoToRedBallGrey-v0 --demos BabyAI-GoToRedBallGrey-v0_agent
+
     # Quick test for imitation learning
-    - python3 -m scripts.train_il --env BabyAI-GoToRedBallGrey-v0 --demos BabyAI-GoToRedBallGrey-v0_agent --val-interval 1 --patience 0 --episodes 100 --val-episodes 50
+    - python3 -m scripts.train_il --env BabyAI-GoToRedBallGrey-v0 --demos BabyAI-GoToRedBallGrey-v0_agent --model GoToRedBallGrey-il --val-interval 1 --patience 0 --episodes 100 --val-episodes 50
+
+    # Quickly test the evaluation of models
+    - python3 -m scripts.evaluate --env BabyAI-GoToRedBallGrey-v0 --model GoToRedBallGrey-il
 
     # Quick test for imitation learning with multi env
     - python3 -m scripts.train_il --multi-env BabyAI-GoToRedBall-v0 BabyAI-GoToRedBallGrey-v0 --multi-demos BabyAI-GoToRedBallGrey-v0_agent BabyAI-GoToRedBallGrey-v0_agent --val-interval 1 --patience 0 --multi-episodes 100 100 --val-episodes 50
