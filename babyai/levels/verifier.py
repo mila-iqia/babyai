@@ -22,7 +22,7 @@ def dot_product(v1, v2):
     Compute the dot product of the vectors v1 and v2.
     """
 
-    return sum([i*j for i, j in zip(v1, v2)])
+    return sum([i * j for i, j in zip(v1, v2)])
 
 
 def pos_next_to(pos_a, pos_b):
@@ -98,7 +98,10 @@ class ObjDesc:
 
     def find_matching_objs(self, env, use_location=True):
         """
-        Find the set of objects matching the description and their positions
+        Find the set of objects matching the description and their positions.
+        When use_location is False, we only update the positions of already tracked objects, without taking into account
+        the location of the object. e.g. A ball that was on "your right" initially will still be tracked as being "on
+        your right" when you move.
         """
 
         if use_location:
@@ -116,7 +119,7 @@ class ObjDesc:
                     continue
 
                 if not use_location:
-                    # we should keep tracking the same objects initially tracked
+                    # we should keep tracking the same objects initially tracked only
                     already_tracked = any([cell is obj for obj in self.obj_set])
                     if not already_tracked:
                         continue
@@ -137,12 +140,12 @@ class ObjDesc:
                 # Check if object's position matches description
                 if use_location and self.loc in ["left", "right", "front", "behind"]:
                     # Locations apply only to objects in the same room
-                    # the agent starts in2
+                    # the agent starts in
                     if not agent_room.pos_inside(i, j):
                         continue
 
                     # Direction from the agent to the object
-                    v = (i-env.start_pos[0], j-env.start_pos[1])
+                    v = (i - env.start_pos[0], j - env.start_pos[1])
 
                     # (d1, d2) is an oriented orthonormal basis
                     d1 = DIR_TO_VEC[env.start_dir]
@@ -156,7 +159,7 @@ class ObjDesc:
                         "behind": dot_product(v, d1) < 0
                     }
 
-                    if not(pos_matches[self.loc]):
+                    if not (pos_matches[self.loc]):
                         continue
 
                 if use_location:

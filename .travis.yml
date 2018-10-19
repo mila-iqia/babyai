@@ -1,0 +1,43 @@
+language: python
+cache: pip
+python:
+    - "3.5"
+
+# command to install dependencies
+install:
+    - pip3 install http://download.pytorch.org/whl/cpu/torch-0.4.1-cp35-cp35m-linux_x86_64.whl
+    - pip3 install --process-dependency-links --editable .
+    - pip3 install flake8
+
+# command to run tests
+script:
+    # Check the source code for obvious errors
+    - python3 -m flake8 . --count --show-source --statistics --select=E901,E999,F821,F822,F823
+
+    # Test the BabyAI levels
+    - ./run_tests.py
+
+    # Quickly exercise the RL training code
+    - time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --procs 4 --batch-size 80 --log-interval 1 --save-interval 2 --val-episodes 10 --frames 300 --arch cnn1 --instr-dim 16 --image-dim 16 --memory-dim 16
+
+    # Check that the bot works on some basic levels
+    - python3 -m scripts.eval_bot --level PutNextLocal --num_runs 100 | grep "100.0%"
+    - python3 -m scripts.eval_bot --level SynthLoc --num_runs 100 | grep "100.0%"
+
+    # Quickly test the generation of bot demos
+    - python3 -m scripts.make_agent_demos --env BabyAI-GoToRedBallGrey-v0 --episodes 100 --valid-episodes 32
+
+    # Quickly test the evaluation of bot demos
+    - python3 -m scripts.evaluate --env BabyAI-GoToRedBallGrey-v0 --demos BabyAI-GoToRedBallGrey-v0_agent
+
+    # Quick test for imitation learning
+    - python3 -m scripts.train_il --env BabyAI-GoToRedBallGrey-v0 --demos BabyAI-GoToRedBallGrey-v0_agent --model GoToRedBallGrey-il --val-interval 1 --patience 0 --episodes 100 --val-episodes 50
+
+    # Quickly test the evaluation of models
+    - python3 -m scripts.evaluate --env BabyAI-GoToRedBallGrey-v0 --model GoToRedBallGrey-il
+
+    # Quick test for imitation learning with multi env
+    - python3 -m scripts.train_il --multi-env BabyAI-GoToRedBall-v0 BabyAI-GoToRedBallGrey-v0 --multi-demos BabyAI-GoToRedBallGrey-v0_agent BabyAI-GoToRedBallGrey-v0_agent --val-interval 1 --patience 0 --multi-episodes 100 100 --val-episodes 50
+
+    # Quick test for train_intelligent_expert
+    - python3 -m scripts.train_intelligent_expert --env BabyAI-GoToRedBallGrey-v0 --demos BabyAI-GoToRedBallGrey-v0_agent --val-interval 1 --patience 0 --val-episodes 50 --start-demos 10 --num-eval-demos 5 --phases 2

@@ -25,11 +25,14 @@ from gym_minigrid import minigrid
 import babyai
 from babyai.utils.agent import BotAdvisorAgent
 
+from babyai.utils.agent import BotAgent
+
 
 class ImgWidget(QLabel):
     """
     Widget to intercept clicks on the full image view
     """
+
     def __init__(self, window):
         super().__init__()
         self.window = window
@@ -192,7 +195,8 @@ class AIGameWindow(QMainWindow):
         elif e.key() == Qt.Key_Return:
             self.stepEnv(actions.done)
         elif e.key() == Qt.Key_Shift:
-            self.stepEnv(None)
+            self.stepEnv()
+
         elif e.key() == Qt.Key_Backspace:
             self.resetEnv()
         elif e.key() == Qt.Key_Escape:
@@ -335,7 +339,10 @@ class AIGameWindow(QMainWindow):
     def resetEnv(self):
         obs = self.env.reset()
 
-        self.agent = BotAdvisorAgent(self.env)
+        self.bot_advisor_agent = BotAdvisorAgent(self.env)
+
+
+        self.bot_agent = BotAgent(self.env)
 
         self.lastObs = obs
         self.showEnv(obs)
@@ -352,14 +359,16 @@ class AIGameWindow(QMainWindow):
         obsPixmap = unwrapped.get_obs_render(image)
         self.obsImgLabel.setPixmap(obsPixmap)
 
-        self.bot_action = self.agent.act()['action']
+        # Get the optimal action from the bot
+        self.bot_advisor_action = self.bot_advisor_agent.act()['action']
+        self.bot_action = self.bot_agent.act()['action']
 
         # Update the mission text
         mission = obs['mission']
         self.missionBox.setPlainText(mission)
 
-        self.missionBox.append('\nOptimal Action: {}'.format(self.bot_action))
-
+        self.missionBox.append('\nOptimal Bot Action: {}'.format(self.bot_action))
+        self.missionBox.append('\nOptimal Bot Advisor Action: {}'.format(self.bot_advisor_action))
 
         # Set the steps remaining
         stepsRem = unwrapped.steps_remaining
@@ -367,11 +376,10 @@ class AIGameWindow(QMainWindow):
 
     def stepEnv(self, action=None):
         # If no manual action was specified by the user
-        if action == None:
-            action = random.randint(0, self.env.action_space.n - 1)
-            action = self.bot_action
+        if action is None:
+            action = self.bot_advisor_action
 
-        self.agent.bot.take_action(action)
+        self.bot_advisor_agent.bot.take_action(action)
         obs, reward, done, info = self.env.step(action)
 
         self.showEnv(obs)

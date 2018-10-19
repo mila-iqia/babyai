@@ -43,6 +43,17 @@ def evaluate(agent, env, episodes, model_agent=True, offsets=None):
     return logs
 
 
+def evaluate_demo_agent(agent, episodes):
+    logs = {"num_frames_per_episode": [], "return_per_episode": []}
+
+    number_of_demos = len(agent.demos)
+
+    for demo_id in range(min(number_of_demos, episodes)):
+        logs["num_frames_per_episode"].append(len(agent.demos[demo_id]))
+
+    return logs
+
+
 class ManyEnvs(gym.Env):
 
     def __init__(self, envs):

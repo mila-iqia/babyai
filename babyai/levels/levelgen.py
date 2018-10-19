@@ -3,6 +3,7 @@ from collections import OrderedDict
 from copy import deepcopy
 import gym
 from gym_minigrid.roomgrid import RoomGrid
+from gym_minigrid.minigrid import LockedDoor
 from .verifier import *
 
 
@@ -48,6 +49,10 @@ class RoomGridLevel(RoomGrid):
 
     def step(self, action):
         obs, reward, done, info = super().step(action)
+        if action == self.actions.drop:
+            self.update_objs_poss()
+
+        # If we drop an object, we need to update its position in the environment
         if action == self.actions.drop:
             self.update_objs_poss()
 
@@ -103,6 +108,15 @@ class RoomGridLevel(RoomGrid):
         """
         Perform some validation on the generated instructions
         """
+        # Gather the colors of locked doors
+        if hasattr(self, 'unblocking') and self.unblocking:
+            colors_of_locked_doors = []
+            for i in range(self.num_rows):
+                for j in range(self.num_cols):
+                    room = self.get_room(i, j)
+                    for door in room.doors:
+                        if door and isinstance(door, LockedDoor):
+                            colors_of_locked_doors.append(door.color)
 
         if isinstance(instr, PutNextInstr):
             # Resolve the objects referenced by the instruction
@@ -119,10 +133,17 @@ class RoomGridLevel(RoomGrid):
                 if move.obj_set[0] is fixed.obj_set[0]:
                     raise RejectSampling('cannot move an object next to itself')
 
-            return
-
         if isinstance(instr, ActionInstr):
-            # Nothing to do
+            if not hasattr(self, 'unblocking') or not self.unblocking:
+                return
+            # TODO: either relax this a bit or make the bot handle this super corner-y scenarios
+            # Check that the instruction doesn't involve a key that matches the color of a locked door
+            potential_objects = ('desc', 'desc_move', 'desc_fixed')
+            for attr in potential_objects:
+                if hasattr(instr, attr):
+                    obj = getattr(instr, attr)
+                    if obj.type == 'key' and obj.color in colors_of_locked_doors:
+                        raise RejectSampling('cannot do anything with/to a key that can be used to open a door')
             return
 
         if isinstance(instr, SeqInstr):
