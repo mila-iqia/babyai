@@ -107,7 +107,7 @@ class BotAdvisor(Bot):
                 if np.array_equal(obj_pos, fwd_pos):
                         return self.get_action_from_subgoal(*alternative)
 
-                path, _ = self.shortest_path(
+                path, _, _ = self.shortest_path(
                     lambda pos, cell: pos == obj_pos
                 )
 
@@ -167,7 +167,7 @@ class BotAdvisor(Bot):
                 return self.get_action_from_subgoal(*alternative)
 
             # Try to find a path
-            path, _ = self.shortest_path(
+            path, _, _ = self.shortest_path(
                 lambda pos, cell: np.array_equal(pos, datum)
             )
             blocked_path = False
@@ -273,12 +273,12 @@ class BotAdvisor(Bot):
                 return self.get_action_from_subgoal('Explore', None)
 
             # Find the closest position adjacent to the object
-            path, adj_pos = self.shortest_path(
+            path, adj_pos, _ = self.shortest_path(
                 lambda pos, cell: not cell and pos_next_to(pos, obj_pos)
             )
 
             if not adj_pos:
-                path, adj_pos = self.shortest_path(
+                path, adj_pos, _ = self.shortest_path(
                     lambda pos, cell: not cell and pos_next_to(pos, obj_pos),
                     ignore_blockers=True
                 )
@@ -290,23 +290,23 @@ class BotAdvisor(Bot):
             # If we are on the target position,
             # Randomly navigate away from this position
             if np.array_equal(pos, adj_pos):
-                #return actions.left
-                if np.random.randint(0, 2) == 0:
-                    return actions.left
-                else:
+                if not fwd_cell:
+                    # Empty cell ahead, go there
                     return actions.forward
+                # TODO: maybe introduce a "closest_wall_or_door_given_dir" function to decide between right and left
+                return actions.left
             return self.get_action_from_subgoal('GoNextTo', adj_pos)
 
         # Explore the world, uncover new unseen cells
         if subgoal == 'Explore':
             #print(self.vis_mask)
             # Find the closest unseen position
-            _, unseen_pos = self.shortest_path(
+            _, unseen_pos, _ = self.shortest_path(
                 lambda pos, cell: not self.vis_mask[pos]
             )
 
             if not unseen_pos:
-                _, unseen_pos = self.shortest_path(
+                _, unseen_pos, _ = self.shortest_path(
                     lambda pos, cell: not self.vis_mask[pos],
                     ignore_blockers=True
                 )
@@ -343,13 +343,13 @@ class BotAdvisor(Bot):
             # We do this because otherwise, opening a locked door as
             # a subgoal may try to open the same door for exploration,
             # resulting in an infinite loop
-            _, door_pos = self.shortest_path(unopened_unlocked_door)
+            _, door_pos, _ = self.shortest_path(unopened_unlocked_door)
             if not door_pos:
-                _, door_pos = self.shortest_path(unopened_unlocked_door, ignore_blockers=True)
+                _, door_pos, _ = self.shortest_path(unopened_unlocked_door, ignore_blockers=True)
             if not door_pos:
-                _, door_pos = self.shortest_path(unopened_door)
+                _, door_pos, _ = self.shortest_path(unopened_door)
             if not door_pos:
-                _, door_pos = self.shortest_path(unopened_door, ignore_blockers=True)
+                _, door_pos, _ = self.shortest_path(unopened_door, ignore_blockers=True)
 
             # Open the door
             if door_pos:
@@ -361,7 +361,7 @@ class BotAdvisor(Bot):
                                                     , ('Open', None))
 
             # Find the closest unseen position, ignoring blocking objects
-            path, unseen_pos = self.shortest_path(
+            path, unseen_pos, _ = self.shortest_path(
                 lambda pos, cell: not self.vis_mask[pos],
                 ignore_blockers=True
             )
@@ -635,7 +635,7 @@ class BotAdvisor(Bot):
                     return True
                 else:
                     #print(5)
-                    path, _ = self.shortest_path(
+                    path, _, _ = self.shortest_path(
                         lambda pos, cell: pos == obj_pos
                     )
 
@@ -695,7 +695,7 @@ class BotAdvisor(Bot):
                 return True
             else:
                 # Try to find a path
-                path, _ = self.shortest_path(
+                path, _, _ = self.shortest_path(
                     lambda pos, cell: np.array_equal(pos, datum)
                 )
 
@@ -800,12 +800,12 @@ class BotAdvisor(Bot):
                     return False
 
                 # Find the closest position adjacent to the object
-                path, adj_pos = self.shortest_path(
+                path, adj_pos, _ = self.shortest_path(
                     lambda pos, cell: not cell and pos_next_to(pos, obj_pos)
                 )
 
                 if not adj_pos:
-                    path, adj_pos = self.shortest_path(
+                    path, adj_pos, _ = self.shortest_path(
                         lambda pos, cell: not cell and pos_next_to(pos, obj_pos),
                         ignore_blockers=True
                     )
@@ -847,7 +847,7 @@ class BotAdvisor(Bot):
         # Explore the world, uncover new unseen cells
         if subgoal == 'Explore':
             # Find the closest unseen position
-            _, unseen_pos = self.shortest_path(
+            _, unseen_pos, _ = self.shortest_path(
                 lambda pos, cell: not self.vis_mask[pos]
             )
             #print('unseen {}'.format(unseen_pos))
@@ -861,7 +861,7 @@ class BotAdvisor(Bot):
                 return False
 
             if not unseen_pos:
-                _, unseen_pos = self.shortest_path(
+                _, unseen_pos, _ = self.shortest_path(
                     lambda pos, cell: not self.vis_mask[pos],
                     ignore_blockers=True
                 )
@@ -894,13 +894,13 @@ class BotAdvisor(Bot):
             # We do this because otherwise, opening a locked door as
             # a subgoal may try to open the same door for exploration,
             # resulting in an infinite loop
-            _, door_pos = self.shortest_path(unopened_unlocked_door)
+            _, door_pos, _ = self.shortest_path(unopened_unlocked_door)
             if not door_pos:
-                _, door_pos = self.shortest_path(unopened_unlocked_door, ignore_blockers=True)
+                _, door_pos, _ = self.shortest_path(unopened_unlocked_door, ignore_blockers=True)
             if not door_pos:
-                _, door_pos = self.shortest_path(unopened_door)
+                _, door_pos, _ = self.shortest_path(unopened_door)
             if not door_pos:
-                _, door_pos = self.shortest_path(unopened_door, ignore_blockers=True)
+                _, door_pos, _ = self.shortest_path(unopened_door, ignore_blockers=True)
             #print(0)
             # Open the door
             if door_pos:
@@ -912,7 +912,7 @@ class BotAdvisor(Bot):
                 return False
 
             # Find the closest unseen position, ignoring blocking objects
-            path, unseen_pos = self.shortest_path(
+            path, unseen_pos, _ = self.shortest_path(
                 lambda pos, cell: not self.vis_mask[pos],
                 ignore_blockers=True
             )
