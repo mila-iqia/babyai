@@ -146,4 +146,4 @@ To contribute to this project, you should first create your own fork, and rememb
 ## About this Project
 
 BabyAI is an open-ended grounded language acquisition effort at [Mila](https://mila.quebec/en/). The current BabyAI platform was designed to study data-effiency of existing methods under the assumption that a human provides all teaching signals
-(i.e. demonstrations, rewards, etc.). For more information, see the paper (COMING SOON).
+(i.e. demonstrations, rewards, etc.). For more information, see the paper (http://arxiv.org/abs/1810.08272).
