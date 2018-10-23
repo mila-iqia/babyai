@@ -134,12 +134,9 @@ class BotAdvisor(Bot):
         # Go to a given location
         if subgoal == 'GoNextTo':
             no_reexplore = False
-            no_door_in_path = True
             if isinstance(datum, dict):
                 if 'no_reexplore' in datum.keys():
                     no_reexplore = datum['no_reexplore']
-                if 'no_door_in_path' in datum.keys():
-                    no_door_in_path = datum['no_door_in_path']
                 datum = datum['dest']
             #print(datum)
             if tuple(pos) == tuple(datum):
@@ -159,9 +156,6 @@ class BotAdvisor(Bot):
                 # else:
                 #     return actions.right
 
-            #print('here')
-            #print(pos, datum, alternative)
-
             # If we are facing the target cell, subgoal completed
             if np.array_equal(datum, fwd_pos):
                 return self.get_action_from_subgoal(*alternative)
@@ -174,7 +168,7 @@ class BotAdvisor(Bot):
 
             # Before checking if there is a path with blockers, maybe we should explore a bit to see if a non blocker path exists
 
-            if not no_reexplore and not path and no_door_in_path:
+            if not no_reexplore and not path:
                 try:
                    # print('gcv')
                     return self.get_action_from_subgoal('Explore', 'no_reexplore')
@@ -221,10 +215,13 @@ class BotAdvisor(Bot):
             #print(path, next_cell)
             # Turn towards the direction we need to go
             else:
-                def closest_walldoor_given_dir(position, direction):
+                def closest_wall_or_door_given_dir(position, direction):
                     distance = 1
                     while True:
                         position_to_try = position + distance * direction
+                        # If the current position is outside the field of view, stop everything and return the previous one
+                        if not self.mission.in_view(*position_to_try):
+                            return distance - 1
                         cell = self.mission.grid.get(*position_to_try)
                         if cell and (cell.type.endswith('door') or cell.type == 'wall'):
                             return distance
@@ -242,17 +239,11 @@ class BotAdvisor(Bot):
                 # if not self.mission.grid.get(*(pos + right_vec)):
                 #    return actions.right
                 # One better thing would be to go to the direction where the closest wall/door is the furthese
-                distance_right = closest_walldoor_given_dir(pos, right_vec)
-                distance_left = closest_walldoor_given_dir(pos, - right_vec)
+                distance_right = closest_wall_or_door_given_dir(pos, right_vec)
+                distance_left = closest_wall_or_door_given_dir(pos, - right_vec)
                 if distance_left > distance_right:
                     return actions.left
                 return actions.right
-
-
-        if subgoal == 'UpdateObjsPoss':
-            self.update_objs_poss()
-            assert len(self.stack) >= 1
-            return self.get_action_from_subgoal(*self.stack[-2])
 
         if subgoal == 'UpdateStackIfNecessary':
             assert len(self.stack) >= 1
@@ -356,8 +347,7 @@ class BotAdvisor(Bot):
                 door = self.mission.grid.get(*door_pos)
                # print('fsdfsd {}'.format(door_pos))
                 return self.get_action_from_subgoal('GoNextTo', {'dest': door_pos,
-                                                                 'no_reexplore': True,
-                                                                 'no_door_in_path': False}
+                                                                 'no_reexplore': True}
                                                     , ('Open', None))
 
             # Find the closest unseen position, ignoring blocking objects
@@ -512,7 +502,6 @@ class BotAdvisor(Bot):
                         self.stack.append(('GoNextTo', drop_pos_cur))
 
                         # Go back to the door and open it
-                        self.stack.append(('UpdateObjsPoss', None))
                         self.stack.append(('Open', None))
                         self.stack.append(('GoNextTo', tuple(fwd_pos)))
 
@@ -521,12 +510,10 @@ class BotAdvisor(Bot):
                         self.stack.append(('GoToObj', key_desc))
 
                         # Drop the object being carried
-                        self.stack.append(('UpdateObjsPoss', None))
                         self.stack.append(('Drop', None))
                         self.stack.append(('GoNextTo', drop_pos_cur))
                     else:
                         self.stack.pop()
-                        self.stack.append(('UpdateObjsPoss', None))
                         self.stack.append(('Open', None))
                         self.stack.append(('GoNextTo', tuple(fwd_pos)))
                         self.stack.append(('Pickup', key_desc))
@@ -585,13 +572,11 @@ class BotAdvisor(Bot):
                 new_fwd_cell = carrying
                 assert new_fwd_cell.type in ('key', 'box', 'ball')
                 # Hopefully the bot would pickup THIS object and not something similar to it
-                self.stack.append(('UpdateObjsPoss', None))
                 self.stack.append(('Pickup', None))
             elif action == actions.pickup and carrying != new_carrying:
                 # drop that thing where you found it
                 fwd_cell = self.mission.grid.get(*fwd_pos)
                 assert fwd_cell.type in ('key', 'box', 'ball')
-                self.stack.append(('UpdateObjsPoss', None))
                 self.stack.append(('Drop', None))
 
             elif action == actions.toggle:
@@ -738,20 +723,17 @@ class BotAdvisor(Bot):
                             self.stack.append(('GoNextTo', drop_pos_cur))
 
                             # Pick up the blocking object and drop it
-                            self.stack.append(('UpdateObjsPoss', None))
                             self.stack.append(('Drop', None))
                             self.stack.append(('GoNextTo', drop_pos_block))
                             self.stack.append(('Pickup', None))
                             self.stack.append(('GoNextTo', fwd_pos))
 
                             # Drop the object being carried
-                            self.stack.append(('UpdateObjsPoss', None))
                             self.stack.append(('Drop', None))
                             self.stack.append(('GoNextTo', drop_pos_cur))
                             return True
                         else:
                             drop_pos = self.find_drop_pos()
-                            self.stack.append(('UpdateObjsPoss', None))
                             self.stack.append(('Drop', None))
                             self.stack.append(('GoNextTo', drop_pos))
                             if action == actions.pickup:
