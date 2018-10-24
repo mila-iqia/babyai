@@ -540,14 +540,20 @@ class Bot:
 
         assert len(obj_desc.obj_set) > 0
 
+        best_distance_to_obj = None
+        best_pos = None
+
         for i in range(len(obj_desc.obj_set)):
             obj = obj_desc.obj_set[i]
             pos = obj_desc.obj_poss[i]
 
             if self.vis_mask[pos]:
-                return pos
+                distance_to_obj = self.distance(pos, self.mission.agent_pos)
+                if not best_distance_to_obj or distance_to_obj < best_distance_to_obj:
+                    best_distance_to_obj = distance_to_obj
+                    best_pos = pos
 
-        return None
+        return best_pos
 
     def distance(self, pos, target):
         # Function that returns the distance between a position and a target. It is useful to define extra conditions
