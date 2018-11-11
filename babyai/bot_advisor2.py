@@ -1,5 +1,5 @@
-from babyai.levels.verifier import *
-from babyai.bot import Bot
+from babyai.levels.verifier import (ObjDesc, pos_next_to,
+                                    GoToInstr, OpenInstr, PickupInstr, PutNextInstr, BeforeInstr, AndInstr, AfterInstr)
 from gym_minigrid.minigrid import *
 from babyai.levels.verifier import *
 
@@ -24,25 +24,40 @@ class Subgoal:
         """
         self.bot = bot
         self.datum = datum
+        if alternative is None:
+            alternative = EmptySubgoal(self.bot)
         self.alternative = alternative
         self.reason = reason
         self.no_reexplore = no_reexplore
         self.blocker = blocker
 
+        self._init_agent_attributes()
+
+        self.actions = self.bot.mission.actions
+
+    def _init_agent_attributes(self):
         self.pos = self.bot.mission.agent_pos
         self.dir_vec = self.bot.mission.dir_vec
-        self.right_vec = self.mission.right_vec
+        self.right_vec = self.bot.mission.right_vec
         self.fwd_pos = self.pos + self.dir_vec
         self.fwd_cell = self.bot.mission.grid.get(*self.fwd_pos)
         self.carrying = self.bot.mission.carrying
 
-        self.actions = self.bot.mission.actions
-
     def __repr__(self):
         # Mainly for debugging purposes
-        return '({}, {}, {}, {}, {}, {})'.format(type(self).__name__,
-                                                 self.datum, self.alternative,
-                                                 self.reason, self.no_reexplore, self.blocker)
+        representation = type(self).__name__
+        if self.datum is not None:
+            representation += ': {}'.format(self.datum)
+        if not isinstance(self.alternative, EmptySubgoal) and not self.alternative is False:
+            representation += ', alternative: {}'.format(self.alternative)
+        if self.reason is not None:
+            representation += ', reason: {}'.format(self.reason)
+        if self.no_reexplore:
+            representation += ', no reexplore'
+        if self.blocker:
+            representation += ', blocker path'
+
+        return representation
 
     def get_action(self):
         """
@@ -51,7 +66,8 @@ class Subgoal:
         alternative is a Subgoal object (maybe can be contained in the info dict)
         Returns an action.
         """
-        raise NotImplementedError("Only implemented for subclasses")
+        print("intermediate", self)
+        pass
 
     def simulate_step(self, action):
         """
@@ -150,8 +166,17 @@ class Subgoal:
             raise DisappearedBoxError('A box was opened. Too Bad :(')
 
 
+class EmptySubgoal(Subgoal):
+    def __init__(self, bot):
+        super().__init__(bot, alternative=False)
+
+    def get_action(self):
+        self.bot.stack.pop()
+
+
 class OpenSubgoal(Subgoal):
     def get_action(self):
+        super().get_action()
         assert self.fwd_cell, 'Forward cell is empty'
         assert self.fwd_cell.type == 'door' or self.fwd_cell.type == 'locked_door', 'Forward cell has to be a door'
 
@@ -168,7 +193,6 @@ class OpenSubgoal(Subgoal):
 
                     # Find a location to drop what we're already carrying
                     drop_pos_cur = self.bot.find_drop_pos()
-                    # print('unseen4 {}'.format(drop_pos_cur))
                     new_subgoal = GoNextToSubgoal(self.bot, drop_pos_cur, DropSubgoal(self.bot))
                 else:
                     # Go To the key
@@ -249,6 +273,7 @@ class OpenSubgoal(Subgoal):
 
 class DropSubgoal(Subgoal):
     def get_action(self):
+        super().get_action()
         return self.actions.drop
 
     def take_action(self, action):
@@ -264,6 +289,7 @@ class DropSubgoal(Subgoal):
 
 class PickupSubgoal(Subgoal):
     def get_action(self):
+        super().get_action()
         return self.actions.pickup
 
     def take_action(self, action):
@@ -279,6 +305,7 @@ class PickupSubgoal(Subgoal):
 
 class GoToObjSubgoal(Subgoal):
     def get_action(self):
+        super().get_action()
         # Do we know where any one of these objects are?
         obj_pos = self.bot.find_obj_pos(self.datum)
 
@@ -311,7 +338,6 @@ class GoToObjSubgoal(Subgoal):
 
             if path:
                 # Get the action from the "GoNextTo" subgoal, with the same alternative as the current one
-                # print('unseen5 {}'.format(obj_pos))
                 new_subgoal = GoNextToSubgoal(self.bot, obj_pos, self.alternative, 'GoToObj')
                 return new_subgoal.get_action()
 
@@ -388,6 +414,7 @@ class GoToObjSubgoal(Subgoal):
 
 class GoNextToSubgoal(Subgoal):
     def get_action(self):
+        super().get_action()
         # CASE 1: The position we are on is the one we should go next to
         # -> Move away from it
         if tuple(self.pos) == tuple(self.datum):
@@ -445,7 +472,6 @@ class GoNextToSubgoal(Subgoal):
 
         # CASE3.4 = CASE 3.2.2: Found a blocker path OR CASE 3.3: Found a non-blocker path
         next_cell = path[0]
-
         # CASE 3.4.1: the forward cell is the one we should go next to
         if np.array_equal(next_cell, self.fwd_pos):
             if self.fwd_cell is not None and not self.fwd_cell.type.endswith('door'):
@@ -605,6 +631,7 @@ class GoNextToSubgoal(Subgoal):
 
 class GoToAdjPosSubgoal(Subgoal):
     def get_action(self):
+        super().get_action()
         # Look for the object
         obj_pos = self.bot.find_obj_pos(self.datum)
 
@@ -695,6 +722,7 @@ class GoToAdjPosSubgoal(Subgoal):
 
 class ExploreSubgoal(Subgoal):
     def get_action(self):
+        super().get_action()
         # Find the closest unseen position
         _, unseen_pos, _ = self.bot.shortest_path(
             lambda pos, cell: not self.bot.vis_mask[pos]
@@ -707,7 +735,6 @@ class ExploreSubgoal(Subgoal):
             )
 
         if unseen_pos:
-            # print('unseen {}'.format(unseen_pos))
             return GoNextToSubgoal(self.bot, unseen_pos).get_action()
 
 
@@ -795,7 +822,6 @@ class ExploreSubgoal(Subgoal):
             if cell.type != 'door' and cell.type != 'locked_door':
                 return False
             return not cell.is_open
-
         # Try to find an unlocked door first
         # We do this because otherwise, opening a locked door as
         # a subgoal may try to open the same door for exploration,
@@ -808,6 +834,7 @@ class ExploreSubgoal(Subgoal):
         if not door_pos:
             _, door_pos, _ = self.bot.shortest_path(unopened_door, ignore_blockers=True)
         # Open the door
+
         if door_pos:
             door = self.bot.mission.grid.get(*door_pos)
             self.bot.stack.pop()
@@ -1145,7 +1172,11 @@ class BotAdvisor:
         if len(self.stack) == 0:
             return self.mission.actions.done
         subgoal = self.stack[-1]
+        subgoal._init_agent_attributes()
+        print(2, subgoal)
         action = subgoal.get_action()
+        print(2, subgoal)
+        print(2, subgoal, action)
         return action
 
     def take_action(self, action):
@@ -1159,6 +1190,7 @@ class BotAdvisor:
         while not finished_updating:
             self.empty_stack_update(action)
             subgoal = self.stack[-1]
+            subgoal._init_agent_attributes()
             finished_updating = subgoal.take_action(action)
 
     def empty_stack_update(self, action):
