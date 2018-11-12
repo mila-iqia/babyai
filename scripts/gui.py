@@ -25,8 +25,6 @@ from gym_minigrid import minigrid
 import babyai
 from babyai.utils.agent import BotAdvisorAgent
 
-from babyai.utils.agent import BotAgent
-
 
 class ImgWidget(QLabel):
     """
@@ -341,9 +339,6 @@ class AIGameWindow(QMainWindow):
 
         self.bot_advisor_agent = BotAdvisorAgent(self.env)
 
-
-        self.bot_agent = BotAgent(self.env)
-
         self.lastObs = obs
         self.showEnv(obs)
 
@@ -361,17 +356,13 @@ class AIGameWindow(QMainWindow):
 
         # Get the optimal action from the bot
         self.bot_advisor_action = self.bot_advisor_agent.act()['action']
-        self.bot_action = self.bot_agent.act()['action']
 
         # Update the mission text
         mission = obs['mission']
         self.missionBox.setPlainText(mission)
 
-        self.missionBox.append('\nOptimal Bot Action: {}'.format(self.bot_action))
-        self.missionBox.append('\nOptimal Bot Stack: {}'.format(self.bot_agent.bot.stack))
-
         self.missionBox.append('\nOptimal Bot Advisor Action: {}'.format(self.bot_advisor_action))
-        self.missionBox.append('\nOptimal Bot Advisor Stack: {}'.format(self.bot_advisor_agent.bot.stack))
+        # self.missionBox.append('\nOptimal Bot Advisor Stack: {}'.format(self.bot_advisor_agent.bot.stack))
 
         # Set the steps remaining
         stepsRem = unwrapped.steps_remaining
