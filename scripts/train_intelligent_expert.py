@@ -29,7 +29,7 @@ import babyai.utils as utils
 from babyai.arguments import ArgumentParser
 from babyai.imitation import ImitationLearning
 from babyai.evaluate import batch_evaluate, evaluate
-from babyai.utils.agent import BotAgent, BotAdvisorAgent
+from babyai.utils.agent import BotAgent
 import torch
 import blosc
 from babyai.utils.agent import DemoAgent
@@ -116,7 +116,7 @@ def evaluate_agent(il_learn, eval_seed, num_eval_demos, return_obss_actions=Fals
 
 def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions, mean_steps):
     env = gym.make(env_name)
-    agent = BotAdvisorAgent(env)
+    agent = BotAgent(env)
     demos = []
 
     for i in range(len(fail_obss)):
@@ -137,7 +137,7 @@ def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions, mean_steps):
                 obs = fail_obss[i][j]
                 assert check_obss_equality(obs, new_obs), "Observations {} of seed {} don't match".format(j, seeds[i])
                 mission = obs['mission']
-                action = agent.act()['action']
+                action = agent.act(update_internal_state=False)['action']
                 _ = agent.bot.take_action(fail_actions[i][j])
                 debug_info['actions'].append(fail_actions[i][j])
                 new_obs, reward, done, _ = env.step(fail_actions[i][j])

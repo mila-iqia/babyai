@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 import torch
 from .. import utils
 from babyai.bot import Bot
-from babyai.bot_advisor import BotAdvisor
 from babyai.model import ACModel
 
 
@@ -136,33 +135,19 @@ class DemoAgent(Agent):
 
 
 class BotAgent:
-    def __init__(self, env, forget=False):
-        """An agent based on a GOFAI bot."""
-        self.env = env
-        self.forget = forget
-        self.on_reset()
-
-    def on_reset(self):
-        self.bot = Bot(self.env, forget=self.forget)
-
-    def act(self, *args, **kwargs):
-        return {'action': self.bot.step()}
-
-    def analyze_feedback(self, reward, done):
-        pass
-
-
-class BotAdvisorAgent:
     def __init__(self, env):
         """An agent based on a GOFAI bot."""
         self.env = env
         self.on_reset()
 
     def on_reset(self):
-        self.bot = BotAdvisor(self.env)
+        self.bot = Bot(self.env)
 
-    def act(self, *args, **kwargs):
-        return {'action': self.bot.get_action()}
+    def act(self, obs=None, update_internal_state=True, *args, **kwargs):
+        action = self.bot.get_action()
+        if update_internal_state:
+            self.bot.take_action(action)
+        return {'action': action}
 
     def analyze_feedback(self, reward, done):
         pass
@@ -172,8 +157,6 @@ def load_agent(env, model_name, demos_name=None, demos_origin=None, argmax=True,
     # env_name needs to be specified for demo agents
     if model_name == 'BOT':
         return BotAgent(env)
-    elif model_name == 'FORGET_BOT':
-        return BotAgent(env, forget=True)
     elif model_name is not None:
         obss_preprocessor = utils.ObssPreprocessor(model_name, env.observation_space)
         return ModelAgent(model_name, obss_preprocessor, argmax)

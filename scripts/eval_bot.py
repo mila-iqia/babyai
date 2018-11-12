@@ -10,7 +10,6 @@ import time
 from optparse import OptionParser
 from babyai.levels import level_dict
 from babyai.bot import Bot
-from babyai.bot_advisor import BotAdvisor
 
 level_list = [
     'OpenRedDoor',
@@ -51,14 +50,6 @@ parser.add_option(
     default=500
 )
 parser.add_option(
-    "--forget",
-    action='store_true'
-)
-parser.add_option(
-    "--advisor",
-    action='store_true'
-)
-parser.add_option(
     "--verbose",
     action='store_true'
 )
@@ -80,11 +71,7 @@ for level_name in level_list:
 
         mission_seed = options.seed + run_no
         mission = level(seed=mission_seed)
-        if not options.advisor:
-            expert = Bot(mission, forget=options.forget)
-        if options.advisor:
-            assert not options.forget, "Cannot use the forget option for BotAdvisors"
-            expert = BotAdvisor(mission)
+        expert = Bot(mission)
 
         if options.verbose:
             print('%s/%s: %s, seed=%d' % (run_no+1, options.num_runs, mission.surface, mission_seed))

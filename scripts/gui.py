@@ -23,7 +23,7 @@ import gym_minigrid
 from gym_minigrid import minigrid
 
 import babyai
-from babyai.utils.agent import BotAdvisorAgent
+from babyai.utils.agent import BotAgent
 
 
 class ImgWidget(QLabel):
@@ -337,7 +337,7 @@ class AIGameWindow(QMainWindow):
     def resetEnv(self):
         obs = self.env.reset()
 
-        self.bot_advisor_agent = BotAdvisorAgent(self.env)
+        self.bot_advisor_agent = BotAgent(self.env)
 
         self.lastObs = obs
         self.showEnv(obs)
@@ -355,7 +355,7 @@ class AIGameWindow(QMainWindow):
         self.obsImgLabel.setPixmap(obsPixmap)
 
         # Get the optimal action from the bot
-        self.bot_advisor_action = self.bot_advisor_agent.act()['action']
+        self.bot_advisor_action = self.bot_advisor_agent.act(update_internal_state=False)['action']
 
         # Update the mission text
         mission = obs['mission']

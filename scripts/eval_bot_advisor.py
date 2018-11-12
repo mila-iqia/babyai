@@ -4,7 +4,7 @@ import random
 import time
 from optparse import OptionParser
 from babyai.levels import level_dict
-from babyai.agents.bot_advisor import BotAdvisor, DisappearedBoxError
+from babyai.bot import Bot
 import numpy as np
 from babyai.utils.agent import ModelAgent, RandomAgent
 
@@ -95,7 +95,7 @@ for level_name in level_list:
         mission_seed = options.seed + run_no
         mission = level(seed=mission_seed)
         non_optimal_steps = options.non_optimal_steps or int(mission.max_steps // 3)
-        expert = BotAdvisor(mission)
+        expert = Bot(mission)
         np.random.seed(mission_seed)
 
         if options.verbose:
