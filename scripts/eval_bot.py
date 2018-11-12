@@ -79,11 +79,8 @@ for level_name in level_list:
         try:
             episode_steps = 0
             while True:
-                if options.advisor:
-                    action = expert.get_action()
-                    expert.take_action(action)
-                else:
-                    action = expert.step()
+                action = expert.get_action()
+                expert.take_action(action)
                 obs, reward, done, info = mission.step(action)
 
                 total_reward += reward
