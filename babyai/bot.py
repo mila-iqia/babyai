@@ -166,22 +166,6 @@ class Subgoal:
             raise DisappearedBoxError('A box was opened. Too Bad :(')
 
 
-class EmptySubgoal(Subgoal):
-    def __init__(self, bot):
-        """
-        We force alternative to be something else than None to avoid infinite recursion at object creation
-        """
-        super().__init__(bot, alternative=False)
-
-    def get_action(self):
-        self.bot.stack.pop()
-        if len(self.bot.stack) >= 1:
-            subgoal = self.bot.stack[-1]
-            subgoal.update_agent_attributes()
-            return subgoal.get_action()
-        return self.bot.mission.actions.done
-
-
 class OpenSubgoal(Subgoal):
     def get_action(self):
         super().get_action()
@@ -1147,12 +1131,13 @@ class Bot:
                             distance_of_first_blocking_obj_to_target = distance_fn((i, j))
 
             # Visit each neighbor cell
-            for k, l in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
-                # TODO: I want this to be "for positions that are one action away and that would make the state change (e.g. if position changes or if carrying changes) instead of one cell away. If there are no one action away positions that change the state, check "2 action away things" then "3 action away things", that is the maximum we should tolerate (e.g. left left forward/pickup/drop or right right forward/pickup/drop)
-                for k, l in [(di, dj), (dj, di), (- dj, - di), (- di, - dj)]:
-                    next_pos = (i + k, j + l)
-                    next_dir_vec = (k, l)
-                    queue.append((*next_pos, *next_dir_vec, path + [next_pos]))
+            # for i, j in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+            # TODO: this as in a for loop, that seems useles, it worked... I removed it - make sure it still works ok
+            # TODO: I want this to be "for positions that are one action away and that would make the state change (e.g. if position changes or if carrying changes) instead of one cell away. If there are no one action away positions that change the state, check "2 action away things" then "3 action away things", that is the maximum we should tolerate (e.g. left left forward/pickup/drop or right right forward/pickup/drop)
+            for k, l in [(di, dj), (dj, di), (- dj, - di), (- di, - dj)]:
+                next_pos = (i + k, j + l)
+                next_dir_vec = (k, l)
+                queue.append((*next_pos, *next_dir_vec, path + [next_pos]))
 
         # Path not found
         return None, None, None
