@@ -200,10 +200,10 @@ class OpenSubgoal(Subgoal):
 
                     # Find a location to drop what we're already carrying
                     drop_pos_cur = self.bot.find_drop_pos()
-                    new_subgoal = GoNextToSubgoal(self.bot, drop_pos_cur, DropSubgoal(self.bot))
+                    new_subgoal = GoNextToSubgoal(self.bot, drop_pos_cur, alternative=DropSubgoal(self.bot))
                 else:
                     # Go To the key
-                    new_subgoal = GoToObjSubgoal(self.bot, key_desc, PickupSubgoal(self.bot))
+                    new_subgoal = GoToObjSubgoal(self.bot, key_desc, alternative=PickupSubgoal(self.bot))
                 return new_subgoal.get_action()
 
         # If the door is already open, close it so we can open it again
@@ -358,7 +358,7 @@ class GoToObjSubgoal(Subgoal):
 
             if path:
                 # Get the action from the "GoNextTo" subgoal, with the same alternative as the current one
-                new_subgoal = GoNextToSubgoal(self.bot, obj_pos, self.alternative, 'GoToObj')
+                new_subgoal = GoNextToSubgoal(self.bot, obj_pos, alternative=self.alternative, reason='GoToObj')
                 return new_subgoal.get_action()
 
         # No path found -> Explore the world
@@ -532,7 +532,7 @@ class GoNextToSubgoal(Subgoal):
                 if self.carrying:
                     drop_pos_cur = self.bot.find_drop_pos()
                     # Drop the object being carried
-                    new_subgoal = GoNextToSubgoal(self.bot, drop_pos_cur, DropSubgoal(self.bot))
+                    new_subgoal = GoNextToSubgoal(self.bot, drop_pos_cur, alternative=DropSubgoal(self.bot))
                     return new_subgoal.get_action()
                 else:
                     return self.actions.pickup
