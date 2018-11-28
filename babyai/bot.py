@@ -19,20 +19,16 @@ class DisappearedBoxError(Exception):
 class Subgoal:
     """The base class for all possible Bot subgoals"""
 
-    def __init__(self, bot=None, datum=None, alternative=None, reason=None, no_reexplore=False, blocker=False):
+    def __init__(self, bot=None, datum=None):
         """
         Initializes a Subgoal object
         bot is the Bot that is trying to perform this subgoal
         datum is the primary information necessary to accomplish the subgoal
-        alternative is a Subgoal object that defines the optimal action when the current subgoal is trivially satisfied
         These subgoals have extra class variables defined in theyr own __init__ method: GoNextTo
         the rest are secondary information that are used to make the bot more efficient
         """
         self.bot = bot
         self.datum = datum
-        if alternative is None:
-            alternative = EmptySubgoal(self.bot)
-        self.alternative = alternative
 
         self.update_agent_attributes()
 
@@ -53,8 +49,6 @@ class Subgoal:
         representation += type(self).__name__
         if self.datum is not None:
             representation += ': {}'.format(self.datum)
-        if not isinstance(self.alternative, EmptySubgoal) and not self.alternative is False:
-            representation += ', alternative: {}'.format(self.alternative)
         representation += ')'
 
         return representation
@@ -63,10 +57,17 @@ class Subgoal:
         """
         Function that gives the optimal action given the current subgoal. It may call the `get_action` function of other
         subgoals.
-        alternative is a Subgoal object (maybe can be contained in the info dict)
         Returns an action.
         """
         pass
+
+    def subgoal_accomplished(self):
+        self.bot.stack.pop()
+        if len(self.bot.stack) >= 1:
+            subgoal = self.bot.stack[-1]
+            subgoal.update_agent_attributes()
+            return subgoal.get_action()
+        return self.bot.mission.actions.done
 
     def simulate_step(self, action):
         """
@@ -200,10 +201,17 @@ class OpenSubgoal(Subgoal):
 
                     # Find a location to drop what we're already carrying
                     drop_pos_cur = self.bot.find_drop_pos()
-                    new_subgoal = GoNextToSubgoal(self.bot, drop_pos_cur, alternative=DropSubgoal(self.bot))
+                    if np.array_equal(drop_pos_cur, self.fwd_pos):
+                        new_subgoal = DropSubgoal(self.bot)
+                    else:
+                        new_subgoal = GoNextToSubgoal(self.bot, drop_pos_cur)
                 else:
                     # Go To the key
-                    new_subgoal = GoToObjSubgoal(self.bot, key_desc, alternative=PickupSubgoal(self.bot))
+                    obj_pos = self.bot.find_obj_pos(key_desc)
+                    if obj_pos is not None and np.array_equal(obj_pos, self.fwd_pos):
+                        new_subgoal = PickupSubgoal(self.bot)
+                    else:
+                        new_subgoal = GoToObjSubgoal(self.bot, key_desc)
                 return new_subgoal.get_action()
 
         # If the door is already open, close it so we can open it again
@@ -334,7 +342,7 @@ class GoToObjSubgoal(Subgoal):
             # If we are right in front of the object, then the subgoal is completed
             # go back to the previous subgoal
             if np.array_equal(obj_pos, self.fwd_pos):
-                return self.alternative.get_action()
+                return self.subgoal_accomplished()
 
             # Look for a non-blocker path leading to the position
             path, _, _ = self.bot.shortest_path(
@@ -357,8 +365,8 @@ class GoToObjSubgoal(Subgoal):
                         path = [elem for elem in suggested_path]
 
             if path:
-                # Get the action from the "GoNextTo" subgoal, with the same alternative as the current one
-                new_subgoal = GoNextToSubgoal(self.bot, obj_pos, alternative=self.alternative, reason='GoToObj')
+                # Get the action from the "GoNextTo" subgoal
+                new_subgoal = GoNextToSubgoal(self.bot, obj_pos, reason='GoToObj')
                 return new_subgoal.get_action()
 
         # No path found -> Explore the world
@@ -443,8 +451,8 @@ class GoToObjSubgoal(Subgoal):
 
 
 class GoNextToSubgoal(Subgoal):
-    def __init__(self, bot=None, datum=None, alternative=None, reason=None, no_reexplore=False, blocker=False):
-        super().__init__(bot, datum, alternative)
+    def __init__(self, bot=None, datum=None, reason=None, no_reexplore=False, blocker=False):
+        super().__init__(bot, datum)
         self.reason = reason  # Reason we are performing this subgoal. Possiblities: Explore, GoToObj
         self.no_reexplore = no_reexplore  # Flag to know if Exploring in the same room  is a good idea
         self.blocker = False  # Flag to know if the path considered for exploration has a blocker or not
@@ -484,7 +492,7 @@ class GoNextToSubgoal(Subgoal):
 
         # CASE 2: we are facing the target cell, subgoal completed
         if np.array_equal(self.datum, self.fwd_pos):
-            return self.alternative.get_action()
+            return self.subgoal_accomplished()
 
         # CASE 3: we are still far from the target
         # Try to find a non-blocker path
@@ -532,7 +540,10 @@ class GoNextToSubgoal(Subgoal):
                 if self.carrying:
                     drop_pos_cur = self.bot.find_drop_pos()
                     # Drop the object being carried
-                    new_subgoal = GoNextToSubgoal(self.bot, drop_pos_cur, alternative=DropSubgoal(self.bot))
+                    # 1-Just in case we are already at the right position
+                    assert not np.array_equal(drop_pos_cur, next_cell), "Drop position is forward cell, weird!"
+                    # Just in case we stumble this AssertionError, we should call the DropSubgoal instead !
+                    new_subgoal = GoNextToSubgoal(self.bot, drop_pos_cur)
                     return new_subgoal.get_action()
                 else:
                     return self.actions.pickup
@@ -862,8 +873,11 @@ class ExploreSubgoal(Subgoal):
 
         # Open the door
         if door_pos:
-            door = self.bot.mission.grid.get(*door_pos)
-            subgoal = GoNextToSubgoal(self.bot, door_pos, no_reexplore=True, alternative=OpenSubgoal(self.bot))
+            # door = self.bot.mission.grid.get(*door_pos)
+            if np.array_equal(door_pos, self.fwd_pos):
+                subgoal = OpenSubgoal(self.bot)
+            else:
+                subgoal = GoNextToSubgoal(self.bot, door_pos, no_reexplore=True)
             return subgoal.get_action()
 
         # Find the closest unseen position, ignoring blocking objects
