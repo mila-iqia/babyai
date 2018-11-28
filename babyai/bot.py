@@ -1195,7 +1195,6 @@ class Bot:
 
         return drop_pos
 
-
     def process_instr(self, instr):
         """
         Translate instructions into an internal form the agent can execute
