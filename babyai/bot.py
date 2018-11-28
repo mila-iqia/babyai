@@ -439,7 +439,8 @@ class GoNextToSubgoal(Subgoal):
         super().__init__(bot, datum)
         self.reason = reason  # Reason we are performing this subgoal. Possiblities: Explore, GoToObj
         self.no_reexplore = no_reexplore  # Flag to know if Exploring in the same room  is a good idea
-        self.blocker = False  # Flag to know if the path considered for exploration has a blocker or not
+        self.blocker = blocker  # Flag to know if the path considered for exploration has a blocker or not
+        # TODO: I was mistakengly initiating blocker to be always False, it worked fine. Now that it's fixed, make sure it sill works, and ideally is better, otherwise revert and see again the purpose of this blocker thing
 
     def __repr__(self):
         """Mainly for debugging purposes"""
@@ -447,8 +448,6 @@ class GoNextToSubgoal(Subgoal):
         representation += type(self).__name__
         if self.datum is not None:
             representation += ': {}'.format(self.datum)
-        if not isinstance(self.alternative, EmptySubgoal) and not self.alternative is False:
-            representation += ', alternative: {}'.format(self.alternative)
         if self.reason is not None:
             representation += ', reason: {}'.format(self.reason)
         if self.no_reexplore:
@@ -928,7 +927,7 @@ class ExploreSubgoal(Subgoal):
         # Open the door
 
         if door_pos:
-            door = self.bot.mission.grid.get(*door_pos)
+            # door = self.bot.mission.grid.get(*door_pos)
             self.bot.stack.pop()
             self.bot.stack.append(OpenSubgoal(self.bot))
             self.bot.stack.append(GoNextToSubgoal(self.bot, door_pos))
@@ -990,7 +989,7 @@ class Bot:
 
         for i in range(len(obj_desc.obj_set)):
             try:
-                obj = obj_desc.obj_set[i]
+                # obj = obj_desc.obj_set[i]
                 obj_pos = obj_desc.obj_poss[i]
 
                 if self.vis_mask[obj_pos]:
