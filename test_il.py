@@ -107,6 +107,7 @@ print('max demo len:', max_demo_len)
 obs = np.zeros(shape=(num_demos, max_demo_len, 147))
 action = np.zeros(shape=(num_demos, max_demo_len, 1), dtype=np.long)
 done = np.ones(shape=(num_demos, max_demo_len, 1), dtype=np.bool)
+active = np.zeros(shape=(num_demos, max_demo_len, 1), dtype=np.float)
 
 print('loading demos')
 for demo_idx, demo in enumerate(demos):
@@ -114,6 +115,7 @@ for demo_idx, demo in enumerate(demos):
         obs[demo_idx, step_idx] = step[0]['image'].reshape((147,))
         action[demo_idx, step_idx] = int(step[1])
         done[demo_idx, step_idx] = step[2]
+        active[demo_idx, step_idx] = (step_idx == 0) or not demo[step_idx-1][2]
 
 num_actions = len(MiniGridEnv.Actions)
 print('num actions:', num_actions)
@@ -139,11 +141,11 @@ for batch_idx in range(50000):
     # Get the observations, actions and done flags for this batch
     obs_batch = obs[demo_idx:(demo_idx+batch_size)]
     act_batch = action[demo_idx:(demo_idx+batch_size)]
-    done_batch = done[demo_idx:(demo_idx+batch_size)].astype(float)
+    active_batch = active[demo_idx:(demo_idx+batch_size)]
 
     obs_batch = make_var(obs_batch)
     act_batch = Variable(torch.from_numpy(act_batch)).cuda()
-    done_batch = make_var(done_batch)
+    active_batch = make_var(active_batch)
 
     # Create initial memory for the model
     memory = Variable(torch.zeros([batch_size, 128])).cuda()
@@ -153,33 +155,28 @@ for batch_idx in range(50000):
     total_steps = 0
     total_correct = 0
 
-    # Indicates which demos are done after the current step
-    done_step = torch.zeros([batch_size, 1]).cuda()
-
     # For each step
     # We will iterate until the max demo len (or until all demos are done)
     for step_idx in range(max_demo_len-1):
-        prev_done = done_step
-        active = (~prev_done.byte()).float()
+        active_step = active_batch[:, step_idx, :]
+
+        if active_step.sum().item() == 0:
+            break
 
         obs_step = obs_batch[:, step_idx, :]
         act_step = act_batch[:, step_idx, :]
-        done_step = done_batch[:, step_idx, :]
 
         #next_obs = obs_batch[:, step_idx+1, :]
 
         dist, memory = model(obs_step, memory)
 
-        policy_loss = -(dist.log_prob(act_step.squeeze(1)) * active).mean()
+        policy_loss = -(dist.log_prob(act_step.squeeze(1)) * active_step).mean()
         total_loss += policy_loss
 
         act_pred = dist.probs.max(1, keepdim=True)[1]
         pred_correct = (act_pred == act_step).float()
-        total_correct += (pred_correct * active).sum().item()
-        total_steps += active.sum().item()
-
-        if active.sum().item() == 0:
-            break
+        total_correct += (pred_correct * active_step).sum().item()
+        total_steps += active_step.sum().item()
 
     optimizer.zero_grad()
     total_loss.backward()

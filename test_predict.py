@@ -97,8 +97,9 @@ print('max demo len:', max_demo_len)
 
 # Done indicates that we become done after the current step
 obs = np.zeros(shape=(num_demos, max_demo_len, 147))
-action = np.zeros(shape=(num_demos, max_demo_len, 1))
+action = np.zeros(shape=(num_demos, max_demo_len, 1), dtype=np.long)
 done = np.ones(shape=(num_demos, max_demo_len, 1), dtype=np.bool)
+active = np.zeros(shape=(num_demos, max_demo_len, 1), dtype=np.float)
 
 print('loading demos')
 for demo_idx, demo in enumerate(demos):
@@ -106,6 +107,7 @@ for demo_idx, demo in enumerate(demos):
         obs[demo_idx, step_idx] = step[0]['image'].reshape((147,))
         action[demo_idx, step_idx] = int(step[1])
         done[demo_idx, step_idx] = step[2]
+        active[demo_idx, step_idx] = (step_idx == 0) or not demo[step_idx-1][2]
 
 model = Model()
 model.cuda()
@@ -127,46 +129,55 @@ for batch_idx in range(50000):
     # Get the observations, actions and done flags for this batch
     obs_batch = obs[demo_idx:(demo_idx+batch_size)]
     act_batch = action[demo_idx:(demo_idx+batch_size)]
-    done_batch = done[demo_idx:(demo_idx+batch_size)].astype(float)
+    active_batch = active[demo_idx:(demo_idx+batch_size)]
 
     obs_batch = make_var(obs_batch)
     act_batch = make_var(act_batch)
-    done_batch = make_var(done_batch)
+    active_batch = make_var(active_batch)
 
     # Create initial memory for the model
     memory = Variable(torch.zeros([batch_size, 64])).cuda()
 
     total_loss = 0
 
-    # Indicates which demos are done after the current step
-    done_step = torch.zeros([batch_size]).cuda()
+    total_correct = 0
+    total_cells = 0
 
     # For each step
     # We will iterate until the max demo len (or until all demos are done)
     for step_idx in range(max_demo_len-1):
+        active_step = active_batch[:, step_idx, :]
 
-        prev_done = done_step
+        if active_step.sum().item() == 0:
+            break
 
         obs_step = obs_batch[:, step_idx, :]
         act_step = act_batch[:, step_idx, :]
-        done_step = done_batch[:, step_idx, :]
-
         next_obs = obs_batch[:, step_idx+1, :]
 
         y, memory = model(obs_step, act_step, memory)
 
-        # FIXME: loss should be multiplied by active, not done!
-
-        # Compute the L1 loss
+        # Compute the L2 loss
         # Demos that are already done don't contribute to the loss
-        diff = (y - next_obs).mean(dim=1)
-        loss = diff * prev_done
-        loss =  loss.abs().mean()
-
+        diff = (y - next_obs)
+        loss = (diff * diff).mean(dim=1)
+        loss = (active_step * loss).mean()
         total_loss += loss
 
-        if torch.all(torch.gt(done_step, 0)).item() == 1:
-            break
+
+
+
+
+        diff = (y - next_obs).abs()
+        num_correct = torch.lt(diff, 0.5).sum(dim=1).unsqueeze(1).float()
+        num_correct = ( active_step * num_correct ).sum().item()
+        num_cells = (active_step * 147).sum().item()
+        total_correct += num_correct
+        total_cells += num_cells
+
+
+
+
 
     optimizer.zero_grad()
     total_loss.backward()
@@ -177,4 +188,7 @@ for batch_idx in range(50000):
     else:
         running_loss = running_loss * 0.99 + total_loss.item() * 0.01
 
+    accuracy = total_correct / total_cells
+
     print('{:.4f}'.format(running_loss))
+    print('{:.4f}'.format(accuracy))
