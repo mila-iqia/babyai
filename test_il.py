@@ -126,7 +126,7 @@ print_model_info(model)
 
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
-batch_size = 8
+batch_size = 128
 
 running_loss = 0
 running_acc = 0
