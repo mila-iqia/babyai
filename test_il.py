@@ -9,7 +9,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
+from torch.distributions.categorical import Categorical
 from babyai.utils.demos import load_demos, transform_demos
+from gym_minigrid.minigrid import MiniGridEnv
 
 def init_weights(m):
     classname = m.__class__.__name__
@@ -40,7 +42,7 @@ def make_var(arr):
     return arr
 
 class Model(nn.Module):
-    def __init__(self):
+    def __init__(self, num_actions):
         super().__init__()
 
         self.encoder = nn.Sequential(
@@ -49,40 +51,46 @@ class Model(nn.Module):
             #nn.BatchNorm2d(32),
             #nn.LeakyReLU(),
 
-            nn.Linear(147+1, 64),
+            nn.Linear(147, 128),
             nn.LeakyReLU(),
 
-            nn.Linear(64, 64),
+            nn.Linear(128, 128),
+            nn.LeakyReLU(),
+
+            nn.Linear(128, 128),
             nn.LeakyReLU(),
         )
 
-        self.rnn = nn.GRUCell(input_size=64, hidden_size=64)
+        self.rnn = nn.GRUCell(input_size=128, hidden_size=128)
 
-        self.decoder = nn.Sequential(
-            nn.Linear(64, 64),
+        self.action_probs = nn.Sequential(
+            nn.Linear(128, num_actions),
             nn.LeakyReLU(),
-
-            nn.Linear(64, 147),
-            nn.LeakyReLU(),
+            nn.LogSoftmax(dim=1)
         )
 
         self.apply(init_weights)
 
-    def forward(self, img, action, memory):
+    def forward(self, img, memory):
         batch_size = img.size(0)
 
         x = img.view(batch_size, -1)
 
-        x = torch.cat([x, action], dim=1)
-
         x = self.encoder(x)
 
+
+        #action_probs = self.action_probs(x)
+        #dist = Categorical(logits=action_probs)
+
+
         memory = self.rnn(x, memory)
-        y = self.decoder(memory)
+        action_probs = self.action_probs(memory)
+        dist = Categorical(logits=action_probs)
 
-        #y = self.decoder(x)
 
-        return y, memory
+
+
+        return dist, memory
 
 demos = load_demos('demos/GoToRedBall-bot-20k.pkl')
 
@@ -97,7 +105,7 @@ print('max demo len:', max_demo_len)
 
 # Done indicates that we become done after the current step
 obs = np.zeros(shape=(num_demos, max_demo_len, 147))
-action = np.zeros(shape=(num_demos, max_demo_len, 1))
+action = np.zeros(shape=(num_demos, max_demo_len, 1), dtype=np.long)
 done = np.ones(shape=(num_demos, max_demo_len, 1), dtype=np.bool)
 
 print('loading demos')
@@ -107,15 +115,19 @@ for demo_idx, demo in enumerate(demos):
         action[demo_idx, step_idx] = int(step[1])
         done[demo_idx, step_idx] = step[2]
 
-model = Model()
+num_actions = len(MiniGridEnv.Actions)
+print('num actions:', num_actions)
+
+model = Model(num_actions)
 model.cuda()
 print_model_info(model)
 
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
-batch_size = 128
+batch_size = 8
 
 running_loss = 0
+running_acc = 0
 
 # For each batch
 for batch_idx in range(50000):
@@ -130,42 +142,43 @@ for batch_idx in range(50000):
     done_batch = done[demo_idx:(demo_idx+batch_size)].astype(float)
 
     obs_batch = make_var(obs_batch)
-    act_batch = make_var(act_batch)
+    act_batch = Variable(torch.from_numpy(act_batch)).cuda()
     done_batch = make_var(done_batch)
 
     # Create initial memory for the model
-    memory = Variable(torch.zeros([batch_size, 64])).cuda()
+    memory = Variable(torch.zeros([batch_size, 128])).cuda()
 
     total_loss = 0
 
+    total_steps = 0
+    total_correct = 0
+
     # Indicates which demos are done after the current step
-    done_step = torch.zeros([batch_size]).cuda()
+    done_step = torch.zeros([batch_size, 1]).cuda()
 
     # For each step
     # We will iterate until the max demo len (or until all demos are done)
     for step_idx in range(max_demo_len-1):
-
         prev_done = done_step
+        active = (~prev_done.byte()).float()
 
         obs_step = obs_batch[:, step_idx, :]
         act_step = act_batch[:, step_idx, :]
         done_step = done_batch[:, step_idx, :]
 
-        next_obs = obs_batch[:, step_idx+1, :]
+        #next_obs = obs_batch[:, step_idx+1, :]
 
-        y, memory = model(obs_step, act_step, memory)
+        dist, memory = model(obs_step, memory)
 
-        # FIXME: loss should be multiplied by active, not done!
+        policy_loss = -(dist.log_prob(act_step.squeeze(1)) * active).mean()
+        total_loss += policy_loss
 
-        # Compute the L1 loss
-        # Demos that are already done don't contribute to the loss
-        diff = (y - next_obs).mean(dim=1)
-        loss = diff * prev_done
-        loss =  loss.abs().mean()
+        act_pred = dist.probs.max(1, keepdim=True)[1]
+        pred_correct = (act_pred == act_step).float()
+        total_correct += (pred_correct * active).sum().item()
+        total_steps += active.sum().item()
 
-        total_loss += loss
-
-        if torch.all(torch.gt(done_step, 0)).item() == 1:
+        if active.sum().item() == 0:
             break
 
     optimizer.zero_grad()
@@ -177,4 +190,8 @@ for batch_idx in range(50000):
     else:
         running_loss = running_loss * 0.99 + total_loss.item() * 0.01
 
+    accuracy = total_correct / total_steps
+    running_acc = running_acc * 0.99 + accuracy * 0.01
+
     print('{:.4f}'.format(running_loss))
+    print('{:.4f}'.format(running_acc))
