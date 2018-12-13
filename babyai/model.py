@@ -97,7 +97,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
         if arch == "cnn1":
             self.image_conv = nn.Sequential(
-                nn.Conv2d(in_channels=3, out_channels=16, kernel_size=(2, 2)),
+                nn.Conv2d(in_channels=17, out_channels=16, kernel_size=(2, 2)),
                 nn.ReLU(),
                 nn.MaxPool2d(kernel_size=(2, 2), stride=2),
                 nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(2, 2)),
@@ -107,7 +107,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             )
         elif arch == "cnn2":
             self.image_conv = nn.Sequential(
-                nn.Conv2d(in_channels=3, out_channels=16, kernel_size=(3, 3)),
+                nn.Conv2d(in_channels=17, out_channels=16, kernel_size=(3, 3)),
                 nn.ReLU(),
                 nn.MaxPool2d(kernel_size=(2, 2), stride=2, ceil_mode=True),
                 nn.Conv2d(in_channels=16, out_channels=image_dim, kernel_size=(3, 3)),
@@ -133,7 +133,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 raise ValueError("FiLM architecture can be used when instructions are enabled")
 
             self.image_conv = nn.Sequential(
-                nn.Conv2d(in_channels=3, out_channels=128, kernel_size=(2, 2), padding=1),
+                nn.Conv2d(in_channels=17, out_channels=128, kernel_size=(2, 2), padding=1),
                 nn.BatchNorm2d(128),
                 nn.ReLU(),
                 nn.MaxPool2d(kernel_size=(2, 2), stride=2),
@@ -200,7 +200,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         if arch == "filmcnn":
             self.controller_1 = AgentControllerFiLM(
                 in_features=self.final_instr_dim, out_features=64,
-                in_channels=3, imm_channels=16)
+                in_channels=17, imm_channels=16)
             self.controller_2 = AgentControllerFiLM(
                 in_features=self.final_instr_dim,
                 out_features=64, in_channels=32, imm_channels=32)
@@ -378,8 +378,8 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 final_states = final_states[iperm_idx]
 
             if outputs.shape[1] < masks.shape[1]:
-                masks = masks[:, :(outputs.shape[1]-masks.shape[1])] 
-                # the packing truncated the original length 
+                masks = masks[:, :(outputs.shape[1]-masks.shape[1])]
+                # the packing truncated the original length
                 # so we need to change mask to fit it
 
             return outputs if self.lang_model == 'attgru' else final_states
