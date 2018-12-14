@@ -3,6 +3,7 @@ import torch
 from .. import utils
 from babyai.bot import Bot
 from babyai.model import ACModel
+from random import Random
 
 
 class Agent(ABC):
@@ -82,17 +83,19 @@ class ModelAgent(Agent):
             self.memory *= (1 - done)
 
 
-class RandomAgent(ModelAgent):
+class RandomAgent:
     """A newly initialized model-based agent."""
 
-    def __init__(self, seed, env):
-        utils.seed(seed)
-        model_name = 'RandomAgent_seed{}'.format(seed)
-        obss_preprocessor = utils.ObssPreprocessor(model_name)
-        model = utils.load_model(model_name, raise_not_found=False)
-        if model is None:
-            model = ACModel(obss_preprocessor.obs_space, env.action_space)
-        super().__init__(model, obss_preprocessor, argmax=False)
+    def __init__(self, seed=0, number_of_actions=7):
+        self.rng = Random(seed)
+        self.number_of_actions = number_of_actions
+
+    def act(self, obs):
+        action = self.rng.randint(0, self.number_of_actions - 1)
+        # To be consistent with how a ModelAgent's output of `act`:
+        return {'action': torch.tensor(action),
+                'dist': None,
+                'value': None}
 
 
 class DemoAgent(Agent):

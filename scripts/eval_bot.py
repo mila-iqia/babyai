@@ -22,6 +22,7 @@ from babyai.levels import level_dict
 from babyai.bot import Bot, DisappearedBoxError
 from babyai.utils.agent import ModelAgent, RandomAgent
 import numpy as np
+from random import Random
 
 level_list = [
     'OpenRedDoor',
@@ -104,8 +105,7 @@ if options.advise_mode:
         bad_agent = ModelAgent(options.model, obss_preprocessor=None,
                                argmax=True)
     else:
-        bad_agent = RandomAgent(seed=options.random_agent_seed,
-                                env=level_dict[level_list[0]]())
+        bad_agent = RandomAgent(seed=options.random_agent_seed)
 
 start_time = time.time()
 
@@ -128,14 +128,14 @@ for level_name in level_list:
         optimal_actions = []
         before_optimal_actions = []
         non_optimal_steps = options.non_optimal_steps or int(mission.max_steps // 3)
-        np.random.seed(mission_seed)
+        rng = Random(mission_seed)
 
         try:
             episode_steps = 0
             while True:
                 action = expert.get_action()
                 if options.advise_mode and episode_steps < non_optimal_steps:
-                    if np.random.rand() < options.bad_action_proba:
+                    if rng.random() < options.bad_action_proba:
                         while True:
                             action = bad_agent.act(mission.gen_obs())['action'].item()
 
