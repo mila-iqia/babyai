@@ -113,7 +113,6 @@ for level_name in level_list:
 
     num_success = 0
     num_disappeared_boxes = 0
-    num_failures_lengthy_episode = 0
     total_reward = 0
     total_steps = 0
 
@@ -154,10 +153,7 @@ for level_name in level_list:
                         num_success += 1
                         total_steps += episode_steps
                     if reward <= 0:
-                        assert episode_steps == mission.max_steps  # Is there another reason for this to happen ?
-                        num_failures_lengthy_episode += 1
-                        if options.verbose:
-                            print('FAILURE on %s, seed %d, reward %.2f' % (level_name, mission_seed, reward))
+                        print('FAILURE on %s, seed %d, reward %.2f' % (level_name, mission_seed, reward))
                     break
         except Exception as e:
             if isinstance(e, DisappearedBoxError):
@@ -172,12 +168,11 @@ for level_name in level_list:
 
     success_rate = 100 * num_success / options.num_runs
     disappeared_boxes_rate = 100 * num_disappeared_boxes / options.num_runs
-    lengthy_episode_failure_rate = 100 * num_failures_lengthy_episode / options.num_runs
     mean_reward = total_reward / options.num_runs
     mean_steps = total_steps / options.num_runs
 
-    str_args = (level_name, success_rate, disappeared_boxes_rate, lengthy_episode_failure_rate, mean_reward, mean_steps)
-    print('%16s: %.1f%%, box errors: %.2f%%, lengthy episode failures: %.2f%%, r=%.3f, s=%.2f' % str_args)
+    print('%16s: %.1f%%, box errors %.2f%%, r=%.3f, s=%.2f' % (level_name, success_rate, disappeared_boxes_rate,
+                                                               mean_reward, mean_steps))
 
 end_time = time.time()
 total_time = end_time - start_time
