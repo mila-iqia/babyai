@@ -59,8 +59,8 @@ class PPOAlgo(BaseAlgo):
             log_losses = []
 
             '''
-            For each epoch, we create int(total_frames / batch_size + 1) batches, each of size batch_size (except 
-            maybe the last one. Each batch is divided into sub-batches of size recurrence (frames are contiguous in 
+            For each epoch, we create int(total_frames / batch_size + 1) batches, each of size batch_size (except
+            maybe the last one. Each batch is divided into sub-batches of size recurrence (frames are contiguous in
             a sub-batch), but the position of each sub-batch in a batch and the position of each batch in the whole
             list of frames is random thanks to self._get_batches_starting_indexes().
             '''
@@ -141,7 +141,7 @@ class PPOAlgo(BaseAlgo):
                 log_values.append(batch_value)
                 log_policy_losses.append(batch_policy_loss)
                 log_value_losses.append(batch_value_loss)
-                log_grad_norms.append(grad_norm)
+                log_grad_norms.append(grad_norm.item())
                 log_losses.append(batch_loss.item())
 
         # Log some values
