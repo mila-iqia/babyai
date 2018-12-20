@@ -337,7 +337,7 @@ class AIGameWindow(QMainWindow):
     def resetEnv(self):
         obs = self.env.reset()
 
-        self.agent = BotAgent(self.env)
+        self.bot_advisor_agent = BotAgent(self.env)
 
         self.lastObs = obs
         self.showEnv(obs)
@@ -355,13 +355,14 @@ class AIGameWindow(QMainWindow):
         self.obsImgLabel.setPixmap(obsPixmap)
 
         # Get the optimal action from the bot
-        self.bot_action = self.agent.act()['action']
+        self.bot_advisor_action = self.bot_advisor_agent.act(update_internal_state=False)['action']
 
         # Update the mission text
         mission = obs['mission']
         self.missionBox.setPlainText(mission)
 
-        self.missionBox.append('\nOptimal Action: {}'.format(self.bot_action))
+        self.missionBox.append('\nOptimal Bot Advisor Action: {}'.format(self.bot_advisor_action))
+        # self.missionBox.append('\nOptimal Bot Advisor Stack: {}'.format(self.bot_advisor_agent.bot.stack))
 
         # Set the steps remaining
         stepsRem = unwrapped.steps_remaining
@@ -370,8 +371,9 @@ class AIGameWindow(QMainWindow):
     def stepEnv(self, action=None):
         # If no manual action was specified by the user
         if action is None:
-            action = self.bot_action
+            action = self.bot_advisor_action
 
+        self.bot_advisor_agent.bot.take_action(action)
         obs, reward, done, info = self.env.step(action)
 
         self.showEnv(obs)
