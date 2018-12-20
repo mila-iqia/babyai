@@ -19,9 +19,8 @@ import random
 import time
 from optparse import OptionParser
 from babyai.levels import level_dict
-from babyai.bot import Bot, DisappearedBoxError
+from babyai.bot import Bot
 from babyai.utils.agent import ModelAgent, RandomAgent
-import numpy as np
 from random import Random
 
 level_list = [

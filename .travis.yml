@@ -22,7 +22,7 @@ script:
 
     # Check that the bot works on Boss Level
     - python3 -m scripts.eval_bot --level BossLevel --num_runs 50 | grep "100.0%"
-    - python3 -m scripts.eval_bot --level BossLevel --num_runs 50 --advise_mode | grep "100.0%"
+    - python3 -m scripts.eval_bot --level BossLevel --num_runs 50 --advise_mode --non_optimal_steps 100 --bad_action_proba .3 | grep "100.0%"
 
     # Quickly test the generation of bot demos
     - python3 -m scripts.make_agent_demos --env BabyAI-GoToRedBallGrey-v0 --episodes 100 --valid-episodes 32
