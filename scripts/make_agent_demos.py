@@ -21,7 +21,7 @@ import babyai.utils as utils
 
 # Parse arguments
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--env", required=True,
                     help="name of the environment to be run (REQUIRED)")
 parser.add_argument("--model", default='BOT',
@@ -29,9 +29,9 @@ parser.add_argument("--model", default='BOT',
 parser.add_argument("--demos", default=None,
                     help="path to save demonstrations (based on --model and --origin by default)")
 parser.add_argument("--episodes", type=int, default=1000,
-                    help="number of episodes to generate demonstrations for (default: 1000)")
+                    help="number of episodes to generate demonstrations for")
 parser.add_argument("--valid-episodes", type=int, default=512,
-                    help="number of validation episodes to generate demonstrations for (default: 512)")
+                    help="number of validation episodes to generate demonstrations for")
 parser.add_argument("--jobs", type=int, default=0,
                     help="Split generation in that many jobs")
 parser.add_argument("--sbatch-args", type=str,
@@ -42,10 +42,12 @@ parser.add_argument("--shift", type=int, default=0,
                     help="skip this many mission from the given seed")
 parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected")
+parser.add_argument("--log-interval", type=int, default=100,
+                    help="interval between progress reports")
 parser.add_argument("--save-interval", type=int, default=10000,
-                    help="interval between demonstrations saving (default: 0, 0 means only at the end)")
+                    help="interval between demonstrations saving")
 parser.add_argument("--filter-steps", type=int, default=0,
-                    help="filter out demos with number of steps more than filter-steps (default: 0, No filtering)")
+                    help="filter out demos with number of steps more than filter-steps")
 
 args = parser.parse_args()
 logger = logging.getLogger(__name__)
@@ -57,8 +59,9 @@ if args.seed == 0:
 
 
 def print_demo_lengths(demos):
-    num_frames_per_episode = [len(demo[0]) for demo in demos]
-    logger.info('Demo num frames: {}'.format(num_frames_per_episode))
+    num_frames_per_episode = [len(demo[2]) for demo in demos]
+    logger.info('Demo length: {:.3f}+-{:.3f}'.format(
+        np.mean(num_frames_per_episode), np.std(num_frames_per_episode)))
 
 
 def generate_demos(n_episodes, valid, seed, shift=0):
@@ -67,17 +70,14 @@ def generate_demos(n_episodes, valid, seed, shift=0):
     # Generate environment
     env = gym.make(args.env)
     env.seed(seed)
-
     for i in range(shift):
         env.reset()
 
     agent = utils.load_agent(env, args.model, args.demos, 'agent', args.argmax, args.env)
-
     demos_path = utils.get_demos_path(args.demos, args.env, 'agent', valid)
-
     demos = []
 
-    offset = shift
+    checkpoint_time = time.time()
 
     while True:
         # Run the expert for one episode
@@ -115,7 +115,13 @@ def generate_demos(n_episodes, valid, seed, shift=0):
             logger.exception("error while generating demo #{}".format(len(demos)))
             continue
 
-        logger.info("demo #{}".format(len(demos)))
+        if len(demos) and len(demos) % args.log_interval == 0:
+            now = time.time()
+            demos_per_second = args.log_interval / (now - checkpoint_time)
+            to_go = (n_episodes - len(demos)) / demos_per_second
+            logger.info("demo #{}, {:.3f} demos per second, {:.3f} seconds to go".format(
+                len(demos), demos_per_second, to_go))
+            checkpoint_time = now
 
         # Save demonstrations
 
@@ -125,7 +131,8 @@ def generate_demos(n_episodes, valid, seed, shift=0):
             logger.info("Demos saved")
             # print statistics for the last 100 demonstrations
             print_demo_lengths(demos[-100:])
-        offset += 1
+
+
 
     # Save demonstrations
     logger.info("Saving demos...")
@@ -136,7 +143,6 @@ def generate_demos(n_episodes, valid, seed, shift=0):
 logging.basicConfig(level='INFO', format="%(asctime)s: %(levelname)s: %(message)s")
 logger.info(args)
 if args.jobs == 0:
-    logger.info(args)
     generate_demos(args.episodes, False, args.seed, args.shift)
     if args.valid_episodes:
         generate_demos(args.valid_episodes, True, 0)
