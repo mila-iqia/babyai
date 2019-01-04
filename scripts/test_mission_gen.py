@@ -10,6 +10,7 @@ current mission is printed in the console.
 
 import random
 import time
+import gym
 from optparse import OptionParser
 
 from babyai.levels import level_dict
@@ -20,8 +21,8 @@ from gym_minigrid.rendering import Window
 def test():
     parser = OptionParser()
     parser.add_option(
-        "--level-name",
-        default='OpenRedDoor'
+        "--env",
+        default='BabyAI-OpenRedDoor-v0',
     )
     parser.add_option(
         "--seed",
@@ -37,22 +38,20 @@ def test():
     rng = random.Random()
     seed = options.seed
 
-    level = level_dict[options.level_name]
-    mission = None
+    mission = gym.make(options.env)
 
     app = QApplication([])
     window = Window()
 
     def reset():
-        nonlocal seed
         nonlocal mission
+        nonlocal seed
 
         if options.seed == -1:
             seed = rng.randint(0, 0xFFFFFF)
-
-        mission = level(seed=seed)
-
-        print('seed=%d' % seed)
+        mission.seed(seed)
+        mission.reset()
+        print('seed {}'.format(seed))
         print(mission.surface)
 
         pixmap = mission.render('pixmap')

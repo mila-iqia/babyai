@@ -386,7 +386,7 @@ class AIGameWindow(QMainWindow):
 def main(argv):
     parser = OptionParser()
     parser.add_option(
-        "--env-name",
+        "--env",
         help="gym environment to load",
         default='BabyAI-BossLevel-v0'
     )
@@ -399,7 +399,7 @@ def main(argv):
     (options, args) = parser.parse_args()
 
     # Load the gym environment
-    env = gym.make(options.env_name)
+    env = gym.make(options.env)
     env.seed(options.seed)
 
     # Create the application window
