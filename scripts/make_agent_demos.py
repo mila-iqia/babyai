@@ -32,10 +32,6 @@ parser.add_argument("--episodes", type=int, default=1000,
                     help="number of episodes to generate demonstrations for")
 parser.add_argument("--valid-episodes", type=int, default=512,
                     help="number of validation episodes to generate demonstrations for")
-parser.add_argument("--jobs", type=int, default=0,
-                    help="Split generation in that many jobs")
-parser.add_argument("--sbatch-args", type=str,
-                    help="Additional arguments for sbatch'ing jobs")
 parser.add_argument("--seed", type=int, default=1,
                     help="random seed")
 parser.add_argument("--shift", type=int, default=0,
@@ -48,6 +44,11 @@ parser.add_argument("--save-interval", type=int, default=10000,
                     help="interval between demonstrations saving")
 parser.add_argument("--filter-steps", type=int, default=0,
                     help="filter out demos with number of steps more than filter-steps")
+
+parser.add_argument("--job-script", type=str, default=None,
+                    help="The script that launches make_agent_demos.py at a cluster.")
+parser.add_argument("--jobs", type=int, default=0,
+                    help="Split generation in that many jobs")
 
 args = parser.parse_args()
 logger = logging.getLogger(__name__)
@@ -148,23 +149,16 @@ if args.jobs == 0:
         generate_demos(args.valid_episodes, True, 0)
 else:
     demos_per_job = args.episodes // args.jobs
-    job_demo_names = [args.demos + '_shard{}'.format(i)
+    demos_path = utils.get_demos_path(args.demos, args.env, 'agent')
+    job_demo_names = [os.path.realpath(demos_path + '.shard{}'.format(i))
                      for i in range(args.jobs)]
     for demo_name in job_demo_names:
         job_demos_path = utils.get_demos_path(demo_name)
         if os.path.exists(job_demos_path):
             os.remove(job_demos_path)
 
-    command = ['sbatch', '--mem=8g']
-    command += args.sbatch_args.split(' ') if args.sbatch_args else []
-    # babyai.sh should be in #PATH and should contain the following lines:
-    #
-    ##!/usr/bin/env bash
-    #source activate babyai
-    #"$@"
-    #
-    command += ['babyai.sh', 'python']
-    command += sys.argv
+    command = [args.job_script]
+    command += sys.argv[1:]
     for i in range(args.jobs):
         cmd_i = list(map(str,
             command
@@ -172,13 +166,13 @@ else:
               + ['--demos', job_demo_names[i]]
               + ['--episodes', demos_per_job]
               + ['--jobs', 0]
-              + ['--valid-episodes', 0]
-              + ['--sbatch-args=']))
-        logger.info('SBATCH COMMAND')
+              + ['--valid-episodes', 0]))
+        logger.info('LAUNCH COMMAND')
         logger.info(cmd_i)
         output = subprocess.check_output(cmd_i)
-        logger.info('SBATCH OUTPUT')
+        logger.info('LAUNCH OUTPUT')
         logger.info(output.decode('utf-8'))
+    sys.exit(0)
 
     job_demos = [None] * args.jobs
     while True:
@@ -204,7 +198,6 @@ else:
     all_demos = []
     for demos in job_demos:
         all_demos.extend(demos)
-    demos_path = utils.get_demos_path(args.demos, args.env, 'agent')
     utils.save_demos(all_demos, demos_path)
 
     # Validation demos
