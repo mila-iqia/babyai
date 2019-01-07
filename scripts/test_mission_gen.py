@@ -57,6 +57,7 @@ def test():
         pixmap = mission.render('pixmap')
         window.setPixmap(pixmap)
         window.setKeyDownCb(keyDownCb)
+        window.setText(mission.surface)
 
     def keyDownCb(keyName):
         if keyName == 'ESCAPE':
