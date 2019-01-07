@@ -3,7 +3,13 @@
 """
 Generate a set of agent demonstrations.
 
-The agent can either be a trained model or the heuristic expert (bot)
+The agent can either be a trained model or the heuristic expert (bot).
+
+Demonstration generation can take a long time, but it can be parallelized
+if you have a cluster at your disposal. Provide a script that launches
+make_agent_demos.py at your cluster as --job-script and the number of jobs as --jobs.
+
+
 """
 
 import argparse
@@ -141,13 +147,8 @@ def generate_demos(n_episodes, valid, seed, shift=0):
     logger.info("Demos saved")
     print_demo_lengths(demos[-100:])
 
-logging.basicConfig(level='INFO', format="%(asctime)s: %(levelname)s: %(message)s")
-logger.info(args)
-if args.jobs == 0:
-    generate_demos(args.episodes, False, args.seed, args.shift)
-    if args.valid_episodes:
-        generate_demos(args.valid_episodes, True, 0)
-else:
+
+def generate_demos_cluster():
     demos_per_job = args.episodes // args.jobs
     demos_path = utils.get_demos_path(args.demos, args.env, 'agent')
     job_demo_names = [os.path.realpath(demos_path + '.shard{}'.format(i))
@@ -172,7 +173,6 @@ else:
         output = subprocess.check_output(cmd_i)
         logger.info('LAUNCH OUTPUT')
         logger.info(output.decode('utf-8'))
-    sys.exit(0)
 
     job_demos = [None] * args.jobs
     while True:
@@ -200,6 +200,14 @@ else:
         all_demos.extend(demos)
     utils.save_demos(all_demos, demos_path)
 
-    # Validation demos
-    if args.valid_episodes:
-        generate_demos(args.valid_episodes, True, 0)
+
+logging.basicConfig(level='INFO', format="%(asctime)s: %(levelname)s: %(message)s")
+logger.info(args)
+# Training demos
+if args.jobs == 0:
+    generate_demos(args.episodes, False, args.seed, args.shift)
+else:
+    generate_demos_cluster()
+# Validation demos
+if args.valid_episodes:
+    generate_demos(args.valid_episodes, True, 0)
