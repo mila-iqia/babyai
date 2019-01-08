@@ -279,6 +279,14 @@ class DropSubgoal(Subgoal):
         super(DropSubgoal, self).take_action(action)
         if action == self.actions.drop:
             self.bot.stack.pop()
+            if self.datum is not None:
+                # this means that the object we just dropped was initially in self.datum
+                # maybe after dropping the object, we were supposed to go to it again, and it was referred to
+                # in the current stack by its old position (self.datum) -> need to loop through the stack and fix it
+                for subgoal in self.bot.stack:
+                    if isinstance(subgoal, GoNextToSubgoal):
+                        if np.array_equal(subgoal.datum, self.datum):
+                            subgoal.datum = self.fwd_pos
         elif action in (self.actions.left, self.actions.right, self.actions.forward):
             # Go back to where you were to drop what you got
             self.bot.stack.append(GoNextToSubgoal(self.bot, tuple(self.fwd_pos)))
@@ -640,7 +648,7 @@ class GoNextToSubgoal(Subgoal):
                     self.bot.stack.append(GoNextToSubgoal(self.bot, drop_pos_cur))
 
                     # Pick up the blocking object and drop it
-                    self.bot.stack.append(DropSubgoal(self.bot))
+                    self.bot.stack.append(DropSubgoal(self.bot, self.fwd_pos))
                     self.bot.stack.append(GoNextToSubgoal(self.bot, drop_pos_block))
                     self.bot.stack.append(PickupSubgoal(self.bot))
                     self.bot.stack.append(GoNextToSubgoal(self.bot, self.fwd_pos))

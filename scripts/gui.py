@@ -362,6 +362,7 @@ class AIGameWindow(QMainWindow):
         self.missionBox.setPlainText(mission)
 
         self.missionBox.append('\nOptimal Bot Advisor Action: {}'.format(self.bot_advisor_action))
+        # UNCOMMENT THE FOLLOWING LINE TO DEBUT THE BOT
         # self.missionBox.append('\nOptimal Bot Advisor Stack: {}'.format(self.bot_advisor_agent.bot.stack))
 
         # Set the steps remaining
@@ -396,11 +397,20 @@ def main(argv):
         help="gym environment seed",
         default=0
     )
+    parser.add_option(
+        "--shift",
+        type=int,
+        help="gym environment seed",
+        default=0
+    )
+
     (options, args) = parser.parse_args()
 
     # Load the gym environment
     env = gym.make(options.env)
     env.seed(options.seed)
+    for _ in range(options.shift):
+        env.reset()
 
     # Create the application window
     app = QApplication(sys.argv)
