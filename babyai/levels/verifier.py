@@ -44,9 +44,6 @@ class ObjDesc:
     """
 
     def __init__(self, type, color=None, loc=None):
-        if type == 'locked_door':
-            type = 'door'
-
         assert type in [None, *OBJ_TYPES], type
         assert color in [None, *COLOR_NAMES], color
         assert loc in [None, *LOC_NAMES], loc
@@ -124,13 +121,8 @@ class ObjDesc:
                     if not already_tracked:
                         continue
 
-                if cell.type == "locked_door":
-                    type = "door"
-                else:
-                    type = cell.type
-
                 # Check if object's type matches description
-                if self.type is not None and type != self.type:
+                if self.type is not None and cell.type != self.type:
                     continue
 
                 # Check if object's color matches description

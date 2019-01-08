@@ -3,7 +3,6 @@ from collections import OrderedDict
 from copy import deepcopy
 import gym
 from gym_minigrid.roomgrid import RoomGrid
-from gym_minigrid.minigrid import LockedDoor
 from .verifier import *
 
 
@@ -113,7 +112,7 @@ class RoomGridLevel(RoomGrid):
                 for j in range(self.num_cols):
                     room = self.get_room(i, j)
                     for door in room.doors:
-                        if door and isinstance(door, LockedDoor):
+                        if door and door.is_locked:
                             colors_of_locked_doors.append(door.color)
 
         if isinstance(instr, PutNextInstr):

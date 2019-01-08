@@ -170,11 +170,11 @@ class OpenSubgoal(Subgoal):
     def get_action(self):
         super().get_action()
         assert self.fwd_cell is not None, 'Forward cell is empty'
-        assert self.fwd_cell.type == 'door' or self.fwd_cell.type == 'locked_door', 'Forward cell has to be a door'
+        assert self.fwd_cell.type == 'door', 'Forward cell has to be a door'
 
         # If the door is locked, go find the key and then return
         # TODO: do we really need to be in front of the locked door to realize that we need the key for it ?
-        if self.fwd_cell.type == 'locked_door':
+        if self.fwd_cell.type == 'door' and self.fwd_cell.is_locked:
             if not self.carrying or self.carrying.type != 'key' or self.carrying.color != self.fwd_cell.color:
                 # Find the key
                 key_desc = ObjDesc('key', self.fwd_cell.color)
@@ -211,7 +211,7 @@ class OpenSubgoal(Subgoal):
         # we need to fetch the key and return
         # i.e. update the stack REGARDLESS of the action
         # TODO: do we really need to be in front of the locked door to realize that we need the key for it ?
-        if self.fwd_cell.type == 'locked_door':
+        if self.fwd_cell.type == 'door' and self.fwd_cell.is_locked:
             if not self.carrying or self.carrying.type != 'key' or self.carrying.color != self.fwd_cell.color:
                 # Find the key
                 key_desc = ObjDesc('key', self.fwd_cell.color)
@@ -825,7 +825,6 @@ class ExploreSubgoal(Subgoal):
         if unseen_pos:
             return GoNextToSubgoal(self.bot, unseen_pos).get_action()
 
-
         # Find the closest unlocked unopened door
         def unopened_unlocked_door(pos, cell):
             if not cell:
@@ -838,7 +837,7 @@ class ExploreSubgoal(Subgoal):
         def unopened_door(pos, cell):
             if not cell:
                 return False
-            if cell.type != 'door' and cell.type != 'locked_door':
+            if cell.type != 'door':
                 return False
             return not cell.is_open
 
@@ -904,15 +903,16 @@ class ExploreSubgoal(Subgoal):
                 return False
             if cell.type != 'door':
                 return False
-            return not cell.is_open
+            return not cell.is_open and not cell.is_locked
 
         # Find the closest unopened door
         def unopened_door(pos, cell):
             if not cell:
                 return False
-            if cell.type != 'door' and cell.type != 'locked_door':
+            if cell.type != 'door':
                 return False
             return not cell.is_open
+
         # Try to find an unlocked door first
         # We do this because otherwise, opening a locked door as
         # a subgoal may try to open the same door for exploration,
@@ -1114,7 +1114,7 @@ class Bot:
                 if cell.type == 'wall':
                     continue
                 # If this is a door
-                elif cell.type == 'door' or cell.type == 'locked_door':
+                elif cell.type == 'door':
                     # If the door is closed, don't visit neighbors
                     if not cell.is_open:
                         continue
