@@ -827,19 +827,11 @@ class ExploreSubgoal(Subgoal):
 
         # Find the closest unlocked unopened door
         def unopened_unlocked_door(pos, cell):
-            if not cell:
-                return False
-            if cell.type != 'door':
-                return False
-            return not cell.is_open
+            return cell and cell.type == 'door' and not cell.is_locked and not cell.is_open
 
         # Find the closest unopened door
         def unopened_door(pos, cell):
-            if not cell:
-                return False
-            if cell.type != 'door':
-                return False
-            return not cell.is_open
+            return cell and cell.type == 'door' and not cell.is_open
 
         # Try to find an unlocked door first
         # We do this because otherwise, opening a locked door as
