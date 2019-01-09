@@ -50,6 +50,8 @@ parser.add_argument("--save-interval", type=int, default=10000,
                     help="interval between demonstrations saving")
 parser.add_argument("--filter-steps", type=int, default=0,
                     help="filter out demos with number of steps more than filter-steps")
+parser.add_argument("--on-exception", type=str, default='warn', choices=('warn', 'crash'),
+                    help="How to handle exceptions during demo generation")
 
 parser.add_argument("--job-script", type=str, default=None,
                     help="The script that launches make_agent_demos.py at a cluster.")
@@ -117,8 +119,12 @@ def generate_demos(n_episodes, valid, seed, shift=0):
             if len(demos) >= n_episodes:
                 break
             if reward == 0:
-                logger.info("failed to accomplish the mission")
+                if args.on_exception == 'crash':
+                    raise Exception("mission failed")
+                logger.info("mission failed")
         except Exception:
+            if args.on_exception == 'crash':
+                raise
             logger.exception("error while generating demo #{}".format(len(demos)))
             continue
 
