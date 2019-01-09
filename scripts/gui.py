@@ -362,8 +362,8 @@ class AIGameWindow(QMainWindow):
         self.missionBox.setPlainText(mission)
 
         self.missionBox.append('\nOptimal Bot Advisor Action: {}'.format(self.bot_advisor_action))
-        # UNCOMMENT THE FOLLOWING LINE TO DEBUT THE BOT
-        # self.missionBox.append('\nOptimal Bot Advisor Stack: {}'.format(self.bot_advisor_agent.bot.stack))
+        # UNCOMMENT THE FOLLOWING LINE TO DEBUG THE BOT
+        self.missionBox.append('\nOptimal Bot Advisor Stack: {}'.format(self.bot_advisor_agent.bot.stack))
 
         # Set the steps remaining
         stepsRem = unwrapped.steps_remaining
