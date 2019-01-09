@@ -168,7 +168,6 @@ class Subgoal:
 
 class OpenSubgoal(Subgoal):
     def get_action(self):
-        super().get_action()
         assert self.fwd_cell is not None, 'Forward cell is empty'
         assert self.fwd_cell.type == 'door', 'Forward cell has to be a door'
 
@@ -272,7 +271,6 @@ class OpenSubgoal(Subgoal):
 
 class DropSubgoal(Subgoal):
     def get_action(self):
-        super().get_action()
         return self.actions.drop
 
     def take_action(self, action):
@@ -296,7 +294,6 @@ class DropSubgoal(Subgoal):
 
 class PickupSubgoal(Subgoal):
     def get_action(self):
-        super().get_action()
         return self.actions.pickup
 
     def take_action(self, action):
@@ -312,7 +309,6 @@ class PickupSubgoal(Subgoal):
 
 class GoToObjSubgoal(Subgoal):
     def get_action(self):
-        super().get_action()
         # Do we know where any one of these objects are?
         obj_pos = self.bot.find_obj_pos(self.datum)
 
@@ -467,7 +463,6 @@ class GoNextToSubgoal(Subgoal):
         return representation
 
     def get_action(self):
-        super().get_action()
         # CASE 1: The position we are on is the one we should go next to
         # -> Move away from it
         if tuple(self.pos) == tuple(self.datum):
