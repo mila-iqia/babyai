@@ -168,7 +168,6 @@ class Subgoal:
 
 class OpenSubgoal(Subgoal):
     def get_action(self):
-        super().get_action()
         assert self.fwd_cell is not None, 'Forward cell is empty'
         assert self.fwd_cell.type == 'door', 'Forward cell has to be a door'
 
@@ -229,7 +228,7 @@ class OpenSubgoal(Subgoal):
                     self.bot.stack.append(GoNextToSubgoal(self.bot, drop_pos_cur))
 
                     # Go back to the door and open it
-                    self.bot.stack.append(OpenSubgoal(self.bot))
+                    self.bot.stack.append(OpenSubgoal(self.bot, 'drop_the_key'))
                     self.bot.stack.append(GoNextToSubgoal(self.bot, tuple(self.fwd_pos)))
 
                     # Go to the key and pick it up
@@ -242,7 +241,7 @@ class OpenSubgoal(Subgoal):
                 else:
                     self.bot.stack.pop()
 
-                    self.bot.stack.append(OpenSubgoal(self.bot))
+                    self.bot.stack.append(OpenSubgoal(self.bot, 'drop_the_key'))
                     self.bot.stack.append(GoNextToSubgoal(self.bot, tuple(self.fwd_pos)))
                     self.bot.stack.append(PickupSubgoal(self.bot))
                     self.bot.stack.append(GoToObjSubgoal(self.bot, key_desc))
@@ -263,6 +262,12 @@ class OpenSubgoal(Subgoal):
         # CASE 3: The door is openable
         if action == self.actions.toggle:
             self.bot.stack.pop()
+            # Sometimes we need to drop the key that we just used to
+            # open the door in order to proceed with the mission
+            if self.fwd_cell.is_locked and self.datum == 'drop_the_key':
+                drop_key_pos = self.bot.find_drop_pos()
+                self.bot.stack.append(DropSubgoal(self.bot))
+                self.bot.stack.append(GoNextToSubgoal(self.bot, drop_key_pos))
         if action in (self.actions.left, self.actions.right):
             # Go back to the door to open it
             self.bot.stack.append(GoNextToSubgoal(self.bot, tuple(self.fwd_pos)))
@@ -272,7 +277,6 @@ class OpenSubgoal(Subgoal):
 
 class DropSubgoal(Subgoal):
     def get_action(self):
-        super().get_action()
         return self.actions.drop
 
     def take_action(self, action):
@@ -296,7 +300,6 @@ class DropSubgoal(Subgoal):
 
 class PickupSubgoal(Subgoal):
     def get_action(self):
-        super().get_action()
         return self.actions.pickup
 
     def take_action(self, action):
@@ -312,7 +315,6 @@ class PickupSubgoal(Subgoal):
 
 class GoToObjSubgoal(Subgoal):
     def get_action(self):
-        super().get_action()
         # Do we know where any one of these objects are?
         obj_pos = self.bot.find_obj_pos(self.datum)
 
@@ -467,7 +469,6 @@ class GoNextToSubgoal(Subgoal):
         return representation
 
     def get_action(self):
-        super().get_action()
         # CASE 1: The position we are on is the one we should go next to
         # -> Move away from it
         if tuple(self.pos) == tuple(self.datum):
