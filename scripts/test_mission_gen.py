@@ -12,9 +12,7 @@ import random
 import time
 import gym
 from optparse import OptionParser
-
 from babyai.levels import level_dict
-
 from PyQt5.QtWidgets import QApplication
 from gym_minigrid.rendering import Window
 
@@ -68,6 +66,13 @@ def test():
             reset()
             return
 
+        if keyName == 'ALT':
+            screen_path = mission.level_name + '.png'
+            print('saving screenshot "{}"'.format(screen_path))
+            pixmap = mission.render('pixmap')
+            pixmap.save(screen_path)
+            return
+
         action = 0
         if keyName == 'LEFT':
             action = mission.actions.left
@@ -83,11 +88,6 @@ def test():
             action = mission.actions.drop
         elif keyName == 'RETURN':
             action = mission.actions.done
-        elif keyName == 'ALT':
-            screen_path = 'media/' + options.level_name + '.png'
-            print('saving screenshot', screen_path)
-            pixmap = mission.render('pixmap')
-            pixmap.save(screen_path)
         else:
             return
 
