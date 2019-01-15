@@ -897,11 +897,9 @@ class Bot:
         # Process/parse the instructions
         self.process_instr(mission.instrs)
 
-    def find_obj_pos(self, obj_desc, use_shortest_path=True):
+    def find_obj_pos(self, obj_desc):
         """
         Find the position of a visible object matching a given description
-        Using use_shortest_path=True ensures that while on the way to the object, we won't change out minds and go to
-        another similar object
         """
 
         assert len(obj_desc.obj_set) > 0
@@ -915,15 +913,22 @@ class Bot:
                 obj_pos = obj_desc.obj_poss[i]
 
                 if self.vis_mask[obj_pos]:
-                    shortest_path_to_obj = None
-                    if use_shortest_path:
-                        shortest_path_to_obj, _, _ = self.shortest_path(
-                            lambda pos, cell: pos == obj_pos
-                        )
+                    shortest_path_to_obj, _, _ = self.shortest_path(
+                        lambda pos, cell: pos == obj_pos
+                    )
                     if shortest_path_to_obj is not None:
                         distance_to_obj = len(shortest_path_to_obj)
                     else:
-                        distance_to_obj = self.distance(obj_pos, self.mission.agent_pos)
+                        shortest_path_to_obj, _, _ = self.shortest_path(
+                            lambda pos, cell: pos == obj_pos, ignore_blockers=True
+                        )
+                        assert shortest_path_to_obj is not None
+                        # The distance should take into account the steps necessary to unblock the way
+                        # Instead of computing it exactly, we can use a lower bound on this number of steps
+                        # which is 4 when the agent is not holding anything (pick, turn, drop, turn back)
+                        # and 7 if the agent is carrying something (turn, drop, turn back, pick,
+                        # turn to other direction, drop, turn back)
+                        distance_to_obj = len(shortest_path_to_obj) + (7 if self.mission.carrying else 4)
                     if not best_distance_to_obj or distance_to_obj < best_distance_to_obj:
                         best_distance_to_obj = distance_to_obj
                         best_pos = obj_pos
