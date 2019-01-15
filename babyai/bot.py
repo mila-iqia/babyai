@@ -204,7 +204,7 @@ class OpenSubgoal(Subgoal):
         return self.actions.toggle
 
     def take_action(self, action):
-        super(OpenSubgoal, self).take_action(action)
+        super().take_action(action)
 
         # CASE 1: The door is locked
         # we need to fetch the key and return
@@ -280,7 +280,7 @@ class DropSubgoal(Subgoal):
         return self.actions.drop
 
     def take_action(self, action):
-        super(DropSubgoal, self).take_action(action)
+        super().take_action(action)
         if action == self.actions.drop:
             self.bot.stack.pop()
             if self.datum is not None:
@@ -303,7 +303,7 @@ class PickupSubgoal(Subgoal):
         return self.actions.pickup
 
     def take_action(self, action):
-        super(PickupSubgoal, self).take_action(action)
+        super().take_action(action)
         if action == self.actions.pickup:
             self.bot.stack.pop()
         elif action in (self.actions.left, self.actions.right):
@@ -314,6 +314,23 @@ class PickupSubgoal(Subgoal):
 
 
 class GoToObjSubgoal(Subgoal):
+    def __init__(self, bot=None, datum=None, adjacent=False):
+        '''If adjacent=True, then the bot would only go two cells away from the objective (with free cell in between)'''
+        super().__init__(bot, datum)
+        self.adjacent = adjacent
+
+    def __repr__(self):
+        """Mainly for debugging purposes"""
+        representation = '('
+        representation += type(self).__name__
+        if self.datum is not None:
+            representation += ': {}'.format(self.datum)
+        if self.adjacent:
+            representation += ', adjacent'
+        representation += ')'
+
+        return representation
+
     def get_action(self):
         # Do we know where any one of these objects are?
         obj_pos = self.bot.find_obj_pos(self.datum)
@@ -333,10 +350,20 @@ class GoToObjSubgoal(Subgoal):
                 # otherwise: forward, left and right are full, we assume that you can go behind
                 return self.actions.left
 
-            # If we are right in front of the object, then the subgoal is completed
-            # go back to the previous subgoal
-            if np.array_equal(obj_pos, self.fwd_pos):
-                return self.subgoal_accomplished()
+            if not self.adjacent:
+                # If we are right in front of the object, then the subgoal is completed
+                # go back to the previous subgoal
+                if np.array_equal(obj_pos, self.fwd_pos):
+                    return self.subgoal_accomplished()
+            else:
+                # We need to go 2 cells away from the objecive
+                if self.bot.distance(obj_pos, self.fwd_pos) == 1:
+                    if self.fwd_cell is None:
+                        return self.subgoal_accomplished()
+                    # corner case: I just opened a door, and the target is right after the door
+                    elif self.fwd_cell.type.endswith('door') and self.fwd_cell.is_open:
+                        # add a useless subgoal that will force unblocking
+                        return GoNextToSubgoal(self.bot, self.fwd_pos + 2 * self.dir_vec).get_action()
 
             # Look for a non-blocker path leading to the position
             path, _, _ = self.bot.shortest_path(
@@ -360,14 +387,14 @@ class GoToObjSubgoal(Subgoal):
 
             if path:
                 # Get the action from the "GoNextTo" subgoal
-                new_subgoal = GoNextToSubgoal(self.bot, obj_pos, reason='GoToObj')
+                new_subgoal = GoNextToSubgoal(self.bot, obj_pos, reason='GoToObj', adjacent=self.adjacent)
                 return new_subgoal.get_action()
 
         # No path found -> Explore the world
         return ExploreSubgoal(self.bot).get_action()
 
     def take_action(self, action):
-        super(GoToObjSubgoal, self).take_action(action)
+        super().take_action(action)
         # Do we know where any one of these objects are?
         obj_pos = self.bot.find_obj_pos(self.datum)
 
@@ -385,9 +412,24 @@ class GoToObjSubgoal(Subgoal):
         if obj_pos:
             # CASE 1.1: we are already right in front of the object
             # we need go back to the previous subgoal, and take it into account to handle the current action
-            if np.array_equal(obj_pos, self.fwd_pos):
-                self.bot.stack.pop()
-                return False
+            if not self.adjacent:
+                # If we are right in front of the object, then the subgoal is completed
+                # go back to the previous subgoal
+                if np.array_equal(obj_pos, self.fwd_pos):
+                    self.bot.stack.pop()
+                    return False
+            else:
+                # We are 2 cells away from the objecive
+                if self.bot.distance(obj_pos, self.fwd_pos) == 1:
+                    if self.fwd_cell is None:
+                        self.bot.stack.pop()
+                        return False
+                    # corner case: I just opened a door, and the target is right after the door
+                    elif self.fwd_cell.type.endswith('door') and self.fwd_cell.is_open:
+                        # add a useless subgoal that will force unblocking
+                        # add a useless subgoal that will force unblocking
+                        self.bot.stack.append(GoNextToSubgoal(self.bot, self.fwd_pos + 2 * self.dir_vec))
+                        return True
 
             # CASE 1.2: The action will make us in front of the object
             if np.array_equal(obj_pos, self.new_fwd_pos):
@@ -436,7 +478,7 @@ class GoToObjSubgoal(Subgoal):
 
                 if path:
                     # New subgoal: go next to the object
-                    self.bot.stack.append(GoNextToSubgoal(self.bot, obj_pos, reason='GoToObj'))
+                    self.bot.stack.append(GoNextToSubgoal(self.bot, obj_pos, reason='GoToObj', adjacent=self.adjacent))
                     return True
 
         # CASE 2: The bot hasn't seen the object. The action will count for the new subgoal
@@ -445,8 +487,9 @@ class GoToObjSubgoal(Subgoal):
 
 
 class GoNextToSubgoal(Subgoal):
-    def __init__(self, bot=None, datum=None, reason=None, no_reexplore=False, blocker=False):
+    def __init__(self, bot=None, datum=None, reason=None, no_reexplore=False, blocker=False, adjacent=False):
         super().__init__(bot, datum)
+        self.adjacent = adjacent  # Do we need to go to a place 2 cells away from the goal ? (for PutNextTo ! )
         self.reason = reason  # Reason we are performing this subgoal. Possiblities: Explore, GoToObj
         self.no_reexplore = no_reexplore  # Flag to know if Exploring in the same room  is a good idea
         self.blocker = blocker  # Flag to know if the path considered for exploration has a blocker or not
@@ -464,6 +507,8 @@ class GoNextToSubgoal(Subgoal):
             representation += ', no reexplore'
         if self.blocker:
             representation += ', blocker path'
+        if self.adjacent:
+            representation += ', adjacent'
         representation += ')'
 
         return representation
@@ -471,7 +516,7 @@ class GoNextToSubgoal(Subgoal):
     def get_action(self):
         # CASE 1: The position we are on is the one we should go next to
         # -> Move away from it
-        if tuple(self.pos) == tuple(self.datum):
+        if self.bot.distance(self.datum, self.pos) == (1 if self.adjacent else 0):
             if self.fwd_cell is None:
                 return self.actions.forward
             if self.bot.mission.grid.get(*(self.pos + self.right_vec)) is None:
@@ -483,8 +528,12 @@ class GoNextToSubgoal(Subgoal):
             return self.actions.left
 
         # CASE 2: we are facing the target cell, subgoal completed
-        if np.array_equal(self.datum, self.fwd_pos):
-            return self.subgoal_accomplished()
+        if not self.adjacent:
+            if np.array_equal(self.datum, self.fwd_pos):
+                return self.subgoal_accomplished()
+        else:
+            if self.bot.distance(self.datum, self.fwd_pos) == 1 and self.fwd_cell is None:
+                return self.subgoal_accomplished()
 
         # CASE 3: we are still far from the target
         # Try to find a non-blocker path
@@ -575,11 +624,11 @@ class GoNextToSubgoal(Subgoal):
             return self.actions.right
 
     def take_action(self, action):
-        super(GoNextToSubgoal, self).take_action(action)
+        super().take_action(action)
 
         # CASE 1: The position we are on is the one we should go next to
         # -> Move away from it
-        if tuple(self.pos) == tuple(self.datum):
+        if self.bot.distance(self.datum, self.pos) == (1 if self.adjacent else 0):
             if action in (self.actions.drop, self.actions.pickup, self.actions.toggle):
                 # Update the stack if we did something bad, or do nothing if the action doesn't change anything
                 self.foolish_action_while_exploring(action)
@@ -588,9 +637,14 @@ class GoNextToSubgoal(Subgoal):
             return True
 
         # CASE 2: we are facing the target cell, subgoal completed
-        if np.array_equal(self.datum, self.fwd_pos):
-            self.bot.stack.pop()
-            return False
+        if not self.adjacent:
+            if np.array_equal(self.datum, self.fwd_pos):
+                self.bot.stack.pop()
+                return False
+        else:
+            if self.bot.distance(self.datum, self.fwd_pos) == 1 and self.fwd_cell is None:
+                self.bot.stack.pop()
+                return False
 
         assert tuple(self.new_pos) != tuple(self.datum), "Doesn't make sense with CASE 2"
 
@@ -604,7 +658,7 @@ class GoNextToSubgoal(Subgoal):
         # the field of view
         # -> remove the subgoal and make the 'GoToObj' subgoal recreate a new GoNextTo subgoal, potentially with
         # a new target, because moving might lead us to discover a similar object that's actually closer
-        if self.reason == 'GoToObj':
+        if self.reason == 'GoToObj' and not self.adjacent:
             if action in (self.actions.forward, self.actions.left, self.actions.right):
                 self.bot.stack.pop()
                 return False
@@ -635,7 +689,6 @@ class GoNextToSubgoal(Subgoal):
             return True
 
         next_cell = path[0]
-
         # CASE 5.3: If the destination is ahead of us
         if np.array_equal(next_cell, self.fwd_pos):
             # If there is a blocking object in front of us
@@ -643,7 +696,6 @@ class GoNextToSubgoal(Subgoal):
                 if self.carrying:
                     drop_pos_cur = self.bot.find_drop_pos()
                     drop_pos_block = self.bot.find_drop_pos(drop_pos_cur)
-
                     # Take back the object being carried
                     self.bot.stack.append(PickupSubgoal(self.bot))
                     self.bot.stack.append(GoNextToSubgoal(self.bot, drop_pos_cur))
@@ -728,7 +780,7 @@ class GoToAdjPosSubgoal(Subgoal):
         return GoNextToSubgoal(self.bot, adj_pos).get_action()
 
     def take_action(self, action):
-        super(GoToAdjPosSubgoal, self).take_action(action)
+        super().take_action(action)
 
         # Look for the object
         obj_pos = self.bot.find_obj_pos(self.datum)
@@ -875,7 +927,7 @@ class ExploreSubgoal(Subgoal):
         assert False, "0nothing left to explore"
 
     def take_action(self, action):
-        super(ExploreSubgoal, self).take_action(action)
+        super().take_action(action)
 
         # Find the closest unseen position
         _, unseen_pos, _ = self.bot.shortest_path(
@@ -1218,7 +1270,8 @@ class Bot:
 
         if isinstance(instr, PutNextInstr):
             self.stack.append(DropSubgoal(self))
-            self.stack.append(GoToAdjPosSubgoal(self, instr.desc_fixed))
+            # self.stack.append(GoToAdjPosSubgoal(self, instr.desc_fixed))
+            self.stack.append(GoToObjSubgoal(self, instr.desc_fixed, adjacent=True))
             self.stack.append(PickupSubgoal(self))
             self.stack.append(GoToObjSubgoal(self, instr.desc_move))
             return
