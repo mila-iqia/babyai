@@ -302,6 +302,45 @@ class GoToInstr(ActionInstr):
 
         return 'continue'
 
+class GoToRoomInstr(ActionInstr):
+    """
+    """
+
+    def __init__(self, room_loc='front'):
+        super().__init__()
+        assert room_loc in LOC_NAMES
+        self.room_loc = room_loc
+
+    def surface(self, env):
+        s = 'go to the room'
+
+        if self.room_loc == 'front':
+            s = s + ' in front of you'
+        elif self.room_loc == 'behind':
+            s = s + ' behind you'
+        else:
+            s = s + ' on your ' + self.room_loc
+
+        return s
+
+    def reset_verifier(self, env):
+        super().reset_verifier(env)
+
+    def verify_action(self, action):
+        loc = self.room_loc
+        agent_pos = self.env.agent_pos
+        agent_room = self.env.room_from_pos(*agent_pos)
+
+        if loc == 'front' and agent_room is self.env.get_room(2,1):
+            return 'success'
+        if loc == 'behind' and agent_room is self.env.get_room(0,1):
+            return 'success'
+        if loc == 'left' and agent_room is self.env.get_room(1,0):
+            return 'success'
+        if loc == 'right' and agent_room is self.env.get_room(1,2):
+            return 'success'
+
+        return 'continue'
 
 class PickupInstr(ActionInstr):
     """

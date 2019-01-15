@@ -251,6 +251,39 @@ class Level_GoTo(RoomGridLevel):
         if self.doors_open:
             self.open_all_doors()
 
+class Level_GoToRoom(RoomGridLevel):
+    """
+    Go to an object, the object may be in another room. Many distractors.
+    """
+
+    def __init__(
+        self,
+        room_size=8,
+        num_rows=3,
+        num_cols=3,
+        num_dists=18,
+        doors_open=False,
+        seed=None
+    ):
+        self.num_dists = num_dists
+        self.doors_open = doors_open
+        super().__init__(
+            num_rows=num_rows,
+            num_cols=num_cols,
+            room_size=room_size,
+            seed=seed,
+            max_steps=40
+        )
+
+    def gen_mission(self):
+        self.place_agent(1, 1, rand_dir=False)
+        self.add_door(1, 1, 0)
+        self.connect_all()
+        self.check_objs_reachable()
+
+        self.instrs = GoToRoomInstr(self._rand_elem(LOC_NAMES))
+
+        self.open_all_doors()
 
 class Level_GoToOpen(Level_GoTo):
     def __init__(self, seed=None):
