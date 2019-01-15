@@ -549,10 +549,12 @@ class GoNextToSubgoal(Subgoal):
                 lambda pos, cell: not self.bot.vis_mask[pos]
             )
 
-            # TODO: I don't think unseen_pos is necessarily in the same room. Do we want that though ?
             if unseen_pos is not None:
-                new_subgoal = GoNextToSubgoal(self.bot, unseen_pos, no_reexplore=True, reason='Explore')
-                return new_subgoal.get_action()
+                # make sure unseen position is in the same room, otherwise prioritize blocker paths
+                current_room = self.bot.mission.room_from_pos(*self.pos)
+                if current_room.pos_inside(*unseen_pos):
+                    new_subgoal = GoNextToSubgoal(self.bot, unseen_pos, no_reexplore=True, reason='Explore')
+                    return new_subgoal.get_action()
 
         # CASE 3.2: No non-blocker path found and (reexploration is not allowed or nothing to explore)
         # -> Look for blocker paths
