@@ -112,7 +112,7 @@ for level_name in level_list:
 
     num_success = 0
     total_reward = 0
-    total_steps = 0
+    total_steps = []
 
     for run_no in range(options.num_runs):
         level = level_dict[level_name]
@@ -159,7 +159,7 @@ for level_name in level_list:
                 if done:
                     if reward > 0:
                         num_success += 1
-                        total_steps += episode_steps
+                        total_steps.append(episode_steps)
                     if reward <= 0:
                         assert episode_steps == mission.max_steps  # Is there another reason for this to happen ?
                         if options.verbose:
@@ -173,10 +173,11 @@ for level_name in level_list:
 
     success_rate = 100 * num_success / options.num_runs
     mean_reward = total_reward / options.num_runs
-    mean_steps = total_steps / options.num_runs
+    mean_steps = sum(total_steps) / options.num_runs
 
     print('%16s: %.1f%%, r=%.3f, s=%.2f' % (level_name, success_rate, mean_reward, mean_steps))
-
+    # Uncomment the following line to print the number of steps per episode (useful to look for episodes to debug)
+    # print({options.seed + num_run: total_steps[num_run] for num_run in range(options.num_runs)})
 end_time = time.time()
 total_time = end_time - start_time
 print('total time: %.1fs' % total_time)
