@@ -350,12 +350,7 @@ class GoToObjSubgoal(Subgoal):
                 # otherwise: forward, left and right are full, we assume that you can go behind
                 return self.actions.left
 
-            if not self.adjacent:
-                # If we are right in front of the object, then the subgoal is completed
-                # go back to the previous subgoal
-                if np.array_equal(obj_pos, self.fwd_pos):
-                    return self.subgoal_accomplished()
-            else:
+            if self.adjacent:
                 # We need to go 2 cells away from the objecive
                 if self.bot.distance(obj_pos, self.fwd_pos) == 1:
                     if self.fwd_cell is None:
@@ -364,6 +359,11 @@ class GoToObjSubgoal(Subgoal):
                     elif self.fwd_cell.type.endswith('door') and self.fwd_cell.is_open:
                         # add a useless subgoal that will force unblocking
                         return GoNextToSubgoal(self.bot, self.fwd_pos + 2 * self.dir_vec).get_action()
+            else:
+                # If we are right in front of the object, then the subgoal is completed
+                # go back to the previous subgoal
+                if np.array_equal(obj_pos, self.fwd_pos):
+                    return self.subgoal_accomplished()
 
             # Look for a non-blocker path leading to the position
             path, _, _ = self.bot.shortest_path(
@@ -412,13 +412,7 @@ class GoToObjSubgoal(Subgoal):
         if obj_pos:
             # CASE 1.1: we are already right in front of the object
             # we need go back to the previous subgoal, and take it into account to handle the current action
-            if not self.adjacent:
-                # If we are right in front of the object, then the subgoal is completed
-                # go back to the previous subgoal
-                if np.array_equal(obj_pos, self.fwd_pos):
-                    self.bot.stack.pop()
-                    return False
-            else:
+            if self.adjacent:
                 # We are 2 cells away from the objecive
                 if self.bot.distance(obj_pos, self.fwd_pos) == 1:
                     if self.fwd_cell is None:
@@ -430,6 +424,13 @@ class GoToObjSubgoal(Subgoal):
                         # add a useless subgoal that will force unblocking
                         self.bot.stack.append(GoNextToSubgoal(self.bot, self.fwd_pos + 2 * self.dir_vec))
                         return True
+            else:
+                # If we are right in front of the object, then the subgoal is completed
+                # go back to the previous subgoal
+                if np.array_equal(obj_pos, self.fwd_pos):
+                    self.bot.stack.pop()
+                    return False
+
 
             # CASE 1.2: The action will make us in front of the object
             if np.array_equal(obj_pos, self.new_fwd_pos):
@@ -528,11 +529,11 @@ class GoNextToSubgoal(Subgoal):
             return self.actions.left
 
         # CASE 2: we are facing the target cell, subgoal completed
-        if not self.adjacent:
-            if np.array_equal(self.datum, self.fwd_pos):
+        if self.adjacent:
+            if self.bot.distance(self.datum, self.fwd_pos) == 1 and self.fwd_cell is None:
                 return self.subgoal_accomplished()
         else:
-            if self.bot.distance(self.datum, self.fwd_pos) == 1 and self.fwd_cell is None:
+            if np.array_equal(self.datum, self.fwd_pos):
                 return self.subgoal_accomplished()
 
         # CASE 3: we are still far from the target
@@ -639,12 +640,13 @@ class GoNextToSubgoal(Subgoal):
             return True
 
         # CASE 2: we are facing the target cell, subgoal completed
-        if not self.adjacent:
-            if np.array_equal(self.datum, self.fwd_pos):
+        if self.adjacent:
+            if self.bot.distance(self.datum, self.fwd_pos) == 1 and self.fwd_cell is None:
                 self.bot.stack.pop()
                 return False
+
         else:
-            if self.bot.distance(self.datum, self.fwd_pos) == 1 and self.fwd_cell is None:
+            if np.array_equal(self.datum, self.fwd_pos):
                 self.bot.stack.pop()
                 return False
 
