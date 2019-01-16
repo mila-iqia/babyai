@@ -386,7 +386,7 @@ class PutNextInstr(ActionInstr):
             pos_a = obj_a.cur_pos
 
             for pos_b in self.desc_fixed.obj_poss:
-                if pos_next_to(pos_a, pos_b):
+                if (pos_a == pos_b).all() or pos_next_to(pos_a, pos_b):
                     return True
         return False
 
