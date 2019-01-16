@@ -35,7 +35,7 @@ def pos_next_to(pos_a, pos_b):
     xa, ya = pos_a
     xb, yb = pos_b
     d = abs(xa - xb) + abs(ya - yb)
-    return d < 2
+    return d == 1
 
 
 class ObjDesc:
