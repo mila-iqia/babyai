@@ -333,7 +333,7 @@ class GoToObjSubgoal(Subgoal):
 
     def get_action(self):
         # Do we know where any one of these objects are?
-        obj_pos = self.bot.find_obj_pos(self.datum)
+        obj_pos = self.bot.find_obj_pos(self.datum, self.adjacent)
 
         # Go to the location of this object
         if obj_pos:
@@ -396,7 +396,7 @@ class GoToObjSubgoal(Subgoal):
     def take_action(self, action):
         super().take_action(action)
         # Do we know where any one of these objects are?
-        obj_pos = self.bot.find_obj_pos(self.datum)
+        obj_pos = self.bot.find_obj_pos(self.datum, self.adjacent)
 
         # Stupid corner case: We have to go to a door, which is open, and we are currently in that position
         if np.array_equal(obj_pos, self.pos):
@@ -905,9 +905,9 @@ class Bot:
         # Process/parse the instructions
         self.process_instr(mission.instrs)
 
-    def find_obj_pos(self, obj_desc):
+    def find_obj_pos(self, obj_desc, adjacent=False):
         """
-        Find the position of a visible object matching a given description
+        Find the position of the closest visible object matching a given description
         """
 
         assert len(obj_desc.obj_set) > 0
@@ -918,6 +918,8 @@ class Bot:
         for i in range(len(obj_desc.obj_set)):
             try:
                 # obj = obj_desc.obj_set[i]
+                if obj_desc.obj_set[i] == self.mission.carrying:
+                    continue
                 obj_pos = obj_desc.obj_poss[i]
 
                 if self.vis_mask[obj_pos]:
@@ -937,6 +939,11 @@ class Bot:
                         # and 7 if the agent is carrying something (turn, drop, turn back, pick,
                         # turn to other direction, drop, turn back)
                         distance_to_obj = len(shortest_path_to_obj) + (7 if self.mission.carrying else 4)
+                    # If what we want is to face a location that is adjacent to an object,
+                    # and if we are already right next to this object,
+                    # then we should not prefer this object to those at distance 2
+                    if adjacent and distance_to_obj == 1:
+                        distance_to_obj = 3
                     if not best_distance_to_obj or distance_to_obj < best_distance_to_obj:
                         best_distance_to_obj = distance_to_obj
                         best_pos = obj_pos

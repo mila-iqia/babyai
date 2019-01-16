@@ -32,7 +32,7 @@ class Level_TestGoToBlocked(RoomGridLevel):
         for i in (1, 2, 3):
             for j in (1, 2, 3):
                 if (i, j) not in [(1 ,1), (3, 3)]:
-                    self.grid.set(i, j, Ball('red'))
+                    self.place_obj(Ball('red'), (i, j), (1, 1))
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
 
@@ -65,6 +65,10 @@ class Level_TestPutNextToBlocked(RoomGridLevel):
 
 
 class Level_TestPutNextToCloseToDoor1(RoomGridLevel):
+    """
+    The yellow ball must be put near the blue ball.
+    But blue ball is right next to a door.
+    """
 
     def __init__(self, seed=None):
         super().__init__(
@@ -89,11 +93,66 @@ class Level_TestPutNextToCloseToDoor1(RoomGridLevel):
 
 
 class Level_TestPutNextToCloseToDoor2(Level_TestPutNextToCloseToDoor1):
+    """
+    The yellow ball must be put near the blue ball.
+    But blue ball is right next to a door.
+    """
 
     def gen_mission(self):
         super().gen_mission()
         self.instrs = PutNextInstr(ObjDesc(self.obj1.type, self.obj1.color),
                                    ObjDesc(self.obj2.type, self.obj2.color))
+
+
+class Level_TestPutNextToSame(RoomGridLevel):
+    """
+    Pick up a yellow ball and put it next to a red ball.
+    Make sure that yellow ball is not found as a potential destination.
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            num_rows=1,
+            num_cols=1,
+            room_size=9,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.start_pos = np.array([3, 3])
+        self.start_dir = 0
+        self.place_obj(Ball('yellow'), (1, 1), (1, 1))
+        self.place_obj(Ball('red'), (2, 2), (1, 1))
+        instr2 = PutNextInstr(ObjDesc('ball', 'yellow'),
+                              ObjDesc('ball', None))
+        self.instrs = instr2
+
+
+class Level_TestPutNextToIdentical(RoomGridLevel):
+    """
+    Test that the agent does not endlessly hesitate between
+    two identical objects.
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            num_rows=1,
+            num_cols=1,
+            room_size=9,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.start_pos = np.array([3, 3])
+        self.start_dir = 0
+        self.place_obj(Ball('yellow'), (1, 1), (1, 1))
+        self.place_obj(Ball('blue'), (4, 4), (1, 1))
+        self.place_obj(Ball('red'), (2, 2), (1, 1))
+        instr1 = PutNextInstr(ObjDesc('ball', 'blue'),
+                              ObjDesc('ball', 'yellow'))
+        instr2 = PutNextInstr(ObjDesc('ball', 'yellow'),
+                              ObjDesc('ball', None))
+        self.instrs = BeforeInstr(instr1, instr2)
 
 
 register_levels(__name__, globals())
