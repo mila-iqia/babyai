@@ -23,6 +23,12 @@ jobs:
         - run: python3 -m scripts.eval_bot --level PutNextLocal --num_runs 100 | grep "100.0%"
         - run: python3 -m scripts.eval_bot --level SynthLoc --num_runs 100 | grep "100.0%"
 
+        # Check that bot works on a few hand-crafted tests
+        - run: python3 -m scripts.evaluate --model=BOT  --env=BabyAI-TestGoToBlocked-v0 --episodes=1 | grep 'S 1.00'
+        # Uncomment me when #17 is merged
+        # - run: python3 -m scripts.evaluate --model=BOT  --env=BabyAI-TestPutNextToBlocked-v0 --episodes=1 | grep 'S 1.00'
+
+
         # Quickly test the generation of bot demos
         - run: python3 -m scripts.make_agent_demos --env BabyAI-GoToRedBallGrey-v0 --episodes 100 --valid-episodes 32
 

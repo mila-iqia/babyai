@@ -48,13 +48,13 @@ def main(args, seed, episodes):
         episodes = len(agent.demos)
 
     # Evaluate
-    if isinstance(agent, utils.ModelAgent):
-        if not args.contiguous_episodes:
-            logs = batch_evaluate(agent, args.env, seed, episodes)
-        else:
-            logs = evaluate(agent, env, episodes, False)
-    else:
+    if isinstance(agent, utils.DemoAgent):
         logs = evaluate_demo_agent(agent, episodes)
+    elif isinstance(agent, utils.BotAgent) or args.contiguous_episodes:
+        logs = evaluate(agent, env, episodes, False)
+    else:
+        logs = batch_evaluate(agent, args.env, seed, episodes)
+
 
     return logs
 
