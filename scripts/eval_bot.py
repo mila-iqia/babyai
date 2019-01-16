@@ -23,28 +23,14 @@ from babyai.bot import Bot
 from babyai.utils.agent import ModelAgent, RandomAgent
 from random import Random
 
-level_list = [
-    'OpenRedDoor',
-    'GoToLocal',
-    'PutNextLocal',
 
-    'GoToObjMaze',
-    'GoTo',
-    'Open',
-    'Pickup',
-    'PickupLoc',
-    'PutNext',
+level_list = [level for level in level_dict.keys()
+              if level not in ['UnlockToUnlock',
+                               'KeyInBox',
+                               'PutNextS6N3Carrying',
+                               'PutNextS5N2Carrying',
+                               'PutNextS7N4Carrying']]
 
-    'Unlock',
-    'GoToImpUnlock',
-    'UnblockPickup',
-
-    'GoToSeq',
-    'Synth',
-    'SynthLoc',
-    'SynthSeq',
-    'BossLevel',
-]
 
 parser = OptionParser()
 parser.add_option(
@@ -108,6 +94,8 @@ if options.advise_mode:
 
 start_time = time.time()
 
+all_good = True
+
 for level_name in level_list:
 
     num_success = 0
@@ -170,6 +158,9 @@ for level_name in level_list:
             print(e)
             # Playing these 2 sets of actions should get you to the mission snapshot above
             print(before_optimal_actions, optimal_actions)
+            import pdb; pdb.set_trace()
+
+    all_good = all_good and (num_success == options.num_runs)
 
     success_rate = 100 * num_success / options.num_runs
     mean_reward = total_reward / options.num_runs
@@ -181,3 +172,5 @@ for level_name in level_list:
 end_time = time.time()
 total_time = end_time - start_time
 print('total time: %.1fs' % total_time)
+if not all_good:
+    raise Exception("some tests failed")
