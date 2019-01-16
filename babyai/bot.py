@@ -421,7 +421,6 @@ class GoToObjSubgoal(Subgoal):
                     # corner case: I just opened a door, and the target is right after the door
                     elif self.fwd_cell.type.endswith('door') and self.fwd_cell.is_open:
                         # add a useless subgoal that will force unblocking
-                        # add a useless subgoal that will force unblocking
                         self.bot.stack.append(GoNextToSubgoal(self.bot, self.fwd_pos + 2 * self.dir_vec))
                         return True
             else:
@@ -641,10 +640,15 @@ class GoNextToSubgoal(Subgoal):
 
         # CASE 2: we are facing the target cell, subgoal completed
         if self.adjacent:
-            if self.bot.distance(self.datum, self.fwd_pos) == 1 and self.fwd_cell is None:
-                self.bot.stack.pop()
-                return False
-
+            if self.bot.distance(self.datum, self.fwd_pos) == 1:
+                if self.fwd_cell is None:
+                    self.bot.stack.pop()
+                    return False
+                # corner case: I just opened a door, and the target is right after the door
+                elif self.fwd_cell.type.endswith('door') and self.fwd_cell.is_open:
+                    # add a useless subgoal that will force unblocking
+                    self.bot.stack.append(GoNextToSubgoal(self.bot, self.fwd_pos + 2 * self.dir_vec))
+                    return True
         else:
             if np.array_equal(self.datum, self.fwd_pos):
                 self.bot.stack.pop()
