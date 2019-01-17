@@ -287,8 +287,6 @@ class LevelGen(RoomGridLevel):
         )
 
     def gen_mission(self):
-        self.place_agent()
-
         if self._rand_float(0, 1) < self.locked_room_prob:
             self.add_locked_room()
 
@@ -296,6 +294,9 @@ class LevelGen(RoomGridLevel):
 
         self.add_distractors(num_distractors=self.num_dists, all_unique=False)
 
+        # The agent must be placed after all the object to respect constraints
+        self.place_agent()
+        
         # If no unblocking required, make sure all objects are
         # reachable without unblocking
         if not self.unblocking:
