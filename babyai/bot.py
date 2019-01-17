@@ -720,7 +720,7 @@ class GoNextToSubgoal(Subgoal):
                     return True
                 else:
                     drop_pos = self.bot.find_drop_pos()
-                    self.bot.stack.append(DropSubgoal(self.bot))
+                    self.bot.stack.append(DropSubgoal(self.bot, self.fwd_pos))
                     self.bot.stack.append(GoNextToSubgoal(self.bot, drop_pos))
                     if action == self.actions.pickup:
                         return True
