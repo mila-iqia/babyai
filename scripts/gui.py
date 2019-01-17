@@ -9,6 +9,7 @@ import sys
 import threading
 import copy
 import random
+import pickle
 from optparse import OptionParser
 
 from PyQt5.QtCore import Qt, QTimer
@@ -398,6 +399,12 @@ def main(argv):
         default='BabyAI-BossLevel-v0'
     )
     parser.add_option(
+        "--load-env",
+        help="load a pickled environment")
+    parser.add_option(
+        "--save-env",
+        help="save a pickled environment")
+    parser.add_option(
         "--seed",
         type=int,
         help="gym environment seed",
@@ -413,10 +420,17 @@ def main(argv):
     (options, args) = parser.parse_args()
 
     # Load the gym environment
-    env = gym.make(options.env)
-    env.seed(options.seed)
-    for _ in range(options.shift):
-        env.reset()
+    if options.load_env:
+        with open(options.load_env, 'rb') as src:
+            env = pickle.load(src)
+    else:
+        env = gym.make(options.env)
+        env.seed(options.seed)
+        for _ in range(options.shift):
+            env.reset()
+    if options.save_env:
+        with open(options.save_env, 'wb') as dst:
+            pickle.dump(env, dst)
 
     # Create the application window
     app = QApplication(sys.argv)
