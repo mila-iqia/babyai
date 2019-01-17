@@ -104,29 +104,6 @@ class Level_TestPutNextToCloseToDoor2(Level_TestPutNextToCloseToDoor1):
                                    ObjDesc(self.obj2.type, self.obj2.color))
 
 
-class Level_TestPutNextToSame(RoomGridLevel):
-    """
-    Pick up a yellow ball and put it next to a red ball.
-    Make sure that yellow ball is not found as a potential destination.
-    """
-
-    def __init__(self, seed=None):
-        super().__init__(
-            num_rows=1,
-            num_cols=1,
-            room_size=9,
-            seed=seed
-        )
-
-    def gen_mission(self):
-        self.start_pos = np.array([3, 3])
-        self.start_dir = 0
-        self.place_obj(Ball('yellow'), (1, 1), (1, 1))
-        self.place_obj(Ball('red'), (2, 2), (1, 1))
-        instr2 = PutNextInstr(ObjDesc('ball', 'yellow'),
-                              ObjDesc('ball', None))
-        self.instrs = instr2
-
 
 class Level_TestPutNextToIdentical(RoomGridLevel):
     """
@@ -145,12 +122,12 @@ class Level_TestPutNextToIdentical(RoomGridLevel):
     def gen_mission(self):
         self.start_pos = np.array([3, 3])
         self.start_dir = 0
-        self.place_obj(Ball('yellow'), (1, 1), (1, 1))
+        self.place_obj(Box('yellow'), (1, 1), (1, 1))
         self.place_obj(Ball('blue'), (4, 4), (1, 1))
         self.place_obj(Ball('red'), (2, 2), (1, 1))
         instr1 = PutNextInstr(ObjDesc('ball', 'blue'),
-                              ObjDesc('ball', 'yellow'))
-        instr2 = PutNextInstr(ObjDesc('ball', 'yellow'),
+                              ObjDesc('box', 'yellow'))
+        instr2 = PutNextInstr(ObjDesc('box', 'yellow'),
                               ObjDesc('ball', None))
         self.instrs = BeforeInstr(instr1, instr2)
 

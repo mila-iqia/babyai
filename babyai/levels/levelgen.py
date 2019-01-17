@@ -120,6 +120,10 @@ class RoomGridLevel(RoomGrid):
             instr.reset_verifier(self)
 
             # Check that the objects are not already next to each other
+            if set(instr.desc_move.obj_set).intersection(
+                    set(instr.desc_fixed.obj_set)):
+                raise RejectSampling(
+                    "there are objects that match both lhs and rhs of PutNext")
             if instr.objs_next():
                 raise RejectSampling('objs already next to each other')
 
