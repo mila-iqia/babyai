@@ -158,7 +158,6 @@ for level_name in level_list:
             print(e)
             # Playing these 2 sets of actions should get you to the mission snapshot above
             print(before_optimal_actions, optimal_actions)
-            import pdb; pdb.set_trace()
 
     all_good = all_good and (num_success == options.num_runs)
 
