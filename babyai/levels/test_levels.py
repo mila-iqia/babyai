@@ -146,12 +146,12 @@ class Level_TestUnblockingLoop(RoomGridLevel):
     def gen_mission(self):
         self.start_pos = np.array([15, 4])
         self.start_dir = 2
-        door, pos = self.add_door(0, 0, None, 'red', False)
-        door, pos = self.add_door(0, 1, None, 'red', False)
-        door, pos = self.add_door(1, 1, None, 'blue', False)
-        self.place_obj(Box('yellow'), (10, 1), (1, 1))
-        self.place_obj(Ball('blue'), (3, 2), (1, 1))
-        self.place_obj(Ball('yellow'), (1, 1), (1, 1))
+        door, pos = self.add_door(0, 0, 1, 'red', False)
+        door, pos = self.add_door(0, 1, 0, 'red', False)
+        door, pos = self.add_door(1, 1, 3, 'blue', False)
+        self.place_obj(Box('yellow'), (9, 1), (1, 1))
+        self.place_obj(Ball('blue'), (5, 3), (1, 1))
+        self.place_obj(Ball('yellow'), (6, 2), (1, 1))
         self.place_obj(Key('blue'), (15, 15), (1, 1))
         put = PutNextInstr(ObjDesc('key', 'blue'), ObjDesc('door', 'blue'))
         goto1 = GoToInstr(ObjDesc('ball', 'yellow'))
