@@ -185,9 +185,10 @@ class AIGameWindow(QMainWindow):
         elif e.key() == Qt.Key_Up:
             self.stepEnv(actions.forward)
 
-        elif e.key() == Qt.Key_PageUp:
+        # Note: Mac keyboards don't have pageup/pagedown
+        elif e.key() == Qt.Key_PageUp or e.key() == Qt.Key_P:
             self.stepEnv(actions.pickup)
-        elif e.key() == Qt.Key_PageDown:
+        elif e.key() == Qt.Key_PageDown or e.key() == Qt.Key_D:
             self.stepEnv(actions.drop)
         elif e.key() == Qt.Key_Space:
             self.stepEnv(actions.toggle)
