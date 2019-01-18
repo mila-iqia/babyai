@@ -132,4 +132,31 @@ class Level_TestPutNextToIdentical(RoomGridLevel):
         self.instrs = BeforeInstr(instr1, instr2)
 
 
+class Level_TestUnblockingLoop(RoomGridLevel):
+    """Test that unblocking does not results into an infinite loop."""
+
+    def __init__(self, seed=None):
+        super().__init__(
+            num_rows=2,
+            num_cols=2,
+            room_size=9,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.start_pos = np.array([15, 4])
+        self.start_dir = 2
+        door, pos = self.add_door(0, 0, None, 'red', False)
+        door, pos = self.add_door(0, 1, None, 'red', False)
+        door, pos = self.add_door(1, 1, None, 'blue', False)
+        self.place_obj(Box('yellow'), (10, 1), (1, 1))
+        self.place_obj(Ball('blue'), (3, 2), (1, 1))
+        self.place_obj(Ball('yellow'), (1, 1), (1, 1))
+        self.place_obj(Key('blue'), (15, 15), (1, 1))
+        put = PutNextInstr(ObjDesc('key', 'blue'), ObjDesc('door', 'blue'))
+        goto1 = GoToInstr(ObjDesc('ball', 'yellow'))
+        goto2 = GoToInstr(ObjDesc('box', 'yellow'))
+        self.instrs = BeforeInstr(put, AndInstr(goto1, goto2))
+
+
 register_levels(__name__, globals())
