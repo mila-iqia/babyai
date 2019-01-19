@@ -304,8 +304,6 @@ class Level_GoToImpUnlock(RoomGridLevel):
     """
 
     def gen_mission(self):
-        self.place_agent()
-
         # Add a locked door to a random room
         id = self._rand_int(0, self.num_rows)
         jd = self._rand_int(0, self.num_cols)
@@ -336,6 +334,16 @@ class Level_GoToImpUnlock(RoomGridLevel):
                         num_distractors=2,
                         all_unique=False
                     )
+
+        # The agent must be placed after all the object to respect constraints
+        while True:
+            self.place_agent()
+            start_room = self.room_from_pos(*self.start_pos)
+            # Ensure that we are not placing the agent in the locked room
+            if start_room is locked_room:
+                continue
+            break
+
         self.check_objs_reachable()
 
         # Add a single object to the locked room
@@ -410,8 +418,6 @@ class Level_Unlock(RoomGridLevel):
     """
 
     def gen_mission(self):
-        self.place_agent()
-
         # Add a locked door to a random room
         id = self._rand_int(0, self.num_rows)
         jd = self._rand_int(0, self.num_cols)
@@ -448,6 +454,16 @@ class Level_Unlock(RoomGridLevel):
                         num_distractors=3,
                         all_unique=False
                     )
+
+        # The agent must be placed after all the object to respect constraints
+        while True:
+            self.place_agent()
+            start_room = self.room_from_pos(*self.start_pos)
+            # Ensure that we are not placing the agent in the locked room
+            if start_room is locked_room:
+                continue
+            break
+
         self.check_objs_reachable()
 
         self.instrs = OpenInstr(ObjDesc(door.type, door.color))
