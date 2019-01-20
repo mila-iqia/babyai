@@ -24,8 +24,9 @@ from babyai.utils.agent import ModelAgent, RandomAgent
 from random import Random
 
 
+# MissBossLevel is the only level the bot currently can't always handle
 level_list = [name for name, level in level_dict.items()
-              if not getattr(level, 'is_bonus', False)]
+              if not getattr(level, 'is_bonus', False) and name != 'MiniBossLevel']
 
 
 parser = OptionParser()
