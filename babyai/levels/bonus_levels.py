@@ -1009,6 +1009,9 @@ class Level_OpenDoorsOrderN4Debug(OpenDoorsOrder):
             seed=seed
         )
 
+for name, level in list(globals().items()):
+    if name.startswith('Level_'):
+        level.is_bonus = True
 
 # Register the levels in this file
 register_levels(__name__, globals())

@@ -24,12 +24,8 @@ from babyai.utils.agent import ModelAgent, RandomAgent
 from random import Random
 
 
-level_list = [level for level in level_dict.keys()
-              if level not in ['UnlockToUnlock',
-                               'KeyInBox',
-                               'PutNextS6N3Carrying',
-                               'PutNextS5N2Carrying',
-                               'PutNextS7N4Carrying']]
+level_list = [name for name, level in level_dict.items()
+              if not getattr(level, 'is_bonus', False)]
 
 
 parser = OptionParser()
