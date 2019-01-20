@@ -752,7 +752,8 @@ class ExploreSubgoal(Subgoal):
 
         # Find the closest unseen position
         _, unseen_pos, with_blockers = self.bot.shortest_path(
-            lambda pos, cell: not self.bot.vis_mask[pos]
+            lambda pos, cell: not self.bot.vis_mask[pos],
+            try_with_blockers=True
         )
 
         if unseen_pos:
