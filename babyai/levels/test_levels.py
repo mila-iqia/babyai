@@ -159,4 +159,26 @@ class Level_TestUnblockingLoop(RoomGridLevel):
         self.instrs = BeforeInstr(put, AndInstr(goto1, goto2))
 
 
+class Level_TestPutNextCloseToDoor(RoomGridLevel):
+    """Test that unblocking does not results into an infinite loop."""
+
+    def __init__(self, seed=None):
+        super().__init__(
+            num_rows=2,
+            num_cols=2,
+            room_size=9,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.start_pos = np.array([15, 4])
+        self.start_dir = 2
+        door, pos = self.add_door(0, 0, 1, 'red', False)
+        door, pos = self.add_door(0, 1, 0, 'red', False)
+        door, pos = self.add_door(1, 1, 3, 'blue', False)
+        self.place_obj(Ball('blue'), (1, 7), (1, 1))
+        self.place_obj(Box('yellow'), (3, 15), (1, 1))
+        self.instrs = PutNextInstr(ObjDesc('box', 'yellow'), ObjDesc('ball', 'blue'))
+
+
 register_levels(__name__, globals())
