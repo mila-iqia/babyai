@@ -801,6 +801,7 @@ class ExploreSubgoal(Subgoal):
 
 
 class Bot:
+
     def __init__(self, mission, timeout=10000):
         # Mission to be solved
         self.mission = mission
@@ -827,6 +828,8 @@ class Bot:
 
         # Process/parse the instructions
         self.process_instr(mission.instrs)
+
+        self.bfs_counter = 0
 
     def find_obj_pos(self, obj_desc, adjacent=False):
         """
@@ -919,11 +922,15 @@ class Bot:
         while len(queue) > 0:
             state, prev_state = queue[0]
             queue = queue[1:]
+            i, j, di, dj = state
 
+            if i < 0 or i >= grid.width or j < 0 or j >= grid.height:
+                continue
             if state in previous_state:
                 continue
 
-            i, j, di, dj = state
+            self.bfs_counter += 1
+
             cell = grid.get(i, j)
             previous_state[state] = prev_state
 
@@ -950,7 +957,7 @@ class Bot:
                     if not cell.is_open:
                         continue
                 elif not ignore_blockers:
-                        continue
+                    continue
 
             # Visit each neighbor cell
             # for i, j in [(0, 1), (0, -1), (1, 0), (-1, 0)]:

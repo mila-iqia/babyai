@@ -101,6 +101,7 @@ for level_name in level_list:
     num_success = 0
     total_reward = 0
     total_steps = []
+    total_bfs_steps = 0
 
     for run_no in range(options.num_runs):
         level = level_dict[level_name]
@@ -145,6 +146,7 @@ for level_name in level_list:
                 episode_steps += 1
 
                 if done:
+                    total_bfs_steps += expert.bfs_counter
                     if reward > 0:
                         num_success += 1
                         total_steps.append(episode_steps)
@@ -173,3 +175,5 @@ total_time = end_time - start_time
 print('total time: %.1fs' % total_time)
 if not all_good:
     raise Exception("some tests failed")
+print(total_bfs_steps)
+
