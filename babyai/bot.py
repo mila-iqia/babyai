@@ -914,18 +914,22 @@ class Bot:
                 self.vis_mask[abs_i, abs_j] = True
 
     def breadth_first_search(self, initial_states, accept_fn, ignore_blockers):
+        """Performs breadth first search.
+
+        This is pretty much your textbook BFS. The state space is agent's locations,
+        but the current direction is also added to the queue to slightly prioritize
+        going straight over turning.
+
+        """
         queue = [(state, None) for state in initial_states]
         grid = self.mission.grid
         previous_pos = dict()
-
 
         while len(queue) > 0:
             state, prev_pos = queue[0]
             queue = queue[1:]
             i, j, di, dj = state
 
-            if i < 0 or i >= grid.width or j < 0 or j >= grid.height:
-                continue
             if (i, j) in previous_pos:
                 continue
 
@@ -960,17 +964,8 @@ class Bot:
                 elif not ignore_blockers:
                     continue
 
-            # Visit each neighbor cell
-            # for i, j in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
-            # TODO: this as in a for loop, that seems useles, it worked...
-            # I removed it - make sure it still works ok
-            # TODO: I want this to be
-            # "for positions that are one action away and that would make the state change
-            # (e.g. if position changes or if carrying changes) instead of one cell away.
-            # If there are no one action away positions that change the state,
-            # check "2 action away things" then "3 action away things",
-            # that is the maximum we should tolerate
-            # (e.g. left left forward/pickup/drop or right right forward/pickup/drop)
+            # Location to which the bot can get without turning
+            # are put in the queue first
             for k, l in [(di, dj), (dj, di), (-dj, -di), (-di, -dj)]:
                 next_pos = (i + k, j + l)
                 next_dir_vec = (k, l)
@@ -982,13 +977,11 @@ class Bot:
 
     def shortest_path(self, accept_fn, try_with_blockers=False):
         """
-        Perform a Breadth-First Search (BFS) starting from the agent position,
-        in order to find the closest cell or shortest path to a cell
-        satisfying a given condition.
+        Finds the path to any of the locations that satisfy `accept_fn`.
+        Prefers the paths that avoid blockers for as long as possible.
         """
 
         # Initial states to visit (BFS)
-        # Includes (i,j) positions along with path to given position
         initial_states = [(*self.mission.agent_pos, *self.mission.dir_vec)]
 
         path = finish = None
