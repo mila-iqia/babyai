@@ -1057,10 +1057,10 @@ class Bot:
             _, drop_pos, _ = self.shortest_path(match_empty)
 
         if not drop_pos:
-            _, drop_pos, _ = self.shortest_path(match_noadj, ignore_blockers=True)
+            _, drop_pos, _ = self.shortest_path(match_noadj, try_with_blockers=True)
 
         if not drop_pos:
-            _, drop_pos, _ = self.shortest_path(match_empty, ignore_blockers=True)
+            _, drop_pos, _ = self.shortest_path(match_empty, try_with_blockers=True)
 
         return drop_pos
 
