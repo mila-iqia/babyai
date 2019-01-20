@@ -709,7 +709,6 @@ class GoNextToSubgoal(Subgoal):
 
 class ExploreSubgoal(Subgoal):
     def get_action(self):
-        super().get_action()
         # Find the closest unseen position
         _, unseen_pos, _ = self.bot.shortest_path(
             lambda pos, cell: not self.bot.vis_mask[pos],
@@ -917,30 +916,32 @@ class Bot:
     def breadth_first_search(self, initial_states, accept_fn, ignore_blockers):
         queue = [(state, None) for state in initial_states]
         grid = self.mission.grid
-        previous_state = dict()
+        previous_pos = dict()
+
 
         while len(queue) > 0:
-            state, prev_state = queue[0]
+            state, prev_pos = queue[0]
             queue = queue[1:]
             i, j, di, dj = state
 
             if i < 0 or i >= grid.width or j < 0 or j >= grid.height:
                 continue
-            if state in previous_state:
+            if (i, j) in previous_pos:
                 continue
 
             self.bfs_counter += 1
 
             cell = grid.get(i, j)
-            previous_state[state] = prev_state
+            previous_pos[(i, j)] = prev_pos
 
             # If we reached a position satisfying the acceptance condition
             if accept_fn((i, j), cell):
                 path = []
-                while state != None:
-                    path.append(state)
-                    state = previous_state[state]
-                return path, (i, j), previous_state
+                pos = (i, j)
+                while pos:
+                    path.append(pos)
+                    pos = previous_pos[pos]
+                return path, (i, j), previous_pos
 
             # If this cell was not visually observed, don't expand from it
             if not self.vis_mask[i, j]:
@@ -974,10 +975,10 @@ class Bot:
                 next_pos = (i + k, j + l)
                 next_dir_vec = (k, l)
                 next_state = (*next_pos, *next_dir_vec)
-                queue.append((next_state, state))
+                queue.append((next_state, (i, j)))
 
         # Path not found
-        return None, None, previous_state
+        return None, None, previous_pos
 
     def shortest_path(self, accept_fn, try_with_blockers=False):
         """
@@ -992,26 +993,26 @@ class Bot:
 
         path = finish = None
         with_blockers = False
-        path, finish, previous_state = self.breadth_first_search(
+        path, finish, previous_pos = self.breadth_first_search(
             initial_states, accept_fn, ignore_blockers=False)
         if not path and try_with_blockers:
             with_blockers = True
             path, finish, _ = self.breadth_first_search(
-                previous_state, accept_fn, ignore_blockers=True)
+                [(i, j, 1, 0) for i, j in previous_pos],
+                accept_fn, ignore_blockers=True)
             if path:
                 # `path` now contains the path to a cell that is reachable without
                 # blockers. Now let's add the path to this cell
-                state = path[-1]
+                pos = path[-1]
                 extra_path = []
-                while state:
-                    extra_path.append(state)
-                    state = previous_state[state]
+                while pos:
+                    extra_path.append(pos)
+                    pos = previous_pos[pos]
                 path = path + extra_path[1:]
 
         if path:
-            # Only positions from the paths are used in the rest of the code
-            path = [tuple(state[0:2]) for state in path[::-1]]
             # And the starting position is not required
+            path = path[::-1]
             path = path[1:]
 
         # Note, that with_blockers only makes sense if path is not None
