@@ -86,7 +86,6 @@ def evaluate_agent(il_learn, eval_seed, num_eval_demos, return_obss_actions=Fals
         il_learn.args.env,
         episodes=num_eval_demos,
         seed=eval_seed,
-        seed_shift=0,
         return_obss_actions=return_obss_actions
     )
     agent.model.train()
