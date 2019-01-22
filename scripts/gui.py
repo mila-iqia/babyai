@@ -366,6 +366,12 @@ class AIGameWindow(QMainWindow):
         # UNCOMMENT THE FOLLOWING LINE TO DEBUG THE BOT
         self.missionBox.append('\nOptimal Bot Advisor Stack: {}'.format(self.bot_advisor_agent.bot.stack))
 
+        self.missionBox.append("""\n"""
+            """Arrow Keys: go left, right, up, down\n"""
+            """PageUp, PageDown: pick and drop\n"""
+            """Backspace: reset\n"""
+            """Shift: let the bot act""")
+
         # Set the steps remaining
         stepsRem = unwrapped.steps_remaining
         self.stepsLabel.setText(str(stepsRem))

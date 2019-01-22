@@ -23,28 +23,11 @@ from babyai.bot import Bot
 from babyai.utils.agent import ModelAgent, RandomAgent
 from random import Random
 
-level_list = [
-    'OpenRedDoor',
-    'GoToLocal',
-    'PutNextLocal',
 
-    'GoToObjMaze',
-    'GoTo',
-    'Open',
-    'Pickup',
-    'PickupLoc',
-    'PutNext',
+# MissBossLevel is the only level the bot currently can't always handle
+level_list = [name for name, level in level_dict.items()
+              if not getattr(level, 'is_bonus', False) and name != 'MiniBossLevel']
 
-    'Unlock',
-    'GoToImpUnlock',
-    'UnblockPickup',
-
-    'GoToSeq',
-    'Synth',
-    'SynthLoc',
-    'SynthSeq',
-    'BossLevel',
-]
 
 parser = OptionParser()
 parser.add_option(
@@ -108,11 +91,14 @@ if options.advise_mode:
 
 start_time = time.time()
 
+all_good = True
+
 for level_name in level_list:
 
     num_success = 0
     total_reward = 0
-    total_steps = 0
+    total_steps = []
+    total_bfs_steps = 0
 
     for run_no in range(options.num_runs):
         level = level_dict[level_name]
@@ -157,9 +143,10 @@ for level_name in level_list:
                 episode_steps += 1
 
                 if done:
+                    total_bfs_steps += expert.bfs_counter
                     if reward > 0:
                         num_success += 1
-                        total_steps += episode_steps
+                        total_steps.append(episode_steps)
                     if reward <= 0:
                         assert episode_steps == mission.max_steps  # Is there another reason for this to happen ?
                         if options.verbose:
@@ -171,12 +158,19 @@ for level_name in level_list:
             # Playing these 2 sets of actions should get you to the mission snapshot above
             print(before_optimal_actions, optimal_actions)
 
+    all_good = all_good and (num_success == options.num_runs)
+
     success_rate = 100 * num_success / options.num_runs
     mean_reward = total_reward / options.num_runs
-    mean_steps = total_steps / options.num_runs
+    mean_steps = sum(total_steps) / options.num_runs
 
     print('%16s: %.1f%%, r=%.3f, s=%.2f' % (level_name, success_rate, mean_reward, mean_steps))
-
+    # Uncomment the following line to print the number of steps per episode (useful to look for episodes to debug)
+    # print({options.seed + num_run: total_steps[num_run] for num_run in range(options.num_runs)})
 end_time = time.time()
 total_time = end_time - start_time
 print('total time: %.1fs' % total_time)
+if not all_good:
+    raise Exception("some tests failed")
+print(total_bfs_steps)
+

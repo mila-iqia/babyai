@@ -15,7 +15,7 @@ class Level_TestGoToBlocked(RoomGridLevel):
     Go to a yellow ball that is blocked with a lot of red balls.
     """
 
-    def __init__(self, room_size=8, seed=None):
+    def __init__(self, seed=None):
         super().__init__(
             num_rows=1,
             num_cols=1,
@@ -32,7 +32,7 @@ class Level_TestGoToBlocked(RoomGridLevel):
         for i in (1, 2, 3):
             for j in (1, 2, 3):
                 if (i, j) not in [(1 ,1), (3, 3)]:
-                    self.grid.set(i, j, Ball('red'))
+                    self.place_obj(Ball('red'), (i, j), (1, 1))
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
 
@@ -42,7 +42,7 @@ class Level_TestPutNextToBlocked(RoomGridLevel):
     Pick up a yellow ball and put it next to a blocked blue ball.
     """
 
-    def __init__(self, room_size=8, seed=None):
+    def __init__(self, seed=None):
         super().__init__(
             num_rows=1,
             num_cols=1,
@@ -62,6 +62,123 @@ class Level_TestPutNextToBlocked(RoomGridLevel):
         self.grid.set(2, 1, Ball('red'))
         self.instrs = PutNextInstr(ObjDesc(obj1.type, obj1.color),
                                    ObjDesc(obj2.type, obj2.color))
+
+
+class Level_TestPutNextToCloseToDoor1(RoomGridLevel):
+    """
+    The yellow ball must be put near the blue ball.
+    But blue ball is right next to a door.
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            num_rows=2,
+            num_cols=1,
+            room_size=9,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.start_pos = np.array([3, 3])
+        self.start_dir = 0
+        door, pos = self.add_door(0, 0, None, 'red', False)
+        self.obj1 = Ball('yellow')
+        self.obj2 = Ball('blue')
+        self.place_obj(self.obj1, (4, 4), (1, 1))
+        self.place_obj(self.obj2, (pos[0], pos[1] + 1), (1, 1))
+        self.instrs = BeforeInstr(
+            OpenInstr(ObjDesc('door', door.color)),
+            PutNextInstr(ObjDesc(self.obj1.type, self.obj1.color),
+                         ObjDesc(self.obj2.type, self.obj2.color)))
+
+
+class Level_TestPutNextToCloseToDoor2(Level_TestPutNextToCloseToDoor1):
+    """
+    The yellow ball must be put near the blue ball.
+    But blue ball is right next to a door.
+    """
+
+    def gen_mission(self):
+        super().gen_mission()
+        self.instrs = PutNextInstr(ObjDesc(self.obj1.type, self.obj1.color),
+                                   ObjDesc(self.obj2.type, self.obj2.color))
+
+
+
+class Level_TestPutNextToIdentical(RoomGridLevel):
+    """
+    Test that the agent does not endlessly hesitate between
+    two identical objects.
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            num_rows=1,
+            num_cols=1,
+            room_size=9,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.start_pos = np.array([3, 3])
+        self.start_dir = 0
+        self.place_obj(Box('yellow'), (1, 1), (1, 1))
+        self.place_obj(Ball('blue'), (4, 4), (1, 1))
+        self.place_obj(Ball('red'), (2, 2), (1, 1))
+        instr1 = PutNextInstr(ObjDesc('ball', 'blue'),
+                              ObjDesc('box', 'yellow'))
+        instr2 = PutNextInstr(ObjDesc('box', 'yellow'),
+                              ObjDesc('ball', None))
+        self.instrs = BeforeInstr(instr1, instr2)
+
+
+class Level_TestUnblockingLoop(RoomGridLevel):
+    """Test that unblocking does not results into an infinite loop."""
+
+    def __init__(self, seed=None):
+        super().__init__(
+            num_rows=2,
+            num_cols=2,
+            room_size=9,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.start_pos = np.array([15, 4])
+        self.start_dir = 2
+        door, pos = self.add_door(0, 0, 1, 'red', False)
+        door, pos = self.add_door(0, 1, 0, 'red', False)
+        door, pos = self.add_door(1, 1, 3, 'blue', False)
+        self.place_obj(Box('yellow'), (9, 1), (1, 1))
+        self.place_obj(Ball('blue'), (5, 3), (1, 1))
+        self.place_obj(Ball('yellow'), (6, 2), (1, 1))
+        self.place_obj(Key('blue'), (15, 15), (1, 1))
+        put = PutNextInstr(ObjDesc('key', 'blue'), ObjDesc('door', 'blue'))
+        goto1 = GoToInstr(ObjDesc('ball', 'yellow'))
+        goto2 = GoToInstr(ObjDesc('box', 'yellow'))
+        self.instrs = BeforeInstr(put, AndInstr(goto1, goto2))
+
+
+class Level_TestPutNextCloseToDoor(RoomGridLevel):
+    """Test that unblocking does not results into an infinite loop."""
+
+    def __init__(self, seed=None):
+        super().__init__(
+            num_rows=2,
+            num_cols=2,
+            room_size=9,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.start_pos = np.array([15, 4])
+        self.start_dir = 2
+        door, pos = self.add_door(0, 0, 1, 'red', False)
+        door, pos = self.add_door(0, 1, 0, 'red', False)
+        door, pos = self.add_door(1, 1, 3, 'blue', False)
+        self.place_obj(Ball('blue'), (1, 7), (1, 1))
+        self.place_obj(Box('yellow'), (3, 15), (1, 1))
+        self.instrs = PutNextInstr(ObjDesc('box', 'yellow'), ObjDesc('ball', 'blue'))
 
 
 register_levels(__name__, globals())

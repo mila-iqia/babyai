@@ -20,9 +20,10 @@ script:
     # Quickly exercise the RL training code
     - time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --procs 4 --batch-size 80 --log-interval 1 --save-interval 2 --val-episodes 10 --frames 300 --arch cnn1 --instr-dim 16 --image-dim 16 --memory-dim 16
 
-    # Check that the bot works on Boss Level
-    - python3 -m scripts.eval_bot --level BossLevel --num_runs 50 | grep "100.0%"
-    - python3 -m scripts.eval_bot --level BossLevel --num_runs 50 --advise_mode --non_optimal_steps 100 --bad_action_proba .3 | grep "100.0%"
+    # Check that the bot works on a few episodes of Boss Level and one episode of each level
+    - python3 -m scripts.eval_bot --level BossLevel --num_runs 50
+    - python3 -m scripts.eval_bot --level BossLevel --num_runs 50 --advise_mode --non_optimal_steps 100 --bad_action_proba .3
+    - python3 -m scripts.eval_bot --num_runs 1
 
     # Quickly test the generation of bot demos
     - python3 -m scripts.make_agent_demos --env BabyAI-GoToRedBallGrey-v0 --episodes 100 --valid-episodes 32
