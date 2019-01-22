@@ -38,10 +38,8 @@ parser.add_argument("--episodes", type=int, default=1000,
                     help="number of episodes to generate demonstrations for")
 parser.add_argument("--valid-episodes", type=int, default=512,
                     help="number of validation episodes to generate demonstrations for")
-parser.add_argument("--seed", type=int, default=1,
-                    help="random seed")
-parser.add_argument("--shift", type=int, default=0,
-                    help="skip this many mission from the given seed")
+parser.add_argument("--seed", type=int, default=0,
+                    help="start random seed")
 parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected")
 parser.add_argument("--log-interval", type=int, default=100,
@@ -63,9 +61,6 @@ logger = logging.getLogger(__name__)
 
 # Set seed for all randomness sources
 
-if args.seed == 0:
-    raise ValueError("seed == 0 is reserved for validation purposes")
-
 
 def print_demo_lengths(demos):
     num_frames_per_episode = [len(demo[2]) for demo in demos]
@@ -78,9 +73,6 @@ def generate_demos(n_episodes, valid, seed, shift=0):
 
     # Generate environment
     env = gym.make(args.env)
-    env.seed(seed)
-    for i in range(shift):
-        env.reset()
 
     agent = utils.load_agent(env, args.model, args.demos, 'agent', args.argmax, args.env)
     demos_path = utils.get_demos_path(args.demos, args.env, 'agent', valid)
@@ -92,6 +84,7 @@ def generate_demos(n_episodes, valid, seed, shift=0):
         # Run the expert for one episode
 
         done = False
+        env.seed(seed + len(demos))
         obs = env.reset()
         agent.on_reset()
 
@@ -133,7 +126,7 @@ def generate_demos(n_episodes, valid, seed, shift=0):
             demos_per_second = args.log_interval / (now - checkpoint_time)
             to_go = (n_episodes - len(demos)) / demos_per_second
             logger.info("demo #{}, {:.3f} demos per second, {:.3f} seconds to go".format(
-                len(demos), demos_per_second, to_go))
+                len(demos) - 1, demos_per_second, to_go))
             checkpoint_time = now
 
         # Save demonstrations
@@ -211,9 +204,9 @@ logging.basicConfig(level='INFO', format="%(asctime)s: %(levelname)s: %(message)
 logger.info(args)
 # Training demos
 if args.jobs == 0:
-    generate_demos(args.episodes, False, args.seed, args.shift)
+    generate_demos(args.episodes, False, args.seed)
 else:
     generate_demos_cluster()
 # Validation demos
 if args.valid_episodes:
-    generate_demos(args.valid_episodes, True, 0)
+    generate_demos(args.valid_episodes, True, int(1e9))

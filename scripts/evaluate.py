@@ -24,8 +24,8 @@ parser.add_argument("--demos", default=None,
                     help="name of the demos file (REQUIRED or --demos-origin or --model REQUIRED)")
 parser.add_argument("--episodes", type=int, default=1000,
                     help="number of episodes of evaluation (default: 1000)")
-parser.add_argument("--seed", type=int, default=None,
-                    help="random seed (default: 0 if model agent, 1 if demo agent) -- needs to be set to 0 if valid")
+parser.add_argument("--seed", type=int, default=1e9,
+                    help="random seed")
 parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected for model agent")
 parser.add_argument("--contiguous-episodes", action="store_true", default=False,
@@ -63,8 +63,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     assert_text = "ONE of --model or --demos-origin or --demos must be specified."
     assert int(args.model is None) + int(args.demos_origin is None) + int(args.demos is None) == 2, assert_text
-    if args.seed is None:
-        args.seed = 0 if args.model is not None else 1
 
     start_time = time.time()
     logs = main(args, args.seed, args.episodes)
