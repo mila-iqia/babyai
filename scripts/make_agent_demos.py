@@ -162,7 +162,7 @@ def generate_demos_cluster():
     for i in range(args.jobs):
         cmd_i = list(map(str,
             command
-              + ['--seed', args.seed + i]
+              + ['--seed', args.seed + i * demos_per_job]
               + ['--demos', job_demo_names[i]]
               + ['--episodes', demos_per_job]
               + ['--jobs', 0]
