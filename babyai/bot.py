@@ -325,10 +325,10 @@ class GoNextToSubgoal(Subgoal):
     datum : (int, int) or ObjDescr
         Where the bot should go. Can be either a grid position, or an object description. If
         `datum` is an object description it is resolved anew at each step, meaning that the bot
-        can change its mind and go another object that matches the same description.
+        can change its mind and go to another object that matches the same description.
     adjacent : bool
-        When True, the bot aims to face an empty cell that is adjacent to the target cell or object.
-        When False (default), the bot aims to face the target cell or object.
+        When `True`, the bot aims to face an empty cell that is adjacent to the target cell or object.
+        When `False` (default), the bot aims to face the target cell or object.
     no_reexplore : bool
         Suppresses the heuristics of additional exploration within the current room even
         when a blocker path is already found.
