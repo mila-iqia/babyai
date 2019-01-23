@@ -113,7 +113,7 @@ def generate_demos(n_episodes, valid, seed, shift=0):
                 break
             if reward == 0:
                 if args.on_exception == 'crash':
-                    raise Exception("mission failed")
+                    raise Exception("mission failed, the seed is {}".format(seed + len(demos)))
                 logger.info("mission failed")
         except Exception:
             if args.on_exception == 'crash':
