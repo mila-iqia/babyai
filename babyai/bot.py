@@ -351,7 +351,7 @@ class GoNextToSubgoal(Subgoal):
                 # No path found -> Explore the world
                 return ExploreSubgoal(self.bot).get_action()
         else:
-            target_pos = self.datum
+            target_pos = tuple(self.datum)
 
         # CASE 1: The position we are on is the one we should go next to
         # -> Move away from it
@@ -377,7 +377,7 @@ class GoNextToSubgoal(Subgoal):
         # CASE 3: we are still far from the target
         # Try to find a non-blocker path
         path, _, _ = self.bot.shortest_path(
-            lambda pos, cell: np.array_equal(pos, target_pos)
+            lambda pos, cell: pos == target_pos,
         )
 
         # CASE 3.1: No non-blocker path found, and reexploration is allowed
@@ -399,7 +399,7 @@ class GoNextToSubgoal(Subgoal):
         # -> Look for blocker paths
         if not path:
             path, _, _ = self.bot.shortest_path(
-                lambda pos, cell: np.array_equal(pos, target_pos),
+                lambda pos, cell: pos == target_pos,
                 try_with_blockers=True
             )
 
@@ -468,7 +468,7 @@ class GoNextToSubgoal(Subgoal):
                 self.bot.stack.append(ExploreSubgoal(self.bot))
                 return False
         else:
-            target_pos = self.datum
+            target_pos = tuple(self.datum)
 
         # CASE 1: The position we are on is the one we should go next to
         # -> Move away from it
@@ -516,7 +516,7 @@ class GoNextToSubgoal(Subgoal):
         # CASE 5: otherwise
         # Try to find a path
         path, _, _ = self.bot.shortest_path(
-            lambda pos, cell: np.array_equal(pos, target_pos),
+            lambda pos, cell: pos == target_pos,
             try_with_blockers=True
         )
 
@@ -699,6 +699,7 @@ class Bot:
         self.process_instr(mission.instrs)
 
         self.bfs_counter = 0
+        self.bfs_step_counter = 0
 
     def find_obj_pos(self, obj_desc, adjacent=False):
         """
@@ -791,6 +792,8 @@ class Bot:
         going straight over turning.
 
         """
+        self.bfs_counter += 1
+
         queue = [(state, None) for state in initial_states]
         grid = self.mission.grid
         previous_pos = dict()
@@ -803,7 +806,7 @@ class Bot:
             if (i, j) in previous_pos:
                 continue
 
-            self.bfs_counter += 1
+            self.bfs_step_counter += 1
 
             cell = grid.get(i, j)
             previous_pos[(i, j)] = prev_pos
