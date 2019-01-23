@@ -378,14 +378,15 @@ class GoNextToSubgoal(Subgoal):
         # CASE 1: The position we are on is the one we should go next to
         # -> Move away from it
         if manhattan_distance(target_pos, self.pos) == (1 if self.adjacent else 0):
-            if self.fwd_cell is None:
+            def steppable(cell):
+                return cell is None or (cell.type == 'door' and cell.is_open)
+            if steppable(self.fwd_cell):
                 return self.actions.forward
-            if self.bot.mission.grid.get(*(self.pos + self.right_vec)) is None:
+            if steppable(self.bot.mission.grid.get(*(self.pos + self.right_vec))):
                 return self.actions.right
-            if self.bot.mission.grid.get(*(self.pos - self.right_vec)) is None:
+            if steppable(self.bot.mission.grid.get(*(self.pos - self.right_vec))):
                 return self.actions.left
-            # TODO: There is a corner case : you are on the position but surrounded in 4 positions
-            # otherwise: forward, left and right are full, we assume that you can go behind
+            # Spin and hope for the best
             return self.actions.left
 
         # CASE 2: we are facing the target cell, subgoal completed
