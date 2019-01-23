@@ -723,8 +723,9 @@ class Bot:
 
         assert len(obj_desc.obj_set) > 0
 
-        best_distance_to_obj = None
+        best_distance_to_obj = 999
         best_pos = None
+
 
         for i in range(len(obj_desc.obj_set)):
             try:
@@ -740,23 +741,32 @@ class Bot:
                     )
                     assert shortest_path_to_obj is not None
                     distance_to_obj = len(shortest_path_to_obj)
+
                     if with_blockers:
                         # The distance should take into account the steps necessary
                         # to unblock the way. Instead of computing it exactly,
                         # we can use a lower bound on this number of steps
                         # which is 4 when the agent is not holding anything
-                        # (pick, turn, drop, turn back)
+                        # (pick, turn, drop, turn back
                         # and 7 if the agent is carrying something
                         # (turn, drop, turn back, pick,
                         # turn to other direction, drop, turn back)
                         distance_to_obj = (len(shortest_path_to_obj)
                                            + (7 if self.mission.carrying else 4))
+
+                    # If we looking for a door and we are currently in that cell
+                    # that contains the door, it will take us at least 2
+                    # (3 if `adjacent == True`) steps to reach the goal.`
+                    if distance_to_obj == 0:
+                        distance_to_obj = 3 if adjacent else 2
+
                     # If what we want is to face a location that is adjacent to an object,
                     # and if we are already right next to this object,
                     # then we should not prefer this object to those at distance 2
                     if adjacent and distance_to_obj == 1:
                         distance_to_obj = 3
-                    if not best_distance_to_obj or distance_to_obj < best_distance_to_obj:
+
+                    if distance_to_obj < best_distance_to_obj:
                         best_distance_to_obj = distance_to_obj
                         best_pos = obj_pos
             except IndexError:
