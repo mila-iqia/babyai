@@ -75,7 +75,7 @@ class ArgumentParser(argparse.ArgumentParser):
                             help="image embedding architecture")
 
         # Validation parameters
-        self.add_argument("--val-seed", type=int, default=1e9,
+        self.add_argument("--val-seed", type=int, default=int(1e9),
                             help="seed for environment used for validation (default: 1e9)")
         self.add_argument("--val-interval", type=int, default=1,
                             help="number of epochs between two validation checks (default: 1)")

@@ -24,7 +24,7 @@ parser.add_argument("--demos", default=None,
                     help="name of the demos file (REQUIRED or --demos-origin or --model REQUIRED)")
 parser.add_argument("--episodes", type=int, default=1000,
                     help="number of episodes of evaluation (default: 1000)")
-parser.add_argument("--seed", type=int, default=1e9,
+parser.add_argument("--seed", type=int, default=int(1e9),
                     help="random seed")
 parser.add_argument("--argmax", action="store_true", default=False,
                     help="action with highest probability is selected for model agent")
