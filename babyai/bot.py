@@ -376,17 +376,13 @@ class GoNextToSubgoal(Subgoal):
 
         # CASE 3: we are still far from the target
         # Try to find a non-blocker path
-        path, _, _ = self.bot.shortest_path(
-            lambda pos, cell: pos == target_pos,
-        )
+        path, _, _ = self.bot.shortest_path(('compare_pos', target_pos))
 
         # CASE 3.1: No non-blocker path found, and reexploration is allowed
         # -> Explore in the same room to see if a non-blocker path exists
         if not self.no_reexplore and path is None:
             # Find the closest unseen position
-            _, unseen_pos, _ = self.bot.shortest_path(
-                lambda pos, cell: not self.bot.vis_mask[pos]
-            )
+            _, unseen_pos, _ = self.bot.shortest_path('not_visible')
 
             if unseen_pos is not None:
                 # make sure unseen position is in the same room, otherwise prioritize blocker paths
@@ -398,10 +394,7 @@ class GoNextToSubgoal(Subgoal):
         # CASE 3.2: No non-blocker path found and (reexploration is not allowed or nothing to explore)
         # -> Look for blocker paths
         if not path:
-            path, _, _ = self.bot.shortest_path(
-                lambda pos, cell: pos == target_pos,
-                try_with_blockers=True
-            )
+            path, _, _ = self.bot.shortest_path(('compare_pos', target_pos), try_with_blockers=True)
 
         # CASE 3.2.1: No path found
         # -> explore the world
@@ -515,10 +508,7 @@ class GoNextToSubgoal(Subgoal):
 
         # CASE 5: otherwise
         # Try to find a path
-        path, _, _ = self.bot.shortest_path(
-            lambda pos, cell: pos == target_pos,
-            try_with_blockers=True
-        )
+        path, _, _ = self.bot.shortest_path(('compare_pos', target_pos), try_with_blockers=True)
 
         # CASE 5.2: No path found, explore the world
         if not path:
@@ -579,31 +569,21 @@ class GoNextToSubgoal(Subgoal):
 class ExploreSubgoal(Subgoal):
     def get_action(self):
         # Find the closest unseen position
-        _, unseen_pos, _ = self.bot.shortest_path(
-            lambda pos, cell: not self.bot.vis_mask[pos],
-            try_with_blockers=True
-        )
+        _, unseen_pos, _ = self.bot.shortest_path('not_visible', try_with_blockers=True)
 
         if unseen_pos:
             return GoNextToSubgoal(self.bot, unseen_pos).get_action()
 
         # Find the closest unlocked unopened door
-        def unopened_unlocked_door(pos, cell):
-            return cell and cell.type == 'door' and not cell.is_locked and not cell.is_open
-
-        # Find the closest unopened door
-        def unopened_door(pos, cell):
-            return cell and cell.type == 'door' and not cell.is_open
-
         # Try to find an unlocked door first
         # We do this because otherwise, opening a locked door as
         # a subgoal may try to open the same door for exploration,
         # resulting in an infinite loop
         _, door_pos, _ = self.bot.shortest_path(
-            unopened_unlocked_door, try_with_blockers=True)
+            'unopened_unlocked_door', try_with_blockers=True)
         if not door_pos:
             _, door_pos, _ = self.bot.shortest_path(
-            unopened_door, try_with_blockers=True)
+            'unopened_door', try_with_blockers=True)
 
         # Open the door
         if door_pos:
@@ -620,10 +600,7 @@ class ExploreSubgoal(Subgoal):
         super().take_action(action)
 
         # Find the closest unseen position
-        _, unseen_pos, with_blockers = self.bot.shortest_path(
-            lambda pos, cell: not self.bot.vis_mask[pos],
-            try_with_blockers=True
-        )
+        _, unseen_pos, with_blockers = self.bot.shortest_path('not_visible', try_with_blockers=True)
 
         if unseen_pos:
             self.bot.stack.pop()
@@ -632,31 +609,15 @@ class ExploreSubgoal(Subgoal):
                                 reason='Explore', blocker=with_blockers))
             return False
 
-        # Find the closest unlocked unopened door
-        def unopened_unlocked_door(pos, cell):
-            if not cell:
-                return False
-            if cell.type != 'door':
-                return False
-            return not cell.is_open and not cell.is_locked
-
-        # Find the closest unopened door
-        def unopened_door(pos, cell):
-            if not cell:
-                return False
-            if cell.type != 'door':
-                return False
-            return not cell.is_open
-
         # Try to find an unlocked door first
         # We do this because otherwise, opening a locked door as
         # a subgoal may try to open the same door for exploration,
         # resulting in an infinite loop
         _, door_pos, _ = self.bot.shortest_path(
-            unopened_unlocked_door, try_with_blockers=True)
+            'unopened_unlocked_door', try_with_blockers=True)
         if not door_pos:
             _, door_pos, _ = self.bot.shortest_path(
-            unopened_door, try_with_blockers=True)
+            'unopened_door', try_with_blockers=True)
 
         # Open the door
         if door_pos:
@@ -701,6 +662,8 @@ class Bot:
         self.bfs_counter = 0
         self.bfs_step_counter = 0
 
+        self.path_cache = {}
+
     def find_obj_pos(self, obj_desc, adjacent=False):
         """
         Find the position of the closest visible object matching a given description
@@ -720,9 +683,7 @@ class Bot:
 
                 if self.vis_mask[obj_pos]:
                     shortest_path_to_obj, _, with_blockers = self.shortest_path(
-                        lambda pos, cell: pos == obj_pos,
-                        try_with_blockers=True
-                    )
+                        ('compare_pos', obj_pos), try_with_blockers=True)
                     assert shortest_path_to_obj is not None
                     distance_to_obj = len(shortest_path_to_obj)
                     if with_blockers:
@@ -783,6 +744,53 @@ class Bot:
                     continue
 
                 self.vis_mask[abs_i, abs_j] = True
+
+        self.path_cache = {}
+
+    ### ACCEPTANCE CONDITIONS FOR BFS
+
+    def match_noadj(self, except_pos, pos, _):
+        i, j = pos
+
+        if np.array_equal(pos, self.mission.agent_pos):
+            return False
+
+        if except_pos and np.array_equal(pos, except_pos):
+            return False
+
+        # If the cell or a neighbor was unseen or is occupied, reject
+        for k, l in [(0, 0), (0, 1), (0, -1), (1, 0), (-1, 0)]:
+            nb_pos = (i + k, j + l)
+            if not self.vis_mask[nb_pos] or self.mission.grid.get(*nb_pos):
+                return False
+
+        return True
+
+    def match_empty(self, except_pos, pos, _):
+        i, j = pos
+
+        if np.array_equal(pos, self.mission.agent_pos):
+            return False
+
+        if except_pos and np.array_equal(pos, except_pos):
+            return False
+
+        if not self.vis_mask[pos] or self.mission.grid.get(*pos):
+            return False
+
+        return True
+
+    def compare_pos(self, target_pos, pos, _):
+        return target_pos == pos
+
+    def not_visible(self, pos, _):
+        return not self.vis_mask[pos]
+
+    def unopened_unlocked_door(self, pos, cell):
+        return cell and cell.type == 'door' and not cell.is_locked and not cell.is_open
+
+    def unopened_door(self, pos, cell):
+        return cell and cell.type == 'door' and not cell.is_open
 
     def breadth_first_search(self, initial_states, accept_fn, ignore_blockers):
         """Performs breadth first search.
@@ -848,11 +856,25 @@ class Bot:
         # Path not found
         return None, None, previous_pos
 
-    def shortest_path(self, accept_fn, try_with_blockers=False):
+    def shortest_path(self, accept_conditions, try_with_blockers=False):
         """
         Finds the path to any of the locations that satisfy `accept_fn`.
         Prefers the paths that avoid blockers for as long as possible.
         """
+        cache_key = (accept_conditions, try_with_blockers)
+        result = self.path_cache.get(cache_key)
+        if result:
+            return result
+
+        assert isinstance(accept_conditions, (tuple, str))
+        if isinstance(accept_conditions, str):
+            accept_fn = getattr(self, accept_conditions)
+        else:
+            # Yes, I know about functools.partial.
+            # But most of people in deep learning don't.
+            accept_fn_method = getattr(self, accept_conditions[0])
+            def accept_fn(pos, cell):
+                return accept_fn_method(*accept_conditions[1:], pos, cell)
 
         # Initial states to visit (BFS)
         initial_states = [(*self.mission.agent_pos, *self.mission.dir_vec)]
@@ -882,7 +904,9 @@ class Bot:
             path = path[1:]
 
         # Note, that with_blockers only makes sense if path is not None
-        return path, finish, with_blockers
+        result = path, finish, with_blockers
+        self.path_cache[cache_key] = result
+        return result
 
     def find_drop_pos(self, except_pos=None):
         """
@@ -892,47 +916,16 @@ class Bot:
 
         grid = self.mission.grid
 
-        def match_noadj(pos, cell):
-            i, j = pos
-
-            if np.array_equal(pos, self.mission.agent_pos):
-                return False
-
-            if except_pos and np.array_equal(pos, except_pos):
-                return False
-
-            # If the cell or a neighbor was unseen or is occupied, reject
-            for k, l in [(0, 0), (0, 1), (0, -1), (1, 0), (-1, 0)]:
-                nb_pos = (i + k, j + l)
-                if not self.vis_mask[nb_pos] or grid.get(*nb_pos):
-                    return False
-
-            return True
-
-        def match_empty(pos, cell):
-            i, j = pos
-
-            if np.array_equal(pos, self.mission.agent_pos):
-                return False
-
-            if except_pos and np.array_equal(pos, except_pos):
-                return False
-
-            if not self.vis_mask[pos] or grid.get(*pos):
-                return False
-
-            return True
-
-        _, drop_pos, _ = self.shortest_path(match_noadj)
+        _, drop_pos, _ = self.shortest_path(('match_noadj', except_pos))
 
         if not drop_pos:
-            _, drop_pos, _ = self.shortest_path(match_empty)
+            _, drop_pos, _ = self.shortest_path(('match_empty', except_pos))
 
         if not drop_pos:
-            _, drop_pos, _ = self.shortest_path(match_noadj, try_with_blockers=True)
+            _, drop_pos, _ = self.shortest_path(('match_noadj', except_pos), try_with_blockers=True)
 
         if not drop_pos:
-            _, drop_pos, _ = self.shortest_path(match_empty, try_with_blockers=True)
+            _, drop_pos, _ = self.shortest_path(('match_empty', except_pos), try_with_blockers=True)
 
         return drop_pos
 
