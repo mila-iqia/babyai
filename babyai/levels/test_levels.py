@@ -183,5 +183,33 @@ class Level_TestPutNextCloseToDoor(RoomGridLevel):
         self.instrs = PutNextInstr(ObjDesc('box', 'yellow'), ObjDesc('ball', 'blue'))
 
 
+class Level_TestLotsOfBlockers(RoomGridLevel):
+    """
+    Test that the agent does not endlessly hesitate between
+    two identical objects.
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            num_rows=1,
+            num_cols=1,
+            room_size=8,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.start_pos = np.array([5, 5])
+        self.start_dir = 0
+        self.place_obj(Box('yellow'), (2, 1), (1, 1))
+        self.place_obj(Box('yellow'), (2, 2), (1, 1))
+        self.place_obj(Box('yellow'), (2, 3), (1, 1))
+        self.place_obj(Box('yellow'), (3, 4), (1, 1))
+        self.place_obj(Box('yellow'), (2, 6), (1, 1))
+        self.place_obj(Box('yellow'), (1, 3), (1, 1))
+        self.place_obj(Ball('blue'), (1, 2), (1, 1))
+        self.place_obj(Ball('red'), (3, 6), (1, 1))
+        self.instrs = PutNextInstr(ObjDesc('ball', 'red'),
+                                   ObjDesc('ball', 'blue'))
+
 
 register_levels(__name__, globals())

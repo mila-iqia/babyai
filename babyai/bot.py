@@ -918,7 +918,7 @@ class Bot:
 
         def match_unblock(pos, cell):
             # Consider the region of 8 neighboring cells around the candidate cell.
-            # If dropping the object in the candidate cell disconnects this region,
+            # If dropping the object in the candidate makes this region disconnected,
             # then probably it is better to drop elsewhere.
 
             i, j = pos
@@ -933,28 +933,44 @@ class Bot:
             if not self.vis_mask[i, j] or grid.get(i, j):
                 return False
 
-            # Consider a cell empty if it is visible and doesn't not anything in it.
-            # Exception 1: consider the cell with the agent also empty, even if it is
-            # carrying smth
-            # Exception 2: except_pos is considered busy as well, because it is typically
-            # also planned to drop something in it
-            empty = []
+            # We distinguish cells of three classes:
+            # class 0: the empty ones, including open doors
+            # class 1: those that are not interesting (just walls so far)
+            # class 2: all the rest, including objects and cells that are current not visible,
+            #          and hence may contain objects, and also `except_pos` at it may soon contain
+            #          an object
+            # We want to ensure that empty cells are connected, and that one can reach
+            # any object cell from any other object cell.
+            cell_class = []
             for k, l in [(-1, -1), (0, -1), (1, -1), (1, 0),
                          (1, 1), (0, 1), (-1, 1), (-1, 0)]:
                 nb_pos = (i + k, j + l)
                 cell = grid.get(*nb_pos)
-                empty.append(self.vis_mask[nb_pos]
-                              and (not cell
-                                   or (cell.type == 'door' and cell.is_open)
-                                   or nb_pos == agent_pos)
-                              and (not except_pos or nb_pos != except_pos))
+                # compeletely blocked
+                if self.vis_mask[nb_pos] and cell and cell.type == 'wall':
+                    cell_class.append(1)
+                # empty
+                elif (self.vis_mask[nb_pos]
+                        and (not cell or (cell.type == 'door' and cell.is_open) or nb_pos == agent_pos)
+                        and nb_pos != except_pos):
+                    cell_class.append(0)
+                # an object cell
+                else:
+                    cell_class.append(2)
 
             # Now we need to check that empty cells are connected. To do that,
             # let's check how many times empty changes to non-empty
             changes = 0
             for i in range(8):
-                if empty[(i + 1) % 8] != empty[i]:
+                if bool(cell_class[(i + 1) % 8]) != bool(cell_class[i]):
                     changes += 1
+
+            # Lastly, we need check that every object has an adjacent empty cell
+            for i in range(8):
+                next_i = (i + 1) % 8
+                prev_i = (i + 7) % 8
+                if cell_class[i] == 2 and cell_class[prev_i] != 0 and cell_class[next_i] != 0:
+                    return False
 
             return changes <= 2
 
