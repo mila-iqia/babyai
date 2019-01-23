@@ -160,7 +160,7 @@ class Level_TestUnblockingLoop(RoomGridLevel):
 
 
 class Level_TestPutNextCloseToDoor(RoomGridLevel):
-    """Test that unblocking does not results into an infinite loop."""
+    """Test putting next when there is door where the object should be put."""
 
     def __init__(self, seed=None):
         super().__init__(
@@ -171,14 +171,17 @@ class Level_TestPutNextCloseToDoor(RoomGridLevel):
         )
 
     def gen_mission(self):
-        self.start_pos = np.array([15, 4])
+        self.start_pos = np.array([5, 10])
         self.start_dir = 2
-        door, pos = self.add_door(0, 0, 1, 'red', False)
-        door, pos = self.add_door(0, 1, 0, 'red', False)
-        door, pos = self.add_door(1, 1, 3, 'blue', False)
-        self.place_obj(Ball('blue'), (1, 7), (1, 1))
+        door, pos1 = self.add_door(0, 0, 1, 'red', False)
+        door, pos2 = self.add_door(0, 1, 0, 'red', False)
+        door, pos3 = self.add_door(1, 1, 3, 'blue', False)
+        self.place_obj(Ball('blue'), (pos1[0], pos1[1] - 1), (1, 1))
+        self.place_obj(Ball('blue'), (pos1[0], pos1[1] - 2), (1, 1))
+        self.place_obj(Box('green'), (pos1[0] - 1, pos1[1] - 1), (1, 1))
         self.place_obj(Box('yellow'), (3, 15), (1, 1))
         self.instrs = PutNextInstr(ObjDesc('box', 'yellow'), ObjDesc('ball', 'blue'))
+
 
 
 register_levels(__name__, globals())
