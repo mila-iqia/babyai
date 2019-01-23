@@ -318,13 +318,35 @@ class PickupSubgoal(Subgoal):
 
 
 class GoNextToSubgoal(Subgoal):
+    """The subgoal for going next to objects or positions.
+
+    Parameters
+    ----------
+    datum : (int, int) or ObjDescr
+        Where the bot should go. Can be either a grid position, or an object description. If
+        `datum` is an object description it is resolved anew at each step, meaning that the bot
+        can change its mind and go another object that matches the same description.
+    adjacent : bool
+        When True, the bot aims to face an empty cell that is adjacent to the target cell or object.
+        When False (default), the bot aims to face the target cell or object.
+    no_reexplore : bool
+        Suppresses the heuristics of additional exploration within the current room even
+        when a blocker path is already found.
+    blocker : bool
+        Flag to know if the path considered for exploration has a blocker or not.
+        # TODO (Salem): I was mistakengly initiating blocker to be always False, it worked fine.
+        Now that it's fixed, make sure it still works, and ideally is better, otherwise revert
+        and see again the purpose of this blocker thing.
+    reason : str
+        Reason we are performing this subgoal. Possiblities: Explore, GoToObj
+
+    """
     def __init__(self, bot=None, datum=None, reason=None, no_reexplore=False, blocker=False, adjacent=False):
         super().__init__(bot, datum)
-        self.adjacent = adjacent  # Do we need to go to a place 2 cells away from the goal ? (for PutNextTo ! )
-        self.reason = reason  # Reason we are performing this subgoal. Possiblities: Explore, GoToObj
-        self.no_reexplore = no_reexplore  # Flag to know if Exploring in the same room  is a good idea
-        self.blocker = blocker  # Flag to know if the path considered for exploration has a blocker or not
-        # TODO: I was mistakengly initiating blocker to be always False, it worked fine. Now that it's fixed, make sure it sill works, and ideally is better, otherwise revert and see again the purpose of this blocker thing
+        self.adjacent = adjacent
+        self.reason = reason
+        self.no_reexplore = no_reexplore
+        self.blocker = blocker
 
     def __repr__(self):
         """Mainly for debugging purposes"""
@@ -503,15 +525,6 @@ class GoNextToSubgoal(Subgoal):
         if np.array_equal(target_pos, self.new_fwd_pos):
             assert action in (self.actions.forward, self.actions.left, self.actions.right), "Doesn't make sense"
             return True
-
-        # CASE 4: The reason for this subgoal is because we are going to a certain object, and the played action changes
-        # the field of view
-        # -> remove the subgoal and make the 'GoToObj' subgoal recreate a new GoNextTo subgoal, potentially with
-        # a new target, because moving might lead us to discover a similar object that's actually closer
-        if self.reason == 'GoToObj' and not self.adjacent:
-            if action in (self.actions.forward, self.actions.left, self.actions.right):
-                self.bot.stack.pop()
-                return False
 
         # CASE 5: otherwise
         # Try to find a path
@@ -698,6 +711,7 @@ class Bot:
         # Process/parse the instructions
         self.process_instr(mission.instrs)
 
+        # Useful statistics
         self.bfs_counter = 0
         self.bfs_step_counter = 0
 
