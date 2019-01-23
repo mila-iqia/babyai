@@ -26,7 +26,7 @@ from random import Random
 
 # MissBossLevel is the only level the bot currently can't always handle
 level_list = [name for name, level in level_dict.items()
-              if not getattr(level, 'is_bonus', False) and name != 'MiniBossLevel']
+              if not getattr(level, 'is_bonus', False)]
 
 
 parser = OptionParser()

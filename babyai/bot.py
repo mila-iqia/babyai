@@ -900,28 +900,52 @@ class Bot:
 
     def find_drop_pos(self, except_pos=None):
         """
-        Find a position where an object can be dropped,
-        ideally without blocking anything
+        Find a position where an object can be dropped, ideally without blocking anything.
         """
 
         grid = self.mission.grid
 
-        def match_noadj(pos, cell):
-            i, j = pos
+        def match_unblock(pos, cell):
+            # Consider the region of 8 neighboring cells around the candidate cell.
+            # If dropping the object in the candidate cell disconnects this region,
+            # then probably it is better to drop elsewhere.
 
-            if np.array_equal(pos, self.mission.agent_pos):
+            i, j = pos
+            agent_pos = tuple(self.mission.agent_pos)
+
+            if np.array_equal(pos, agent_pos):
                 return False
 
             if except_pos and np.array_equal(pos, except_pos):
                 return False
 
-            # If the cell or a neighbor was unseen or is occupied, reject
-            for k, l in [(0, 0), (0, 1), (0, -1), (1, 0), (-1, 0)]:
-                nb_pos = (i + k, j + l)
-                if not self.vis_mask[nb_pos] or grid.get(*nb_pos):
-                    return False
+            if not self.vis_mask[i, j] or grid.get(i, j):
+                return False
 
-            return True
+            # Consider a cell empty if it is visible and doesn't not anything in it.
+            # Exception 1: consider the cell with the agent also empty, even if it is
+            # carrying smth
+            # Exception 2: except_pos is considered busy as well, because it is typically
+            # also planned to drop something in it
+            empty = []
+            for k, l in [(-1, -1), (0, -1), (1, -1), (1, 0),
+                         (1, 1), (0, 1), (-1, 1), (-1, 0)]:
+                nb_pos = (i + k, j + l)
+                cell = grid.get(*nb_pos)
+                empty.append(self.vis_mask[nb_pos]
+                              and (not cell
+                                   or (cell.type == 'door' and cell.is_open)
+                                   or nb_pos == agent_pos)
+                              and (not except_pos or nb_pos != except_pos))
+
+            # Now we need to check that empty cells are connected. To do that,
+            # let's check how many times empty changes to non-empty
+            changes = 0
+            for i in range(8):
+                if empty[(i + 1) % 8] != empty[i]:
+                    changes += 1
+
+            return changes <= 2
 
         def match_empty(pos, cell):
             i, j = pos
@@ -937,13 +961,13 @@ class Bot:
 
             return True
 
-        _, drop_pos, _ = self.shortest_path(match_noadj)
+        _, drop_pos, _ = self.shortest_path(match_unblock)
 
         if not drop_pos:
             _, drop_pos, _ = self.shortest_path(match_empty)
 
         if not drop_pos:
-            _, drop_pos, _ = self.shortest_path(match_noadj, try_with_blockers=True)
+            _, drop_pos, _ = self.shortest_path(match_unblock, try_with_blockers=True)
 
         if not drop_pos:
             _, drop_pos, _ = self.shortest_path(match_empty, try_with_blockers=True)
