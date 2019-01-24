@@ -23,8 +23,6 @@ script:
     # Check that the bot works on a few episodes of Boss Level
     - python3 -m scripts.eval_bot --level BossLevel --num_runs 50
     - python3 -m scripts.eval_bot --level BossLevel --num_runs 50 --advise_mode --non_optimal_steps 100 --bad_action_proba .3
-    # Test the bot on MiniBossLevel, cause it is especially good for testing unblocking
-    - python3 -m scripts.eval_bot --level MiniBossLevel --num_runs 50
     # Check that the bot works on a single episode from each level
     - python3 -m scripts.eval_bot --num_runs 1
 
