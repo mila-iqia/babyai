@@ -65,13 +65,6 @@ class Subgoal:
         """
         pass
 
-    def subgoal_accomplished(self):
-        self.bot.stack.pop()
-        if len(self.bot.stack) >= 1:
-            subgoal = self.bot.stack[-1]
-            subgoal.update_agent_attributes()
-            return subgoal.get_action()
-        return self.bot.mission.actions.done
 
     def simulate_step(self, action):
         """
@@ -152,9 +145,15 @@ class Subgoal:
 
     def take_action(self, action):
         """
-        Function that updates the bot's stack given the action played
-        Should be overridden in all sub-classes
-        TODO: There are some steps that are common in both take_action and get_action for certain subgoals, maybe the bot's speed can be improved if we do them only once - or at least we can factorize the code a bit
+        Function that updates the bot's stack given the action played.
+        Should be overridden in all sub-classes.
+        TODO: There are some steps that are common in both take_action and get_action
+        for certain subgoals, maybe the bot's speed can be improved if we do them only once
+        - or at least we can factorize the code a bit
+
+        When this function returns `True`, it means no more replanning needs to be done.
+        When it returns `False`, the bot continues replanning.
+
         """
         self.erroneous_box_opening(action)
         self.simulate_step(action)
@@ -383,10 +382,10 @@ class GoNextToSubgoal(Subgoal):
         # CASE 2: we are facing the target cell, subgoal completed
         if self.adjacent:
             if manhattan_distance(target_pos, self.fwd_pos) == 1 and self.fwd_cell is None:
-                return self.subgoal_accomplished()
+                return None
         else:
             if np.array_equal(target_pos, self.fwd_pos):
-                return self.subgoal_accomplished()
+                return None
 
         # CASE 3: we are still far from the target
         # Try to find a non-blocker path
@@ -1043,10 +1042,15 @@ class Bot:
         self.process_obs()
         if len(self.stack) == 0:
             return self.mission.actions.done
-        subgoal = self.stack[-1]
-        subgoal.update_agent_attributes()
-        action = subgoal.get_action()
-        return action
+        while True:
+            subgoal = self.stack[-1]
+            subgoal.update_agent_attributes()
+            action = subgoal.get_action()
+            if action is not None:
+                return action
+            if not self.stack:
+                return self.bot.mission.actions.done
+            self.stack.pop()
 
     def take_action(self, action):
         """
