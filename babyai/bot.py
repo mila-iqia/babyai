@@ -378,14 +378,15 @@ class GoNextToSubgoal(Subgoal):
         # CASE 1: The position we are on is the one we should go next to
         # -> Move away from it
         if manhattan_distance(target_pos, self.pos) == (1 if self.adjacent else 0):
-            if self.fwd_cell is None:
+            def steppable(cell):
+                return cell is None or (cell.type == 'door' and cell.is_open)
+            if steppable(self.fwd_cell):
                 return self.actions.forward
-            if self.bot.mission.grid.get(*(self.pos + self.right_vec)) is None:
+            if steppable(self.bot.mission.grid.get(*(self.pos + self.right_vec))):
                 return self.actions.right
-            if self.bot.mission.grid.get(*(self.pos - self.right_vec)) is None:
+            if steppable(self.bot.mission.grid.get(*(self.pos - self.right_vec))):
                 return self.actions.left
-            # TODO: There is a corner case : you are on the position but surrounded in 4 positions
-            # otherwise: forward, left and right are full, we assume that you can go behind
+            # Spin and hope for the best
             return self.actions.left
 
         # CASE 2: we are facing the target cell, subgoal completed
@@ -711,8 +712,10 @@ class Bot:
         # Process/parse the instructions
         self.process_instr(mission.instrs)
 
-        # Useful statistics
+        # How many BFS search this bot has improved
         self.bfs_counter = 0
+        # How many steps were made in total in all BFS searches
+        # performed by this bot
         self.bfs_step_counter = 0
 
     def find_obj_pos(self, obj_desc, adjacent=False):
@@ -722,8 +725,9 @@ class Bot:
 
         assert len(obj_desc.obj_set) > 0
 
-        best_distance_to_obj = None
+        best_distance_to_obj = 999
         best_pos = None
+
 
         for i in range(len(obj_desc.obj_set)):
             try:
@@ -739,23 +743,32 @@ class Bot:
                     )
                     assert shortest_path_to_obj is not None
                     distance_to_obj = len(shortest_path_to_obj)
+
                     if with_blockers:
                         # The distance should take into account the steps necessary
                         # to unblock the way. Instead of computing it exactly,
                         # we can use a lower bound on this number of steps
                         # which is 4 when the agent is not holding anything
-                        # (pick, turn, drop, turn back)
+                        # (pick, turn, drop, turn back
                         # and 7 if the agent is carrying something
                         # (turn, drop, turn back, pick,
                         # turn to other direction, drop, turn back)
                         distance_to_obj = (len(shortest_path_to_obj)
                                            + (7 if self.mission.carrying else 4))
+
+                    # If we looking for a door and we are currently in that cell
+                    # that contains the door, it will take us at least 2
+                    # (3 if `adjacent == True`) steps to reach the goal.`
+                    if distance_to_obj == 0:
+                        distance_to_obj = 3 if adjacent else 2
+
                     # If what we want is to face a location that is adjacent to an object,
                     # and if we are already right next to this object,
                     # then we should not prefer this object to those at distance 2
                     if adjacent and distance_to_obj == 1:
                         distance_to_obj = 3
-                    if not best_distance_to_obj or distance_to_obj < best_distance_to_obj:
+
+                    if distance_to_obj < best_distance_to_obj:
                         best_distance_to_obj = distance_to_obj
                         best_pos = obj_pos
             except IndexError:
@@ -900,28 +913,68 @@ class Bot:
 
     def find_drop_pos(self, except_pos=None):
         """
-        Find a position where an object can be dropped,
-        ideally without blocking anything
+        Find a position where an object can be dropped, ideally without blocking anything.
         """
 
         grid = self.mission.grid
 
-        def match_noadj(pos, cell):
-            i, j = pos
+        def match_unblock(pos, cell):
+            # Consider the region of 8 neighboring cells around the candidate cell.
+            # If dropping the object in the candidate makes this region disconnected,
+            # then probably it is better to drop elsewhere.
 
-            if np.array_equal(pos, self.mission.agent_pos):
+            i, j = pos
+            agent_pos = tuple(self.mission.agent_pos)
+
+            if np.array_equal(pos, agent_pos):
                 return False
 
             if except_pos and np.array_equal(pos, except_pos):
                 return False
 
-            # If the cell or a neighbor was unseen or is occupied, reject
-            for k, l in [(0, 0), (0, 1), (0, -1), (1, 0), (-1, 0)]:
+            if not self.vis_mask[i, j] or grid.get(i, j):
+                return False
+
+            # We distinguish cells of three classes:
+            # class 0: the empty ones, including open doors
+            # class 1: those that are not interesting (just walls so far)
+            # class 2: all the rest, including objects and cells that are current not visible,
+            #          and hence may contain objects, and also `except_pos` at it may soon contain
+            #          an object
+            # We want to ensure that empty cells are connected, and that one can reach
+            # any object cell from any other object cell.
+            cell_class = []
+            for k, l in [(-1, -1), (0, -1), (1, -1), (1, 0),
+                         (1, 1), (0, 1), (-1, 1), (-1, 0)]:
                 nb_pos = (i + k, j + l)
-                if not self.vis_mask[nb_pos] or grid.get(*nb_pos):
+                cell = grid.get(*nb_pos)
+                # compeletely blocked
+                if self.vis_mask[nb_pos] and cell and cell.type == 'wall':
+                    cell_class.append(1)
+                # empty
+                elif (self.vis_mask[nb_pos]
+                        and (not cell or (cell.type == 'door' and cell.is_open) or nb_pos == agent_pos)
+                        and nb_pos != except_pos):
+                    cell_class.append(0)
+                # an object cell
+                else:
+                    cell_class.append(2)
+
+            # Now we need to check that empty cells are connected. To do that,
+            # let's check how many times empty changes to non-empty
+            changes = 0
+            for i in range(8):
+                if bool(cell_class[(i + 1) % 8]) != bool(cell_class[i]):
+                    changes += 1
+
+            # Lastly, we need check that every object has an adjacent empty cell
+            for i in range(8):
+                next_i = (i + 1) % 8
+                prev_i = (i + 7) % 8
+                if cell_class[i] == 2 and cell_class[prev_i] != 0 and cell_class[next_i] != 0:
                     return False
 
-            return True
+            return changes <= 2
 
         def match_empty(pos, cell):
             i, j = pos
@@ -937,13 +990,13 @@ class Bot:
 
             return True
 
-        _, drop_pos, _ = self.shortest_path(match_noadj)
+        _, drop_pos, _ = self.shortest_path(match_unblock)
 
         if not drop_pos:
             _, drop_pos, _ = self.shortest_path(match_empty)
 
         if not drop_pos:
-            _, drop_pos, _ = self.shortest_path(match_noadj, try_with_blockers=True)
+            _, drop_pos, _ = self.shortest_path(match_unblock, try_with_blockers=True)
 
         if not drop_pos:
             _, drop_pos, _ = self.shortest_path(match_empty, try_with_blockers=True)
