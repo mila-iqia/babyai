@@ -712,8 +712,10 @@ class Bot:
         # Process/parse the instructions
         self.process_instr(mission.instrs)
 
-        # Useful statistics
+        # How many BFS search this bot has improved
         self.bfs_counter = 0
+        # How many steps were made in total in all BFS searches
+        # performed by this bot
         self.bfs_step_counter = 0
 
     def find_obj_pos(self, obj_desc, adjacent=False):

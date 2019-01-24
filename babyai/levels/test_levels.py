@@ -178,7 +178,10 @@ class Level_TestPutNextCloseToDoor(RoomGridLevel):
         door, pos3 = self.add_door(1, 1, 3, 'blue', False)
         self.place_obj(Ball('blue'), (pos1[0], pos1[1] - 1), (1, 1))
         self.place_obj(Ball('blue'), (pos1[0], pos1[1] - 2), (1, 1))
-        self.place_obj(Box('green'), (pos1[0] - 1, pos1[1] - 1), (1, 1))
+        if pos1[0] - 1 >= 1:
+            self.place_obj(Box('green'), (pos1[0] - 1, pos1[1] - 1), (1, 1))
+        if pos1[0] + 1 < 8:
+            self.place_obj(Box('green'), (pos1[0] + 1, pos1[1] - 1), (1, 1))
         self.place_obj(Box('yellow'), (3, 15), (1, 1))
         self.instrs = PutNextInstr(ObjDesc('box', 'yellow'), ObjDesc('ball', 'blue'))
 
