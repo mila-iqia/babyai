@@ -321,9 +321,8 @@ class GoNextToSubgoal(Subgoal):
     adjacent : bool
         When `True`, the bot aims to face an empty cell that is adjacent to the target cell or object.
         When `False` (default), the bot aims to face the target cell or object.
-    no_reexplore : bool
-        Suppresses the heuristics of additional exploration within the current room even
-        when a blocker path is already found.
+    reexplore_room : bool
+        When `True`, the agent prefers exploring the current room to unblocking.
     blocker : bool
         Flag to know if the path considered for exploration has a blocker or not.
         # TODO (Salem): I was mistakengly initiating blocker to be always False, it worked fine.
@@ -333,11 +332,11 @@ class GoNextToSubgoal(Subgoal):
         Reason we are performing this subgoal. Possiblities: Explore, GoToObj
 
     """
-    def __init__(self, bot=None, datum=None, reason=None, no_reexplore=False, blocker=False, adjacent=False):
+    def __init__(self, bot=None, datum=None, reason=None, reexplore_room=True, blocker=False, adjacent=False):
         super().__init__(bot, datum)
         self.adjacent = adjacent
         self.reason = reason
-        self.no_reexplore = no_reexplore
+        self.reexplore_room = reexplore_room
         self.blocker = blocker
 
     def __repr__(self):
@@ -348,8 +347,8 @@ class GoNextToSubgoal(Subgoal):
             representation += ': {}'.format(self.datum)
         if self.reason is not None:
             representation += ', reason: {}'.format(self.reason)
-        if self.no_reexplore:
-            representation += ', no reexplore'
+        if self.reexplore_room:
+            representation += ', reexplore_room'
         if self.blocker:
             representation += ', blocker path'
         if self.adjacent:
@@ -397,7 +396,7 @@ class GoNextToSubgoal(Subgoal):
 
         # CASE 3.1: No non-blocker path found, and reexploration is allowed
         # -> Explore in the same room to see if a non-blocker path exists
-        if not self.no_reexplore and path is None:
+        if self.reexplore_room and path is None:
             # Find the closest unseen position
             _, unseen_pos, _ = self.bot.shortest_path(
                 lambda pos, cell: not self.bot.vis_mask[pos]
@@ -407,7 +406,7 @@ class GoNextToSubgoal(Subgoal):
                 # make sure unseen position is in the same room, otherwise prioritize blocker paths
                 current_room = self.bot.mission.room_from_pos(*self.pos)
                 if current_room.pos_inside(*unseen_pos):
-                    new_subgoal = GoNextToSubgoal(self.bot, unseen_pos, no_reexplore=True, reason='Explore')
+                    new_subgoal = GoNextToSubgoal(self.bot, unseen_pos, reexplore_room=False, reason='Explore')
                     return new_subgoal.get_action()
 
         # CASE 3.2: No non-blocker path found and (reexploration is not allowed or nothing to explore)
@@ -617,7 +616,7 @@ class ExploreSubgoal(Subgoal):
             if np.array_equal(door_pos, self.fwd_pos):
                 subgoal = OpenSubgoal(self.bot)
             else:
-                subgoal = GoNextToSubgoal(self.bot, door_pos, no_reexplore=True)
+                subgoal = GoNextToSubgoal(self.bot, door_pos, reexplore_room=False)
             return subgoal.get_action()
 
         assert False, "0nothing left to explore"

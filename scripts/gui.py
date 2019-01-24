@@ -362,7 +362,8 @@ class AIGameWindow(QMainWindow):
         mission = obs['mission']
         self.missionBox.setPlainText(mission)
 
-        self.missionBox.append('\nOptimal Bot Advisor Action: {}'.format(self.bot_advisor_action))
+        self.missionBox.append('\nOptimal Bot Advisor Action: {}'.format(
+            minigrid.MiniGridEnv.Actions(self.bot_advisor_action).name))
         # UNCOMMENT THE FOLLOWING LINE TO DEBUG THE BOT
         self.missionBox.append('\nOptimal Bot Advisor Stack: {}'.format(self.bot_advisor_agent.bot.stack))
 
