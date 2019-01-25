@@ -138,7 +138,7 @@ for level_name in level_list:
                 else:
                     optimal_actions.append(action)
 
-                expert.take_action(action)
+                expert.replan(action)
                 obs, reward, done, info = mission.step(action)
 
                 total_reward += reward

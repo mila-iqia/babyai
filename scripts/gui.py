@@ -382,7 +382,7 @@ class AIGameWindow(QMainWindow):
         if action is None:
             action = self.bot_advisor_action
 
-        self.bot_advisor_agent.bot.take_action(action)
+        self.bot_advisor_agent.bot.replan(action)
         obs, reward, done, info = self.env.step(action)
 
         self.showEnv(obs)
