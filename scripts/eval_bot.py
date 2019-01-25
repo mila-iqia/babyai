@@ -120,7 +120,7 @@ for level_name in level_list:
         try:
             episode_steps = 0
             while True:
-                action = expert.get_action()
+                action = expert.replan()
                 if options.advise_mode and episode_steps < non_optimal_steps:
                     if rng.random() < options.bad_action_proba:
                         while True:
@@ -138,7 +138,7 @@ for level_name in level_list:
                 else:
                     optimal_actions.append(action)
 
-                expert.replan(action)
+                #expert.replan(action)
                 obs, reward, done, info = mission.step(action)
 
                 total_reward += reward

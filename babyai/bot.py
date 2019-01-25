@@ -38,15 +38,6 @@ class Subgoal:
 
         self.actions = self.bot.mission.actions
 
-    def update_agent_attributes(self):
-        """Should be called at each step to update some elements about the agent and the environment"""
-        self.pos = self.bot.mission.agent_pos
-        self.dir_vec = self.bot.mission.dir_vec
-        self.right_vec = self.bot.mission.right_vec
-        self.fwd_pos = self.pos + self.dir_vec
-        self.fwd_cell = self.bot.mission.grid.get(*self.fwd_pos)
-        self.carrying = self.bot.mission.carrying
-
     def __repr__(self):
         """Mainly for debugging purposes"""
         representation = '('
@@ -57,91 +48,17 @@ class Subgoal:
 
         return representation
 
-    def get_action(self):
-        """
-        Function that gives the optimal action given the current subgoal. It may call the `get_action` function of other
-        subgoals.
-        Returns an action.
-        """
-        raise NotImplementedError()
+    def update_agent_attributes(self):
+        """Should be called at each step to update some elements about the agent and the environment"""
+        self.pos = self.bot.mission.agent_pos
+        self.dir_vec = self.bot.mission.dir_vec
+        self.right_vec = self.bot.mission.right_vec
+        self.fwd_pos = self.pos + self.dir_vec
+        self.fwd_cell = self.bot.mission.grid.get(*self.fwd_pos)
+        self.carrying = self.bot.mission.carrying
 
-
-    def simulate_step(self, action):
-        """
-        Function that simulates an action by creating variables descrbing the new potential state of the agent
-        """
-        self.new_pos = self.pos
-        agent_dir = self.bot.mission.agent_dir
-        self.new_carrying = self.carrying
-
-        # Rotate left
-        if action == self.actions.left:
-            agent_dir -= 1
-            if agent_dir < 0:
-                agent_dir += 4
-
-        # Rotate right
-        elif action == self.actions.right:
-            agent_dir = (agent_dir + 1) % 4
-
-        # Move forward
-        elif action == self.actions.forward:
-            if self.fwd_cell is None or self.fwd_cell.can_overlap():
-                self.new_pos = self.fwd_pos
-
-        # Pick up an object
-        elif action == self.actions.pickup:
-            if self.fwd_cell is not None and self.fwd_cell.can_pickup():
-                if self.carrying is None:
-                    self.new_carrying = self.fwd_cell
-
-        # Drop an object
-        elif action == self.actions.drop:
-            if self.fwd_cell is None and self.carrying is not None:
-                self.new_carrying = None
-
-        # Toggle/activate an object
-        elif action == self.actions.toggle:
-            pass
-
-        # Done action (not used by default)
-        elif action == self.actions.done:
-            pass
-
-        else:
-            assert False, "unknown action"
-
-        self.new_dir_vec = DIR_TO_VEC[agent_dir]
-        self.new_right_vec = np.array((-self.new_dir_vec[1], self.new_dir_vec[0]))
-        self.new_fwd_pos = self.new_pos + self.new_dir_vec
-
-    def foolish_action_while_exploring(self, action):
-        '''
-        A bit too conservative here:
-        If you pick up an object when you shouldn't have, you should drop it back in the same position
-        If you drop an object when you shouldn't have, you should pick that one up, and not one similar to it
-        If you a close a door when you shouldn't have, you should open it back
-        TODO: relax this
-        '''
-
-        if action == self.actions.drop and self.carrying != self.new_carrying:
-            # get that thing back
-            new_fwd_cell = self.carrying
-            assert new_fwd_cell.type in ('key', 'box', 'ball')
-            self.bot.stack.append(PickupSubgoal(self.bot))
-
-        elif action == self.actions.pickup and self.carrying != self.new_carrying:
-            # drop that thing where you found it
-            fwd_cell = self.bot.mission.grid.get(*self.fwd_pos)
-            assert fwd_cell.type in ('key', 'box', 'ball')
-            self.bot.stack.append(DropSubgoal(self.bot))
-
-        elif action == self.actions.toggle:
-            fwd_cell = self.bot.mission.grid.get(*self.fwd_pos)
-            if fwd_cell and fwd_cell.type == 'door' and fwd_cell.is_open:
-                # i.e. the agent decided to close the door
-                # need to open it
-                self.bot.stack.append(OpenSubgoal(self.bot))
+    def replan_after_action(self, action_taken):
+        pass
 
     def replan(self, given_action):
         """
@@ -157,44 +74,83 @@ class Subgoal:
         """
         raise NotImplementedError()
 
+    def is_exploratory(self):
+        return False
+
+
+class CloseSubgoal(Subgoal):
+
+    def replan_after_action(self, action_taken):
+        self.bot.stack.pop()
+
+    def replan(self):
+        assert self.fwd_cell is not None, 'Forward cell is empty'
+        assert self.fwd_cell.type == 'door', 'Forward cell has to be a door'
+        assert self.fwd_cell.is_open, 'Forward door must be open'
+        return self.actions.toggle
+
+
 class OpenSubgoal(Subgoal):
-    def get_action(self):
+
+    def replan_after_action(self, action_taken):
+        self.bot.stack.pop()
+        if self.datum == 'drop_the_key':
+            drop_key_pos = self.bot.find_drop_pos()
+            self.bot.stack.append(DropSubgoal(self.bot))
+            self.bot.stack.append(GoNextToSubgoal(self.bot, drop_key_pos))
+
+    def replan(self):
         assert self.fwd_cell is not None, 'Forward cell is empty'
         assert self.fwd_cell.type == 'door', 'Forward cell has to be a door'
 
         # If the door is locked, go find the key and then return
-        # TODO: do we really need to be in front of the locked door to realize that we need the key for it ?
-        if self.fwd_cell.type == 'door' and self.fwd_cell.is_locked:
-            if not self.carrying or self.carrying.type != 'key' or self.carrying.color != self.fwd_cell.color:
-                # Find the key
-                key_desc = ObjDesc('key', self.fwd_cell.color)
-                key_desc.find_matching_objs(self.bot.mission)
+        # TODO: do we really need to be in front of the locked door
+        # to realize that we need the key for it ?
+        got_the_key = (self.carrying and self.carrying.type == 'key'
+            and self.carrying.color == self.fwd_cell.color)
+        if (self.fwd_cell.is_locked and not got_the_key):
+            # Find the key
+            key_desc = ObjDesc('key', self.fwd_cell.color)
+            key_desc.find_matching_objs(self.bot.mission)
 
-                # If we're already carrying something
-                if self.carrying:
+            # If we're already carrying something
+            if self.carrying:
+                self.bot.stack.pop()
 
-                    # Find a location to drop what we're already carrying
-                    drop_pos_cur = self.bot.find_drop_pos()
-                    if np.array_equal(drop_pos_cur, self.fwd_pos):
-                        new_subgoal = DropSubgoal(self.bot)
-                    else:
-                        new_subgoal = GoNextToSubgoal(self.bot, drop_pos_cur)
-                else:
-                    # Go To the key
-                    obj_pos = self.bot.find_obj_pos(key_desc)
-                    if obj_pos is not None and np.array_equal(obj_pos, self.fwd_pos):
-                        new_subgoal = PickupSubgoal(self.bot)
-                    else:
-                        new_subgoal = GoNextToSubgoal(self.bot, key_desc)
-                return new_subgoal.get_action()
+                # Find a location to drop what we're already carrying
+                drop_pos_cur = self.bot.find_drop_pos()
 
-        # If the door is already open, close it so we can open it again
-        if self.fwd_cell.type == 'door' and self.fwd_cell.is_open:
-            return self.actions.toggle
+                # Take back the object being carried
+                self.bot.stack.append(PickupSubgoal(self.bot))
+                self.bot.stack.append(GoNextToSubgoal(self.bot, drop_pos_cur))
+
+                # Go back to the door and open it
+                self.bot.stack.append(OpenSubgoal(self.bot, 'drop_the_key'))
+                self.bot.stack.append(GoNextToSubgoal(self.bot, tuple(self.fwd_pos)))
+
+                # Go to the key and pick it up
+                self.bot.stack.append(PickupSubgoal(self.bot))
+                self.bot.stack.append(GoNextToSubgoal(self.bot, key_desc))
+
+                # Drop the object being carried
+                self.bot.stack.append(DropSubgoal(self.bot))
+                self.bot.stack.append(GoNextToSubgoal(self.bot, drop_pos_cur))
+            else:
+                self.bot.stack.pop()
+
+                self.bot.stack.append(OpenSubgoal(self.bot, 'drop_the_key'))
+                self.bot.stack.append(GoNextToSubgoal(self.bot, tuple(self.fwd_pos)))
+                self.bot.stack.append(PickupSubgoal(self.bot))
+                self.bot.stack.append(GoNextToSubgoal(self.bot, key_desc))
+            return
+
+        if self.fwd_cell.is_open:
+            self.bot.stack.append(CloseSubgoal(self.bot))
+            return
 
         return self.actions.toggle
 
-    def replan(self, action):
+    def replan2(self, action):
         # CASE 1: The door is locked
         # we need to fetch the key and return
         # i.e. update the stack REGARDLESS of the action
@@ -265,31 +221,25 @@ class OpenSubgoal(Subgoal):
 
 
 class DropSubgoal(Subgoal):
-    def get_action(self):
-        return self.actions.drop
 
-    def replan(self, given_action):
-        if given_action == self.actions.drop:
-            self.bot.stack.pop()
-        elif given_action in (self.actions.left, self.actions.right, self.actions.forward):
-            # Go back to where you were to drop what you got
-            self.bot.stack.append(GoNextToSubgoal(self.bot, tuple(self.fwd_pos)))
-        # done/pickup actions won't have any effect -> Next step would take us to the same subgoal
-        return True
+    def replan_after_action(self, action_taken):
+        # if this was the top-most goal, then it is done
+        self.bot.stack.pop()
+
+    def replan(self):
+        assert self.bot.mission.carrying
+        return self.actions.drop
 
 
 class PickupSubgoal(Subgoal):
-    def get_action(self):
-        return self.actions.pickup
 
-    def replan(self, given_action):
-        if given_action == self.actions.pickup:
-            self.bot.stack.pop()
-        elif given_action in (self.actions.left, self.actions.right):
-            # Go back to where you were to pickup what was in front of you
-            self.bot.stack.append(GoNextToSubgoal(self.bot, tuple(self.fwd_pos)))
-        # done/drop/forward actions won't have any effect -> Next step would take us to the same subgoal
-        return True
+    def replan_after_action(self, action_taken):
+        # if this was the top-most goal, then it is done
+        self.bot.stack.pop()
+
+    def replan(self):
+        assert not self.bot.mission.carrying
+        return self.actions.pickup
 
 
 class GoNextToSubgoal(Subgoal):
@@ -306,21 +256,15 @@ class GoNextToSubgoal(Subgoal):
         When `False` (default), the bot aims to face the target cell or object.
     reexplore_room : bool
         When `True`, the agent prefers exploring the current room to unblocking.
-    blocker : bool
-        Flag to know if the path considered for exploration has a blocker or not.
-        # TODO (Salem): I was mistakengly initiating blocker to be always False, it worked fine.
-        Now that it's fixed, make sure it still works, and ideally is better, otherwise revert
-        and see again the purpose of this blocker thing.
     reason : str
         Reason we are performing this subgoal. Possiblities: Explore, GoToObj
 
     """
-    def __init__(self, bot=None, datum=None, reason=None, reexplore_room=True, blocker=False, adjacent=False):
+    def __init__(self, bot=None, datum=None, reason=None, reexplore_room=True, adjacent=False):
         super().__init__(bot, datum)
         self.adjacent = adjacent
         self.reason = reason
         self.reexplore_room = reexplore_room
-        self.blocker = blocker
 
     def __repr__(self):
         """Mainly for debugging purposes"""
@@ -332,20 +276,19 @@ class GoNextToSubgoal(Subgoal):
             representation += ', reason: {}'.format(self.reason)
         if self.reexplore_room:
             representation += ', reexplore_room'
-        if self.blocker:
-            representation += ', blocker path'
         if self.adjacent:
             representation += ', adjacent'
         representation += ')'
 
         return representation
 
-    def get_action(self):
+    def replan(self):
         if isinstance(self.datum, ObjDesc):
             target_pos = self.bot.find_obj_pos(self.datum, self.adjacent)
             if not target_pos:
                 # No path found -> Explore the world
-                return ExploreSubgoal(self.bot).get_action()
+                self.bot.stack.append(ExploreSubgoal(self.bot))
+                return
         else:
             target_pos = tuple(self.datum)
 
@@ -365,11 +308,19 @@ class GoNextToSubgoal(Subgoal):
 
         # CASE 2: we are facing the target cell, subgoal completed
         if self.adjacent:
-            if manhattan_distance(target_pos, self.fwd_pos) == 1 and self.fwd_cell is None:
-                return None
+            if manhattan_distance(target_pos, self.fwd_pos) == 1:
+                if self.fwd_cell is None:
+                    self.bot.stack.pop()
+                    return
+                if self.fwd_cell.type == 'door' and self.fwd_cell.is_open:
+                    # add a subgoal that will force unblocking
+                    self.bot.stack.append(GoNextToSubgoal(
+                        self.bot, self.fwd_pos + 2 * self.dir_vec))
+                    return
         else:
             if np.array_equal(target_pos, self.fwd_pos):
-                return None
+                self.bot.stack.pop()
+                return
 
         # CASE 3: we are still far from the target
         # Try to find a non-blocker path
@@ -389,10 +340,13 @@ class GoNextToSubgoal(Subgoal):
                 # make sure unseen position is in the same room, otherwise prioritize blocker paths
                 current_room = self.bot.mission.room_from_pos(*self.pos)
                 if current_room.pos_inside(*unseen_pos):
-                    new_subgoal = GoNextToSubgoal(self.bot, unseen_pos, reexplore_room=False, reason='Explore')
-                    return new_subgoal.get_action()
+                    self.bot.stack.append(
+                        GoNextToSubgoal(
+                            self.bot, unseen_pos, reexplore_room=False, reason='Explore'))
+                    return
 
-        # CASE 3.2: No non-blocker path found and (reexploration is not allowed or nothing to explore)
+        # CASE 3.2: No non-blocker path found and
+        # reexploration is not allowed or nothing to explore
         # -> Look for blocker paths
         if not path:
             path, _, _ = self.bot.shortest_path(
@@ -403,120 +357,21 @@ class GoNextToSubgoal(Subgoal):
         # CASE 3.2.1: No path found
         # -> explore the world
         if not path:
-            return ExploreSubgoal(self.bot).get_action()
+            self.stack.append(ExploreSubgoal(self.bot).get_action())
+            return
 
         # CASE3.4 = CASE 3.2.2: Found a blocker path OR CASE 3.3: Found a non-blocker path
         next_cell = path[0]
         # CASE 3.4.1: the forward cell is the one we should go next to
         if np.array_equal(next_cell, self.fwd_pos):
-            if self.fwd_cell is not None and not self.fwd_cell.type.endswith('door'):
-                if self.carrying:
-                    drop_pos_cur = self.bot.find_drop_pos()
-                    # Drop the object being carried
-                    # 1-Just in case we are already at the right position
-                    assert not np.array_equal(drop_pos_cur, next_cell), "Drop position is forward cell, weird!"
-                    # Just in case we stumble this AssertionError, we should call the DropSubgoal instead !
-                    new_subgoal = GoNextToSubgoal(self.bot, drop_pos_cur)
-                    return new_subgoal.get_action()
-                else:
-                    return self.actions.pickup
-
-            return self.actions.forward
-
-        # CASE 3.4.2: the forward cell is not the one we should go to
-        # -> Turn towards the direction we need to go
-        else:
-            def closest_wall_or_door_given_dir(position, direction):
-                distance = 1
-                while True:
-                    position_to_try = position + distance * direction
-                    # If the current position is outside the field of view, stop everything and return the previous one
-                    if not self.bot.mission.in_view(*position_to_try):
-                        return distance - 1
-                    cell = self.bot.mission.grid.get(*position_to_try)
-                    if cell and (cell.type.endswith('door') or cell.type == 'wall'):
-                        return distance
-                    distance += 1
-
-            if np.array_equal(next_cell - self.pos, self.right_vec):
-                return self.actions.right
-            elif np.array_equal(next_cell - self.pos, - self.right_vec):
-                return self.actions.left
-            # well then the cell is behind us, instead of choosing left or right randomly,
-            # let's do something that might be useful:
-            # Because when we're GoingNextTo for the purpose of exploring,
-            # things might change while on the way to the position we're going to, we should
-            # pick this right or left wisely.
-            # The simplest thing we should do is: pick the one that doesn't lead you to face a non empty cell.
-            # One better thing would be to go to the direction where the closest wall/door is the furthest
-            distance_right = closest_wall_or_door_given_dir(self.pos, self.right_vec)
-            distance_left = closest_wall_or_door_given_dir(self.pos, - self.right_vec)
-            if distance_left > distance_right:
-                return self.actions.left
-            return self.actions.right
-
-    def replan(self, given_action):
-        if isinstance(self.datum, ObjDesc):
-            target_pos = self.bot.find_obj_pos(self.datum, self.adjacent)
-            if not target_pos:
-                # CASE 2: The bot hasn't seen the object. The action will count for the new subgoal
-                self.bot.stack.append(ExploreSubgoal(self.bot))
-                return False
-        else:
-            target_pos = tuple(self.datum)
-
-        # CASE 1: The position we are on is the one we should go next to
-        # -> Move away from it
-        if manhattan_distance(target_pos, self.pos) == (1 if self.adjacent else 0):
-            if given_action in (self.actions.drop, self.actions.pickup, self.actions.toggle):
-                # Update the stack if we did something bad, or do nothing if the action doesn't change anything
-                self.foolish_action_while_exploring(given_action)
-            # Whatever other action, the stack should stay the same, and it's the new action that should be evaluated
-            # TODO: Double check what happens in this scenario with all actions
-            return True
-
-        # CASE 2: we are facing the target cell, subgoal completed
-        if self.adjacent:
-            if manhattan_distance(target_pos, self.fwd_pos) == 1:
-                if self.fwd_cell is None:
-                    self.bot.stack.pop()
-                    return False
-                # corner case: I just opened a door, and the target is right after the door
-                elif self.fwd_cell.type.endswith('door') and self.fwd_cell.is_open:
-                    # add a useless subgoal that will force unblocking
-                    self.bot.stack.append(GoNextToSubgoal(self.bot, self.fwd_pos + 2 * self.dir_vec))
-                    return True
-        else:
-            if np.array_equal(target_pos, self.fwd_pos):
-                self.bot.stack.pop()
-                return False
-
-        assert tuple(self.new_pos) != tuple(target_pos), "Doesn't make sense with CASE 2"
-
-        # CASE 3: the action taken would lead us to face the target cell
-        # -> Don't do anything. The stack will be popped at next step anyway
-        if np.array_equal(target_pos, self.new_fwd_pos):
-            assert given_action in (self.actions.forward, self.actions.left, self.actions.right), "Doesn't make sense"
-            return True
-
-        # CASE 5: otherwise
-        # Try to find a path
-        path, _, _ = self.bot.shortest_path(
-            lambda pos, cell: pos == target_pos,
-            try_with_blockers=True
-        )
-
-        # CASE 5.2: No path found, explore the world
-        if not path:
-            # Explore the world
-            self.bot.stack.append(ExploreSubgoal(self.bot))
-            return True
-
-        next_cell = path[0]
-        # CASE 5.3: If the destination is ahead of us
-        if np.array_equal(next_cell, self.fwd_pos):
-            # If there is a blocking object in front of us
-            if self.fwd_cell and not self.fwd_cell.type.endswith('door'):
+            if self.fwd_cell:
+                if self.fwd_cell.type == 'door':
+                    assert not self.fwd_cell.is_locked
+                    if not self.fwd_cell.is_open:
+                        self.bot.stack.append(OpenSubgoal(self.bot))
+                        return
+                    else:
+                        return self.actions.forward
                 if self.carrying:
                     drop_pos_cur = self.bot.find_drop_pos()
                     drop_pos_block = self.bot.find_drop_pos(drop_pos_cur)
@@ -533,45 +388,52 @@ class GoNextToSubgoal(Subgoal):
                     # Drop the object being carried
                     self.bot.stack.append(DropSubgoal(self.bot))
                     self.bot.stack.append(GoNextToSubgoal(self.bot, drop_pos_cur))
-                    return True
+                    return
                 else:
                     drop_pos = self.bot.find_drop_pos()
                     self.bot.stack.append(DropSubgoal(self.bot))
                     self.bot.stack.append(GoNextToSubgoal(self.bot, drop_pos))
-                    if given_action == self.actions.pickup:
-                        return True
-                    else:
-                        self.bot.stack.append(PickupSubgoal(self.bot))
-                        self.bot.stack.append(GoNextToSubgoal(self.bot, self.fwd_pos))
-                        return True
-
-            # TODO: what if I drop a blocker not in drop_pos ? Can I make drop_pos a list ? Please be the case !
-            # TODO: what if I pickup another blocker (and that's good)
-
-        # CASE 5.4: If there is nothing blocking us and we drop/pickup/toggle something for no reason
-        if given_action in (self.actions.drop, self.actions.pickup, self.actions.toggle):
-            self.foolish_action_while_exploring(given_action)
-
-        # CASE 5.5: If we are GoingNextTo something because of exploration
-        if self.reason == 'Explore':
-            if not self.blocker:
-                self.bot.stack.pop()
+                    self.bot.stack.append(PickupSubgoal(self.bot))
+                    return
             else:
-                if self.bot.vis_mask[target_pos]:
-                    self.bot.stack.pop()
-        return True
+                return self.actions.forward
+
+        # CASE 3.4.2: the forward cell is not the one we should go to
+        # -> Turn towards the direction we need to go
+        if np.array_equal(next_cell - self.pos, self.right_vec):
+            return self.actions.right
+        elif np.array_equal(next_cell - self.pos, -self.right_vec):
+            return self.actions.left
+        # well then the cell is behind us, instead of choosing left or right randomly,
+        # let's do something that might be useful:
+        # Because when we're GoingNextTo for the purpose of exploring,
+        # things might change while on the way to the position we're going to, we should
+        # pick this right or left wisely.
+        # The simplest thing we should do is: pick the one
+        # that doesn't lead you to face a non empty cell.
+        # One better thing would be to go to the direction
+        # where the closest wall/door is the furthest
+        distance_right = self.bot.closest_wall_or_door_given_dir(self.pos, self.right_vec)
+        distance_left = self.bot.closest_wall_or_door_given_dir(self.pos, -self.right_vec)
+        if distance_left > distance_right:
+            return self.actions.left
+        return self.actions.right
+
+    def is_exploratory(self):
+        return self.reason == 'Explore'
 
 
 class ExploreSubgoal(Subgoal):
-    def get_action(self):
+    def replan(self):
         # Find the closest unseen position
-        _, unseen_pos, _ = self.bot.shortest_path(
+        _, unseen_pos, with_blockers = self.bot.shortest_path(
             lambda pos, cell: not self.bot.vis_mask[pos],
             try_with_blockers=True
         )
 
         if unseen_pos:
-            return GoNextToSubgoal(self.bot, unseen_pos).get_action()
+            self.bot.stack.append(GoNextToSubgoal(self.bot, unseen_pos, reason='Explore'))
+            return None
 
         # Find the closest unlocked unopened door
         def unopened_unlocked_door(pos, cell):
@@ -593,64 +455,15 @@ class ExploreSubgoal(Subgoal):
 
         # Open the door
         if door_pos:
-            # door = self.bot.mission.grid.get(*door_pos)
-            if np.array_equal(door_pos, self.fwd_pos):
-                subgoal = OpenSubgoal(self.bot)
-            else:
-                subgoal = GoNextToSubgoal(self.bot, door_pos, reexplore_room=False)
-            return subgoal.get_action()
-
-        assert False, "0nothing left to explore"
-
-    def replan(self, given_action):
-        # Find the closest unseen position
-        _, unseen_pos, with_blockers = self.bot.shortest_path(
-            lambda pos, cell: not self.bot.vis_mask[pos],
-            try_with_blockers=True
-        )
-
-        if unseen_pos:
-            self.bot.stack.pop()
-            self.bot.stack.append(
-                GoNextToSubgoal(self.bot, unseen_pos,
-                                reason='Explore', blocker=with_blockers))
-            return False
-
-        # Find the closest unlocked unopened door
-        def unopened_unlocked_door(pos, cell):
-            if not cell:
-                return False
-            if cell.type != 'door':
-                return False
-            return not cell.is_open and not cell.is_locked
-
-        # Find the closest unopened door
-        def unopened_door(pos, cell):
-            if not cell:
-                return False
-            if cell.type != 'door':
-                return False
-            return not cell.is_open
-
-        # Try to find an unlocked door first
-        # We do this because otherwise, opening a locked door as
-        # a subgoal may try to open the same door for exploration,
-        # resulting in an infinite loop
-        _, door_pos, _ = self.bot.shortest_path(
-            unopened_unlocked_door, try_with_blockers=True)
-        if not door_pos:
-            _, door_pos, _ = self.bot.shortest_path(
-            unopened_door, try_with_blockers=True)
-
-        # Open the door
-        if door_pos:
-            # door = self.bot.mission.grid.get(*door_pos)
             self.bot.stack.pop()
             self.bot.stack.append(OpenSubgoal(self.bot))
             self.bot.stack.append(GoNextToSubgoal(self.bot, door_pos))
-            return False
+            return
 
-        assert False, "1nothing left to explore"
+        assert False, "0nothing left to explore"
+
+    def is_exploratory(self):
+        return True
 
 
 class Bot:
@@ -781,6 +594,19 @@ class Bot:
 
                 self.vis_mask[abs_i, abs_j] = True
 
+    def closest_wall_or_door_given_dir(self, position, direction):
+        distance = 1
+        while True:
+            position_to_try = position + distance * direction
+            # If the current position is outside the field of view,
+            # stop everything and return the previous one
+            if not self.mission.in_view(*position_to_try):
+                return distance - 1
+            cell = self.mission.grid.get(*position_to_try)
+            if cell and (cell.type.endswith('door') or cell.type == 'wall'):
+                return distance
+            distance += 1
+
     def breadth_first_search(self, initial_states, accept_fn, ignore_blockers):
         """Performs breadth first search.
 
@@ -821,9 +647,7 @@ class Bot:
             if not self.vis_mask[i, j]:
                 continue
 
-            # If there is something in this cell
             if cell:
-                # If this is a wall, don't visit neighbors
                 if cell.type == 'wall':
                     continue
                 # If this is a door
@@ -1014,49 +838,34 @@ class Bot:
 
         assert False, "unknown instruction type"
 
-    def get_action(self):
-        """
-        Produce the optimal action at the current state
-        """
-        # Process the current observation
+    def replan(self, last_action=None):
+        # Step 1: see if the plan needs to be changed if the last action was
+        # suboptimal.
+
+        # Step 2: come up with a plan
         self.process_obs()
-        if len(self.stack) == 0:
-            return self.mission.actions.done
-        while True:
+
+        if self.stack:
+            self.stack[-1].replan_after_action(last_action)
+
+        suggested_action = None
+        while self.stack:
             subgoal = self.stack[-1]
             subgoal.update_agent_attributes()
-            action = subgoal.get_action()
-            if action is not None:
-                return action
-            if not self.stack:
-                return self.bot.mission.actions.done
+            suggested_action = subgoal.replan()
+            # If is not clear what can be done for the current subgoal
+            # (because it is completed, because there is blocker,
+            # or because exploration is required), keep replanning
+            if suggested_action is not None:
+                break
+        if not self.stack:
+            suggested_action = self.mission.actions.done
+
+        # Clear the stack from the non-essential subgoals
+        while self.stack and self.stack[-1].is_exploratory():
             self.stack.pop()
 
-    def replan(self, given_action):
-        """
-        Update the subgoal stack given the action that will be taken by the agent.
-
-        The algorithm is as follows: the top subgoal's `replan` method called,
-        until a moment when a subgoal that has already been at the top of the stack
-        pops up.
-
-        """
-
-        self.step_count += 1
-
-        seen_stack_tops = set()
-        while True:
-            if not self.stack:
-                self.empty_stack_update()
-                break
-
-            subgoal = self.stack[-1]
-            seen_stack_tops.add(subgoal)
-
-            subgoal.update_agent_attributes()
-            subgoal.simulate_step(given_action)
-            if subgoal.replan(given_action):
-                break
+        return suggested_action
 
     def empty_stack_update(self, action):
         pos = self.mission.agent_pos
