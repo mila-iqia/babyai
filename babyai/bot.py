@@ -23,7 +23,7 @@ def manhattan_distance(pos, target):
 class Subgoal:
     """The base class for all possible Bot subgoals"""
 
-    def __init__(self, bot=None, datum=None):
+    def __init__(self, bot=None, datum=None, reason=None):
         """
         Initializes a Subgoal object
         bot is the Bot that is trying to perform this subgoal
@@ -33,6 +33,7 @@ class Subgoal:
         """
         self.bot = bot
         self.datum = datum
+        self.reason = reason
 
         self.update_agent_attributes()
 
@@ -44,8 +45,9 @@ class Subgoal:
         representation += type(self).__name__
         if self.datum is not None:
             representation += ': {}'.format(self.datum)
+        if self.reason is not None:
+            representation += ', reason: {}'.format(self.reason)
         representation += ')'
-
         return representation
 
     def update_agent_attributes(self):
@@ -57,10 +59,7 @@ class Subgoal:
         self.fwd_cell = self.bot.mission.grid.get(*self.fwd_pos)
         self.carrying = self.bot.mission.carrying
 
-    def replan_after_action(self, action_taken):
-        pass
-
-    def replan(self, given_action):
+    def replan_before_action(self):
         """
         Function that updates the bot's stack given the action played.
         Should be overridden in all sub-classes.
@@ -73,6 +72,10 @@ class Subgoal:
 
         """
         raise NotImplementedError()
+
+    def replan_after_action(self, action_taken):
+        pass
+
 
     def is_exploratory(self):
         return False
@@ -94,10 +97,11 @@ class OpenSubgoal(Subgoal):
 
     def replan_after_action(self, action_taken):
         self.bot.stack.pop()
-        if self.datum == 'drop_the_key':
+        if self.reason == 'Unlock':
             drop_key_pos = self.bot.find_drop_pos()
             self.bot.stack.append(DropSubgoal(self.bot))
             self.bot.stack.append(GoNextToSubgoal(self.bot, drop_key_pos))
+
 
     def replan(self):
         assert self.fwd_cell is not None, 'Forward cell is empty'
@@ -125,7 +129,7 @@ class OpenSubgoal(Subgoal):
                 self.bot.stack.append(GoNextToSubgoal(self.bot, drop_pos_cur))
 
                 # Go back to the door and open it
-                self.bot.stack.append(OpenSubgoal(self.bot, 'drop_the_key'))
+                self.bot.stack.append(OpenSubgoal(self.bot, reason='Unlock'))
                 self.bot.stack.append(GoNextToSubgoal(self.bot, tuple(self.fwd_pos)))
 
                 # Go to the key and pick it up
@@ -138,7 +142,7 @@ class OpenSubgoal(Subgoal):
             else:
                 self.bot.stack.pop()
 
-                self.bot.stack.append(OpenSubgoal(self.bot, 'drop_the_key'))
+                self.bot.stack.append(OpenSubgoal(self.bot, reason='Unlock'))
                 self.bot.stack.append(GoNextToSubgoal(self.bot, tuple(self.fwd_pos)))
                 self.bot.stack.append(PickupSubgoal(self.bot))
                 self.bot.stack.append(GoNextToSubgoal(self.bot, key_desc))
@@ -174,48 +178,10 @@ class PickupSubgoal(Subgoal):
 
 
 class GoNextToSubgoal(Subgoal):
-    """The subgoal for going next to objects or positions.
-
-    Parameters
-    ----------
-    datum : (int, int) or ObjDescr
-        Where the bot should go. Can be either a grid position, or an object description. If
-        `datum` is an object description it is resolved anew at each step, meaning that the bot
-        can change its mind and go to another object that matches the same description.
-    adjacent : bool
-        When `True`, the bot aims to face an empty cell that is adjacent to the target cell or object.
-        When `False` (default), the bot aims to face the target cell or object.
-    reexplore_room : bool
-        When `True`, the agent prefers exploring the current room to unblocking.
-    reason : str
-        Reason we are performing this subgoal. Possiblities: Explore, GoToObj
-
-    """
-    def __init__(self, bot=None, datum=None, reason=None, reexplore_room=True, adjacent=False):
-        super().__init__(bot, datum)
-        self.adjacent = adjacent
-        self.reason = reason
-        self.reexplore_room = reexplore_room
-
-    def __repr__(self):
-        """Mainly for debugging purposes"""
-        representation = '('
-        representation += type(self).__name__
-        if self.datum is not None:
-            representation += ': {}'.format(self.datum)
-        if self.reason is not None:
-            representation += ', reason: {}'.format(self.reason)
-        if self.reexplore_room:
-            representation += ', reexplore_room'
-        if self.adjacent:
-            representation += ', adjacent'
-        representation += ')'
-
-        return representation
-
+    """The subgoal for going next to objects or positions."""
     def replan(self):
         if isinstance(self.datum, ObjDesc):
-            target_pos = self.bot.find_obj_pos(self.datum, self.adjacent)
+            target_pos = self.bot.find_obj_pos(self.datum, self.reason == 'PutNext')
             if not target_pos:
                 # No path found -> Explore the world
                 self.bot.stack.append(ExploreSubgoal(self.bot))
@@ -225,7 +191,7 @@ class GoNextToSubgoal(Subgoal):
 
         # CASE 1: The position we are on is the one we should go next to
         # -> Move away from it
-        if manhattan_distance(target_pos, self.pos) == (1 if self.adjacent else 0):
+        if manhattan_distance(target_pos, self.pos) == (1 if self.reason == 'PutNext' else 0):
             def steppable(cell):
                 return cell is None or (cell.type == 'door' and cell.is_open)
             if steppable(self.fwd_cell):
@@ -238,7 +204,7 @@ class GoNextToSubgoal(Subgoal):
             return self.actions.left
 
         # CASE 2: we are facing the target cell, subgoal completed
-        if self.adjacent:
+        if self.reason == 'PutNext':
             if manhattan_distance(target_pos, self.fwd_pos) == 1:
                 if self.fwd_cell is None:
                     self.bot.stack.pop()
@@ -261,7 +227,7 @@ class GoNextToSubgoal(Subgoal):
 
         # CASE 3.1: No non-blocker path found, and reexploration is allowed
         # -> Explore in the same room to see if a non-blocker path exists
-        if self.reexplore_room and path is None:
+        if self.reason != 'ReexploreRoom' and path is None:
             # Find the closest unseen position. If it can be reached
             # by a shortest path within the current room, go for it.
             current_room = self.bot.mission.room_from_pos(*self.pos)
@@ -269,8 +235,7 @@ class GoNextToSubgoal(Subgoal):
                 lambda pos, cell: not self.bot.vis_mask[pos])
             if unseen_pos is not None and all([current_room.pos_inside(*pos) for pos in path]):
                 self.bot.stack.append(
-                    GoNextToSubgoal(
-                        self.bot, unseen_pos, reexplore_room=False, reason='Explore'))
+                    GoNextToSubgoal(self.bot, unseen_pos, reason='ReexploreRoom'))
                 return
 
         # CASE 3.2: No non-blocker path found and
@@ -348,7 +313,7 @@ class GoNextToSubgoal(Subgoal):
         return self.actions.right
 
     def is_exploratory(self):
-        return self.reason == 'Explore'
+        return self.reason in ['Explore', 'ReexploreRoom']
 
 
 class ExploreSubgoal(Subgoal):
@@ -749,7 +714,7 @@ class Bot:
 
         if isinstance(instr, PutNextInstr):
             self.stack.append(DropSubgoal(self))
-            self.stack.append(GoNextToSubgoal(self, instr.desc_fixed, adjacent=True))
+            self.stack.append(GoNextToSubgoal(self, instr.desc_fixed, reason='PutNext'))
             self.stack.append(PickupSubgoal(self))
             self.stack.append(GoNextToSubgoal(self, instr.desc_move))
             return
