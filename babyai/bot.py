@@ -331,19 +331,16 @@ class GoNextToSubgoal(Subgoal):
         # CASE 3.1: No non-blocker path found, and reexploration is allowed
         # -> Explore in the same room to see if a non-blocker path exists
         if self.reexplore_room and path is None:
-            # Find the closest unseen position
-            _, unseen_pos, _ = self.bot.shortest_path(
-                lambda pos, cell: not self.bot.vis_mask[pos]
-            )
-
-            if unseen_pos is not None:
-                # make sure unseen position is in the same room, otherwise prioritize blocker paths
-                current_room = self.bot.mission.room_from_pos(*self.pos)
-                if current_room.pos_inside(*unseen_pos):
-                    self.bot.stack.append(
-                        GoNextToSubgoal(
-                            self.bot, unseen_pos, reexplore_room=False, reason='Explore'))
-                    return
+            # Find the closest unseen position. If it can be reached
+            # by a shortest path within the current room, go for it.
+            current_room = self.bot.mission.room_from_pos(*self.pos)
+            path, unseen_pos, _ = self.bot.shortest_path(
+                lambda pos, cell: not self.bot.vis_mask[pos])
+            if unseen_pos is not None and all([current_room.pos_inside(*pos) for pos in path]):
+                self.bot.stack.append(
+                    GoNextToSubgoal(
+                        self.bot, unseen_pos, reexplore_room=False, reason='Explore'))
+                return
 
         # CASE 3.2: No non-blocker path found and
         # reexploration is not allowed or nothing to explore
