@@ -130,6 +130,10 @@ class OpenSubgoal(Subgoal):
         if action_taken == self.actions.toggle:
             self.bot.stack.pop()
             if self.reason == 'Unlock':
+                # The reason why this has to be planned after the action is taken
+                # is because if the positions for dropping is chosen in advance,
+                # then by the time the key is dropped there, it might already
+                # be occupied.
                 drop_key_pos = self.bot.find_drop_pos()
                 self.bot.stack.append(DropSubgoal(self.bot))
                 self.bot.stack.append(GoNextToSubgoal(self.bot, drop_key_pos))
