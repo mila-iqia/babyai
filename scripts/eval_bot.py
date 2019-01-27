@@ -17,6 +17,7 @@ eval_boy.py --advise_mode --bad_action_proba .8 --non_optimal_steps 10 --random_
 
 import random
 import time
+import traceback
 from optparse import OptionParser
 from babyai.levels import level_dict
 from babyai.bot import Bot
@@ -119,27 +120,30 @@ for level_name in level_list:
 
         try:
             episode_steps = 0
+            last_action = None
             while True:
-                action = expert.replan()
+                action = expert.replan(last_action)
                 if options.advise_mode and episode_steps < non_optimal_steps:
                     if rng.random() < options.bad_action_proba:
                         while True:
                             action = bad_agent.act(mission.gen_obs())['action'].item()
-
-                            # To make things simple, only allow random left/right/fwd moves, and opening of doors
-                            if action in (mission.actions.left, mission.actions.right, mission.actions.forward):
-                                break
                             fwd_pos = mission.agent_pos + mission.dir_vec
                             fwd_cell = mission.grid.get(*fwd_pos)
-                            if action == mission.actions.toggle and fwd_cell is not None and fwd_cell.type == 'door':
+                            # The current bot can't recover from two kinds of behaviour:
+                            # - opening a box (cause it just disappears)
+                            # - closing a door (cause its path finding mechanism get confused)
+                            opening_box = (action == mission.actions.toggle
+                                and fwd_cell and fwd_cell.type == 'box')
+                            closing_door = (action == mission.actions.toggle
+                                and fwd_cell and fwd_cell.type == 'door' and fwd_cell.is_open)
+                            if not opening_box and not closing_door:
                                 break
-
                     before_optimal_actions.append(action)
                 else:
                     optimal_actions.append(action)
 
-                #expert.replan(action)
                 obs, reward, done, info = mission.step(action)
+                last_action = action
 
                 total_reward += reward
                 episode_steps += 1
@@ -151,6 +155,8 @@ for level_name in level_list:
                     if reward > 0:
                         num_success += 1
                         total_steps.append(episode_steps)
+                        if options.verbose:
+                            print('SUCCESS on seed {}, reward {:.2f}'.format(mission_seed, reward))
                     if reward <= 0:
                         assert episode_steps == mission.max_steps  # Is there another reason for this to happen ?
                         if options.verbose:
@@ -158,9 +164,12 @@ for level_name in level_list:
                     break
         except Exception as e:
             print('FAILURE on %s, seed %d' % (level_name, mission_seed))
-            print(e)
+            traceback.print_exc()
             # Playing these 2 sets of actions should get you to the mission snapshot above
-            print(before_optimal_actions, optimal_actions)
+            print(before_optimal_actions)
+            print(optimal_actions)
+            print(expert.stack)
+            break
 
     all_good = all_good and (num_success == options.num_runs)
 

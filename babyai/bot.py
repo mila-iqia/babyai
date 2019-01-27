@@ -80,13 +80,44 @@ class Subgoal:
     def is_exploratory(self):
         return False
 
+    def plan_undo_action(self, action_taken):
+        if action_taken == self.actions.forward:
+            # check if the 'forward' action was succesful
+            if not np.array_equal(self.bot.prev_agent_pos, self.pos):
+                self.bot.stack.append(GoNextToSubgoal(self.bot, self.pos))
+        elif action_taken == self.actions.left:
+            old_fwd_pos = self.pos + self.right_vec
+            self.bot.stack.append(GoNextToSubgoal(self.bot, self.pos + self.right_vec))
+        elif action_taken == self.actions.right:
+            old_fwd_pos = self.pos - self.right_vec
+            self.bot.stack.append(GoNextToSubgoal(self.bot, self.pos - self.right_vec))
+        elif action_taken == self.actions.drop and self.bot.prev_carrying != self.carrying:
+            # get that thing back
+            assert self.fwd_cell.type in ('key', 'box', 'ball')
+            self.bot.stack.append(PickupSubgoal(self.bot))
+        elif action_taken == self.actions.pickup and self.bot.prev_carrying != self.carrying:
+            # drop that thing where you found it
+            fwd_cell = self.bot.mission.grid.get(*self.fwd_pos)
+            self.bot.stack.append(DropSubgoal(self.bot))
+        elif action_taken == self.actions.toggle:
+            fwd_cell = self.bot.mission.grid.get(*self.fwd_pos)
+            if (fwd_cell and fwd_cell.type == 'door'
+                    and self.bot.fwd_door_was_open != fwd_cell.is_open):
+                self.bot.stack.append(CloseSubgoal(self.bot)
+                                      if fwd_cell.is_open
+                                      else OpenSubgoal(self.bot))
+
+
 
 class CloseSubgoal(Subgoal):
 
     def replan_after_action(self, action_taken):
-        self.bot.stack.pop()
+        if action_taken == self.actions.toggle:
+            self.bot.stack.pop()
+        elif action_taken in [self.actions.forward, self.actions.left, self.actions.right]:
+            self.plan_undo_action(action_taken)
 
-    def replan(self):
+    def replan_before_action(self):
         assert self.fwd_cell is not None, 'Forward cell is empty'
         assert self.fwd_cell.type == 'door', 'Forward cell has to be a door'
         assert self.fwd_cell.is_open, 'Forward door must be open'
@@ -96,14 +127,16 @@ class CloseSubgoal(Subgoal):
 class OpenSubgoal(Subgoal):
 
     def replan_after_action(self, action_taken):
-        self.bot.stack.pop()
-        if self.reason == 'Unlock':
-            drop_key_pos = self.bot.find_drop_pos()
-            self.bot.stack.append(DropSubgoal(self.bot))
-            self.bot.stack.append(GoNextToSubgoal(self.bot, drop_key_pos))
+        if action_taken == self.actions.toggle:
+            self.bot.stack.pop()
+            if self.reason == 'Unlock':
+                drop_key_pos = self.bot.find_drop_pos()
+                self.bot.stack.append(DropSubgoal(self.bot))
+                self.bot.stack.append(GoNextToSubgoal(self.bot, drop_key_pos))
+        else:
+            self.plan_undo_action(action_taken)
 
-
-    def replan(self):
+    def replan_before_action(self):
         assert self.fwd_cell is not None, 'Forward cell is empty'
         assert self.fwd_cell.type == 'door', 'Forward cell has to be a door'
 
@@ -158,28 +191,33 @@ class OpenSubgoal(Subgoal):
 class DropSubgoal(Subgoal):
 
     def replan_after_action(self, action_taken):
-        # if this was the top-most goal, then it is done
-        self.bot.stack.pop()
+        if action_taken == self.actions.drop:
+            self.bot.stack.pop()
+        elif action_taken in [self.actions.forward, self.actions.left, self.actions.right]:
+            self.plan_undo_action(action_taken)
 
-    def replan(self):
+    def replan_before_action(self):
         assert self.bot.mission.carrying
+        assert not self.fwd_cell
         return self.actions.drop
 
 
 class PickupSubgoal(Subgoal):
 
     def replan_after_action(self, action_taken):
-        # if this was the top-most goal, then it is done
-        self.bot.stack.pop()
+        if action_taken == self.actions.pickup:
+            self.bot.stack.pop()
+        elif action_taken in [self.actions.left, self.actions.right]:
+            self.plan_undo_action(action_taken)
 
-    def replan(self):
+    def replan_before_action(self):
         assert not self.bot.mission.carrying
         return self.actions.pickup
 
 
 class GoNextToSubgoal(Subgoal):
     """The subgoal for going next to objects or positions."""
-    def replan(self):
+    def replan_before_action(self):
         if isinstance(self.datum, ObjDesc):
             target_pos = self.bot.find_obj_pos(self.datum, self.reason == 'PutNext')
             if not target_pos:
@@ -312,12 +350,16 @@ class GoNextToSubgoal(Subgoal):
             return self.actions.left
         return self.actions.right
 
+    def replan_after_action(self, action_taken):
+        if action_taken in [self.actions.pickup, self.actions.drop, self.actions.toggle]:
+            self.plan_undo_action(action_taken)
+
     def is_exploratory(self):
         return self.reason in ['Explore', 'ReexploreRoom']
 
 
 class ExploreSubgoal(Subgoal):
-    def replan(self):
+    def replan_before_action(self):
         # Find the closest unseen position
         _, unseen_pos, with_blockers = self.bot.shortest_path(
             lambda pos, cell: not self.bot.vis_mask[pos],
@@ -486,6 +528,13 @@ class Bot:
                     continue
 
                 self.vis_mask[abs_i, abs_j] = True
+
+    def remember_current_state(self):
+        self.prev_agent_pos = self.mission.agent_pos
+        self.prev_carrying = self.mission.carrying
+        fwd_cell = self.mission.grid.get(*self.mission.agent_pos + self.mission.dir_vec)
+        if fwd_cell and fwd_cell.type == 'door':
+            self.fwd_door_was_open = fwd_cell.is_open
 
     def closest_wall_or_door_given_dir(self, position, direction):
         distance = 1
@@ -731,21 +780,25 @@ class Bot:
 
         assert False, "unknown instruction type"
 
-    def replan(self, last_action=None):
-        # Step 1: see if the plan needs to be changed if the last action was
-        # suboptimal.
-
-        # Step 2: come up with a plan
+    def replan(self, action_taken=None):
         self.process_obs()
 
+        # TODO: instead of updating all subgoals, just add a couple
+        # properties to the `Subgoal` class.
+        for subgoal in self.stack:
+            subgoal.update_agent_attributes()
+
         if self.stack:
-            self.stack[-1].replan_after_action(last_action)
+            self.stack[-1].replan_after_action(action_taken)
+
+        # Clear the stack from the non-essential subgoals
+        while self.stack and self.stack[-1].is_exploratory():
+            self.stack.pop()
 
         suggested_action = None
         while self.stack:
             subgoal = self.stack[-1]
-            subgoal.update_agent_attributes()
-            suggested_action = subgoal.replan()
+            suggested_action = subgoal.replan_before_action()
             # If is not clear what can be done for the current subgoal
             # (because it is completed, because there is blocker,
             # or because exploration is required), keep replanning
@@ -754,9 +807,7 @@ class Bot:
         if not self.stack:
             suggested_action = self.mission.actions.done
 
-        # Clear the stack from the non-essential subgoals
-        while self.stack and self.stack[-1].is_exploratory():
-            self.stack.pop()
+        self.remember_current_state()
 
         return suggested_action
 
@@ -777,7 +828,3 @@ class Bot:
                 and self.fwd_cell is not None
                 and self.fwd_cell.type == 'box'):
             raise DisappearedBoxError('A box was opened. Too Bad :(')
-
-    def step(self):
-        action = self.get_action()
-        self.replan(action)
