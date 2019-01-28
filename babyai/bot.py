@@ -284,14 +284,24 @@ class GoNextToSubgoal(Subgoal):
     """
 
     def replan_before_action(self):
+        target_obj = None
         if isinstance(self.datum, ObjDesc):
-            target_pos = self.bot._find_obj_pos(self.datum, self.reason == 'PutNext')
+            target_obj, target_pos = self.bot._find_obj_pos(self.datum, self.reason == 'PutNext')
             if not target_pos:
                 # No path found -> Explore the world
                 self.bot.stack.append(ExploreSubgoal(self.bot))
                 return
         else:
             target_pos = tuple(self.datum)
+
+        if (self.reason == 'Open'
+                and target_obj and target_obj.type == 'door' and target_obj.is_locked):
+            key_desc = ObjDesc('key', target_obj.color)
+            key_desc.find_matching_objs(self.bot.mission)
+            if not self.carrying:
+                self.bot.stack.append(PickupSubgoal(self.bot))
+                self.bot.stack.append(GoNextToSubgoal(self.bot, key_desc))
+                return
 
         # The position we are on is the one we should go next to
         # -> Move away from it
@@ -579,6 +589,7 @@ class Bot:
 
         best_distance_to_obj = 999
         best_pos = None
+        best_obj = None
 
         for i in range(len(obj_desc.obj_set)):
             try:
@@ -621,13 +632,14 @@ class Bot:
                     if distance_to_obj < best_distance_to_obj:
                         best_distance_to_obj = distance_to_obj
                         best_pos = obj_pos
+                        best_obj = obj_desc.obj_set[i]
             except IndexError:
                 # Suppose we are tracking red keys, and we just used a red key to open a door,
                 # then for the last i, accessing obj_desc.obj_poss[i] will raise an IndexError
                 # -> Solution: Not care about that red key we used to open the door
                 pass
 
-        return best_pos
+        return best_obj, best_pos
 
     def _process_obs(self):
         """Parse the contents of an observation/image and update our state."""
@@ -881,7 +893,7 @@ class Bot:
 
         if isinstance(instr, OpenInstr):
             self.stack.append(OpenSubgoal(self))
-            self.stack.append(GoNextToSubgoal(self, instr.desc))
+            self.stack.append(GoNextToSubgoal(self, instr.desc, reason='Open'))
             return
 
         if isinstance(instr, PickupInstr):
