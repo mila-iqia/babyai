@@ -2,7 +2,18 @@
 
 [![Build Status](https://travis-ci.org/mila-udem/babyai.svg?branch=master)](https://travis-ci.org/mila-udem/babyai)
 
-A platform for simulating language learning with a human in the loop. This is a on-going research project based at [Mila](https://mila.quebec/en/).
+A platform for simulating language learning with a human in the loop. This is an ongoing research project based at [Mila](https://mila.quebec/en/). If you use this platform in your research, please cite:
+
+```
+@inproceedings{
+  babyai_iclr19,
+  title={Baby{AI}: First Steps Towards Grounded Language Learning With a Human In the Loop},
+  author={Maxime Chevalier-Boisvert and Dzmitry Bahdanau and Salem Lahlou and Lucas Willems and Chitwan Saharia and Thien Huu Nguyen and Yoshua Bengio},
+  booktitle={International Conference on Learning Representations},
+  year={2019},
+  url={https://openreview.net/forum?id=rJeXCo0cYX},
+}
+```
 
 ## Installation
 
