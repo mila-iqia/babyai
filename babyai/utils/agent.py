@@ -147,9 +147,7 @@ class BotAgent:
         self.bot = Bot(self.env)
 
     def act(self, obs=None, update_internal_state=True, *args, **kwargs):
-        action = self.bot.get_action()
-        if update_internal_state:
-            self.bot.take_action(action)
+        action = self.bot.replan()
         return {'action': action}
 
     def analyze_feedback(self, reward, done):

@@ -137,7 +137,7 @@ def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions, mean_steps):
                 assert check_obss_equality(obs, new_obs), "Observations {} of seed {} don't match".format(j, seeds[i])
                 mission = obs['mission']
                 action = agent.act(update_internal_state=False)['action']
-                _ = agent.bot.take_action(fail_actions[i][j])
+                _ = agent.bot.replan(fail_actions[i][j])
                 debug_info['actions'].append(fail_actions[i][j])
                 new_obs, reward, done, _ = env.step(fail_actions[i][j])
                 if done and reward > 0:

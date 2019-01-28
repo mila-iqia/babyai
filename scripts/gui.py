@@ -356,15 +356,17 @@ class AIGameWindow(QMainWindow):
         self.obsImgLabel.setPixmap(obsPixmap)
 
         # Get the optimal action from the bot
-        self.bot_advisor_action = self.bot_advisor_agent.act(update_internal_state=False)['action']
+        self.bot_advisor_action = self.bot_advisor_agent.act()['action']
 
         # Update the mission text
         mission = obs['mission']
         self.missionBox.setPlainText(mission)
 
-        self.missionBox.append('\nOptimal Bot Advisor Action: {}'.format(self.bot_advisor_action))
+        self.missionBox.append('\nOptimal Bot Advisor Action: {}'.format(
+            minigrid.MiniGridEnv.Actions(self.bot_advisor_action).name))
         # UNCOMMENT THE FOLLOWING LINE TO DEBUG THE BOT
-        self.missionBox.append('\nOptimal Bot Advisor Stack: {}'.format(self.bot_advisor_agent.bot.stack))
+        self.missionBox.append('\nOptimal Bot Advisor Stack After Replanning: {}'.format(
+            self.bot_advisor_agent.bot.stack))
 
         self.missionBox.append("""\n"""
             """Arrow Keys: go left, right, up, down\n"""
@@ -381,7 +383,6 @@ class AIGameWindow(QMainWindow):
         if action is None:
             action = self.bot_advisor_action
 
-        self.bot_advisor_agent.bot.take_action(action)
         obs, reward, done, info = self.env.step(action)
 
         self.showEnv(obs)
