@@ -215,6 +215,11 @@ class OpenSubgoal(Subgoal):
             self.bot.stack.append(CloseSubgoal(self.bot))
             return
 
+        if self.fwd_cell.is_locked and self.reason is None:
+            self.bot.stack.pop()
+            self.bot.stack.append(OpenSubgoal(self.bot, reason='Unlock'))
+            return
+
         return self.actions.toggle
 
     def replan_after_action(self, action_taken):
@@ -485,9 +490,14 @@ class ExploreSubgoal(Subgoal):
         # Open the door
         if door_pos:
             door_obj = self.bot.mission.grid.get(*door_pos)
+            # If we are going to a locked door, there are two cases:
+            # - we already have the key, then we should not drop it
+            # - we don't have the key, in which case eventually we should drop it
+            got_the_key = (self.carrying
+                and self.carrying.type == 'key' and self.carrying.color == door_obj.color)
+            open_reason = 'KeepKey' if door_obj.is_locked and got_the_key else None
             self.bot.stack.pop()
-            self.bot.stack.append(OpenSubgoal(
-                self.bot, reason='Unlock' if door_obj.is_locked else None))
+            self.bot.stack.append(OpenSubgoal(self.bot, reason=open_reason))
             self.bot.stack.append(GoNextToSubgoal(self.bot, door_obj, reason='Open'))
             return
 
