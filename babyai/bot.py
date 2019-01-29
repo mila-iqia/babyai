@@ -264,8 +264,9 @@ class GoNextToSubgoal(Subgoal):
 
     Parameters:
     ----------
-    datum : (int, int) tuple or `ObjDesc`
-        The position or the object to which we are going:
+    datum : (int, int) tuple or `ObjDesc` or object reference
+        The position or the decription of the object or
+        the object to which we are going.
     reason : str
         One of the following:
         - `None`: go the position (object) and face it
@@ -291,6 +292,9 @@ class GoNextToSubgoal(Subgoal):
                 # No path found -> Explore the world
                 self.bot.stack.append(ExploreSubgoal(self.bot))
                 return
+        elif isinstance(self.datum, WorldObj):
+            target_obj = self.datum
+            target_pos = target_obj.cur_pos
         else:
             target_pos = tuple(self.datum)
 
@@ -475,9 +479,11 @@ class ExploreSubgoal(Subgoal):
 
         # Open the door
         if door_pos:
+            door_obj = self.bot.mission.grid.get(*door_pos)
             self.bot.stack.pop()
-            self.bot.stack.append(OpenSubgoal(self.bot))
-            self.bot.stack.append(GoNextToSubgoal(self.bot, door_pos))
+            self.bot.stack.append(OpenSubgoal(
+                self.bot, reason='Unlock' if door_obj.is_locked else None))
+            self.bot.stack.append(GoNextToSubgoal(self.bot, door_obj, reason='Open'))
             return
 
         assert False, "0nothing left to explore"
