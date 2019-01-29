@@ -298,6 +298,11 @@ class GoNextToSubgoal(Subgoal):
         else:
             target_pos = tuple(self.datum)
 
+        # Suppore we are walking towards the door that we would like to open,
+        # it is locked, and we don't have the key. What do we do? If we are carrying
+        # something, it makes to just continue, as we still need to bring this object
+        # close to the door. If we are not carrying anything though, then it makes
+        # sense to change the plan and go straight for the required key.
         if (self.reason == 'Open'
                 and target_obj and target_obj.type == 'door' and target_obj.is_locked):
             key_desc = ObjDesc('key', target_obj.color)
