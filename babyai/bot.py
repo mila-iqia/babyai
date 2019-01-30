@@ -313,6 +313,9 @@ class GoNextToSubgoal(Subgoal):
             key_desc = ObjDesc('key', target_obj.color)
             key_desc.find_matching_objs(self.bot.mission)
             if not self.carrying:
+                # No we need to commit to going to this particular door
+                self.bot.stack.pop()
+                self.bot.stack.append(GoNextToSubgoal(self.bot, target_obj, reason='Open'))
                 self.bot.stack.append(PickupSubgoal(self.bot))
                 self.bot.stack.append(GoNextToSubgoal(self.bot, key_desc))
                 return
