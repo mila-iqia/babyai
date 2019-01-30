@@ -157,9 +157,13 @@ class OpenSubgoal(Subgoal):
     Parameters:
     ----------
     reason : str
-        Can be either `None` or `"Unlock"`. If the reason is `"Unlock"`,
+        `None`, `"Unlock"`, or `"UnlockAndKeepKey"`. If the reason is `"Unlock"`,
         the agent will plan dropping the key somewhere after it opens the door
-        (see `replan_after_action`).
+        (see `replan_after_action`). When the agent faces the door, and the
+        reason is `None`, this subgoals replaces itself with a similar one,
+        but with with the reason `"Unlock"`. `reason="UnlockAndKeepKey` means
+        that the agent should not schedule the dropping of the key
+        when it faces a locked door, and should instead keep the key.
 
     """
 
@@ -189,7 +193,7 @@ class OpenSubgoal(Subgoal):
                 self.bot.stack.append(GoNextToSubgoal(self.bot, drop_pos_cur))
 
                 # Go back to the door and open it
-                self.bot.stack.append(OpenSubgoal(self.bot, reason='Unlock'))
+                self.bot.stack.append(OpenSubgoal(self.bot))
                 self.bot.stack.append(GoNextToSubgoal(self.bot, tuple(self.fwd_pos)))
 
                 # Go to the key and pick it up
@@ -200,10 +204,16 @@ class OpenSubgoal(Subgoal):
                 self.bot.stack.append(DropSubgoal(self.bot))
                 self.bot.stack.append(GoNextToSubgoal(self.bot, drop_pos_cur))
             else:
+                # This branch is will be used very rarely, given that
+                # GoNextToSubGoal(..., reason='Open') should plan
+                # going to the key before we get to stand right in front of a door.
+                # But the agent can be spawned right in front of a open door,
+                # for which we case we do need this code.
+
                 self.bot.stack.pop()
 
                 # Go back to the door and open it
-                self.bot.stack.append(OpenSubgoal(self.bot, reason='Unlock'))
+                self.bot.stack.append(OpenSubgoal(self.bot))
                 self.bot.stack.append(GoNextToSubgoal(self.bot, tuple(self.fwd_pos)))
 
                 # Go to the key and pick it up
@@ -213,6 +223,11 @@ class OpenSubgoal(Subgoal):
 
         if self.fwd_cell.is_open:
             self.bot.stack.append(CloseSubgoal(self.bot))
+            return
+
+        if self.fwd_cell.is_locked and self.reason is None:
+            self.bot.stack.pop()
+            self.bot.stack.append(OpenSubgoal(self.bot, reason='Unlock'))
             return
 
         return self.actions.toggle
@@ -264,8 +279,9 @@ class GoNextToSubgoal(Subgoal):
 
     Parameters:
     ----------
-    datum : (int, int) tuple or `ObjDesc`
-        The position or the object to which we are going:
+    datum : (int, int) tuple or `ObjDesc` or object reference
+        The position or the decription of the object or
+        the object to which we are going.
     reason : str
         One of the following:
         - `None`: go the position (object) and face it
@@ -284,14 +300,35 @@ class GoNextToSubgoal(Subgoal):
     """
 
     def replan_before_action(self):
+        target_obj = None
         if isinstance(self.datum, ObjDesc):
-            target_pos = self.bot._find_obj_pos(self.datum, self.reason == 'PutNext')
+            target_obj, target_pos = self.bot._find_obj_pos(self.datum, self.reason == 'PutNext')
             if not target_pos:
                 # No path found -> Explore the world
                 self.bot.stack.append(ExploreSubgoal(self.bot))
                 return
+        elif isinstance(self.datum, WorldObj):
+            target_obj = self.datum
+            target_pos = target_obj.cur_pos
         else:
             target_pos = tuple(self.datum)
+
+        # Suppore we are walking towards the door that we would like to open,
+        # it is locked, and we don't have the key. What do we do? If we are carrying
+        # something, it makes to just continue, as we still need to bring this object
+        # close to the door. If we are not carrying anything though, then it makes
+        # sense to change the plan and go straight for the required key.
+        if (self.reason == 'Open'
+                and target_obj and target_obj.type == 'door' and target_obj.is_locked):
+            key_desc = ObjDesc('key', target_obj.color)
+            key_desc.find_matching_objs(self.bot.mission)
+            if not self.carrying:
+                # No we need to commit to going to this particular door
+                self.bot.stack.pop()
+                self.bot.stack.append(GoNextToSubgoal(self.bot, target_obj, reason='Open'))
+                self.bot.stack.append(PickupSubgoal(self.bot))
+                self.bot.stack.append(GoNextToSubgoal(self.bot, key_desc))
+                return
 
         # The position we are on is the one we should go next to
         # -> Move away from it
@@ -465,9 +502,16 @@ class ExploreSubgoal(Subgoal):
 
         # Open the door
         if door_pos:
+            door_obj = self.bot.mission.grid.get(*door_pos)
+            # If we are going to a locked door, there are two cases:
+            # - we already have the key, then we should not drop it
+            # - we don't have the key, in which case eventually we should drop it
+            got_the_key = (self.carrying
+                and self.carrying.type == 'key' and self.carrying.color == door_obj.color)
+            open_reason = 'KeepKey' if door_obj.is_locked and got_the_key else None
             self.bot.stack.pop()
-            self.bot.stack.append(OpenSubgoal(self.bot))
-            self.bot.stack.append(GoNextToSubgoal(self.bot, door_pos))
+            self.bot.stack.append(OpenSubgoal(self.bot, reason=open_reason))
+            self.bot.stack.append(GoNextToSubgoal(self.bot, door_obj, reason='Open'))
             return
 
         assert False, "0nothing left to explore"
@@ -579,6 +623,7 @@ class Bot:
 
         best_distance_to_obj = 999
         best_pos = None
+        best_obj = None
 
         for i in range(len(obj_desc.obj_set)):
             try:
@@ -621,13 +666,14 @@ class Bot:
                     if distance_to_obj < best_distance_to_obj:
                         best_distance_to_obj = distance_to_obj
                         best_pos = obj_pos
+                        best_obj = obj_desc.obj_set[i]
             except IndexError:
                 # Suppose we are tracking red keys, and we just used a red key to open a door,
                 # then for the last i, accessing obj_desc.obj_poss[i] will raise an IndexError
                 # -> Solution: Not care about that red key we used to open the door
                 pass
 
-        return best_pos
+        return best_obj, best_pos
 
     def _process_obs(self):
         """Parse the contents of an observation/image and update our state."""
@@ -881,7 +927,7 @@ class Bot:
 
         if isinstance(instr, OpenInstr):
             self.stack.append(OpenSubgoal(self))
-            self.stack.append(GoNextToSubgoal(self, instr.desc))
+            self.stack.append(GoNextToSubgoal(self, instr.desc, reason='Open'))
             return
 
         if isinstance(instr, PickupInstr):
