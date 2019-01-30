@@ -19,25 +19,6 @@ def initialize_parameters(m):
 
 
 # Inspired by FiLMedBlock from https://arxiv.org/abs/1709.07871
-
-class AgentControllerFiLM(nn.Module):
-    def __init__(self, in_features, out_features, in_channels, imm_channels):
-        super().__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=imm_channels, kernel_size=(1, 1)),
-            nn.ReLU(),
-            nn.Conv2d(in_channels=imm_channels, out_channels=64, kernel_size=(1, 1)),
-            nn.ReLU()
-        )
-        self.weight = nn.Linear(in_features, out_features)
-        self.bias = nn.Linear(in_features, out_features)
-
-        self.apply(initialize_parameters)
-
-    def forward(self, x, y):
-        return self.conv(x) * self.weight(y).unsqueeze(2).unsqueeze(3) + self.bias(y).unsqueeze(2).unsqueeze(3)
-
-
 class ExpertControllerFiLM(nn.Module):
     def __init__(self, in_features, out_features, in_channels, imm_channels):
         super().__init__()
@@ -58,22 +39,6 @@ class ExpertControllerFiLM(nn.Module):
         out = self.bn2(out)
         out = F.relu(out)
         return out
-
-
-class ImageBOWEmbedding(nn.Module):
-    def __init__(self, num_embeddings, embedding_dim, padding_idx=None, reduce_fn=torch.mean):
-        super(ImageBOWEmbedding, self).__init__()
-        self.num_embeddings = num_embeddings
-        self.embedding_dim = embedding_dim
-        self.padding_idx = padding_idx
-        self.reduce_fn = reduce_fn
-        self.embedding = nn.Embedding(num_embeddings, embedding_dim, padding_idx=padding_idx)
-
-    def forward(self, inputs):
-        embeddings = self.embedding(inputs)
-        embeddings = self.reduce_fn(embeddings, dim=1)
-        embeddings = torch.transpose(torch.transpose(embeddings, 1, 3), 2, 3)
-        return embeddings
 
 
 class ACModel(nn.Module, babyai.rl.RecurrentACModel):
@@ -105,29 +70,6 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 nn.Conv2d(in_channels=32, out_channels=image_dim, kernel_size=(2, 2)),
                 nn.ReLU()
             )
-        elif arch == "cnn2":
-            self.image_conv = nn.Sequential(
-                nn.Conv2d(in_channels=3, out_channels=16, kernel_size=(3, 3)),
-                nn.ReLU(),
-                nn.MaxPool2d(kernel_size=(2, 2), stride=2, ceil_mode=True),
-                nn.Conv2d(in_channels=16, out_channels=image_dim, kernel_size=(3, 3)),
-                nn.ReLU()
-            )
-        elif arch == "filmcnn":
-            if not self.use_instr:
-                raise ValueError("FiLM architecture can be used when instructions are enabled")
-
-            self.image_conv_1 = nn.Sequential(
-                nn.Conv2d(in_channels=64, out_channels=32, kernel_size=(2, 2)),
-                nn.ReLU(),
-                nn.MaxPool2d(kernel_size=(2, 2), stride=2)
-            )
-            self.image_conv_2 = nn.Sequential(
-                nn.Conv2d(in_channels=64, out_channels=32, kernel_size=(2, 2)),
-                nn.ReLU(),
-                nn.Conv2d(in_channels=32, out_channels=128, kernel_size=(2, 2)),
-                nn.ReLU()
-            )
         elif arch.startswith("expert_filmcnn"):
             if not self.use_instr:
                 raise ValueError("FiLM architecture can be used when instructions are enabled")
@@ -143,23 +85,12 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 nn.MaxPool2d(kernel_size=(2, 2), stride=2)
             )
             self.film_pool = nn.MaxPool2d(kernel_size=(2, 2), stride=2)
-        elif arch == 'embcnn1':
-            self.image_conv = nn.Sequential(
-                ImageBOWEmbedding(obs_space["image"], embedding_dim=16, padding_idx=0, reduce_fn=torch.mean),
-                nn.ReLU(),
-                nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(3, 3)),
-                nn.ReLU(),
-                nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(3, 3)),
-                nn.ReLU(),
-                nn.Conv2d(in_channels=32, out_channels=image_dim, kernel_size=(3, 3)),
-                nn.ReLU()
-            )
         else:
             raise ValueError("Incorrect architecture name: {}".format(arch))
 
         # Define instruction embedding
         if self.use_instr:
-            if self.lang_model in ['gru', 'conv', 'bigru', 'attgru']:
+            if self.lang_model in ['gru', 'bigru', 'attgru']:
                 self.word_embedding = nn.Embedding(obs_space["instr"], self.instr_dim)
                 if self.lang_model in ['gru', 'bigru', 'attgru']:
                     gru_dim = self.instr_dim
@@ -176,15 +107,6 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                         nn.Conv2d(1, kernel_dim, (K, self.instr_dim)) for K in kernel_sizes])
                     self.final_instr_dim = kernel_dim * len(kernel_sizes)
 
-            elif self.lang_model == 'bow':
-                hidden_units = [obs_space["instr"], self.instr_dim, self.instr_dim]
-                layers = []
-                for n_in, n_out in zip(hidden_units, hidden_units[1:]):
-                    layers.append(nn.Linear(n_in, n_out))
-                    layers.append(nn.ReLU())
-                self.instr_bow = nn.Sequential(*layers)
-                self.final_instr_dim = instr_dim
-
             if self.lang_model == 'attgru':
                 self.memory2key = nn.Linear(self.memory_size, self.final_instr_dim)
 
@@ -194,16 +116,8 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
         # Resize image embedding
         self.embedding_size = self.semi_memory_size
-        if self.use_instr and arch != "filmcnn" and not arch.startswith("expert_filmcnn"):
+        if self.use_instr and not "filmcnn" in arch:
             self.embedding_size += self.final_instr_dim
-
-        if arch == "filmcnn":
-            self.controller_1 = AgentControllerFiLM(
-                in_features=self.final_instr_dim, out_features=64,
-                in_channels=3, imm_channels=16)
-            self.controller_2 = AgentControllerFiLM(
-                in_features=self.final_instr_dim,
-                out_features=64, in_channels=32, imm_channels=32)
 
         if arch.startswith("expert_filmcnn"):
             if arch == "expert_filmcnn":
@@ -305,12 +219,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
         x = torch.transpose(torch.transpose(obs.image, 1, 3), 2, 3)
 
-        if self.arch == "filmcnn":
-            x = self.controller_1(x, instr_embedding)
-            x = self.image_conv_1(x)
-            x = self.controller_2(x, instr_embedding)
-            x = self.image_conv_2(x)
-        elif self.arch.startswith("expert_filmcnn"):
+        if self.arch.startswith("expert_filmcnn"):
             x = self.image_conv(x)
             for controler in self.controllers:
                 x = controler(x, instr_embedding)
@@ -328,7 +237,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         else:
             embedding = x
 
-        if self.use_instr and self.arch != "filmcnn" and not self.arch.startswith("expert_filmcnn"):
+        if self.use_instr and not "filmcnn" in self.arch:
             embedding = torch.cat((embedding, instr_embedding), dim=1)
 
         if hasattr(self, 'aux_info') and self.aux_info:
@@ -378,25 +287,11 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 final_states = final_states[iperm_idx]
 
             if outputs.shape[1] < masks.shape[1]:
-                masks = masks[:, :(outputs.shape[1]-masks.shape[1])] 
-                # the packing truncated the original length 
+                masks = masks[:, :(outputs.shape[1]-masks.shape[1])]
+                # the packing truncated the original length
                 # so we need to change mask to fit it
 
             return outputs if self.lang_model == 'attgru' else final_states
 
-        elif self.lang_model == 'conv':
-            inputs = self.word_embedding(instr).unsqueeze(1)  # (B,1,T,D)
-            inputs = [F.relu(conv(inputs)).squeeze(3) for conv in self.instr_convs]
-            inputs = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in inputs]
-
-            return torch.cat(inputs, 1)
-
-        elif self.lang_model == 'bow':
-            device = torch.device("cuda" if instr.is_cuda else "cpu")
-            input_dim = self.obs_space["instr"]
-            input = torch.zeros((instr.size(0), input_dim), device=device)
-            idx = torch.arange(instr.size(0), dtype=torch.int64)
-            input[idx.unsqueeze(1), instr] = 1.
-            return self.instr_bow(input)
         else:
             ValueError("Undefined instruction architecture: {}".format(self.use_instr))
