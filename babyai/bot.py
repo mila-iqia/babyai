@@ -157,9 +157,13 @@ class OpenSubgoal(Subgoal):
     Parameters:
     ----------
     reason : str
-        Can be either `None` or `"Unlock"`. If the reason is `"Unlock"`,
+        `None`, `"Unlock"`, or `"UnlockAndKeepKey"`. If the reason is `"Unlock"`,
         the agent will plan dropping the key somewhere after it opens the door
-        (see `replan_after_action`).
+        (see `replan_after_action`). When the agent faces the door, and the
+        reason is `None`, this subgoals replaces itself with a similar one,
+        but with with the reason `"Unlock"`. `reason="UnlockAndKeepKey` means
+        that the agent should not schedule the dropping of the key
+        when it faces a locked door, and should instead keep the key.
 
     """
 
@@ -189,7 +193,7 @@ class OpenSubgoal(Subgoal):
                 self.bot.stack.append(GoNextToSubgoal(self.bot, drop_pos_cur))
 
                 # Go back to the door and open it
-                self.bot.stack.append(OpenSubgoal(self.bot, reason='Unlock'))
+                self.bot.stack.append(OpenSubgoal(self.bot))
                 self.bot.stack.append(GoNextToSubgoal(self.bot, tuple(self.fwd_pos)))
 
                 # Go to the key and pick it up
@@ -200,10 +204,16 @@ class OpenSubgoal(Subgoal):
                 self.bot.stack.append(DropSubgoal(self.bot))
                 self.bot.stack.append(GoNextToSubgoal(self.bot, drop_pos_cur))
             else:
+                # This branch is will be used very rarely, given that
+                # GoNextToSubGoal(..., reason='Open') should plan
+                # going to the key before we get to stand right in front of a door.
+                # But the agent can be spawned right in front of a open door,
+                # for which we case we do need this code.
+
                 self.bot.stack.pop()
 
                 # Go back to the door and open it
-                self.bot.stack.append(OpenSubgoal(self.bot, reason='Unlock'))
+                self.bot.stack.append(OpenSubgoal(self.bot))
                 self.bot.stack.append(GoNextToSubgoal(self.bot, tuple(self.fwd_pos)))
 
                 # Go to the key and pick it up
