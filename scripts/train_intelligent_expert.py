@@ -18,6 +18,7 @@ GoToLocal, over 60K demos needed
 
 import os
 import csv
+import json
 import copy
 import gym
 import time
@@ -30,6 +31,7 @@ from babyai.arguments import ArgumentParser
 from babyai.imitation import ImitationLearning
 from babyai.evaluate import batch_evaluate, evaluate
 from babyai.utils.agent import BotAgent
+import babyai.utils as utils
 import torch
 import blosc
 from babyai.utils.agent import DemoAgent
@@ -49,23 +51,8 @@ parser.add_argument("--demo-grow-factor", type=float, default=1.2,
                     help="number of demos to add to the training set")
 parser.add_argument("--num-eval-demos", type=int, default=1000,
                     help="number of demos used for evaluation while growing the training set")
-parser.add_argument("--finetune", action="store_true", default=False,
-                    help="fine-tune the model at every phase instead of retraining")
 parser.add_argument("--phases", type=int, default=1000,
                     help="maximum number of phases to train for")
-
-parser.add_argument("--dagger", action="store_true", default=False,
-                    help="Use DaGGER to add demos")
-parser.add_argument("--continue-dagger", action="store_true", default=False,
-                    help='Complete DaGGER trajectories to target')
-parser.add_argument("--dagger-trim-coef", type=float, default=2.,
-                    help="Trim agent's trajectories at this number multiplied by the bot mean number of steps")
-parser.add_argument("--episodes-to-evaluate-mean", type=int, default=100,
-                    help="Number of episodes to use to evaluate the mean number of steps it takes to solve the task")
-parser.add_argument("--dagger-start-with-bot-demos", action="store_true", default=False,
-                    help="If not specified, no full bot demos are considered (args.start_demos is useless)")
-parser.add_argument("--additive-train-set-size", type=int, default=None,
-                    help="If set, then train site size is additive, and this overrides args.demo_grow_factor")
 
 logger = logging.getLogger(__name__)
 
@@ -113,63 +100,6 @@ def evaluate_agent(il_learn, eval_seed, num_eval_demos, return_obss_actions=Fals
         return success_rate, fail_seeds, fail_obss, fail_actions
 
 
-def generate_dagger_demos(env_name, seeds, fail_obss, fail_actions, mean_steps):
-    env = gym.make(env_name)
-    agent = BotAgent(env)
-    demos = []
-
-    for i in range(len(fail_obss)):
-        # Run the expert for one episode
-        env.seed(int(seeds[i]))
-
-        new_obs = env.reset()
-        agent.on_reset()
-
-        env0_str = env.__str__()
-
-        actions = []
-        images = []
-        directions = []
-        debug_info = {'seed': [int(seeds[i])], 'actions': []}
-        try:
-            for j in range(min(int(args.dagger_trim_coef * mean_steps), len(fail_obss[i]) - 1)):
-                obs = fail_obss[i][j]
-                assert check_obss_equality(obs, new_obs), "Observations {} of seed {} don't match".format(j, seeds[i])
-                mission = obs['mission']
-                action = agent.act(update_internal_state=False)['action']
-                _ = agent.bot.replan(fail_actions[i][j])
-                debug_info['actions'].append(fail_actions[i][j])
-                new_obs, reward, done, _ = env.step(fail_actions[i][j])
-                if done and reward > 0:
-                    raise ValueError(
-                        "The baby's actions shouldn't solve the task. Env0 {}, Env9{}, Seed {}, actions {}.".format(
-                            env0_str, env.__str__(), int(seeds[i]), fail_actions[i]
-                        ))
-                actions.append(action)
-                images.append(obs['image'])
-                directions.append(obs['direction'])
-            if args.continue_dagger:
-                obs = new_obs
-                while not done:
-                    action = agent.act(obs)['action']
-                    debug_info['actions'].append(action)
-                    new_obs, reward, done, _ = env.step(action)
-                    agent.analyze_feedback(reward, done)
-                    actions.append(action)
-                    images.append(obs['image'])
-                    directions.append(obs['direction'])
-            print(debug_info, actions)
-
-            demos.append((mission, blosc.pack_array(np.array(images)), directions, actions))
-
-        except Exception as e:
-            logger.exception("error while generating demo #{}: {}. Env0 {}, Env9{}, Seed {}, actions {}.".format(
-                len(demos), e, env0_str, env.__str__(), int(seeds[i]), fail_actions[i]))
-            continue
-
-    return demos
-
-
 def generate_demos(env_name, seeds):
     env = gym.make(env_name)
     agent = BotAgent(env)
@@ -214,15 +144,13 @@ def generate_demos(env_name, seeds):
     return demos
 
 
-def grow_training_set(il_learn, train_demos, eval_seed, grow_factor, num_eval_demos, dagger=False, mean_steps=None):
+def grow_training_set(il_learn, train_demos, eval_seed, grow_factor, num_eval_demos):
     """
     Grow the training set of demonstrations by some factor
+    We specifically generate demos on which the agent fails
     """
 
     new_train_set_size = int(len(train_demos) * grow_factor)
-    if args.additive_train_set_size is not None:
-        new_train_set_size = len(train_demos) + args.additive_train_set_size
-
     num_new_demos = new_train_set_size - len(train_demos)
 
     logger.info("Generating {} new demos for {}".format(num_new_demos, il_learn.args.env))
@@ -232,24 +160,14 @@ def grow_training_set(il_learn, train_demos, eval_seed, grow_factor, num_eval_de
         num_new_demos = new_train_set_size - len(train_demos)
 
         # Evaluate the success rate of the model
-        if not dagger:
-            success_rate, fail_seeds = evaluate_agent(il_learn, eval_seed, num_eval_demos)
-        else:
-            success_rate, fail_seeds, fail_obss, fail_actions = evaluate_agent(il_learn, eval_seed, num_eval_demos,
-                                                                               True)
+        success_rate, fail_seeds = evaluate_agent(il_learn, eval_seed, num_eval_demos)
         eval_seed += num_eval_demos
 
         if len(fail_seeds) > num_new_demos:
             fail_seeds = fail_seeds[:num_new_demos]
-            if dagger:
-                fail_obss = fail_obss[:num_new_demos]
-                fail_actions = fail_actions[:num_new_demos]
 
         # Generate demos for the worst performing seeds
-        if not dagger:
-            new_demos = generate_demos(il_learn.args.env, fail_seeds)
-        else:
-            new_demos = generate_dagger_demos(il_learn.args.env, fail_seeds, fail_obss, fail_actions, mean_steps)
+        new_demos = generate_demos(il_learn.args.env, fail_seeds)
         train_demos.extend(new_demos)
 
     return eval_seed
@@ -288,52 +206,67 @@ def main(args):
     if first_created:
         csv_writer.writerow(header)
 
-    # Get the status path
-    status_path = os.path.join(utils.get_log_dir(args.model), 'status.json')
-
     # Log command, availability of CUDA, and model
     logger.info(args)
     logger.info("CUDA available: {}".format(torch.cuda.is_available()))
     logger.info(il_learn.acmodel)
-    train_demos = []
 
-    # Generate the initial set of training demos
-    if not args.dagger or args.dagger_start_with_bot_demos:
-        train_demos += generate_demos(args.env, range(args.seed, args.seed + args.start_demos))
-    # Seed at which evaluation will begin
-    eval_seed = args.seed + args.start_demos
+    # Seed at which demo evaluation/generation will begin
+    eval_seed = args.seed + len(il_learn.train_demos)
+
+    # Phase at which we start
+    cur_phase = 0
+
+    # Try to load the status (if resuming)
+    status_path = os.path.join(utils.get_log_dir(args.model), 'status.json')
+    if os.path.exists(status_path):
+        with open(status_path, 'r') as src:
+            status = json.load(src)
+            eval_seed = status.get('eval_seed', eval_seed)
+            cur_phase = status.get('cur_phase', cur_phase)
 
     model_name = args.model
 
-    if args.dagger:
-        mean_steps = get_bot_mean(args.env, args.episodes_to_evaluate_mean, args.seed)
-    else:
-        mean_steps = None
+    for phase_no in range(cur_phase, args.phases):
+        logger.info("Starting phase {} with {} demos, eval_seed={}".format(phase_no, len(il_learn.train_demos), eval_seed))
 
-    for phase_no in range(0, args.phases):
-        logger.info("Starting phase {} with {} demos".format(phase_no, len(train_demos)))
-
-        if not args.finetune:
-            # Create a new model to be trained from scratch
-            logging.info("Creating new model to be trained from scratch")
-            args.model = model_name + ('_phase_%d' % phase_no)
-            il_learn = ImitationLearning(args)
+        # Each phase trains a different model from scratch
+        args.model = model_name + ('_phase_%d' % phase_no)
+        il_learn = ImitationLearning(args)
 
         # Train the imitation learning agent
-        if len(train_demos) > 0:
-            il_learn.train(train_demos, writer, csv_writer, status_path, header, reset_status=True)
+        if len(il_learn.train_demos) > 0:
+            train_status_path = os.path.join(utils.get_log_dir(args.model), 'status.json')
+            il_learn.train(il_learn.train_demos, writer, csv_writer, train_status_path, header)
 
         # Stopping criterion
         valid_log = il_learn.validate(args.val_episodes)
         success_rate = np.mean([1 if r > 0 else 0 for r in valid_log[0]['return_per_episode']])
 
         if success_rate >= 0.99:
-            logger.info("Reached target success rate with {} demos, stopping".format(len(train_demos)))
+            logger.info("Reached target success rate with {} demos, stopping".format(len(il_learn.train_demos)))
             break
 
-        eval_seed = grow_training_set(il_learn, train_demos, eval_seed, args.demo_grow_factor, args.num_eval_demos,
-                                      args.dagger, mean_steps)
+        eval_seed = grow_training_set(
+            il_learn,
+            il_learn.train_demos,
+            eval_seed,
+            args.demo_grow_factor,
+            args.num_eval_demos
+        )
 
+        # Save the current demo generation seed
+        with open(status_path, 'w') as dst:
+            status = {
+                'eval_seed': eval_seed,
+                'cur_phase':phase_no + 1
+            }
+            json.dump(status, dst)
+
+        # Save the demos
+        demos_path = utils.get_demos_path(args.demos, args.env, args.demos_origin, valid=False)
+        print('saving demos to:', demos_path)
+        utils.save_demos(il_learn.train_demos, demos_path)
 
 if __name__ == "__main__":
     args = parser.parse_args()
