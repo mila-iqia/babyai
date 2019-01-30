@@ -40,10 +40,20 @@ pip3 install --process-dependency-links --editable .
 If you are using conda, you can create a `babyai` environment with all the dependencies by running:
 
 ```
+git clone https://github.com/mila-udem/babyai.git
+cd babyai
 conda env create -f environment.yaml
+pip install -e .
 ```
 
-Having done that, install this repository in the conda environment using the command above.
+After that, execute the following commands to setup the environment.
+
+```
+cd ..
+git clone https://github.com/maximecb/gym-minigrid.git
+cd gym-minigrid
+pip install -e .
+```
 
 ### Docker Container
 
