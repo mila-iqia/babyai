@@ -86,6 +86,7 @@ class ImitationLearning(object):
             if getattr(self.args, 'pretrained_model', None):
                 self.acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
             else:
+                logger.info('Creating new model')
                 self.acmodel = ACModel(self.obss_preprocessor.obs_space, action_space,
                                        args.image_dim, args.memory_dim, args.instr_dim,
                                        not self.args.no_instr, self.args.instr_arch,
