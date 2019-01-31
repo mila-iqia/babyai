@@ -43,7 +43,7 @@ If you are using conda, you can create a `babyai` environment with all the depen
 git clone https://github.com/mila-udem/babyai.git
 cd babyai
 conda env create -f environment.yaml
-pip install -e .
+source activate babyai
 ```
 
 After that, execute the following commands to setup the environment.
@@ -52,6 +52,13 @@ After that, execute the following commands to setup the environment.
 cd ..
 git clone https://github.com/maximecb/gym-minigrid.git
 cd gym-minigrid
+pip install -e .
+```
+
+The last command installs the repository as a module. Move back to the `babyai` repository and install that as a module.
+
+```
+cd ../babyai
 pip install -e .
 ```
 

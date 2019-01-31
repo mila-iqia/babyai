@@ -8,6 +8,6 @@ dependencies:
     - torchvision
     - pyqt
     - numpy
+    - blosc
     - pip:
         - gym
-        - blosc
