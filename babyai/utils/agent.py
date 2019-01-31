@@ -138,6 +138,13 @@ class DemoAgent(Agent):
 
 
 class BotAgent:
+    """
+    This class can be used to generate bot demonstrations, but should not
+    be used for advising (e.g. DAgger). To generate advice, use the
+    babyai.bot.Bot class directly, and call the replan method with the
+    action taken after every action.
+    """
+    
     def __init__(self, env):
         """An agent based on a GOFAI bot."""
         self.env = env
