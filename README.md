@@ -52,14 +52,14 @@ After that, execute the following commands to setup the environment.
 cd ..
 git clone https://github.com/maximecb/gym-minigrid.git
 cd gym-minigrid
-pip install -e .
+pip install --editable .
 ```
 
-The last command installs the repository as a module. Move back to the `babyai` repository and install that as a module.
+The last command installs the repository in editable mode. Move back to the `babyai` repository and install that in editable mode as well.
 
 ```
 cd ../babyai
-pip install -e .
+pip install --editable .
 ```
 
 ### Docker Container
