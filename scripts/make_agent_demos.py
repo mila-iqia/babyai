@@ -80,11 +80,11 @@ def generate_demos(n_episodes, valid, seed, shift=0):
 
     checkpoint_time = time.time()
 
-    while True:
+    for i in range(n_episodes):
         # Run the expert for one episode
 
         done = False
-        env.seed(seed + len(demos))
+        env.seed(seed + i)
         obs = env.reset()
         agent.on_reset()
 
@@ -109,8 +109,6 @@ def generate_demos(n_episodes, valid, seed, shift=0):
             if reward > 0 and (args.filter_steps == 0 or len(images) <= args.filter_steps):
                 demos.append((mission, blosc.pack_array(np.array(images)), directions, actions))
 
-            if len(demos) >= n_episodes:
-                break
             if reward == 0:
                 if args.on_exception == 'crash':
                     raise Exception("mission failed, the seed is {}".format(seed + len(demos)))
@@ -137,7 +135,6 @@ def generate_demos(n_episodes, valid, seed, shift=0):
             logger.info("Demos saved")
             # print statistics for the last 100 demonstrations
             print_demo_lengths(demos[-100:])
-
 
 
     # Save demonstrations
