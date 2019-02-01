@@ -81,15 +81,16 @@ def generate_demos(n_episodes, valid, seed, shift=0):
     checkpoint_time = time.time()
 
     just_crashed = False
-    for i in range(n_episodes):
-        # Run the expert for one episode
+    while True:
+        if len(demos) == n_episodes:
+            break
 
         done = False
         if just_crashed:
             logger.info("reset the environment to find a mission that the bot can solve")
             env.reset()
         else:
-            env.seed(seed + i)
+            env.seed(seed + len(demos))
         obs = env.reset()
         agent.on_reset()
 
