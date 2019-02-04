@@ -141,7 +141,7 @@ def generate_demos(n_episodes, valid, seed, shift=0):
         if args.save_interval > 0 and len(demos) < n_episodes and len(demos) % args.save_interval == 0:
             logger.info("Saving demos...")
             utils.save_demos(demos, demos_path)
-            logger.info("Demos saved")
+            logger.info("{} demos saved".format(len(demos)))
             # print statistics for the last 100 demonstrations
             print_demo_lengths(demos[-100:])
 
@@ -149,7 +149,7 @@ def generate_demos(n_episodes, valid, seed, shift=0):
     # Save demonstrations
     logger.info("Saving demos...")
     utils.save_demos(demos, demos_path)
-    logger.info("Demos saved")
+    logger.info("{} demos saved".format(len(demos)))
     print_demo_lengths(demos[-100:])
 
 
