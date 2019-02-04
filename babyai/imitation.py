@@ -413,6 +413,7 @@ class ImitationLearning(object):
                 if torch.cuda.is_available():
                     self.acmodel.cpu()
                 utils.save_model(self.acmodel, self.args.model)
+                self.obss_preprocessor.vocab.save()
                 if torch.cuda.is_available():
                     self.acmodel.cuda()
                 with open(status_path, 'w') as dst:
