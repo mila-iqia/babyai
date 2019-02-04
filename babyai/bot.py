@@ -753,6 +753,11 @@ class Bot:
             cell = grid.get(i, j)
             previous_pos[(i, j)] = prev_pos
 
+            # If this cell was not visually observed,
+            # don't expand from it and don't accept it
+            if not self.vis_mask[i, j]:
+                continue
+
             # If we reached a position satisfying the acceptance condition
             if accept_fn((i, j), cell):
                 path = []
@@ -761,10 +766,6 @@ class Bot:
                     path.append(pos)
                     pos = previous_pos[pos]
                 return path, (i, j), previous_pos
-
-            # If this cell was not visually observed, don't expand from it
-            if not self.vis_mask[i, j]:
-                continue
 
             if cell:
                 if cell.type == 'wall':
