@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import torch
 from .. import utils
 from babyai.bot import Bot
+from babyai.oldbot import OldBot
 from babyai.model import ACModel
 from random import Random
 
@@ -158,10 +159,31 @@ class BotAgent:
         pass
 
 
+class OldBotAgent:
+    def __init__(self, env, forget=False):
+        """An agent based on a GOFAI bot."""
+        self.env = env
+        self.forget = forget
+        self.on_reset()
+
+    def on_reset(self):
+        self.bot = OldBot(self.env, forget=self.forget)
+
+    def act(self, *args, **kwargs):
+        return {'action': self.bot.step()}
+
+    def analyze_feedback(self, reward, done):
+        pass
+
+
 def load_agent(env, model_name, demos_name=None, demos_origin=None, argmax=True, env_name=None):
     # env_name needs to be specified for demo agents
     if model_name == 'BOT':
         return BotAgent(env)
+
+    if model_name == 'OLDBOT':
+        return OldBotAgent(env)
+
     elif model_name is not None:
         obss_preprocessor = utils.ObssPreprocessor(model_name, env.observation_space)
         return ModelAgent(model_name, obss_preprocessor, argmax)
