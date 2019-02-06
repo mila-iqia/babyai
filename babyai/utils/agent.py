@@ -108,6 +108,10 @@ class DemoAgent(Agent):
         self.demo_id = 0
         self.step_id = 0
 
+    def switch_demo(self, demo_id):
+        self.demo_id = demo_id
+        self.step_id = 0
+
     @staticmethod
     def check_obss_equality(obs1, obs2):
         if not(obs1.keys() == obs2.keys()):
