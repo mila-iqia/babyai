@@ -108,3 +108,8 @@ ENV/
 
 # storage
 storage/
+
+# pytorch weights, training history
+*.csv
+*.pt
+*.json
