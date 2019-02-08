@@ -305,8 +305,7 @@ class GoNextToSubgoal(Subgoal):
             target_obj, target_pos = self.bot._find_obj_pos(self.datum, self.reason == 'PutNext')
             if not target_pos:
                 # No path found -> Explore the world
-                self.bot.stack.append(ExploreSubgoal(self.bot))
-                return
+                return ExploreSubgoal(self.bot).replan_before_action()
         elif isinstance(self.datum, WorldObj):
             target_obj = self.datum
             target_pos = target_obj.cur_pos
@@ -394,8 +393,7 @@ class GoNextToSubgoal(Subgoal):
         # No path found
         # -> explore the world
         if not path:
-            self.stack.append(ExploreSubgoal(self.bot).get_action())
-            return
+            return ExploreSubgoal(self.bot).replan_before_action()
 
         # So there is a path (blocker, or non-blockers)
         # -> try following it
@@ -509,7 +507,6 @@ class ExploreSubgoal(Subgoal):
             got_the_key = (self.carrying
                 and self.carrying.type == 'key' and self.carrying.color == door_obj.color)
             open_reason = 'KeepKey' if door_obj.is_locked and got_the_key else None
-            self.bot.stack.pop()
             self.bot.stack.append(OpenSubgoal(self.bot, reason=open_reason))
             self.bot.stack.append(GoNextToSubgoal(self.bot, door_obj, reason='Open'))
             return
