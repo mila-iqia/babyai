@@ -55,7 +55,7 @@ def main():
 
     env = gym.make(args.env)
     episode_num = args.demo_id
-    env.seed(episode_num)
+    env.seed(args.seed + episode_num)
     obs = env.reset()
     print("Mission: {}".format(obs["mission"]))
 
