@@ -404,7 +404,6 @@ class OldBot:
                 self.stack.append(('GoNextTo', unseen_pos))
                 return None
 
-            #print(self.stack)
             assert False, "nothing left to explore"
 
         assert False, 'invalid subgoal "%s"' % subgoal
@@ -452,9 +451,9 @@ class OldBot:
         assert len(obj_desc.obj_set) > 0
 
         for i in range(len(obj_desc.obj_set)):
+
             obj = obj_desc.obj_set[i]
             pos = obj_desc.obj_poss[i]
-
             if self.vis_mask[pos]:
                 return pos
 

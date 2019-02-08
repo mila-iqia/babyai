@@ -306,9 +306,13 @@ class GoNextToSubgoal(Subgoal):
             if not target_pos:
                 # No path found -> Explore the world
                 return ExploreSubgoal(self.bot).replan_before_action()
+            if self.bot.commit_obj:
+                self.bot.stack.pop()
+                self.bot.stack.append(GoNextToSubgoal(self.bot, target_obj, self.reason))
+                return
         elif isinstance(self.datum, WorldObj):
             target_obj = self.datum
-            target_pos = target_obj.cur_pos
+            target_pos = tuple(target_obj.cur_pos)
         else:
             target_pos = tuple(self.datum)
 
@@ -386,7 +390,7 @@ class GoNextToSubgoal(Subgoal):
         # -> Look for blocker paths
         if not path:
             path, _, _ = self.bot._shortest_path(
-                lambda pos, cell: pos == target_pos,
+                    lambda pos, cell: pos == target_pos,
                 try_with_blockers=True
             )
 
@@ -441,6 +445,9 @@ class GoNextToSubgoal(Subgoal):
         if np.array_equal(next_cell - self.pos, self.right_vec):
             return self.actions.right
         elif np.array_equal(next_cell - self.pos, -self.right_vec):
+            return self.actions.left
+
+        if not self.bot.smart_turns:
             return self.actions.left
 
         # If we reacher this point in the code,  then the cell is behind us.
@@ -538,9 +545,18 @@ class Bot:
 
     """
 
-    def __init__(self, mission):
-        # Mission to be solved
+    def __init__(self, mission,
+                 smart_turns=True,
+                 commit_obj=False, seek_closest_obj=True,
+                 commit_expl=False, prefer_straight=True):
+        # Mission to be solve
         self.mission = mission
+
+        self.smart_turns = smart_turns
+        self.commit_obj = commit_obj
+        self.seek_closest_obj = seek_closest_obj
+        self.commit_expl = commit_expl
+        self.prefer_straight = prefer_straight
 
         # Grid containing what has been mapped out
         self.grid = Grid(mission.width, mission.height)
@@ -594,8 +610,9 @@ class Bot:
             self.stack[-1].replan_after_action(action_taken)
 
         # Clear the stack from the non-essential subgoals
-        while self.stack and self.stack[-1].is_exploratory():
-            self.stack.pop()
+        if not self.commit_expl:
+            while self.stack and self.stack[-1].is_exploratory():
+                self.stack.pop()
 
         suggested_action = None
         while self.stack:
@@ -664,6 +681,8 @@ class Bot:
                         best_distance_to_obj = distance_to_obj
                         best_pos = obj_pos
                         best_obj = obj_desc.obj_set[i]
+                    if not self.seek_closest_obj:
+                        break
             except IndexError:
                 # Suppose we are tracking red keys, and we just used a red key to open a door,
                 # then for the last i, accessing obj_desc.obj_poss[i] will raise an IndexError
@@ -776,7 +795,11 @@ class Bot:
 
             # Location to which the bot can get without turning
             # are put in the queue first
-            for k, l in [(di, dj), (dj, di), (-dj, -di), (-di, -dj)]:
+            if self.prefer_straight:
+                dirs = [(di, dj), (dj, di), (-dj, -di), (-di, -dj)]
+            else:
+                dirs = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+            for k, l in dirs:
                 next_pos = (i + k, j + l)
                 next_dir_vec = (k, l)
                 next_state = (*next_pos, *next_dir_vec)

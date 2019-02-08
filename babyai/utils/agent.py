@@ -143,13 +143,14 @@ class DemoAgent(Agent):
 
 
 class BotAgent:
-    def __init__(self, env):
+    def __init__(self, env, **bot_kwargs):
         """An agent based on a GOFAI bot."""
         self.env = env
+        self.bot_kwargs = bot_kwargs
         self.on_reset()
 
     def on_reset(self):
-        self.bot = Bot(self.env)
+        self.bot = Bot(self.env, **self.bot_kwargs)
 
     def act(self, obs=None, update_internal_state=True, *args, **kwargs):
         action = self.bot.replan()
@@ -184,7 +185,26 @@ def load_agent(env, model_name, demos_name=None, demos_origin=None, argmax=True,
     if model_name == 'OLDBOT':
         return OldBotAgent(env)
 
-    elif model_name is not None:
+    if model_name == 'HYBBOT1':
+        return BotAgent(env, smart_turns=False)
+
+    if model_name == 'HYBBOT2':
+        return BotAgent(env, smart_turns=False, commit_obj=True)
+
+    if model_name == 'HYBBOT3':
+        return BotAgent(
+            env, smart_turns=False, commit_obj=True, seek_closest_obj=False)
+
+    if model_name == 'HYBBOT4':
+        return BotAgent(
+            env, smart_turns=False, commit_obj=True, seek_closest_obj=False, commit_expl=True)
+
+    if model_name == 'HYBBOT5':
+        return BotAgent(
+            env, smart_turns=False, commit_obj=True, seek_closest_obj=False,
+            commit_expl=True, prefer_straight=False)
+
+    if model_name is not None:
         obss_preprocessor = utils.ObssPreprocessor(model_name, env.observation_space)
         return ModelAgent(model_name, obss_preprocessor, argmax)
     elif demos_origin is not None or demos_name is not None:
