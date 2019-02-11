@@ -299,6 +299,16 @@ class GoNextToSubgoal(Subgoal):
 
     """
 
+    def is_accomplished(self, target_pos):
+        if self.reason == 'PutNext':
+            if manhattan_distance(target_pos, self.fwd_pos) == 1:
+                if self.fwd_cell is None:
+                    return True
+        else:
+            if np.array_equal(target_pos, self.fwd_pos):
+                return True
+        return False
+
     def replan_before_action(self):
         target_obj = None
         if isinstance(self.datum, ObjDesc):
@@ -306,8 +316,12 @@ class GoNextToSubgoal(Subgoal):
             if not target_pos:
                 # No path found -> Explore the world
                 return ExploreSubgoal(self.bot).replan_before_action()
-            if self.bot.commit_obj:
+            if self.is_accomplished(target_pos):
                 self.bot.stack.pop()
+                return
+            if self.bot.commit_obj:
+                if self.bot.commit_obj_correctly:
+                    self.bot.stack.pop()
                 self.bot.stack.append(GoNextToSubgoal(self.bot, target_obj, self.reason))
                 return
         elif isinstance(self.datum, WorldObj):
@@ -374,7 +388,7 @@ class GoNextToSubgoal(Subgoal):
 
         # No non-blocker path found, and reexploration is allowed
         # -> Explore in the same room to see if a non-blocker path exists
-        if self.reason != 'ReexploreRoom' and path is None:
+        if self.reason != 'ReexploreRoom' and self.bot.reexplore_room and path is None:
             # Find the closest unseen position. If it can be reached
             # by a shortest path within the current room, go for it.
             current_room = self.bot.mission.room_from_pos(*self.pos)
@@ -548,7 +562,8 @@ class Bot:
     def __init__(self, mission,
                  smart_turns=True,
                  commit_obj=False, seek_closest_obj=True,
-                 commit_expl=False, prefer_straight=True):
+                 commit_expl=False, prefer_straight=True,
+                 commit_obj_correctly=True, reexplore_room=True):
         # Mission to be solve
         self.mission = mission
 
@@ -557,6 +572,8 @@ class Bot:
         self.seek_closest_obj = seek_closest_obj
         self.commit_expl = commit_expl
         self.prefer_straight = prefer_straight
+        self.commit_obj_correctly = commit_obj_correctly
+        self.reexplore_room = reexplore_room
 
         # Grid containing what has been mapped out
         self.grid = Grid(mission.width, mission.height)

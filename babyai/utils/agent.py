@@ -204,6 +204,17 @@ def load_agent(env, model_name, demos_name=None, demos_origin=None, argmax=True,
             env, smart_turns=False, commit_obj=True, seek_closest_obj=False,
             commit_expl=True, prefer_straight=False)
 
+    if model_name == 'HYBBOT6':
+        return BotAgent(
+            env, smart_turns=False, commit_obj=True, seek_closest_obj=False,
+            commit_expl=True, prefer_straight=False, commit_obj_correctly=False)
+
+    if model_name == 'HYBBOT7':
+        return BotAgent(
+            env, smart_turns=False, commit_obj=True, seek_closest_obj=False,
+            commit_expl=True, prefer_straight=False, commit_obj_correctly=False,
+            reexplore_room=False)
+
     if model_name is not None:
         obss_preprocessor = utils.ObssPreprocessor(model_name, env.observation_space)
         return ModelAgent(model_name, obss_preprocessor, argmax)
