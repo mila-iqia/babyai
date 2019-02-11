@@ -14,7 +14,7 @@ import gym
 from optparse import OptionParser
 from babyai.levels import level_dict
 from PyQt5.QtWidgets import QApplication
-from gym_minigrid.rendering import Window
+from babyai.minigrid.rendering import Window
 
 def test():
     parser = OptionParser()

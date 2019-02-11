@@ -7,7 +7,7 @@ import numpy as np
 import gym
 from .verifier import *
 from .levelgen import *
-from gym_minigrid.minigrid import *
+from babyai.minigrid.minigrid import *
 
 
 class Level_TestGoToBlocked(RoomGridLevel):

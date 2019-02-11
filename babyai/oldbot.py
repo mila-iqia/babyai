@@ -2,7 +2,7 @@ import numpy
 import time
 import math
 
-from gym_minigrid.minigrid import *
+from babyai.minigrid.minigrid import *
 from babyai.levels.verifier import *
 
 class OldBot:

@@ -1,4 +1,4 @@
-from gym_minigrid.minigrid import *
+from babyai.minigrid.minigrid import *
 from babyai.levels.verifier import *
 from babyai.levels.verifier import (ObjDesc, pos_next_to,
                                     GoToInstr, OpenInstr, PickupInstr, PutNextInstr, BeforeInstr, AndInstr, AfterInstr)

@@ -19,12 +19,9 @@ from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
 
 # Gym environment used by the Baby AI Game
 import gym
-import gym_minigrid
-from gym_minigrid import minigrid
-
 import babyai
 from babyai.utils.agent import BotAgent
-
+from babyai.minigrid import minigrid
 
 class ImgWidget(QLabel):
     """

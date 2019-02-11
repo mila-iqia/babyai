@@ -32,7 +32,7 @@ Then, clone this repository and install the other dependencies with `pip3`:
 ```
 git clone https://github.com/mila-udem/babyai.git
 cd babyai
-pip3 install --process-dependency-links --editable .
+pip3 install --editable .
 ```
 
 ### Installation using Conda (Alternative Method)
@@ -46,20 +46,11 @@ conda env create -f environment.yaml
 source activate babyai
 ```
 
-After that, execute the following commands to setup the environment.
-
-```
-cd ..
-git clone https://github.com/maximecb/gym-minigrid.git
-cd gym-minigrid
-pip install --editable .
-```
-
 The last command installs the repository in editable mode. Move back to the `babyai` repository and install that in editable mode as well.
 
 ```
 cd ../babyai
-pip install --editable .
+pip3 install --editable .
 ```
 
 ### Docker Container

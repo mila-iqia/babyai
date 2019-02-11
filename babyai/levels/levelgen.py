@@ -2,7 +2,7 @@ import random
 from collections import OrderedDict
 from copy import deepcopy
 import gym
-from gym_minigrid.roomgrid import RoomGrid
+from babyai.minigrid.roomgrid import RoomGrid
 from .verifier import *
 
 
