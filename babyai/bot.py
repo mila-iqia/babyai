@@ -563,7 +563,7 @@ class Bot:
                  smart_turns=True,
                  commit_obj=False, seek_closest_obj=True,
                  commit_expl=False, prefer_straight=True,
-                 commit_obj_correctly=True, reexplore_room=True):
+                 commit_obj_correctly=True, reexplore_room=False):
         # Mission to be solve
         self.mission = mission
 
