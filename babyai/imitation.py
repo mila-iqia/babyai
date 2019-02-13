@@ -133,7 +133,10 @@ class ImitationLearning(object):
             return np.arange(0, num_frames, self.args.recurrence)[:-1]
 
     def run_epoch_recurrence(self, demos, is_training=False):
-        indices = list(range(len(demos)))
+        if self.args.epoch_length == 0:
+            indices = list(range(len(demos)))
+        else:
+            indices = np.random.choice(len(demos), self.args.epoch_length)
         if is_training:
             np.random.shuffle(indices)
         batch_size = min(self.args.batch_size, len(demos))
