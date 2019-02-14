@@ -414,6 +414,9 @@ class ImitationLearning(object):
                     logger.info(
                         "Losing patience, new value={}, limit={}".format(status['patience'], self.args.patience))
 
+
+            if status['i'] % self.args.save_interval == 0:
+                logger.info("Saving current model")
                 if torch.cuda.is_available():
                     self.acmodel.cpu()
                 utils.save_model(self.acmodel, self.args.model)
