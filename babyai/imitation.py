@@ -139,6 +139,7 @@ class ImitationLearning(object):
             indices = np.random.choice(len(demos), self.args.epoch_length)
         if is_training:
             np.random.shuffle(indices)
+
         batch_size = min(self.args.batch_size, len(demos))
         offset = 0
 
@@ -161,6 +162,7 @@ class ImitationLearning(object):
             log["entropy"].append(_log["entropy"])
             log["policy_loss"].append(_log["policy_loss"])
             log["accuracy"].append(_log["accuracy"])
+            log["frames"] = frames
 
             offset += batch_size
 
@@ -340,8 +342,7 @@ class ImitationLearning(object):
             self.scheduler.step()
 
             log = self.run_epoch_recurrence(train_demos, is_training=True)
-            total_len = sum([len(item[3]) for item in train_demos])
-            status['num_frames'] += total_len
+            status['num_frames'] += log['frames']
 
             update_end_time = time.time()
 
