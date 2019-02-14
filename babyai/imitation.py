@@ -350,7 +350,7 @@ class ImitationLearning(object):
             if status['i'] % self.args.log_interval == 0:
                 total_ellapsed_time = int(time.time() - total_start_time)
 
-                fps = total_len / (update_end_time - update_start_time)
+                fps = log['frames'] / (update_end_time - update_start_time)
                 duration = datetime.timedelta(seconds=total_ellapsed_time)
 
                 for key in log:
