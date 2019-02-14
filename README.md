@@ -1,4 +1,4 @@
-# BabyAI Platform - ICLR19 Release
+# BabyAI Platform (ICLR19 Release)
 
 [![Build Status](https://travis-ci.org/mila-udem/babyai.svg?branch=master)](https://travis-ci.org/mila-udem/babyai)
 
