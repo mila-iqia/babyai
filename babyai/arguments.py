@@ -31,8 +31,8 @@ class ArgumentParser(argparse.ArgumentParser):
         # Training arguments
         self.add_argument("--log-interval", type=int, default=10,
                             help="number of updates between two logs (default: 10)")
-        self.add_argument("--save-interval", type=int, default=1000,
-                            help="number of updates between two saves (default: 1000, 0 means no saving)")
+        self.add_argument("--save-interval", type=int, default=1,
+                            help="number of updates between two saves (default: 1, 0 means no saving)")
         self.add_argument("--frames", type=int, default=int(9e10),
                             help="number of frames of training (default: 9e10)")
         self.add_argument("--patience", type=int, default=100,
