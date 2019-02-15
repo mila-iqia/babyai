@@ -152,7 +152,8 @@ def evaluate_meta(agent, env_name, seed, episodes, offsets=None):
     for i in range(episodes):
         obs = env.reset()
         agent.on_reset()
-        bot_advisor_agent = BotAgent(obs)
+        bot_advisor_agent = BotAgent(env)
+        print(bot_advisor_agent.bot.stack)
 
         num_frames = 0
         returnn = 0
