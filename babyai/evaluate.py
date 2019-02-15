@@ -1,6 +1,9 @@
 import numpy as np
 import gym
 
+import babyai
+from babyai.utils.agent import BotAgent
+
 
 # Returns the performance of the agent on the environment for a particular number of episodes.
 def evaluate(agent, env, episodes, model_agent=True, offsets=None):
@@ -134,4 +137,38 @@ def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
             logs["observations_per_episode"].extend(obss)
             logs["actions_per_episode"].extend(actions)
 
+    return logs
+
+
+
+# use botAgent metapolicy to decompose instructions
+def evaluate_meta(agent, env_name, seed, episodes, offsets=None):
+    agent.model.eval()
+    env = gym.make(env_name)
+
+    # Initialize logs
+    logs = {"num_frames_per_episode": [], "return_per_episode": [], "observations_per_episode": []}
+
+    for i in range(episodes):
+        obs = env.reset()
+        agent.on_reset()
+        bot_advisor_agent = BotAgent(obs)
+
+        num_frames = 0
+        returnn = 0
+        obss = []
+
+        done = False
+        while not done:
+            action = agent.act(obs)['action']
+            obss.append(obs)
+            obs, reward, done, _ = env.step(action)
+            agent.analyze_feedback(reward, done)
+            num_frames += 1
+            returnn += reward
+
+        logs["observations_per_episode"].append(obss)
+        logs["num_frames_per_episode"].append(num_frames)
+        logs["return_per_episode"].append(returnn)
+    agent.model.train()
     return logs

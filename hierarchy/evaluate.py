@@ -10,7 +10,7 @@ import time
 import datetime
 
 import babyai.utils as utils
-from babyai.evaluate import evaluate_demo_agent, batch_evaluate, evaluate, evaluate_meta
+from babyai.evaluate import evaluate_demo_agent, batch_evaluate, evaluate
 # Parse arguments
 
 parser = argparse.ArgumentParser()
@@ -32,8 +32,6 @@ parser.add_argument("--contiguous-episodes", action="store_true", default=False,
                     help="Make sure episodes on which evaluation is done are contiguous")
 parser.add_argument("--worst-episodes-to-show", type=int, default=10,
                     help="The number of worse episodes to show")
-parser.add_argument("--meta", type=int, default=0,
-                    help="If 1, evaluate the bot meta policy on PutNextLocal")
 
 
 def main(args, seed, episodes):
@@ -50,17 +48,12 @@ def main(args, seed, episodes):
         episodes = len(agent.demos)
 
     # Evaluate
-    if args.meta == 1:
-        # Evaluate PutNextLocal with GoToLocal model + bot stack
-        meta_env = 'BabyAI-GoToLocal-v0'#'BabyAI-PutNextLocal-v0'
-        env = gym.make(meta_env)
-        agent = utils.load_agent(env, args.model, args.demos, args.demos_origin, args.argmax, meta_env)
-        logs = evaluate_meta(agent, meta_env, seed, episodes)
-    elif isinstance(agent, utils.DemoAgent):
+    if isinstance(agent, utils.DemoAgent):
         logs = evaluate_demo_agent(agent, episodes)
     elif isinstance(agent, utils.BotAgent) or args.contiguous_episodes:
         logs = evaluate(agent, env, episodes, False)
     else:
+        print('batch')
         logs = batch_evaluate(agent, args.env, seed, episodes)
 
 
