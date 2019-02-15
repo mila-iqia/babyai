@@ -957,6 +957,36 @@ class Bot:
 
         assert False, "unknown instruction type"
 
+
+    def _produce_instruction(self, goal):
+        """
+        translate subgoal tuple into baby-language instruction -- inverse of above function
+        """
+
+        if isinstance(goal, GoNextToSubgoal):
+            objectOfFocus = goal.datum
+            if isinstance(objectOfFocus, tuple):
+                assert False, "tell dyth to handle tuples when producing instructions"
+            return f'go to the {objectOfFocus.color} {objectOfFocus.type}'
+
+        if isinstance(goal, OpenSubgoal):
+            return 'open'
+
+        if isinstance(goal, PickupSubgoal):
+            return 'pickup'
+
+        if isinstance(goal, DropSubgoal):
+            return 'drop'
+
+        if isinstance(goal, ExploreSubgoal):
+            return 'explore'
+
+        if isinstance(goal, CloseSubgoal):
+            return 'close'
+
+        assert False, "unknown subgoal"
+
+
     def _check_erroneous_box_opening(self, action):
         """
         When the agent opens a box, we raise an error and mark the task unsolvable.

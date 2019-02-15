@@ -140,7 +140,6 @@ def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
     return logs
 
 
-
 # use botAgent metapolicy to decompose instructions
 def evaluate_meta(agent, env_name, seed, episodes, offsets=None):
     agent.model.eval()
@@ -152,8 +151,12 @@ def evaluate_meta(agent, env_name, seed, episodes, offsets=None):
     for i in range(episodes):
         obs = env.reset()
         agent.on_reset()
-        bot_advisor_agent = BotAgent(env)
-        print(bot_advisor_agent.bot.stack)
+
+        metacontroller = BotAgent(env)
+        stack = metacontroller.bot.stack
+        for s in stack:
+            print(metacontroller.bot._produce_instruction(s))
+        print("")
 
         num_frames = 0
         returnn = 0
