@@ -55,7 +55,8 @@ def main(args, seed, episodes):
         meta_env = 'BabyAI-PutNextLocal-v0'#'BabyAI-GoToLocal-v0'
         env = gym.make(meta_env)
         agent = utils.load_agent(env, args.model, args.demos, args.demos_origin, args.argmax, meta_env)
-        logs = evaluate_meta(agent, meta_env, seed, episodes)
+        logs = evaluate_meta(agent, env, episodes)
+
     elif isinstance(agent, utils.DemoAgent):
         logs = evaluate_demo_agent(agent, episodes)
     elif isinstance(agent, utils.BotAgent) or args.contiguous_episodes:

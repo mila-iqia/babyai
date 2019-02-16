@@ -140,10 +140,19 @@ def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
     return logs
 
 
+# get actions from a metabot
+def get_subgoal(env):
+    metacontroller = BotAgent(env)
+    stack = metacontroller.bot.stack
+    s = stack.pop()
+    print(metacontroller.bot._produce_instruction(s))
+    print(stack)
+    print("")
+
+
 # use botAgent metapolicy to decompose instructions
-def evaluate_meta(agent, env_name, seed, episodes, offsets=None):
+def evaluate_meta(agent, env, episodes):
     agent.model.eval()
-    env = gym.make(env_name)
 
     # Initialize logs
     logs = {"num_frames_per_episode": [], "return_per_episode": [], "observations_per_episode": []}
@@ -152,11 +161,7 @@ def evaluate_meta(agent, env_name, seed, episodes, offsets=None):
         obs = env.reset()
         agent.on_reset()
 
-        metacontroller = BotAgent(env)
-        stack = metacontroller.bot.stack
-        for s in stack:
-            print(metacontroller.bot._produce_instruction(s))
-        print("")
+        get_subgoal(env)
 
         num_frames = 0
         returnn = 0
