@@ -78,11 +78,25 @@ nvidia-docker run -it maximecb/babyai bash
 
 Pretrained IL and RL models can be found in the `models` directory of the image.
 
+### BabyAI Storage Path
+
+Add this line to `.bashrc` (Linux), or `.bash_profile` (Mac).
+
+```
+export BABYAI_STORAGE='/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>'
+```
+
+where `/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>` is the folder where you typed `git clone https://github.com/mila-udem/babyai.git` earlier.
+
+Models, logs and demos will be produced in this directory, in the folders `models`, `logs` and `demos` respectively.
+
 ### Demonstration Dataset
 
 **NOTE 2018-10-18:** we are in the process of improving the heuristic agent (bot) and will be releasing a new dataset of higher-quality demonstrations soon.
 
 Generating demonstrations takes a sizeable amount of computational resources. A gzipped archive containing the demonstrations used for the ICLR 2019 submission is [available here](http://lisaweb.iro.umontreal.ca/transfert/lisa/users/chevalma/iclr19-demos.tar.gz) (14GB download).
+
+Once downloaded, extract the `.pkl` files to `/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>/demos`.
 
 ## Structure of the Codebase
 
