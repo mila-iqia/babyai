@@ -40,7 +40,7 @@ class ArgumentParser(argparse.ArgumentParser):
         self.add_argument("--epochs", type=int, default=1000000,
                             help="maximum number of epochs")
         self.add_argument("--epoch-length", type=int, default=0,
-                            help="numboer of examples per epoch; the whole dataset is used by if 0")
+                            help="number of examples per epoch; the whole dataset is used by if 0")
         self.add_argument("--frames-per-proc", type=int, default=40,
                             help="number of frames per process before update (default: 40)")
         self.add_argument("--lr", type=float, default=1e-4,
