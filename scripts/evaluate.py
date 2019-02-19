@@ -97,7 +97,8 @@ if __name__ == "__main__":
     if n > 0:
         print("{} worst episodes:".format(n))
         for i in indexes[:n]:
-            print(logs['seed_per_episode'][i])
+            if 'seed_per_episode' in logs:
+                print(logs['seed_per_episode'][i])
             if args.model is not None:
                 print("- episode {}: R={}, F={}".format(i, logs["return_per_episode"][i], logs["num_frames_per_episode"][i]))
             else:
