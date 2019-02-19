@@ -82,7 +82,7 @@ if __name__ == "__main__":
     num_frames_per_episode = utils.synthesize(logs["num_frames_per_episode"])
 
     if args.model is not None:
-        print("F {} | FPS {:.0f} | D {} | R:xsmM {:.2f} {:.2f} {:.2f} {:.2f} | S {:.2f} | F:xsmM {:.1f} {:.1f} {} {}"
+        print("F {} | FPS {:.0f} | D {} | R:xsmM {:.3f} {:.3f} {:.3f} {:.3f} | S {:.3f} | F:xsmM {:.1f} {:.1f} {} {}"
               .format(num_frames, fps, duration,
                       *return_per_episode.values(),
                       success_per_episode['mean'],
@@ -97,6 +97,8 @@ if __name__ == "__main__":
     if n > 0:
         print("{} worst episodes:".format(n))
         for i in indexes[:n]:
+            if 'seed_per_episode' in logs:
+                print(logs['seed_per_episode'][i])
             if args.model is not None:
                 print("- episode {}: R={}, F={}".format(i, logs["return_per_episode"][i], logs["num_frames_per_episode"][i]))
             else:
