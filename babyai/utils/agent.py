@@ -157,7 +157,7 @@ class BotAgent:
 class HandCraftedMetacontroller:
     def __init__(self, env):
         """Obtain a metacontroller policy from a GOFAI bot."""
-        self.env = #!/usr/bin/env python
+        self.env = env
         self.on_reset()
 
     def get_subgoal(env):
