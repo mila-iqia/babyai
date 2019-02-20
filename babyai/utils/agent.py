@@ -154,6 +154,38 @@ class BotAgent:
         pass
 
 
+class HandCraftedMetacontroller:
+    def __init__(self, env):
+        """Obtain a metacontroller policy from a GOFAI bot."""
+        self.env = #!/usr/bin/env python
+        self.on_reset()
+
+    def get_subgoal(env):
+        'return baby-language subgoal instruction from a bot'
+        metacontroller = BotAgent(env)
+        stack = metacontroller.bot.stack
+        subgoal = stack.pop()
+        return metacontroller.bot._produce_instruction(subgoal)
+
+    def get_action(env, obs):
+        'get next action from a bot'
+        metacontroller = BotAgent(env)
+        return metacontroller.act(obs)['action']
+
+    def int_to_action_name(actionInt):
+        'convert action int into a printable string description'
+        int_to_action = {
+            0: 'left',
+            1: 'right',
+            2: 'forward',
+            3: 'pickup',
+            4: 'drop',
+            5: 'toggle/open',
+            6: 'done'
+        }
+        return int_to_action[actionInt]
+
+
 def load_agent(env, model_name, demos_name=None, demos_origin=None, argmax=True, env_name=None):
     # env_name needs to be specified for demo agents
     if model_name == 'BOT':

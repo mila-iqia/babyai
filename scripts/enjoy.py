@@ -31,6 +31,8 @@ parser.add_argument("--pause", type=float, default=0.1,
                     help="the pause between two consequent actions of an agent")
 parser.add_argument("--manual-mode", action="store_true", default=False,
                     help="Allows you to take control of the agent at any point of time")
+parser.add_argument("--meta", type=int, default=0,
+                    help="If 1, evaluate the bot meta policy on PutNextLocal")
 
 args = parser.parse_args()
 

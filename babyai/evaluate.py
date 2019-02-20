@@ -140,14 +140,7 @@ def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
     return logs
 
 
-# get actions from a metabot
-def get_subgoal(env):
-    metacontroller = BotAgent(env)
-    stack = metacontroller.bot.stack
-    s = stack.pop()
-    print(metacontroller.bot._produce_instruction(s))
-    print(stack)
-    print("")
+
 
 
 # use botAgent metapolicy to decompose instructions
@@ -161,21 +154,29 @@ def evaluate_meta(agent, env, episodes):
         obs = env.reset()
         agent.on_reset()
 
-        get_subgoal(env)
-
         num_frames = 0
         returnn = 0
         obss = []
 
         done = False
+        print(obs['mission'])
         while not done:
-            action = agent.act(obs)['action']
+            action = get_action(env, obs)
+            # if not pick up object, do subgoal, otherwise remove subgoal
+            if not (action == 3):
+                subinstruction = get_subgoal(env)
+                obs['mission'] = subinstruction
+                action = agent.act(obs)['action']
+            else:
+                pass
             obss.append(obs)
             obs, reward, done, _ = env.step(action)
             agent.analyze_feedback(reward, done)
             num_frames += 1
             returnn += reward
 
+        print(returnn)
+        print(pig)
         logs["observations_per_episode"].append(obss)
         logs["num_frames_per_episode"].append(num_frames)
         logs["return_per_episode"].append(returnn)

@@ -966,7 +966,7 @@ class Bot:
         if isinstance(goal, GoNextToSubgoal):
             objectOfFocus = goal.datum
             if isinstance(objectOfFocus, tuple):
-                assert False, "tell dyth to handle tuples when producing instructions"
+                raise NotImplementedError()
             return 'go to the {} {}'.format(objectOfFocus.color, objectOfFocus.type)
 
         if isinstance(goal, OpenSubgoal):

@@ -52,7 +52,8 @@ def main(args, seed, episodes):
     # Evaluate
     if args.meta == 1:
         # Evaluate PutNextLocal with GoToLocal model + bot stack
-        meta_env = 'BabyAI-PutNextLocal-v0'#'BabyAI-GoToLocal-v0'
+        meta_env = 'BabyAI-PutNextLocal-v0'
+        worker_env = 'BabyAI-GoToLocal-v0'
         env = gym.make(meta_env)
         agent = utils.load_agent(env, args.model, args.demos, args.demos_origin, args.argmax, meta_env)
         logs = evaluate_meta(agent, env, episodes)
