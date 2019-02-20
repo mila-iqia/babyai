@@ -84,6 +84,7 @@ class ImitationLearning(object):
         self.acmodel = utils.load_model(args.model, raise_not_found=False)
         if self.acmodel is None:
             if getattr(self.args, 'pretrained_model', None):
+                logger.info("Loading pretrained model")
                 self.acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
             else:
                 logger.info('Creating new model')
@@ -132,9 +133,13 @@ class ImitationLearning(object):
             return np.arange(0, num_frames, self.args.recurrence)[:-1]
 
     def run_epoch_recurrence(self, demos, is_training=False):
-        indices = list(range(len(demos)))
+        if self.args.epoch_length == 0:
+            indices = list(range(len(demos)))
+        else:
+            indices = np.random.choice(len(demos), self.args.epoch_length)
         if is_training:
             np.random.shuffle(indices)
+
         batch_size = min(self.args.batch_size, len(demos))
         offset = 0
 
@@ -157,6 +162,7 @@ class ImitationLearning(object):
             log["entropy"].append(_log["entropy"])
             log["policy_loss"].append(_log["policy_loss"])
             log["accuracy"].append(_log["accuracy"])
+            log["frames"] = frames
 
             offset += batch_size
 
@@ -336,8 +342,7 @@ class ImitationLearning(object):
             self.scheduler.step()
 
             log = self.run_epoch_recurrence(train_demos, is_training=True)
-            total_len = sum([len(item[3]) for item in train_demos])
-            status['num_frames'] += total_len
+            status['num_frames'] += log['frames']
 
             update_end_time = time.time()
 
@@ -345,7 +350,7 @@ class ImitationLearning(object):
             if status['i'] % self.args.log_interval == 0:
                 total_ellapsed_time = int(time.time() - total_start_time)
 
-                fps = total_len / (update_end_time - update_start_time)
+                fps = log['frames'] / (update_end_time - update_start_time)
                 duration = datetime.timedelta(seconds=total_ellapsed_time)
 
                 for key in log:
@@ -410,6 +415,9 @@ class ImitationLearning(object):
                     logger.info(
                         "Losing patience, new value={}, limit={}".format(status['patience'], self.args.patience))
 
+
+            if status['i'] % self.args.save_interval == 0:
+                logger.info("Saving current model")
                 if torch.cuda.is_available():
                     self.acmodel.cpu()
                 utils.save_model(self.acmodel, self.args.model)

@@ -31,14 +31,16 @@ class ArgumentParser(argparse.ArgumentParser):
         # Training arguments
         self.add_argument("--log-interval", type=int, default=10,
                             help="number of updates between two logs (default: 10)")
-        self.add_argument("--save-interval", type=int, default=1000,
-                            help="number of updates between two saves (default: 1000, 0 means no saving)")
+        self.add_argument("--save-interval", type=int, default=1,
+                            help="number of updates between two saves (default: 1, 0 means no saving)")
         self.add_argument("--frames", type=int, default=int(9e10),
                             help="number of frames of training (default: 9e10)")
         self.add_argument("--patience", type=int, default=100,
                             help="patience for early stopping (default: 100)")
         self.add_argument("--epochs", type=int, default=1000000,
                             help="maximum number of epochs")
+        self.add_argument("--epoch-length", type=int, default=0,
+                            help="number of examples per epoch; the whole dataset is used by if 0")
         self.add_argument("--frames-per-proc", type=int, default=40,
                             help="number of frames per process before update (default: 40)")
         self.add_argument("--lr", type=float, default=1e-4,

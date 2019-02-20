@@ -289,13 +289,6 @@ class GoNextToSubgoal(Subgoal):
         - `"Explore"`: going to a position, just like when the reason is `None`. The only
           difference is that with this reason the subgoal will be considered
           exploratory
-        - `"ReexploreRoom"`: a special kind of exploration that is used when the agent knows
-          how to reach the target position (object), but there are blockers on its way.
-          Instead of following the path with blockers, the bot reexplores the room
-          in which it is currently located. The actual behaviour is similar to when
-          the reason is `None`, with the exception that this subgoal
-          is exploratory and can not trigger further reexploration in the room.
-          TODO: is this option actually helpful?
 
     """
 
@@ -368,19 +361,6 @@ class GoNextToSubgoal(Subgoal):
         path, _, _ = self.bot._shortest_path(
             lambda pos, cell: pos == target_pos,
         )
-
-        # No non-blocker path found, and reexploration is allowed
-        # -> Explore in the same room to see if a non-blocker path exists
-        if self.reason != 'ReexploreRoom' and path is None:
-            # Find the closest unseen position. If it can be reached
-            # by a shortest path within the current room, go for it.
-            current_room = self.bot.mission.room_from_pos(*self.pos)
-            path, unseen_pos, _ = self.bot._shortest_path(
-                lambda pos, cell: not self.bot.vis_mask[pos])
-            if unseen_pos is not None and all([current_room.pos_inside(*pos) for pos in path]):
-                self.bot.stack.append(
-                    GoNextToSubgoal(self.bot, unseen_pos, reason='ReexploreRoom'))
-                return
 
         # No non-blocker path found and
         # reexploration within the room is not allowed or there is nothing to explore
@@ -466,7 +446,7 @@ class GoNextToSubgoal(Subgoal):
             self._plan_undo_action(action_taken)
 
     def is_exploratory(self):
-        return self.reason in ['Explore', 'ReexploreRoom']
+        return self.reason == 'Explore'
 
 
 class ExploreSubgoal(Subgoal):
