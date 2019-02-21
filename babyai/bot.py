@@ -946,7 +946,7 @@ class Bot:
         if isinstance(goal, GoNextToSubgoal):
             objectOfFocus = goal.datum
             if isinstance(objectOfFocus, tuple):
-                raise NotImplementedError()
+                raise AttributeError('Agent cannot goto tuple, must go to object')
             return 'go to the {} {}'.format(objectOfFocus.color, objectOfFocus.type)
 
         if isinstance(goal, OpenSubgoal):
@@ -959,7 +959,7 @@ class Bot:
             return 'drop'
 
         if isinstance(goal, ExploreSubgoal):
-            return 'explore'
+            raise AttributeError('Agent has no concept of what explore is')
 
         if isinstance(goal, CloseSubgoal):
             return 'close'

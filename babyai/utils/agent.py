@@ -155,24 +155,64 @@ class BotAgent:
 
 
 class HandCraftedMetacontroller:
-    def __init__(self, env):
+    def __init__(self, env, agent):
         """Obtain a metacontroller policy from a GOFAI bot."""
+        self.agent = agent
+        self.agent.model.eval()
+        self.on_reset(env)
+
+    def on_reset(self, env):
         self.env = env
-        self.on_reset()
+        self.botAgent = BotAgent(self.env)
+        self.bot = self.botAgent.bot
+        self.agent.on_reset()
 
-    def get_subgoal(env):
+    def get_instruction(self):
         'return baby-language subgoal instruction from a bot'
-        metacontroller = BotAgent(env)
-        stack = metacontroller.bot.stack
-        subgoal = stack.pop()
-        return metacontroller.bot._produce_instruction(subgoal)
+        stack = self.bot.stack
+        subgoal = stack[-1]
+        instruction = self.bot._produce_instruction(subgoal)
+        return instruction
 
-    def get_action(env, obs):
-        'get next action from a bot'
-        metacontroller = BotAgent(env)
-        return metacontroller.act(obs)['action']
+    def clean_instruction(self):
+        'if instruction is explore, delete subgoal and get next instruction'
+        try:
+            instruction = self.get_instruction()
+        except AttributeError:
+            self.bot.stack.pop()
+            instruction = self.clean_instruction()
+        return instruction
 
-    def int_to_action_name(actionInt):
+    def is_subgoal_GoTo(self):
+        'return true if first subgoal goto'
+        stack = self.bot.stack
+        subgoal = stack[-1]
+        isGoTo = isinstance(goal, GoNextToSubgoal)
+        return isGoTo
+
+    def get_action(self, obs):
+        'get next action using a bot subgoal'
+        if self.is_subgoal_GoTo():
+            instruction = self.clean_instruction()
+            obs['mission'] = instruction
+            action = self.agent.act(obs)['action']
+        else:
+            action = self.botAgent.act(obs)['action']
+            
+        # # if not pick up object, do subgoal, otherwise remove subgoal
+        # action = self.botAgent.act(obs)['action']
+        # # print(obs['mission'])
+        # # if subgoal is gonext to AND action is pickup, ignore
+        # if (action < 3):
+        #     instruction = self.clean_instruction()
+        #     obs['mission'] = instruction
+        #     action = self.agent.act(obs)['action']
+        #     # print(instruction)
+        # #print(self.int_to_action_name(action))
+        # # print(self.env)
+        return action
+
+    def int_to_action_name(self, actionInt):
         'convert action int into a printable string description'
         int_to_action = {
             0: 'left',
@@ -183,7 +223,13 @@ class HandCraftedMetacontroller:
             5: 'toggle/open',
             6: 'done'
         }
-        return int_to_action[actionInt]
+        try:
+            actionInt = actionInt.cpu().numpy()
+        except:
+            pass
+        actionInt = actionInt[0]
+        action = int_to_action[actionInt]
+        return action
 
 
 def load_agent(env, model_name, demos_name=None, demos_origin=None, argmax=True, env_name=None):

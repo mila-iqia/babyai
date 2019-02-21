@@ -144,41 +144,32 @@ def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
 
 
 # use botAgent metapolicy to decompose instructions
+# use by: python scripts/evaluate.py --env BabyAI-GoToLocal-v0 --meta 1 --model ../models/BabyAI-GoToLocal-v0_ppo_expert_filmcnn_gru_mem_seed1_19-02-13-23-43-17_best/
 def evaluate_meta(agent, env, episodes):
-    agent.model.eval()
-
     # Initialize logs
     logs = {"num_frames_per_episode": [], "return_per_episode": [], "observations_per_episode": []}
 
-    for i in range(episodes):
+    i = 0
+    while i < episodes:
         obs = env.reset()
-        agent.on_reset()
+        agent.on_reset(env)
 
         num_frames = 0
         returnn = 0
         obss = []
 
-        done = False
-        print(obs['mission'])
-        while not done:
-            action = get_action(env, obs)
-            # if not pick up object, do subgoal, otherwise remove subgoal
-            if not (action == 3):
-                subinstruction = get_subgoal(env)
-                obs['mission'] = subinstruction
-                action = agent.act(obs)['action']
-            else:
-                pass
-            obss.append(obs)
-            obs, reward, done, _ = env.step(action)
-            agent.analyze_feedback(reward, done)
-            num_frames += 1
-            returnn += reward
-
-        print(returnn)
-        print(pig)
-        logs["observations_per_episode"].append(obss)
-        logs["num_frames_per_episode"].append(num_frames)
-        logs["return_per_episode"].append(returnn)
-    agent.model.train()
+        try:
+            done = False
+            while not done:
+                action = agent.get_action(obs)
+                obs, reward, done, _ = env.step(action)
+                num_frames += 1
+                returnn += reward
+                obss.append(obs)
+            logs["observations_per_episode"].append(obss)
+            logs["num_frames_per_episode"].append(num_frames)
+            logs["return_per_episode"].append(returnn)
+            i += 1
+        except AssertionError:
+            pass
     return logs

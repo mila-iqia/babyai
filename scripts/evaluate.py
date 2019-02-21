@@ -11,6 +11,7 @@ import datetime
 
 import babyai.utils as utils
 from babyai.evaluate import evaluate_demo_agent, batch_evaluate, evaluate, evaluate_meta
+from babyai.utils.agent import HandCraftedMetacontroller
 # Parse arguments
 
 parser = argparse.ArgumentParser()
@@ -53,10 +54,10 @@ def main(args, seed, episodes):
     if args.meta == 1:
         # Evaluate PutNextLocal with GoToLocal model + bot stack
         meta_env = 'BabyAI-PutNextLocal-v0'
-        worker_env = 'BabyAI-GoToLocal-v0'
         env = gym.make(meta_env)
-        agent = utils.load_agent(env, args.model, args.demos, args.demos_origin, args.argmax, meta_env)
-        logs = evaluate_meta(agent, env, episodes)
+        worker_agent = utils.load_agent(env, args.model, args.demos, args.demos_origin, args.argmax, meta_env)
+        meta_agent = HandCraftedMetacontroller(env, agent)
+        logs = evaluate_meta(meta_agent, env, episodes)
 
     elif isinstance(agent, utils.DemoAgent):
         logs = evaluate_demo_agent(agent, episodes)
