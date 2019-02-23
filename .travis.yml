@@ -3,9 +3,13 @@ cache: pip
 python:
     - "3.5"
 
+before_install:
+    - pip3 install --upgrade pip
+
 # command to install dependencies
 install:
     - pip3 install http://download.pytorch.org/whl/cpu/torch-0.4.1-cp35-cp35m-linux_x86_64.whl
+    - pip3 
     - pip3 install --editable .
     - pip3 install flake8
 
