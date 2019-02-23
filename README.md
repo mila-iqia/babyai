@@ -114,10 +114,10 @@ To run the interactive GUI application that illustrates the platform:
 scripts/gui.py
 ```
 
-The level being run can be selected with the `--env-name` option, eg:
+The level being run can be selected with the `--env` option, eg:
 
 ```
-scripts/gui.py --env-name BabyAI-UnlockPickup-v0
+scripts/gui.py --env BabyAI-UnlockPickup-v0
 ```
 
 ### Training

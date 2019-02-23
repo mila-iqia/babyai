@@ -5,6 +5,7 @@ FROM nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04
 # install
 RUN apt-get update -y
 RUN apt-get install -y qt5-default qttools5-dev-tools git python3-pip
+RUN pip3 install --upgrade pip
 
 # code
 RUN git clone https://github.com/mila-udem/babyai.git
