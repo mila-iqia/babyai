@@ -1,6 +1,6 @@
 # BabyAI Platform
 
-[![Build Status](https://travis-ci.org/mila-udem/babyai.svg?branch=master)](https://travis-ci.org/mila-udem/babyai)
+[![Build Status](https://travis-ci.org/mila-iqia/babyai.svg?branch=master)](https://travis-ci.org/mila-iqia/babyai)
 
 A platform for simulating language learning with a human in the loop. This is an ongoing research project based at [Mila](https://mila.quebec/en/). If you use this platform in your research, please cite:
 
@@ -30,7 +30,7 @@ for installation instructions specific to your platform.
 Then, clone this repository and install the other dependencies with `pip3`:
 
 ```
-git clone https://github.com/mila-udem/babyai.git
+git clone https://github.com/mila-iqia/babyai.git
 cd babyai
 pip3 install --editable .
 ```
@@ -40,7 +40,7 @@ pip3 install --editable .
 If you are using conda, you can create a `babyai` environment with all the dependencies by running:
 
 ```
-git clone https://github.com/mila-udem/babyai.git
+git clone https://github.com/mila-iqia/babyai.git
 cd babyai
 conda env create -f environment.yaml
 source activate babyai
@@ -86,7 +86,7 @@ Add this line to `.bashrc` (Linux), or `.bash_profile` (Mac).
 export BABYAI_STORAGE='/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>'
 ```
 
-where `/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>` is the folder where you typed `git clone https://github.com/mila-udem/babyai.git` earlier.
+where `/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>` is the folder where you typed `git clone https://github.com/mila-iqia/babyai.git` earlier.
 
 Models, logs and demos will be produced in this directory, in the folders `models`, `logs` and `demos` respectively.
 
@@ -179,7 +179,7 @@ There are also older levels documented in
 
 ### Troubleshooting
 
-If you run into error messages relating to OpenAI gym or PyQT, it may be that the version of those libraries that you have installed is incompatible. You can try upgrading specific libraries with pip3, eg: `pip3 install --upgrade gym`. If the problem persists, please [open an issue](https://github.com/mila-udem/babyai/issues) on this repository and paste a *complete* error message, along with some information about your platform (are you running Windows, Mac, Linux? Are you running this on a Mila machine?).
+If you run into error messages relating to OpenAI gym or PyQT, it may be that the version of those libraries that you have installed is incompatible. You can try upgrading specific libraries with pip3, eg: `pip3 install --upgrade gym`. If the problem persists, please [open an issue](https://github.com/mila-iqia/babyai/issues) on this repository and paste a *complete* error message, along with some information about your platform (are you running Windows, Mac, Linux? Are you running this on a Mila machine?).
 
 ## Instructions for Committers
 
