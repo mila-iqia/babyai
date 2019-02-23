@@ -32,7 +32,7 @@ Then, clone this repository and install the other dependencies with `pip3`:
 ```
 git clone https://github.com/mila-udem/babyai.git
 cd babyai
-pip3 install --process-dependency-links --editable .
+pip3 install --editable .
 ```
 
 ### Installation using Conda (Alternative Method)
