@@ -153,23 +153,25 @@ def evaluate_meta(agent, env, episodes):
     while i < episodes:
         obs = env.reset()
         agent.on_reset(env)
-
+        print(obs['mission'])
         num_frames = 0
         returnn = 0
         obss = []
 
-        try:
-            done = False
-            while not done:
-                action = agent.get_action(obs)
-                obs, reward, done, _ = env.step(action)
-                num_frames += 1
-                returnn += reward
-                obss.append(obs)
-            logs["observations_per_episode"].append(obss)
-            logs["num_frames_per_episode"].append(num_frames)
-            logs["return_per_episode"].append(returnn)
-            i += 1
-        except AssertionError:
-            pass
+        # try:
+        done = False
+        while not done:
+            action = agent.get_action(obs)
+            obs, reward, done, _ = env.step(action)
+            num_frames += 1
+            returnn += reward
+            obss.append(obs)
+            print(env)
+        logs["observations_per_episode"].append(obss)
+        logs["num_frames_per_episode"].append(num_frames)
+        logs["return_per_episode"].append(returnn)
+        i += 1
+        print(pig)
+        # except AssertionError:
+        #     pass
     return logs

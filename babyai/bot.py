@@ -966,6 +966,14 @@ class Bot:
 
         assert False, "unknown subgoal"
 
+    def _is_first_subgoal_GoTo(self):
+        """
+        return true if first subgoal goto
+        """
+        print(self.stack)
+        subgoal = self.stack[-1]
+        isGoTo = isinstance(subgoal, GoNextToSubgoal)
+        return isGoTo
 
     def _check_erroneous_box_opening(self, action):
         """
