@@ -166,7 +166,6 @@ class HandCraftedMetacontroller:
         self.botAgent = BotAgent(self.env)
         self.bot = self.botAgent.bot
         self.agent.on_reset()
-        self.lastAction = None
 
     def get_instruction(self):
         'return baby-language subgoal instruction from a bot'
@@ -186,35 +185,11 @@ class HandCraftedMetacontroller:
 
     def get_action(self, obs):
         'get next action using a bot subgoal'
-        # self.bot.stack[-1].replan_after_action(self.lastAction)
-        # self.bot.stack[-1].replan_after_action(self.lastAction)
-        # while self.bot.stack[-1].is_exploratory():
-            # self.bot.stack.pop()
-        # action = self.bot.stack[-1].replan_before_action()
-
-        if self.bot._is_first_subgoal_GoTo():
+        action = self.bot.replan()
+        if self.bot._is_first_subgoal_GoTo() and (action > 2):
             instruction = self.clean_instruction()
-            print(obs['mission'])
             obs['mission'] = instruction
-            # print(instruction)
             action = self.agent.act(obs)['action']
-            # self.bot.replan()
-        else:
-            print("WAHEY\n\n\n")
-            action = self.botAgent.act(obs)['action']
-
-        # # if not pick up object, do subgoal, otherwise remove subgoal
-        # action = self.botAgent.act(obs)['action']
-        # # print(obs['mission'])
-        # # if subgoal is gonext to AND action is pickup, ignore
-        # if (action < 3):
-        #     instruction = self.clean_instruction()
-        #     obs['mission'] = instruction
-        #     action = self.agent.act(obs)['action']
-        #     # print(instruction)
-        # #print(self.int_to_action_name(action))
-        # # print(self.env)
-        self.lastAction = action
         return action
 
     def int_to_action_name(self, actionInt):

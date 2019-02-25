@@ -970,7 +970,6 @@ class Bot:
         """
         return true if first subgoal goto
         """
-        print(self.stack)
         subgoal = self.stack[-1]
         isGoTo = isinstance(subgoal, GoNextToSubgoal)
         return isGoTo
