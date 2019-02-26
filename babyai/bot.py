@@ -298,8 +298,8 @@ class GoNextToSubgoal(Subgoal):
             target_obj, target_pos = self.bot._find_obj_pos(self.datum, self.reason == 'PutNext')
             if not target_pos:
                 # No path found -> Explore the world
-                self.bot.stack.append(ExploreSubgoal(self.bot))
-                return
+                # self.bot.stack.append(ExploreSubgoal(self.bot))
+                return self.actions.left
         elif isinstance(self.datum, WorldObj):
             target_obj = self.datum
             target_pos = target_obj.cur_pos
@@ -374,8 +374,8 @@ class GoNextToSubgoal(Subgoal):
         # No path found
         # -> explore the world
         if not path:
-            self.stack.append(ExploreSubgoal(self.bot).get_action())
-            return
+            # self.bot.stack.append(ExploreSubgoal(self.bot).replan_before_action())
+            return self.actions.left
 
         # So there is a path (blocker, or non-blockers)
         # -> try following it
@@ -566,7 +566,7 @@ class Bot:
         self._process_obs()
 
         # Check that no box has been opened
-        self._check_erroneous_box_opening(action_taken)
+        # self._check_erroneous_box_opening(action_taken)
 
         # TODO: instead of updating all subgoals, just add a couple
         # properties to the `Subgoal` class.
@@ -946,7 +946,8 @@ class Bot:
         if isinstance(goal, GoNextToSubgoal):
             objectOfFocus = goal.datum
             if isinstance(objectOfFocus, tuple):
-                raise AttributeError('Agent cannot goto tuple, must go to object')
+                return 'turn'
+                # raise AttributeError
             return 'go to the {} {}'.format(objectOfFocus.color, objectOfFocus.type)
 
         if isinstance(goal, OpenSubgoal):

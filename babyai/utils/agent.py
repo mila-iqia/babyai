@@ -163,14 +163,14 @@ class HandCraftedMetacontroller:
 
     def on_reset(self, env):
         self.env = env
+        self.lastAction = None
         self.botAgent = BotAgent(self.env)
         self.bot = self.botAgent.bot
         self.agent.on_reset()
 
     def get_instruction(self):
         'return baby-language subgoal instruction from a bot'
-        stack = self.bot.stack
-        subgoal = stack[-1]
+        subgoal = self.bot.stack[-1]
         instruction = self.bot._produce_instruction(subgoal)
         return instruction
 
@@ -183,13 +183,32 @@ class HandCraftedMetacontroller:
             instruction = self.clean_instruction()
         return instruction
 
-    def get_action(self, obs):
+    def get_action(self, obs, verbose=False):
         'get next action using a bot subgoal'
-        action = self.bot.replan()
-        if self.bot._is_first_subgoal_GoTo() and (action > 2):
+        # if action is done or no more subgoals, end
+        action = self.bot.replan(self.lastAction)
+        if (not self.bot.stack) or (action == self.bot.mission.actions.done):
+            return self.bot.mission.actions.done
+
+        if verbose:
+            print(obs['mission'])
+            print(self.bot.stack)
+            print(self.env)
+
+        if self.bot.stack[-1].is_exploratory():
+            self.lastAction = self.bot.mission.actions.left
+            return self.bot.mission.actions.left
+
+        if self.bot._is_first_subgoal_GoTo():
             instruction = self.clean_instruction()
+            if verbose:
+                print(instruction)
+            if instruction == 'turn':
+                self.lastAction = self.bot.mission.actions.left
+                return self.bot.mission.actions.left
             obs['mission'] = instruction
             action = self.agent.act(obs)['action']
+        self.lastAction = action
         return action
 
     def int_to_action_name(self, actionInt):
