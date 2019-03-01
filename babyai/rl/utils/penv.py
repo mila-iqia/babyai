@@ -26,6 +26,7 @@ class ParallelEnv(gym.Env):
         self.action_space = self.envs[0].action_space
 
         self.locals = []
+        self.processes = []
         for env in self.envs[1:]:
             local, remote = Pipe()
             self.locals.append(local)
@@ -33,6 +34,7 @@ class ParallelEnv(gym.Env):
             p.daemon = True
             p.start()
             remote.close()
+            self.processes.append(p)
 
     def reset(self):
         for local in self.locals:
@@ -51,3 +53,7 @@ class ParallelEnv(gym.Env):
 
     def render(self):
         raise NotImplementedError
+
+    def __del__(self):
+        for p in self.processes:
+            p.terminate()
