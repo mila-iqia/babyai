@@ -143,16 +143,19 @@ class Level_GoToObjDoor(RoomGridLevel):
 
     def __init__(self, seed=None):
         super().__init__(
-            room_size=7,
+            room_size=8,
             seed=seed
         )
 
     def gen_mission(self):
-        objs = self.add_distractors(1, 1, num_distractors=5)
+        self.place_agent(1, 1)
+        objs = self.add_distractors(1, 1, num_distractors=8, all_unique=False)
+
         for _ in range(4):
             door, _ = self.add_door(1, 1)
             objs.append(door)
-        self.place_agent(1, 1)
+
+        self.check_objs_reachable()
 
         obj = self._rand_elem(objs)
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
