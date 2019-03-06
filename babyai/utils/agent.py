@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 import torch
 from .. import utils
-from babyai.bot import Bot
+from babyai.bot import Bot, MetacontrollerBot
 from babyai.model import ACModel
 from random import Random
+from copy import deepcopy
 
 
 class Agent(ABC):
@@ -162,50 +163,26 @@ class HandCraftedMetacontroller:
         self.on_reset(env)
 
     def on_reset(self, env):
+        'reset the bot, agent and last action'
         self.env = env
         self.lastAction = None
-        self.botAgent = BotAgent(self.env)
-        self.bot = self.botAgent.bot
+        self.bot = MetacontrollerBot(self.env)
         self.agent.on_reset()
 
-    def get_instruction(self):
-        'return baby-language subgoal instruction from a bot'
-        subgoal = self.bot.stack[-1]
-        instruction = self.bot._produce_instruction(subgoal)
-        return instruction
-
-    def clean_instruction(self):
-        'if instruction is explore, delete subgoal and get next instruction'
-        try:
-            instruction = self.get_instruction()
-        except AttributeError:
-            self.bot.stack.pop()
-            instruction = self.clean_instruction()
-        return instruction
-
-    def get_action(self, obs, verbose=False):
+    def get_action(self, obs, verbose=True):
         'get next action using a bot subgoal'
         # if action is done or no more subgoals, end
-        action = self.bot.replan(self.lastAction)
+        action = self.bot.unsafe_replan(self.lastAction)
         if (not self.bot.stack) or (action == self.bot.mission.actions.done):
             return self.bot.mission.actions.done
-
-        if verbose:
-            print(obs['mission'])
-            print(self.bot.stack)
-            print(self.env)
-
-        if self.bot.stack[-1].is_exploratory():
-            self.lastAction = self.bot.mission.actions.left
-            return self.bot.mission.actions.left
-
-        if self.bot._is_first_subgoal_GoTo():
-            instruction = self.clean_instruction()
+        if self.bot.is_first_subgoal_GoTo():
+            instruction = self.bot.produce_instruction()
             if verbose:
+                print(obs['mission'])
                 print(instruction)
-            if instruction == 'turn':
-                self.lastAction = self.bot.mission.actions.left
-                return self.bot.mission.actions.left
+                print(self.bot.subgoal)
+                print(self.env)
+                print("")
             obs['mission'] = instruction
             action = self.agent.act(obs)['action']
         self.lastAction = action

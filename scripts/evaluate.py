@@ -53,13 +53,8 @@ def main(args, seed, episodes):
     # Evaluate
     if args.meta == 1:
         # Evaluate PutNextLocal with GoToLocal model + bot stack
-        meta_env = 'BabyAI-PutNextLocal-v0'
-        worker_env = 'BabyAI-GoToLocal-v0'
-        env = gym.make(meta_env)
-        worker_agent = utils.load_agent(env, args.model, args.demos, args.demos_origin, args.argmax, worker_env)
         meta_agent = HandCraftedMetacontroller(env, agent)
         logs = evaluate_meta(meta_agent, env, episodes)
-
     elif isinstance(agent, utils.DemoAgent):
         logs = evaluate_demo_agent(agent, episodes)
     elif isinstance(agent, utils.BotAgent) or args.contiguous_episodes:

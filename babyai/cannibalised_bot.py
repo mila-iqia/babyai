@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 from gym_minigrid.minigrid import *
 from babyai.levels.verifier import *
 from babyai.levels.verifier import (ObjDesc, pos_next_to,
@@ -300,8 +298,8 @@ class GoNextToSubgoal(Subgoal):
             target_obj, target_pos = self.bot._find_obj_pos(self.datum, self.reason == 'PutNext')
             if not target_pos:
                 # No path found -> Explore the world
-                self.bot.stack.append(ExploreSubgoal(self.bot))
-                return
+                # self.bot.stack.append(ExploreSubgoal(self.bot))
+                return self.actions.left
         elif isinstance(self.datum, WorldObj):
             target_obj = self.datum
             target_pos = target_obj.cur_pos
@@ -376,8 +374,8 @@ class GoNextToSubgoal(Subgoal):
         # No path found
         # -> explore the world
         if not path:
-            self.stack.append(ExploreSubgoal(self.bot).get_action())
-            return
+            # self.bot.stack.append(ExploreSubgoal(self.bot).replan_before_action())
+            return self.actions.left
 
         # So there is a path (blocker, or non-blockers)
         # -> try following it
@@ -568,7 +566,7 @@ class Bot:
         self._process_obs()
 
         # Check that no box has been opened
-        self._check_erroneous_box_opening(action_taken)
+        # self._check_erroneous_box_opening(action_taken)
 
         # TODO: instead of updating all subgoals, just add a couple
         # properties to the `Subgoal` class.
@@ -939,6 +937,44 @@ class Bot:
 
         assert False, "unknown instruction type"
 
+
+    def _produce_instruction(self, goal):
+        """
+        translate subgoal tuple into baby-language instruction -- inverse of above function
+        """
+
+        if isinstance(goal, GoNextToSubgoal):
+            objectOfFocus = goal.datum
+            if isinstance(objectOfFocus, tuple):
+                return 'turn'
+                # raise AttributeError
+            return 'go to the {} {}'.format(objectOfFocus.color, objectOfFocus.type)
+
+        if isinstance(goal, OpenSubgoal):
+            return 'open'
+
+        if isinstance(goal, PickupSubgoal):
+            return 'pickup'
+
+        if isinstance(goal, DropSubgoal):
+            return 'drop'
+
+        if isinstance(goal, ExploreSubgoal):
+            raise AttributeError('Agent has no concept of what explore is')
+
+        if isinstance(goal, CloseSubgoal):
+            return 'close'
+
+        assert False, "unknown subgoal"
+
+    def _is_first_subgoal_GoTo(self):
+        """
+        return true if first subgoal goto
+        """
+        subgoal = self.stack[-1]
+        isGoTo = isinstance(subgoal, GoNextToSubgoal)
+        return isGoTo
+
     def _check_erroneous_box_opening(self, action):
         """
         When the agent opens a box, we raise an error and mark the task unsolvable.
@@ -948,50 +984,3 @@ class Bot:
                 and self.prev_fwd_cell is not None
                 and self.prev_fwd_cell.type == 'box'):
             raise DisappearedBoxError('A box was opened. I am not sure I can help now.')
-
-
-class MetacontrollerBot(Bot):
-
-    def __init__(self, mission):
-        super(MetacontrollerBot, self).__init__(mission)
-        self.subgoal = self._get_clean_stack()
-
-    def produce_instruction(self):
-        'translate first subgoal into baby-language instruction'
-        # only GoTo needed: ignore Open, Pickup, Drop, Explore, Close
-        self.subgoal = self._get_clean_stack()
-        object = self.subgoal.datum
-        return 'go to the {} {}'.format(object.color, object.type)
-
-    def _get_clean_stack(self):
-        'walk the stack to get first non-exploratory subgoal'
-        index = -1
-        while self.stack and self.stack[index].is_exploratory():
-            index -= 1
-        return self.stack[index]
-
-    def is_first_subgoal_GoTo(self):
-        'true if first subgoal goto'
-        self.subgoal = self._get_clean_stack()
-        isGoTo = isinstance(self.subgoal, GoNextToSubgoal)
-        return isGoTo
-
-    def unsafe_replan(self, action_taken=None):
-        'Same as replan, but no checking box opened'
-        self._process_obs()
-        for subgoal in self.stack:
-            subgoal.update_agent_attributes()
-        if self.stack:
-            self.stack[-1].replan_after_action(action_taken)
-        while self.stack and self.stack[-1].is_exploratory():
-            self.stack.pop()
-        suggested_action = None
-        while self.stack:
-            subgoal = self.stack[-1]
-            suggested_action = subgoal.replan_before_action()
-            if suggested_action is not None:
-                break
-        if not self.stack:
-            suggested_action = self.mission.actions.done
-        self._remember_current_state()
-        return suggested_action
