@@ -177,7 +177,7 @@ class HandcraftedMetacontroller:
         if target_pos != None:
             self.obj_poss = target_pos
 
-    def get_action(self, obs, verbose=True):
+    def get_action(self, obs, verbose=False):
         'get next action using a bot subgoal'
         # if action doesn't work, probably because box has been opened
         try:

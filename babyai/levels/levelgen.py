@@ -46,21 +46,25 @@ class RoomGridLevel(RoomGrid):
 
         return obs
 
-    def step(self, action):
-        fwd_pos = self.agent_pos + self.dir_vec
-        fwd_cell = self.grid.get(*fwd_pos)
-
-        if action == self.actions.toggle and fwd_cell and fwd_cell.type == 'box':
-            action = self.actions.drop
-
-        obs, reward, done, info = super().step(action)
+    def step(self, action, openBox=False, agent=None):
+        # if box in front of agent and if action is toggle, do nothing
+        if openBox == False:
+            fwd_pos = self.agent_pos + self.dir_vec
+            fwd_cell = self.grid.get(*fwd_pos)
+            if action == self.actions.toggle and fwd_cell and fwd_cell.type == 'box':
+                action = self.actions.drop
+            obs, reward, done, info = super().step(action)
 
         # If we drop an object, we need to update its position in the environment
         if action == self.actions.drop:
             self.update_objs_poss()
-
+            
         # If we've successfully completed the mission
-        status = self.instrs.verify(action)
+        if isinstance(self.instrs, GoToInstr):
+            # If goTo, need to check agent carries same at beginning and end
+            status = self.instrs.verify(action, agent=None)
+        else:
+            status = self.instrs.verify(action)
 
         if status is 'success':
             done = True

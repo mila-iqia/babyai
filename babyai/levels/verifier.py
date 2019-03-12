@@ -183,7 +183,7 @@ class Instr:
 
         self.env = env
 
-    def verify(self, action):
+    def verify(self, action, agent=None):
         """
         Verify if the task described by the instruction is incomplete,
         complete with success or failed. The return value is a string,
@@ -213,12 +213,14 @@ class ActionInstr(Instr):
         # Indicates that the action was completed on the last step
         self.lastStepMatch = False
 
-    def verify(self, action):
+    def verify(self, action, agent=None):
         """
         Verifies actions, with and without the done action.
         """
 
         if not use_done_actions:
+            if isinstance(self, GoToInstr):
+                return self.verify_action(action, agent=agent)
             return self.verify_action(action)
 
         if action == self.env.actions.done:
@@ -226,7 +228,7 @@ class ActionInstr(Instr):
                 return 'success'
             return 'failure'
 
-        res = self.verify_action(action)
+        res = self.verify_action(action, agent=agent)
         self.lastStepMatch = (res == 'success')
 
     def verify_action(self):
@@ -293,12 +295,17 @@ class GoToInstr(ActionInstr):
         # Identify set of possible matching objects in the environment
         self.desc.find_matching_objs(env)
 
-    def verify_action(self, action):
+    def verify_action(self, action, agent=None, carry_invariant=True):
         # For each object position
         for pos in self.desc.obj_poss:
             # If the agent is next to (and facing) the object
             if np.array_equal(pos, self.env.front_pos):
                 return 'success'
+                # if carry_invariant:
+                #     if agent is carrying same object at start:
+                #         return 'success'
+                # else:
+                #     return 'success'
 
         return 'continue'
 
