@@ -47,6 +47,12 @@ class RoomGridLevel(RoomGrid):
         return obs
 
     def step(self, action):
+        fwd_pos = self.agent_pos + self.dir_vec
+        fwd_cell = self.grid.get(*fwd_pos)
+
+        if action == self.actions.toggle and fwd_cell and fwd_cell.type == 'box':
+            action = self.actions.drop
+
         obs, reward, done, info = super().step(action)
 
         # If we drop an object, we need to update its position in the environment

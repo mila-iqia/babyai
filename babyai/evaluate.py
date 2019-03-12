@@ -145,20 +145,17 @@ def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
 
 # use botAgent metapolicy to decompose instructions
 # use by: python scripts/evaluate.py --env BabyAI-GoToLocal-v0 --meta 1 --model ../models/BabyAI-GoToLocal-v0_ppo_expert_filmcnn_gru_mem_seed1_19-02-13-23-43-17_best/
-def evaluate_meta(agent, env, episodes):
+def evaluate_meta(agent, env, episodes, verbose=True):
     # Initialize logs
     logs = {"num_frames_per_episode": [], "return_per_episode": [], "observations_per_episode": []}
 
-    # for _ in range(episodes):
-    i = 0
-    while i < episodes:
+    for _ in range(episodes):
         obs = env.reset()
         agent.on_reset(env)
         num_frames = 0
         returnn = 0
         obss = []
 
-        # try:
         done = False
         while not done:
             action = agent.get_action(obs)
@@ -166,12 +163,16 @@ def evaluate_meta(agent, env, episodes):
             num_frames += 1
             returnn += reward
             obss.append(obs)
-            # print(env)
         logs["observations_per_episode"].append(obss)
         logs["num_frames_per_episode"].append(num_frames)
         logs["return_per_episode"].append(returnn)
-        i += 1
-        # except:
-        # print(pig)
-        # pass
+
+        if verbose:
+            if returnn == 0:
+                print(returnn)
+                print(obs['mission'])
+                print(agent.bot.stack)
+                print(agent.bot.subgoal)
+                print(env)
+                print("")
     return logs
