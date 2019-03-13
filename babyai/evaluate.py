@@ -140,9 +140,6 @@ def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
     return logs
 
 
-
-
-
 # use botAgent metapolicy to decompose instructions
 # use by: python scripts/evaluate.py --env BabyAI-GoToLocal-v0 --meta 1 --model ../models/BabyAI-GoToLocal-v0_ppo_expert_filmcnn_gru_mem_seed1_19-02-13-23-43-17_best/
 def evaluate_meta(agent, env, episodes, verbose=True):

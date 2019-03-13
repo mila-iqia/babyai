@@ -147,7 +147,7 @@ class Level_GoToObjDoor(RoomGridLevel):
             seed=seed
         )
 
-    def gen_mission(self):
+    def gen_mission(self, agent=None):
         self.place_agent(1, 1)
         objs = self.add_distractors(1, 1, num_distractors=8, all_unique=False)
 
@@ -158,7 +158,7 @@ class Level_GoToObjDoor(RoomGridLevel):
         self.check_objs_reachable()
 
         obj = self._rand_elem(objs)
-        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
+        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))#, agent=agent)
 
 
 class Level_ActionObjDoor(RoomGridLevel):

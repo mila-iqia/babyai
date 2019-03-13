@@ -285,6 +285,7 @@ class GoToInstr(ActionInstr):
     def __init__(self, obj_desc):
         super().__init__()
         self.desc = obj_desc
+        self.carrying = True
 
     def surface(self, env):
         return 'go to ' + self.desc.surface(env)
@@ -295,18 +296,17 @@ class GoToInstr(ActionInstr):
         # Identify set of possible matching objects in the environment
         self.desc.find_matching_objs(env)
 
-    def verify_action(self, action, agent=None, carry_invariant=True):
+    def verify_action(self, action, agent=None):
         # For each object position
         for pos in self.desc.obj_poss:
             # If the agent is next to (and facing) the object
             if np.array_equal(pos, self.env.front_pos):
-                return 'success'
-                # if carry_invariant:
-                #     if agent is carrying same object at start:
-                #         return 'success'
-                # else:
-                #     return 'success'
-
+                # agent passed to GoTo implies a check for carry invariance
+                if agent != None:
+                    if self.carrying: #== agent.bot.mission.carrying:
+                        return 'success'
+                else:
+                    return 'success'
         return 'continue'
 
 

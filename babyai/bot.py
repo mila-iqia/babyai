@@ -987,7 +987,7 @@ class MetacontrollerBot(Bot):
         return isGoTo
 
     def unsafe_replan(self, action_taken=None):
-        'Same as replan, but no checking box opened'
+        'unsafe because no checking box opened'
         self._process_obs()
         for subgoal in self.stack:
             subgoal.update_agent_attributes()
