@@ -3,6 +3,8 @@ from gym_minigrid.envs import Key, Ball, Box
 from .verifier import *
 from .levelgen import *
 
+from random import choice
+
 
 class Level_OpenRedDoor(RoomGridLevel):
     """
@@ -147,7 +149,7 @@ class Level_GoToObjDoor(RoomGridLevel):
             seed=seed
         )
 
-    def gen_mission(self, agent=None):
+    def gen_mission(self):
         self.place_agent(1, 1)
         objs = self.add_distractors(1, 1, num_distractors=8, all_unique=False)
 
@@ -175,7 +177,7 @@ class Level_GoToObjDoorCarry(RoomGridLevel):
             seed=seed
         )
 
-    def gen_mission(self, agent=None):
+    def gen_mission(self):
         self.place_agent(1, 1)
         objs = self.add_distractors(1, 1, num_distractors=8, all_unique=False)
 
@@ -185,10 +187,17 @@ class Level_GoToObjDoorCarry(RoomGridLevel):
 
         self.check_objs_reachable()
 
-        # generate new object, randomly assign to agent.bot.carrying
+        # generate new object, randomly assign to agent.bot.carrying, perhaps?
 
         obj = self._rand_elem(objs)
-        self.instrs = GoNextToInstr(ObjDesc(obj.type, obj.color), carry_inv=True)
+        objDesc = ObjDesc(obj.type, obj.color)
+
+        instr = choice([0, 1])
+        if instr == 0 or obj.type == 'door':
+            # we don't expect to drop anything next to do a door, so goto
+            self.instrs = GoToInstr(objDesc, carry_inv=True)
+        else:
+            self.instrs = GoNextToInstr(objDesc, carry_inv=True)
 
 
 class Level_ActionObjDoor(RoomGridLevel):

@@ -156,7 +156,7 @@ def evaluate_meta(agent, env, episodes, verbose=True):
         done = False
         while not done:
             action = agent.get_action(obs)
-            obs, reward, done, _ = env.step(action, agent=agent)
+            obs, reward, done, _ = env.step(action)
             num_frames += 1
             returnn += reward
             obss.append(obs)

@@ -303,7 +303,6 @@ class GoToInstr(ActionInstr):
             if np.array_equal(pos, self.env.front_pos):
                 # check for carry invariance
                 if self.carry_inv:
-                    print(self.carrying, self.env.carrying)
                     if self.carrying == self.env.carrying:
                         return 'success'
                 else:
@@ -331,7 +330,7 @@ class GoNextToInstr(ActionInstr):
         ]
 
     def surface(self, env):
-        return 'go to ' + self.desc.surface(env)
+        return 'go next to ' + self.desc.surface(env)
 
     def reset_verifier(self, env):
         super().reset_verifier(env)
@@ -355,7 +354,6 @@ class GoNextToInstr(ActionInstr):
             if self.are_squares_adj(pos, self.env.front_pos):
                 # check for carry invariance
                 if self.carry_inv:
-                    print(self.carrying, self.env.carrying)
                     if self.carrying == self.env.carrying:
                         return 'success'
                 else:

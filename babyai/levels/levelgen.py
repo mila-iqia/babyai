@@ -43,7 +43,7 @@ class RoomGridLevel(RoomGrid):
         nav_time_maze = nav_time_room * self.num_rows * self.num_cols
         num_navs = self.num_navs_needed(self.instrs)
         self.max_steps = num_navs * nav_time_maze
-        
+
         return obs
 
     def step(self, action, doNotOpenBox=True):
