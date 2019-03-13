@@ -157,6 +157,36 @@ class Level_GoToObjDoor(RoomGridLevel):
 
         self.check_objs_reachable()
 
+        # generate new object, randomly assign to agent.bot.carrying
+
+        obj = self._rand_elem(objs)
+        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
+
+
+class Level_GoToObjDoorCarry(RoomGridLevel):
+    """
+    Go to an object or door
+    (of a given type and color, in the current room)
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=8,
+            seed=seed
+        )
+
+    def gen_mission(self, agent=None):
+        self.place_agent(1, 1)
+        objs = self.add_distractors(1, 1, num_distractors=8, all_unique=False)
+
+        for _ in range(4):
+            door, _ = self.add_door(1, 1)
+            objs.append(door)
+
+        self.check_objs_reachable()
+
+        # generate new object, randomly assign to agent.bot.carrying
+
         obj = self._rand_elem(objs)
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color), agent=agent)
 
