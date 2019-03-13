@@ -282,10 +282,12 @@ class GoToInstr(ActionInstr):
     eg: go to the door
     """
 
-    def __init__(self, obj_desc):
+    def __init__(self, obj_desc, agent=None):
         super().__init__()
         self.desc = obj_desc
-        self.carrying = True
+        if agent != None:
+            print(agent)
+            self.carrying = agent.bot.mission.carrying
 
     def surface(self, env):
         return 'go to ' + self.desc.surface(env)

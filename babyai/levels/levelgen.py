@@ -92,7 +92,11 @@ class RoomGridLevel(RoomGrid):
                 super()._gen_grid(width, height)
 
                 # Generate the mission
-                self.gen_mission()
+                if isinstance(self, Level_GoToObjDoor):
+                    print('function')
+                    self.gen_mission(agent=None)
+                else:
+                    self.gen_mission()
 
                 # Validate the instructions
                 self.validate_instrs(self.instrs)
