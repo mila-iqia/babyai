@@ -188,7 +188,7 @@ class Level_GoToObjDoorCarry(RoomGridLevel):
         # generate new object, randomly assign to agent.bot.carrying
 
         obj = self._rand_elem(objs)
-        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color), agent=agent)
+        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color), carry_inv=True)
 
 
 class Level_ActionObjDoor(RoomGridLevel):

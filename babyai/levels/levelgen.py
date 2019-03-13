@@ -43,10 +43,10 @@ class RoomGridLevel(RoomGrid):
         nav_time_maze = nav_time_room * self.num_rows * self.num_cols
         num_navs = self.num_navs_needed(self.instrs)
         self.max_steps = num_navs * nav_time_maze
-
+        
         return obs
 
-    def step(self, action, doNotOpenBox=True, agent=None):
+    def step(self, action, doNotOpenBox=True):
         # if box in front of agent and if action is toggle, do nothing
         if doNotOpenBox == True:
             fwd_pos = self.agent_pos + self.dir_vec
@@ -60,11 +60,7 @@ class RoomGridLevel(RoomGrid):
             self.update_objs_poss()
 
         # If we've successfully completed the mission
-        if isinstance(self.instrs, GoToInstr):
-            # If goTo, need to check agent carries same at beginning and end
-            status = self.instrs.verify(action, agent=agent)
-        else:
-            status = self.instrs.verify(action)
+        status = self.instrs.verify(action)
 
         if status is 'success':
             done = True

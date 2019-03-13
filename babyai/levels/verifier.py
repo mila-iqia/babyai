@@ -14,7 +14,7 @@ LOC_NAMES = ['left', 'right', 'front', 'behind']
 
 # Environment flag to indicate that done actions should be
 # used by the verifier
-use_done_actions = os.environ.get('BABYAI_DONE_ACTIONS', False)
+use_done_actions = os.environ.get('BABYAI_DONE_ACTIONS', True)
 
 
 def dot_product(v1, v2):
@@ -183,7 +183,7 @@ class Instr:
 
         self.env = env
 
-    def verify(self, action, agent=None):
+    def verify(self, action):
         """
         Verify if the task described by the instruction is incomplete,
         complete with success or failed. The return value is a string,
@@ -213,14 +213,12 @@ class ActionInstr(Instr):
         # Indicates that the action was completed on the last step
         self.lastStepMatch = False
 
-    def verify(self, action, agent=None):
+    def verify(self, action):
         """
         Verifies actions, with and without the done action.
         """
 
         if not use_done_actions:
-            if isinstance(self, GoToInstr):
-                return self.verify_action(action, agent=agent)
             return self.verify_action(action)
 
         if action == self.env.actions.done:
@@ -228,7 +226,7 @@ class ActionInstr(Instr):
                 return 'success'
             return 'failure'
 
-        res = self.verify_action(action, agent=agent)
+        res = self.verify_action(action)
         self.lastStepMatch = (res == 'success')
 
     def verify_action(self):
@@ -282,7 +280,7 @@ class GoToInstr(ActionInstr):
     eg: go to the door
     """
 
-    def __init__(self, obj_desc, carry_inv=True):
+    def __init__(self, obj_desc, carry_inv=False):
         super().__init__()
         self.desc = obj_desc
         self.carry_inv = carry_inv
@@ -296,17 +294,16 @@ class GoToInstr(ActionInstr):
         # Identify set of possible matching objects in the environment
         self.desc.find_matching_objs(env)
         if self.carry_inv:
-            print(self.env.carrying)
             self.carrying = self.env.carrying
 
-    def verify_action(self, action, agent=None):
+    def verify_action(self, action):
         # For each object position
         for pos in self.desc.obj_poss:
             # If the agent is next to (and facing) the object
             if np.array_equal(pos, self.env.front_pos):
                 # agent passed to GoTo implies a check for carry invariance
                 if self.carry_inv:
-                    print(self.carrying, agent.bot.mission.carrying, self.env.carrying)
+                    print(self.carrying, self.env.carrying) # agent.bot.mission.carrying
                     if self.carrying == self.env.carrying:
                         return 'success'
                 else:
