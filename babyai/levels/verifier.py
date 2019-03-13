@@ -14,7 +14,7 @@ LOC_NAMES = ['left', 'right', 'front', 'behind']
 
 # Environment flag to indicate that done actions should be
 # used by the verifier
-use_done_actions = os.environ.get('BABYAI_DONE_ACTIONS', True)
+use_done_actions = os.environ.get('BABYAI_DONE_ACTIONS', False)
 
 
 def dot_product(v1, v2):
@@ -302,15 +302,14 @@ class GoToInstr(ActionInstr):
             # If the agent is next to (and facing) the object
             if np.array_equal(pos, self.env.front_pos):
                 # check for carry invariance
-                if self.carry_inv:
-                    if self.carrying == self.env.carrying:
-                        return 'success'
-                else:
+                if not self.carry_inv:
+                    return 'success'
+                if self.carrying == self.env.carrying:
                     return 'success'
         return 'continue'
 
 
-class GoNextToInstr(ActionInstr):
+class GoNextToInstr(GoToInstr):
     """
     Look towards a cell adjacent to an object matching a given description
     such that anything carried can be placed next to the object
@@ -320,24 +319,12 @@ class GoNextToInstr(ActionInstr):
 
     def __init__(self, obj_desc, carry_inv=False):
         super().__init__()
-        self.desc = obj_desc
-        self.carry_inv = carry_inv
         self.adj_vectors = [
             np.array([1, 0]),
             np.array([0, 1]),
             np.array([-1, 0]),
             np.array([0, -1])
         ]
-
-    def surface(self, env):
-        return 'go next to ' + self.desc.surface(env)
-
-    def reset_verifier(self, env):
-        super().reset_verifier(env)
-        # Identify set of possible matching objects in the environment
-        self.desc.find_matching_objs(env)
-        if self.carry_inv:
-            self.carrying = self.env.carrying
 
     def are_squares_adj(self, pos, front_pos):
         'is pos adjacent to front_pos'
@@ -353,10 +340,9 @@ class GoNextToInstr(ActionInstr):
             # If the agent is next to (and facing) the object
             if self.are_squares_adj(pos, self.env.front_pos):
                 # check for carry invariance
-                if self.carry_inv:
-                    if self.carrying == self.env.carrying:
-                        return 'success'
-                else:
+                if not self.carry_inv:
+                    return 'success'
+                if self.carrying == self.env.carrying:
                     return 'success'
         return 'continue'
 
