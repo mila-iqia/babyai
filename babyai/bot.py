@@ -1,7 +1,7 @@
 from gym_minigrid.minigrid import *
 from babyai.levels.verifier import *
 from babyai.levels.verifier import (ObjDesc, pos_next_to,
-                                    GoToInstr, OpenInstr, PickupInstr, PutNextInstr, BeforeInstr, AndInstr, AfterInstr)
+                                    GoToInstr, GoNextToInstr, OpenInstr, PickupInstr, PutNextInstr, BeforeInstr, AndInstr, AfterInstr)
 
 
 class DisappearedBoxError(Exception):
@@ -912,6 +912,10 @@ class Bot:
         """
 
         if isinstance(instr, GoToInstr):
+            self.stack.append(GoNextToSubgoal(self, instr.desc))
+            return
+
+        if isinstance(instr, GoNextToInstr):
             self.stack.append(GoNextToSubgoal(self, instr.desc))
             return
 

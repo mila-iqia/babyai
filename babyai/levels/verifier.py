@@ -318,27 +318,19 @@ class GoNextToInstr(GoToInstr):
     """
 
     def __init__(self, obj_desc, carry_inv=False):
-        super().__init__()
-        self.adj_vectors = [
-            np.array([1, 0]),
-            np.array([0, 1]),
-            np.array([-1, 0]),
-            np.array([0, -1])
-        ]
+        super().__init__(
+            obj_desc,
+            carry_inv=carry_inv
+        )
 
-    def are_squares_adj(self, pos, front_pos):
-        'is pos adjacent to front_pos'
-        for adj in self.adj_vectors:
-            adj_pos = front_pos + adj
-            if np.array_equal(pos, adj_pos):
-                return True
-        return False
+    def surface(self, env):
+        return 'go next to ' + self.desc.surface(env)
 
     def verify_action(self, action):
         # For each object position
         for pos in self.desc.obj_poss:
             # If the agent is next to (and facing) the object
-            if self.are_squares_adj(pos, self.env.front_pos):
+            if pos_next_to(pos, self.env.front_pos):
                 # check for carry invariance
                 if not self.carry_inv:
                     return 'success'
