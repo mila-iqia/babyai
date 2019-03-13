@@ -277,6 +277,7 @@ class OpenInstr(ActionInstr):
 class GoToInstr(ActionInstr):
     """
     Go next to (and look towards) an object matching a given description
+    carry_inv(ariance) -- ensure agent carries same object at begining and end
     eg: go to the door
     """
 
@@ -290,7 +291,6 @@ class GoToInstr(ActionInstr):
 
     def reset_verifier(self, env):
         super().reset_verifier(env)
-
         # Identify set of possible matching objects in the environment
         self.desc.find_matching_objs(env)
         if self.carry_inv:
@@ -301,9 +301,61 @@ class GoToInstr(ActionInstr):
         for pos in self.desc.obj_poss:
             # If the agent is next to (and facing) the object
             if np.array_equal(pos, self.env.front_pos):
-                # agent passed to GoTo implies a check for carry invariance
+                # check for carry invariance
                 if self.carry_inv:
-                    print(self.carrying, self.env.carrying) # agent.bot.mission.carrying
+                    print(self.carrying, self.env.carrying)
+                    if self.carrying == self.env.carrying:
+                        return 'success'
+                else:
+                    return 'success'
+        return 'continue'
+
+
+class GoNextToInstr(ActionInstr):
+    """
+    Look towards a cell adjacent to an object matching a given description
+    such that anything carried can be placed next to the object
+    carry_inv(ariance) -- ensure agent carries same object at begining and end
+    eg: go to the door
+    """
+
+    def __init__(self, obj_desc, carry_inv=False):
+        super().__init__()
+        self.desc = obj_desc
+        self.carry_inv = carry_inv
+        self.adj_vectors = [
+            np.array([1, 0]),
+            np.array([0, 1]),
+            np.array([-1, 0]),
+            np.array([0, -1])
+        ]
+
+    def surface(self, env):
+        return 'go to ' + self.desc.surface(env)
+
+    def reset_verifier(self, env):
+        super().reset_verifier(env)
+        # Identify set of possible matching objects in the environment
+        self.desc.find_matching_objs(env)
+        if self.carry_inv:
+            self.carrying = self.env.carrying
+
+    def are_squares_adj(self, pos, front_pos):
+        'is pos adjacent to front_pos'
+        for adj in self.adj_vectors:
+            adj_pos = front_pos + adj
+            if np.array_equal(pos, adj_pos):
+                return True
+        return False
+
+    def verify_action(self, action):
+        # For each object position
+        for pos in self.desc.obj_poss:
+            # If the agent is next to (and facing) the object
+            if self.are_squares_adj(pos, self.env.front_pos):
+                # check for carry invariance
+                if self.carry_inv:
+                    print(self.carrying, self.env.carrying)
                     if self.carrying == self.env.carrying:
                         return 'success'
                 else:
