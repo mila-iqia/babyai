@@ -183,7 +183,7 @@ class Level_GoToObjDoorCarry(Level_GoToObjDoor):
 
     def carrying_object(self):
         'randomly choose if agent should carry, if so, randomly generate object'
-        carry = self._rand_int(0, 1)
+        carry = self._rand_int(0, 2)
         if carry == 0:
             object = self._rand_elem([Key, Ball, Box])
             color = self._rand_elem(['red', 'green', 'blue', 'purple', 'yellow', 'grey'])
@@ -195,12 +195,12 @@ class Level_GoToObjDoorCarry(Level_GoToObjDoor):
         objDesc = self.get_ObjDesc(objs)
         carrying = self.carrying_object()
 
-        instr = 1#self._rand_int(0, 1)
+        instr = self._rand_int(0, 2)
         if instr == 0 or objDesc.type == 'door':
             # we don't expect to drop anything next to do a door, so goto
-            self.instrs = GoToInstr(objDesc, carry_inv=True, carrying=carrying)
+            self.instrs = GoToInstr(objDesc, carrying=carrying)
         else:
-            self.instrs = GoNextToInstr(objDesc, carry_inv=True, carrying=carrying, objs=objs)
+            self.instrs = GoNextToInstr(objDesc, carrying=carrying, objs=objs)
 
 
 class Level_ActionObjDoor(RoomGridLevel):

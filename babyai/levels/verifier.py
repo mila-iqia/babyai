@@ -281,10 +281,9 @@ class GoToInstr(ActionInstr):
     eg: go to the door
     """
 
-    def __init__(self, obj_desc, carry_inv=False, carrying=None):
+    def __init__(self, obj_desc, carrying=None):
         super().__init__()
         self.desc = obj_desc
-        self.carry_inv = carry_inv
         self.carrying = carrying
 
     def surface(self, env):
@@ -294,9 +293,7 @@ class GoToInstr(ActionInstr):
         super().reset_verifier(env)
         # Identify set of possible matching objects in the environment
         self.desc.find_matching_objs(env)
-        if self.carry_inv:
-            self.env.carrying = self.carrying
-            print(self.env.carrying)
+        self.env.carrying = self.carrying
 
     def verify_action(self, action):
         # For each object position
@@ -304,8 +301,6 @@ class GoToInstr(ActionInstr):
             # If the agent is next to (and facing) the object
             if np.array_equal(pos, self.env.front_pos):
                 # check for carry invariance
-                if not self.carry_inv:
-                    return 'success'
                 if self.carrying == self.env.carrying:
                     return 'success'
         return 'continue'
@@ -319,17 +314,17 @@ class GoNextToInstr(GoToInstr):
     eg: go to the door
     """
 
-    def __init__(self, obj_desc, carry_inv=False, carrying=None, objs=None):
+    def __init__(self, obj_desc, carrying=None, objs=None):
         super().__init__(
             obj_desc,
-            carry_inv=carry_inv
+            carrying=carrying
         )
         self.objs = [ObjDesc(obj.type, obj.color) for obj in objs]
 
     def surface(self, env):
         return 'go next to ' + self.desc.surface(env)
 
-    def is_empty(self, front_pos):
+    def is_not_empty(self, front_pos):
         'true if no object on square'
         for obj in self.objs:
             obj.find_matching_objs(self.env)
@@ -342,15 +337,14 @@ class GoNextToInstr(GoToInstr):
     def verify_action(self, action):
         # For each object position
         front_pos = self.env.front_pos
-        if self.is_empty(front_pos):
-            return 'continue'
         for pos in self.desc.obj_poss:
             # If the agent is next to (and facing) the object
             if pos_next_to(pos, front_pos):
+                # if cell in front is empty
+                if self.is_not_empty(front_pos):
+                    return 'continue'
                 # check for carry invariance
-                if not self.carry_inv:
-                    return 'success'
-                elif self.carrying == self.env.carrying:
+                if self.carrying == self.env.carrying:
                     return 'success'
         return 'continue'
 
