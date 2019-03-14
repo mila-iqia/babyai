@@ -281,10 +281,11 @@ class GoToInstr(ActionInstr):
     eg: go to the door
     """
 
-    def __init__(self, obj_desc, carry_inv=False):
+    def __init__(self, obj_desc, carry_inv=False, carrying=None):
         super().__init__()
         self.desc = obj_desc
         self.carry_inv = carry_inv
+        self.carrying = carrying
 
     def surface(self, env):
         return 'go to ' + self.desc.surface(env)
@@ -294,7 +295,8 @@ class GoToInstr(ActionInstr):
         # Identify set of possible matching objects in the environment
         self.desc.find_matching_objs(env)
         if self.carry_inv:
-            self.carrying = self.env.carrying
+            self.env.carrying = self.carrying
+            print(self.env.carrying)
 
     def verify_action(self, action):
         # For each object position
@@ -317,7 +319,7 @@ class GoNextToInstr(GoToInstr):
     eg: go to the door
     """
 
-    def __init__(self, obj_desc, carry_inv=False):
+    def __init__(self, obj_desc, carry_inv=False, carrying=None):
         super().__init__(
             obj_desc,
             carry_inv=carry_inv
@@ -326,11 +328,19 @@ class GoNextToInstr(GoToInstr):
     def surface(self, env):
         return 'go next to ' + self.desc.surface(env)
 
+    def is_empty(self, front_pos):
+        'true if no object on square'
+        for pos in self.desc.obj_poss:
+            if np.array_equal(pos, front_pos):
+                return False
+        return True
+
     def verify_action(self, action):
         # For each object position
         for pos in self.desc.obj_poss:
             # If the agent is next to (and facing) the object
-            if pos_next_to(pos, self.env.front_pos):
+            front_pos = self.env.front_pos
+            if pos_next_to(pos, front_pos) and self.is_empty(front_pos):
                 # check for carry invariance
                 if not self.carry_inv:
                     return 'success'
