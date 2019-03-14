@@ -53,6 +53,9 @@ parser.add_argument("--num-eval-demos", type=int, default=1000,
                     help="number of demos used for evaluation while growing the training set")
 parser.add_argument("--phases", type=int, default=1000,
                     help="maximum number of phases to train for")
+parser.add_argument("--save-interval", type=int, default=1,
+                    help="number of updates between two saves (default: 1, 0 means no saving)")
+
 
 logger = logging.getLogger(__name__)
 
