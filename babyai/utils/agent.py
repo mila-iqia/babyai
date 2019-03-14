@@ -161,6 +161,13 @@ class HandcraftedMetacontroller:
         self.agent = agent
         self.agent.model.eval()
         self.on_reset(env)
+        # 0: 'left'
+        # 1: 'right'
+        # 2: 'forward'
+        # 3: 'pickup'
+        # 4: 'drop'
+        # 5: 'toggle/open'
+        # 6: 'done'
 
     def on_reset(self, env):
         'reset the bot, agent and last action'
@@ -201,25 +208,6 @@ class HandcraftedMetacontroller:
             obs['mission'] = instruction
             action = self.agent.act(obs)['action']
         self.lastAction = action
-        return action
-
-    def int_to_action_name(self, actionInt):
-        'convert action int into a printable string description'
-        int_to_action = {
-            0: 'left',
-            1: 'right',
-            2: 'forward',
-            3: 'pickup',
-            4: 'drop',
-            5: 'toggle/open',
-            6: 'done'
-        }
-        try:
-            actionInt = actionInt.cpu().numpy()
-        except:
-            pass
-        actionInt = actionInt[0]
-        action = int_to_action[actionInt]
         return action
 
 

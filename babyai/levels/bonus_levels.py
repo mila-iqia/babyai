@@ -3,7 +3,7 @@ from gym_minigrid.envs import Key, Ball, Box
 from .verifier import *
 from .levelgen import *
 
-from random import choice
+# from random import choice
 
 
 class Level_OpenRedDoor(RoomGridLevel):
@@ -173,7 +173,6 @@ class Level_GoToObjDoorCarry(RoomGridLevel):
 
     def __init__(self, seed=None):
         super().__init__(
-            room_size=8,
             seed=seed
         )
 
@@ -192,7 +191,7 @@ class Level_GoToObjDoorCarry(RoomGridLevel):
         obj = self._rand_elem(objs)
         objDesc = ObjDesc(obj.type, obj.color)
 
-        instr = choice([0, 1])
+        instr = self._rand_elem([0, 1])
         if instr == 0 or obj.type == 'door':
             # we don't expect to drop anything next to do a door, so goto
             self.instrs = GoToInstr(objDesc, carry_inv=True)

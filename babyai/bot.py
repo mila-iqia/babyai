@@ -1019,3 +1019,54 @@ class MetacontrollerBot(Bot):
         'pass the object description into the datum of the subgoal'
         self.subgoal = self._get_clean_stack()
         self.subgoal.set_target_pos(obj_poss)
+
+
+class Metacontroller(Bot):
+
+    def __init__(self, mission):
+        super(Metacontroller, self).__init__(mission)
+
+    def first_subgoal_GoTo():
+        'first subgoal is goto instruction'
+        subgoal = self.stack[-1]
+        isGoTo = isinstance(subgoal, GoNextToSubgoal)
+        return isGoTo
+
+    def first_subgoal_exploratory():
+        'true if subgoal exploratory or goto tuple'
+        subgoal = self.stack[-1]
+        if subgoal.is_exploratory():
+            return True
+        return isinstance(subgoal.datum, tuple)
+
+    def produce_instruction(self):
+        'translate first subgoal into baby-language instruction'
+        # only GoTo needed: ignore Open, Pickup, Drop, Explore, Close
+        self.subgoal = self._get_clean_stack()
+        object = self.subgoal.datum
+        return 'go to the {} {}'.format(object.color, object.type)
+
+    def call_controller():
+        'if not exploratory and goto, pass instruction to controller'
+        if not first_subgoal_exploratory() and first_subgoal_GoTo():
+            return True
+
+    def unsafe_replan(self, action_taken=None):
+        'unsafe because no checking box opened'
+        self._process_obs()
+        for subgoal in self.stack:
+            subgoal.update_agent_attributes()
+        if self.stack:
+            self.stack[-1].replan_after_action(action_taken)
+        while self.stack and self.stack[-1].is_exploratory():
+            self.stack.pop()
+        suggested_action = None
+        while self.stack:
+            subgoal = self.stack[-1]
+            suggested_action = subgoal.replan_before_action()
+            if suggested_action is not None:
+                break
+        if not self.stack:
+            suggested_action = self.mission.actions.done
+        self._remember_current_state()
+        return suggested_action
