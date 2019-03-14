@@ -319,32 +319,38 @@ class GoNextToInstr(GoToInstr):
     eg: go to the door
     """
 
-    def __init__(self, obj_desc, carry_inv=False, carrying=None):
+    def __init__(self, obj_desc, carry_inv=False, carrying=None, objs=None):
         super().__init__(
             obj_desc,
             carry_inv=carry_inv
         )
+        self.objs = [ObjDesc(obj.type, obj.color) for obj in objs]
 
     def surface(self, env):
         return 'go next to ' + self.desc.surface(env)
 
     def is_empty(self, front_pos):
         'true if no object on square'
-        for pos in self.desc.obj_poss:
-            if np.array_equal(pos, front_pos):
-                return False
-        return True
+        for obj in self.objs:
+            obj.find_matching_objs(self.env)
+            poss = obj.obj_poss
+            for pos in poss:
+                if np.array_equal(pos, front_pos):
+                    return True
+        return False
 
     def verify_action(self, action):
         # For each object position
+        front_pos = self.env.front_pos
+        if self.is_empty(front_pos):
+            return 'continue'
         for pos in self.desc.obj_poss:
             # If the agent is next to (and facing) the object
-            front_pos = self.env.front_pos
-            if pos_next_to(pos, front_pos) and self.is_empty(front_pos):
+            if pos_next_to(pos, front_pos):
                 # check for carry invariance
                 if not self.carry_inv:
                     return 'success'
-                if self.carrying == self.env.carrying:
+                elif self.carrying == self.env.carrying:
                     return 'success'
         return 'continue'
 

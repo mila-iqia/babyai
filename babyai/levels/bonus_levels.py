@@ -147,7 +147,8 @@ class Level_GoToObjDoor(RoomGridLevel):
             seed=seed
         )
 
-    def gen_mission(self):
+    def get_objs(self):
+        'find obj in environment and create description'
         self.place_agent(1, 1)
         objs = self.add_distractors(1, 1, num_distractors=8, all_unique=False)
 
@@ -156,15 +157,23 @@ class Level_GoToObjDoor(RoomGridLevel):
             objs.append(door)
 
         self.check_objs_reachable()
+        return objs
 
+    def get_ObjDesc(self, objs):
+        'select obj to goto'
         obj = self._rand_elem(objs)
-        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
+        return ObjDesc(obj.type, obj.color)
+
+    def gen_mission(self):
+        'create instruction from description'
+        objs = self.get_objs()
+        objDesc = self.get_ObjDesc(objs)
+        self.instrs = GoToInstr(objDesc)
 
 
-class Level_GoToObjDoorCarry(RoomGridLevel):
+class Level_GoToObjDoorCarry(Level_GoToObjDoor):
     """
-    Go to an object or door
-    (of a given type and color, in the current room)
+    Go (next) to an object or door
     """
 
     def __init__(self, seed=None):
@@ -174,32 +183,24 @@ class Level_GoToObjDoorCarry(RoomGridLevel):
 
     def carrying_object(self):
         'randomly choose if agent should carry, if so, randomly generate object'
-        carry = self._rand_elem([0, 1])
+        carry = self._rand_int(0, 1)
         if carry == 0:
-            object = random.choice([Key, Ball, Box])
-            color = random.choice(['red', 'green', 'blue', 'purple', 'yellow', 'grey'])
+            object = self._rand_elem([Key, Ball, Box])
+            color = self._rand_elem(['red', 'green', 'blue', 'purple', 'yellow', 'grey'])
             return object(color)
 
     def gen_mission(self):
-        self.place_agent(1, 1)
-        objs = self.add_distractors(1, 1, num_distractors=8, all_unique=False)
-
-        for _ in range(4):
-            door, _ = self.add_door(1, 1)
-            objs.append(door)
-
-        self.check_objs_reachable()
-
-        obj = self._rand_elem(objs)
-        objDesc = ObjDesc(obj.type, obj.color)
-
+        'randomly choose GoTo or GoNextTo'
+        objs = self.get_objs()
+        objDesc = self.get_ObjDesc(objs)
         carrying = self.carrying_object()
-        instr = self._rand_elem([0, 1])
-        if instr == 0 or obj.type == 'door':
+
+        instr = 1#self._rand_int(0, 1)
+        if instr == 0 or objDesc.type == 'door':
             # we don't expect to drop anything next to do a door, so goto
             self.instrs = GoToInstr(objDesc, carry_inv=True, carrying=carrying)
         else:
-            self.instrs = GoNextToInstr(objDesc, carry_inv=True, carrying=carrying)
+            self.instrs = GoNextToInstr(objDesc, carry_inv=True, carrying=carrying, objs=objs)
 
 
 class Level_ActionObjDoor(RoomGridLevel):
