@@ -208,7 +208,9 @@ class HandcraftedMetacontroller:
         return action
 
 
-class HandcraftedMetacontroller:
+class BlockingHandcraftedMetacontroller:
+
+
     def __init__(self, env, agent):
         """Obtain a metacontroller policy from a GOFAI bot."""
         self.agent = agent

@@ -1,7 +1,7 @@
 from gym_minigrid.minigrid import *
 from babyai.levels.verifier import *
 from babyai.levels.verifier import (ObjDesc, pos_next_to,
-                                    GoToInstr, OpenInstr, PickupInstr, PutNextInstr, BeforeInstr, AndInstr, AfterInstr)
+                                    GoToInstr, GoNextToInstr, OpenInstr, PickupInstr, PutNextInstr, BeforeInstr, AndInstr, AfterInstr)
 
 
 class DisappearedBoxError(Exception):
@@ -291,10 +291,19 @@ class GoNextToSubgoal(Subgoal):
           exploratory
 
     """
+    def __init__(self, *args, **kwargs):
+        super(GoNextToSubgoal, self).__init__(*args, **kwargs)
+        self.target_pos = None
+
+    def set_target_pos(self, target_pos):
+        'set self.target_pos to the tuple target_pos'
+        self.target_pos = target_pos
 
     def replan_before_action(self):
         target_obj = None
-        if isinstance(self.datum, ObjDesc):
+        if self.target_pos != None:
+            target_pos = self.target_pos
+        elif isinstance(self.datum, ObjDesc):
             target_obj, target_pos = self.bot._find_obj_pos(self.datum, self.reason == 'PutNext')
             if not target_pos:
                 # No path found -> Explore the world
@@ -374,6 +383,7 @@ class GoNextToSubgoal(Subgoal):
         # No path found
         # -> explore the world
         if not path:
+            # self.stack.append(ExploreSubgoal(self.bot).get_action())
             self.bot.stack.append(ExploreSubgoal(self.bot))
             return
 
@@ -905,6 +915,10 @@ class Bot:
             self.stack.append(GoNextToSubgoal(self, instr.desc))
             return
 
+        if isinstance(instr, GoNextToInstr):
+            self.stack.append(GoNextToSubgoal(self, instr.desc))
+            return
+
         if isinstance(instr, OpenInstr):
             self.stack.append(OpenSubgoal(self))
             self.stack.append(GoNextToSubgoal(self, instr.desc, reason='Open'))
@@ -949,31 +963,110 @@ class Bot:
 
 
 class MetacontrollerBot(Bot):
+
+    def __init__(self, mission):
+        super(MetacontrollerBot, self).__init__(mission)
+        self.subgoal = self._get_clean_stack()
+
+    def produce_instruction(self):
+        'translate first subgoal into baby-language instruction'
+        # only GoTo needed: ignore Open, Pickup, Drop, Explore, Close
+        self.subgoal = self._get_clean_stack()
+        object = self.subgoal.datum
+        return 'go to the {} {}'.format(object.color, object.type)
+
+    def _get_clean_stack(self):
+        'walk the stack to get first non-exploratory subgoal'
+        index = -1
+        subgoal = self.stack[index]
+        while self.stack and (subgoal.is_exploratory() or isinstance(subgoal.datum, tuple)):
+            index -= 1
+            subgoal = self.stack[index]
+        return self.stack[index]
+
+    def is_first_subgoal_GoTo(self):
+        'true if first subgoal goto'
+        self.subgoal = self._get_clean_stack()
+        isGoTo = isinstance(self.subgoal, GoNextToSubgoal)
+        return isGoTo
+
+    def unsafe_replan(self, action_taken=None):
+        'unsafe because no checking box opened'
+        self._process_obs()
+        for subgoal in self.stack:
+            subgoal.update_agent_attributes()
+        if self.stack:
+            self.stack[-1].replan_after_action(action_taken)
+        while self.stack and self.stack[-1].is_exploratory():
+            self.stack.pop()
+        suggested_action = None
+        while self.stack:
+            subgoal = self.stack[-1]
+            suggested_action = subgoal.replan_before_action()
+            if suggested_action is not None:
+                break
+        if not self.stack:
+            suggested_action = self.mission.actions.done
+        self._remember_current_state()
+        return suggested_action
+
+    def get_subgoal_datum(self):
+        'get the datum of the first non-exploratory subgoal'
+        self.subgoal = self._get_clean_stack()
+        return self.subgoal.datum
+
+    def set_GoTo_state(self, obj_poss):
+        'pass the object description into the datum of the subgoal'
+        self.subgoal = self._get_clean_stack()
+        self.subgoal.set_target_pos(obj_poss)
+
+
+class Metacontroller(Bot):
+
     def __init__(self, mission):
         super(Metacontroller, self).__init__(mission)
 
-
-class StackBot(Bot):
-    def __init__(self, mission):
-        'wrapper which get instruction from bot'
-        super(StackBot, self).__init__(mission)
-
-    def first_subgoal_GoTo(self):
+    def first_subgoal_GoTo():
         'first subgoal is goto instruction'
         subgoal = self.stack[-1]
         isGoTo = isinstance(subgoal, GoNextToSubgoal)
         return isGoTo
 
-    def first_subgoal_exploratory(self):
+    def first_subgoal_exploratory():
         'true if subgoal exploratory or goto tuple'
         subgoal = self.stack[-1]
         if subgoal.is_exploratory():
             return True
         return isinstance(subgoal.datum, tuple)
 
-    def get_instruction(self):
-        'get instruction from first subgoal of bot'
-        if self.first_subgoal_exploratory():
-            return 'explore'
-        elif first_subgoal_GoTo:
-            return 'go to'
+    def produce_instruction(self):
+        'translate first subgoal into baby-language instruction'
+        # only GoTo needed: ignore Open, Pickup, Drop, Explore, Close
+        self.subgoal = self._get_clean_stack()
+        object = self.subgoal.datum
+        return 'go to the {} {}'.format(object.color, object.type)
+
+    def call_controller():
+        'if not exploratory and goto, pass instruction to controller'
+        if not first_subgoal_exploratory() and first_subgoal_GoTo():
+            return True
+
+    def unsafe_replan(self, action_taken=None):
+        'unsafe because no checking box opened'
+        self._process_obs()
+        for subgoal in self.stack:
+            subgoal.update_agent_attributes()
+        if self.stack:
+            self.stack[-1].replan_after_action(action_taken)
+        while self.stack and self.stack[-1].is_exploratory():
+            self.stack.pop()
+        suggested_action = None
+        while self.stack:
+            subgoal = self.stack[-1]
+            suggested_action = subgoal.replan_before_action()
+            if suggested_action is not None:
+                break
+        if not self.stack:
+            suggested_action = self.mission.actions.done
+        self._remember_current_state()
+        return suggested_action
