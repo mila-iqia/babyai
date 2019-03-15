@@ -279,8 +279,10 @@ class ExploreInstr(ActionInstr):
     Move around a room until all squares including walls and corners are seen
     """
 
-    def __init__(self):
+    def __init__(self, carrying=None, carry_inv=False):
         super().__init__()
+        self.carry_inv = carry_inv
+        self.carrying = carrying
 
     def surface(self, env):
         return 'explore'
@@ -288,9 +290,11 @@ class ExploreInstr(ActionInstr):
     def reset_verifier(self, env):
         super().reset_verifier(env)
         self.vis_mask = np.zeros(shape=(env.width, env.height), dtype=np.bool)
+        self.env.carrying = self.carrying
 
     def process_obs(self):
-        'Parse the contents of an observation/image and update our state.'
+        'update seen squares in env using observation'
+        # adapted from bot.py
         grid, vis_mask = self.env.gen_obs_grid()
         pos = self.env.agent_pos
         f_vec = self.env.dir_vec
@@ -312,17 +316,18 @@ class ExploreInstr(ActionInstr):
 
     def completely_observed(self):
         'if number of squares seen is 64, then room completely observed'
-        grid = self.env.grid
-        seen = np.nonzero(self.vis_mask == True)
-        seen = len(np.transpose(seen))
-        if seen == 64:
+        seen = np.nonzero(self.vis_mask == True)[0]
+        if len(seen) == 64:
             return True
         return False
 
     def verify_action(self, action):
         self.process_obs()
         if self.completely_observed():
-            return 'success'
+            if not self.carry_inv:
+                return 'success'
+            if self.env.carrying == self.carrying:
+                return 'success'
         return 'continue'
 
 
@@ -333,10 +338,11 @@ class GoToInstr(ActionInstr):
     eg: go to the door
     """
 
-    def __init__(self, obj_desc, carrying=None):
+    def __init__(self, obj_desc, carrying=None, carry_inv=False):
         super().__init__()
         self.desc = obj_desc
         self.carrying = carrying
+        self.carry_inv = carry_inv
 
     def surface(self, env):
         return 'go to ' + self.desc.surface(env)
@@ -353,6 +359,8 @@ class GoToInstr(ActionInstr):
             # If the agent is next to (and facing) the object
             if np.array_equal(pos, self.env.front_pos):
                 # check for carry invariance
+                if not self.carry_inv:
+                    return 'success'
                 if self.carrying == self.env.carrying:
                     return 'success'
         return 'continue'
@@ -366,10 +374,11 @@ class GoNextToInstr(GoToInstr):
     eg: go to the door
     """
 
-    def __init__(self, obj_desc, carrying=None, objs=None):
+    def __init__(self, obj_desc, carrying=None, carry_inv=False, objs=None):
         super().__init__(
             obj_desc,
-            carrying=carrying
+            carrying=carrying,
+            carry_inv=carry_inv
         )
         self.objs = [ObjDesc(obj.type, obj.color) for obj in objs]
 
@@ -396,6 +405,8 @@ class GoNextToInstr(GoToInstr):
                 if self.is_not_empty(front_pos):
                     return 'continue'
                 # check for carry invariance
+                if not self.carry_inv:
+                    return 'success'
                 if self.carrying == self.env.carrying:
                     return 'success'
         return 'continue'

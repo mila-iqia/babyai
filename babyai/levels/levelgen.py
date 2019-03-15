@@ -31,6 +31,8 @@ class RoomGridLevel(RoomGrid):
             room_size=room_size,
             **kwargs
         )
+        self.doNotOpenBox=False
+        self.doNotOpenDoor=False
 
     def reset(self, **kwargs):
         obs = super().reset(**kwargs)
@@ -46,14 +48,25 @@ class RoomGridLevel(RoomGrid):
 
         return obs
 
-    def step(self, action, doNotOpenBox=True):
-        # if box in front of agent and if action is toggle, do nothing
-        if doNotOpenBox == True:
-            fwd_pos = self.agent_pos + self.dir_vec
-            fwd_cell = self.grid.get(*fwd_pos)
-            if action == self.actions.toggle and fwd_cell and fwd_cell.type == 'box':
+    def do_not_open(self, action, badAction, objType):
+        'do not do anything if action performed in front of objType'
+        fwd_pos = self.agent_pos + self.dir_vec
+        fwd_cell = self.grid.get(*fwd_pos)
+        if action == action and fwd_cell and fwd_cell.type == objType:
+            action = self.actions.drop
+        return super().step(action)
+
+    def step(self, action):
+        fwd_pos = self.agent_pos + self.dir_vec
+        fwd_cell = self.grid.get(*fwd_pos)
+        if action == self.actions.toggle and fwd_cell:
+            # if agent wants to open box, do nothing
+            if self.doNotOpenBox and fwd_cell.type == 'box':
                 action = self.actions.drop
-            obs, reward, done, info = super().step(action)
+            # if agent wants to open door, do nothing
+            if self.doNotOpenDoor and fwd_cell.type == 'door':
+                action = self.actions.drop
+        obs, reward, done, info = super().step(action)
 
         # If we drop an object, we need to update its position in the environment
         if action == self.actions.drop:
