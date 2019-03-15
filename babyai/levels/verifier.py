@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from enum import Enum
-from gym_minigrid.minigrid import COLOR_NAMES, DIR_TO_VEC
+from gym_minigrid.minigrid import COLOR_NAMES, DIR_TO_VEC, AGENT_VIEW_SIZE
 
 # Object types we are allowed to describe in language
 OBJ_TYPES = ['box', 'ball', 'key', 'door']
@@ -271,6 +271,58 @@ class OpenInstr(ActionInstr):
             if front_cell and front_cell.type == 'door':
                 return 'failure'
 
+        return 'continue'
+
+
+class ExploreInstr(ActionInstr):
+    """
+    Move around a room until all squares including walls and corners are seen
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def surface(self, env):
+        return 'explore'
+
+    def reset_verifier(self, env):
+        super().reset_verifier(env)
+        self.vis_mask = np.zeros(shape=(env.width, env.height), dtype=np.bool)
+
+    def process_obs(self):
+        'Parse the contents of an observation/image and update our state.'
+        grid, vis_mask = self.env.gen_obs_grid()
+        pos = self.env.agent_pos
+        f_vec = self.env.dir_vec
+        r_vec = self.env.right_vec
+        # Compute absolute coordinates of the top-left corner of the agent's view area
+        top_left = pos + f_vec * (AGENT_VIEW_SIZE - 1) - r_vec * (AGENT_VIEW_SIZE // 2)
+        # Mark everything in front of us as visible
+        for vis_j in range(0, AGENT_VIEW_SIZE):
+            for vis_i in range(0, AGENT_VIEW_SIZE):
+                if not vis_mask[vis_i, vis_j]:
+                    continue
+                # Compute the world coordinates of this cell
+                abs_i, abs_j = top_left - (f_vec * vis_j) + (r_vec * vis_i)
+                if abs_i < 0 or abs_i >= self.vis_mask.shape[0]:
+                    continue
+                if abs_j < 0 or abs_j >= self.vis_mask.shape[1]:
+                    continue
+                self.vis_mask[abs_i, abs_j] = True
+
+    def completely_observed(self):
+        'if number of squares seen is 64, then room completely observed'
+        grid = self.env.grid
+        seen = np.nonzero(self.vis_mask == True)
+        seen = len(np.transpose(seen))
+        if seen == 64:
+            return True
+        return False
+
+    def verify_action(self, action):
+        self.process_obs()
+        if self.completely_observed():
+            return 'success'
         return 'continue'
 
 

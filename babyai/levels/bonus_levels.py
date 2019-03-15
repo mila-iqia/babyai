@@ -171,6 +171,22 @@ class Level_GoToObjDoor(RoomGridLevel):
         self.instrs = GoToInstr(objDesc)
 
 
+class Level_GoToObjDoorExplore(Level_GoToObjDoor):
+    """
+    Use GoToObjDoor level and create explore instruction
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            seed=seed
+        )
+
+    def gen_mission(self):
+        'create instruction from description'
+        objs = self.get_objs()
+        self.instrs = ExploreInstr()
+
+
 class Level_GoToObjDoorCarry(Level_GoToObjDoor):
     """
     Go (next) to an object or door
