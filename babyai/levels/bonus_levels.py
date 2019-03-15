@@ -206,7 +206,7 @@ class Level_GoToObjDoorCarry(Level_GoToObjDoor):
 
 class Level_GoToObjDoorExplore(Level_GoToObjDoorCarry):
     """
-    Use GoToObjDoor level and create explore instruction
+    Explore environment populated with distractors from GoToObjDoor
     """
 
     def __init__(self, seed=None):
@@ -224,7 +224,7 @@ class Level_GoToObjDoorExplore(Level_GoToObjDoorCarry):
 
 class Level_AllControllerTasks(Level_GoToObjDoorCarry):
     """
-    Use GoToObjDoor level and create explore instruction
+    Train on Use GoToObjDoor level and create explore instruction
     """
 
     def __init__(self, seed=None):
@@ -241,7 +241,6 @@ class Level_AllControllerTasks(Level_GoToObjDoorCarry):
 
         instr = self._rand_int(0, 3)
         if instr == 0 or objDesc.type == 'door':
-            # we don't expect to drop anything next to do a door, so goto
             self.instrs = GoToInstr(objDesc, carrying=carrying, carry_inv=True)
         elif instr == 1:
             self.instrs = GoNextToInstr(objDesc, carrying=carrying, carry_inv=True, objs=objs)
