@@ -35,7 +35,7 @@ parser.add_argument("--multi-demos", nargs='*', default=None,
 parser.add_argument("--multi-episodes", type=int, nargs='*', default=None,
                     help="number of episodes of demos to use from each file (REQUIRED when multi-env is specified)")
 parser.add_argument("--save-interval", type=int, default=1,
-                    help="number of updates between two saves (default: 1, 0 means no saving)")
+                    help="number of epochs between two saves (default: 1, 0 means no saving)")
 
 
 def main(args):
