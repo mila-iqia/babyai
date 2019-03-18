@@ -168,7 +168,6 @@ def evaluate_meta(agent, env, episodes, verbose=True):
                 print(returnn)
                 print(obs['mission'])
                 print(agent.bot.stack)
-                print(agent.bot.subgoal)
                 print(env)
                 print("")
     return logs
