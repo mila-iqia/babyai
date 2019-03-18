@@ -144,7 +144,8 @@ class Level_GoToObjDoor(RoomGridLevel):
     def __init__(self, seed=None):
         super().__init__(
             room_size=8,
-            seed=seed
+            seed=seed,
+            max_steps=64
         )
 
     def get_objs(self):
