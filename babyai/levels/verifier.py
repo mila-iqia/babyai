@@ -371,7 +371,7 @@ class GoNextToInstr(GoToInstr):
     """
     Look towards a cell adjacent to an object matching a given description
     such that anything carried can be placed next to the object
-    carry_inv(ariance) -- ensure agent carries same object at begining and end
+    carry_inv(ariance) -- ensure agent carries same object at beginning and end
     eg: go to the door
     """
 
@@ -381,7 +381,8 @@ class GoNextToInstr(GoToInstr):
             carrying=carrying,
             carry_inv=carry_inv
         )
-        self.objs = [ObjDesc(obj.type, obj.color) for obj in objs]
+        if objs is not None:
+            self.objs = [ObjDesc(obj.type, obj.color) for obj in objs]
 
     def surface(self, env):
         return 'go next to ' + self.desc.surface(env)

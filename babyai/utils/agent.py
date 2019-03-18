@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import torch
 from .. import utils
-from babyai.bot import Bot, StackBot, MetacontrollerBot
+from babyai.bot import Bot, StackBot
 from babyai.model import ACModel
 from random import Random
 from copy import deepcopy
@@ -157,52 +157,50 @@ class BotAgent:
 
 class HandcraftedMetacontroller:
     def __init__(self, env, agent):
-        """Obtain a metacontroller policy from a GOFAI bot."""
+        """
+        get meta-policy from StackBot
+        control policy trained by AllControllerTasks environment
+        """
         self.agent = agent
         self.agent.model.eval()
         self.on_reset(env)
 
     def on_reset(self, env):
-        'reset the bot, agent and last action'
+        'reset bot, agent and last action'
         self.env = env
-        self.lastAction = None
-        self.bot = MetacontrollerBot(self.env)
+        self.action = None
+        self.bot = StackBot(self.env)
         self.agent.on_reset()
-        self.obj_poss = None
+        self.instr = None
 
-    def update_position(self):
-        'remember the position of an object'
-        datum = deepcopy(self.bot.get_subgoal_datum())
-        _, target_pos = self.bot._find_obj_pos(datum)
-        if target_pos != None:
-            self.obj_poss = target_pos
-
-    def get_action(self, obs, verbose=False):
-        'get next action using a bot subgoal'
-        # if action doesn't work, probably because box has been opened
-        try:
-            action = self.bot.unsafe_replan(self.lastAction)
-        except:
-            self.bot.set_GoTo_state(self.obj_poss)
-            action = self.bot.unsafe_replan(self.lastAction)
-        # if action is done or no more subgoals, end
-        if (not self.bot.stack) or (action == self.bot.mission.actions.done):
-            return self.bot.mission.actions.done
-        if self.bot.is_first_subgoal_GoTo():
-            self.update_position()
-            instruction = self.bot.produce_instruction()
-            if verbose:
-                print(obs['mission'])
-                print(instruction)
-                print(self.bot.stack)
-                print(self.bot.subgoal)
-                print(self.env)
-                print("")
-            obs['mission'] = instruction
-            action = self.agent.act(obs)['action']
-        self.lastAction = action
+    def get_agent_action(self):
+        'plan what action to get from the agent'
+        # find instruction, if still none, do bot's action
+        if self.instr is None:
+            self.instr = self.bot.get_instruction()
+        if self.instr is None:
+            return self.action
+        # use instruction to plan next action
+        obs['mission'] = self.instr
+        action = self.agent.act(obs)['action']
+        # if last in subtask, remove instruction
+        if action == self.env.actions.done:
+            self.instr = None
         return action
 
+    def get_action(self, obs):
+        'get next action'
+        # replan and get bot's action
+        self.action = self.bot.replan(self.lastAction)
+        if not self.bot.stack:
+            return self.env.actions.done
+        # get action from instruction on stack
+        action = self.get_agent_action()
+        while action is None:
+            action = self.get_agent_action()
+        # update action for next time
+        self.action = action
+        return action
 
 
 def load_agent(env, model_name, demos_name=None, demos_origin=None, argmax=True, env_name=None):

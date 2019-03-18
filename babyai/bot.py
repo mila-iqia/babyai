@@ -949,32 +949,21 @@ class Bot:
             raise DisappearedBoxError('A box was opened. I am not sure I can help now.')
 
 
-# class MetacontrollerBot(Bot):
-#     def __init__(self, mission):
-#         super(Metacontroller, self).__init__(mission)
-
-
 class StackBot(Bot):
     def __init__(self, mission):
         'wrapper which get instruction from bot'
         super(StackBot, self).__init__(mission)
 
-    def first_subgoal_GoTo(self):
+    def is_GoTo(self, subgoal):
         'first subgoal is goto instruction'
-        subgoal = self.stack[-1]
         return isinstance(subgoal, GoNextToSubgoal)
 
-    def first_subgoal_exploratory(self):
+    def is_exploratory(self, subgoal):
         'true if subgoal exploratory or goto tuple'
-        subgoal = self.stack[-1]
-        # if subgoal.is_exploratory():
-        #     return True
-        # return isinstance(subgoal.datum, tuple)
-        return subgoal.is_exploratory()
+        return isinstance(subgoal.datum, tuple)
 
-    def get_goto_instruction(self):
+    def goTo_instr(self, subgoal):
         'if instruction is goto, get instruction string'
-        subgoal = self.stack[-1]
         datum = subgoal.datum
         if subgoal.reason == 'PutNext':
             instr = GoNextToInstr(datum)
@@ -984,7 +973,8 @@ class StackBot(Bot):
 
     def get_instruction(self):
         'get instruction from first subgoal of bot'
-        if self.first_subgoal_exploratory():
+        subgoal = self.stack[-1]
+        if self.is_exploratory(subgoal):
             return 'explore'
-        elif self.first_subgoal_GoTo():
-            return self.get_goto_instruction()
+        if self.is_GoTo(subgoal):
+            return self.goTo_instr(subgoal)
