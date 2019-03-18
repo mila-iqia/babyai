@@ -160,6 +160,12 @@ class Level_GoToObjDoor(RoomGridLevel):
         self.check_objs_reachable()
         return objs
 
+    def reset(self, **kwargs):
+        'override reset to preserve max_steps=64'
+        obs = super().reset(**kwargs)
+        self.max_steps = 64
+        return obs
+
     def get_ObjDesc(self, objs):
         'select obj to goto'
         obj = self._rand_elem(objs)
