@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import torch
 from .. import utils
-from babyai.bot import Bot, MetacontrollerBot
+from babyai.bot import Bot, StackBot, MetacontrollerBot
 from babyai.model import ACModel
 from random import Random
 from copy import deepcopy
@@ -161,65 +161,6 @@ class HandcraftedMetacontroller:
         self.agent = agent
         self.agent.model.eval()
         self.on_reset(env)
-        # 0, 1, 2: l, r, forward
-        # 3, 4: pickup, drop
-        # 5: toggle/open
-        # 6: 'done'
-
-    def on_reset(self, env):
-        'reset the bot, agent and last action'
-        self.env = env
-        self.lastAction = None
-        self.bot = MetacontrollerBot(self.env)
-        self.agent.on_reset()
-        self.obj_poss = None
-
-    def update_position(self):
-        'remember the position of an object'
-        datum = deepcopy(self.bot.get_subgoal_datum())
-        _, target_pos = self.bot._find_obj_pos(datum)
-        if target_pos != None:
-            self.obj_poss = target_pos
-
-    def get_action(self, obs, verbose=False):
-        'get next action using a bot subgoal'
-        # if action doesn't work, probably because box has been opened
-        try:
-            action = self.bot.unsafe_replan(self.lastAction)
-        except:
-            self.bot.set_GoTo_state(self.obj_poss)
-            action = self.bot.unsafe_replan(self.lastAction)
-        # if action is done or no more subgoals, end
-        if (not self.bot.stack) or (action == self.bot.mission.actions.done):
-            return self.bot.mission.actions.done
-        if self.bot.is_first_subgoal_GoTo():
-            self.update_position()
-            instruction = self.bot.produce_instruction()
-            if verbose:
-                print(obs['mission'])
-                print(instruction)
-                print(self.bot.stack)
-                print(self.bot.subgoal)
-                print(self.env)
-                print("")
-            obs['mission'] = instruction
-            action = self.agent.act(obs)['action']
-        self.lastAction = action
-        return action
-
-
-class BlockingHandcraftedMetacontroller:
-
-
-    def __init__(self, env, agent):
-        """Obtain a metacontroller policy from a GOFAI bot."""
-        self.agent = agent
-        self.agent.model.eval()
-        self.on_reset(env)
-        # 0, 1, 2: l, r, forward
-        # 3, 4: pickup, drop
-        # 5: toggle/open
-        # 6: 'done'
 
     def on_reset(self, env):
         'reset the bot, agent and last action'

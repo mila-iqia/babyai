@@ -1,7 +1,8 @@
 from gym_minigrid.minigrid import *
 from babyai.levels.verifier import *
 from babyai.levels.verifier import (ObjDesc, pos_next_to,
-                                    GoToInstr, OpenInstr, PickupInstr, PutNextInstr, BeforeInstr, AndInstr, AfterInstr)
+                                    GoToInstr, GoNextToInstr, OpenInstr, PickupInstr, PutNextInstr,
+                                    BeforeInstr, AndInstr, AfterInstr)
 
 
 class DisappearedBoxError(Exception):
@@ -948,9 +949,9 @@ class Bot:
             raise DisappearedBoxError('A box was opened. I am not sure I can help now.')
 
 
-class MetacontrollerBot(Bot):
-    def __init__(self, mission):
-        super(Metacontroller, self).__init__(mission)
+# class MetacontrollerBot(Bot):
+#     def __init__(self, mission):
+#         super(Metacontroller, self).__init__(mission)
 
 
 class StackBot(Bot):
@@ -961,19 +962,29 @@ class StackBot(Bot):
     def first_subgoal_GoTo(self):
         'first subgoal is goto instruction'
         subgoal = self.stack[-1]
-        isGoTo = isinstance(subgoal, GoNextToSubgoal)
-        return isGoTo
+        return isinstance(subgoal, GoNextToSubgoal)
 
     def first_subgoal_exploratory(self):
         'true if subgoal exploratory or goto tuple'
         subgoal = self.stack[-1]
-        if subgoal.is_exploratory():
-            return True
-        return isinstance(subgoal.datum, tuple)
+        # if subgoal.is_exploratory():
+        #     return True
+        # return isinstance(subgoal.datum, tuple)
+        return subgoal.is_exploratory()
+
+    def get_goto_instruction(self):
+        'if instruction is goto, get instruction string'
+        subgoal = self.stack[-1]
+        datum = subgoal.datum
+        if subgoal.reason == 'PutNext':
+            instr = GoNextToInstr(datum)
+        else:
+            instr = GoToInstr(datum)
+        return instr.surface(self.mission)
 
     def get_instruction(self):
         'get instruction from first subgoal of bot'
         if self.first_subgoal_exploratory():
             return 'explore'
-        elif first_subgoal_GoTo:
-            return 'go to'
+        elif self.first_subgoal_GoTo():
+            return self.get_goto_instruction()

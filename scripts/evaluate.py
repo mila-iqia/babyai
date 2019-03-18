@@ -34,7 +34,7 @@ parser.add_argument("--contiguous-episodes", action="store_true", default=False,
 parser.add_argument("--worst-episodes-to-show", type=int, default=10,
                     help="The number of worse episodes to show")
 parser.add_argument("--meta", type=int, default=0,
-                    help="If 1, evaluate the bot meta policy on PutNextLocal")
+                    help="If 1, use metacontroller")
 
 
 def main(args, seed, episodes):

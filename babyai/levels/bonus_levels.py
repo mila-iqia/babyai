@@ -243,14 +243,14 @@ class Level_AllControllerTasks(Level_GoToObjDoorCarry):
     def gen_mission(self):
         'randomly choose GoTo or GoNextTo'
         objs = self.get_objs()
-        objDesc = self.get_ObjDesc(objs)
+        desc = self.get_ObjDesc(objs)
         carrying = self.carrying_object()
 
         instr = self._rand_int(0, 3)
-        if instr == 0 or objDesc.type == 'door':
-            self.instrs = GoToInstr(objDesc, carrying=carrying, carry_inv=True)
+        if instr == 0 or desc.type == 'door':
+            self.instrs = GoToInstr(desc, carrying=carrying, carry_inv=True)
         elif instr == 1:
-            self.instrs = GoNextToInstr(objDesc, carrying=carrying, carry_inv=True, objs=objs)
+            self.instrs = GoNextToInstr(desc, carrying=carrying, carry_inv=True, objs=objs)
         else:
             self.instrs = ExploreInstr(carrying=carrying, carry_inv=True)
 
