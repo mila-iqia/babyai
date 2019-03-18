@@ -173,7 +173,7 @@ class HandcraftedMetacontroller:
         self.agent.on_reset()
         self.instr = None
 
-    def get_agent_action(self):
+    def get_agent_action(self, obs):
         'plan what action to get from the agent'
         # find instruction, if still none, do bot's action
         if self.instr is None:
@@ -195,9 +195,9 @@ class HandcraftedMetacontroller:
         if not self.bot.stack:
             return self.env.actions.done
         # get action from instruction on stack
-        action = self.get_agent_action()
+        action = self.get_agent_action(obs)
         while action is None:
-            action = self.get_agent_action()
+            action = self.get_agent_action(obs)
         # update action for next time
         self.action = action
         return action
