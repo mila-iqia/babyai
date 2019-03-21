@@ -245,7 +245,7 @@ class AIGameWindow(QMainWindow):
         print('description: "%s"' % desc)
         print('object: %s %s' % (pointObj.color, pointObj.type))
 
-        viewSz = minigrid.AGENT_VIEW_SIZE
+        viewSz = env.agent_view_size
 
         NUM_TARGET = 50
         numItrs = 0
