@@ -234,13 +234,14 @@ while status['num_frames'] < args.frames:
         agent.model.train()
         mean_return = np.mean(logs["return_per_episode"])
         success_rate = np.mean([1 if r > 0 else 0 for r in logs['return_per_episode']])
+        save_model = False
         if success_rate > best_success_rate:
             best_success_rate = success_rate
-            utils.save_model(acmodel, args.model + '_best')
-            obss_preprocessor.vocab.save(utils.get_vocab_path(args.model + '_best'))
-            logger.info("Return {: .2f}; best model is saved".format(mean_return))
-        if (success_rate == best_success_rate) and (mean_return > best_mean_return):
+            save_model = True
+        elif (success_rate == best_success_rate) and (mean_return > best_mean_return):
             best_mean_return = mean_return
+            save_model = True
+        if save_model:
             utils.save_model(acmodel, args.model + '_best')
             obss_preprocessor.vocab.save(utils.get_vocab_path(args.model + '_best'))
             logger.info("Return {: .2f}; best model is saved".format(mean_return))
