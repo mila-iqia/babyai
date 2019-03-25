@@ -178,6 +178,68 @@ class Level_GoToObjDoor(RoomGridLevel):
         self.instrs = GoToInstr(objDesc)
 
 
+class Level_GoToObjDoor2(RoomGridLevel):
+    """
+    Go to an object or door
+    (of a given type and color, in the current room)
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            room_size=8,
+            seed=seed,
+            max_steps=64
+        )
+
+    def get_objs(self):
+        'find obj in environment and create description'
+        self.place_agent(1, 1)
+        self.connect_all()
+        self.add_distractors(num_distractors=18, all_unique=False)
+        room = self.get_room(1, 1)
+        doors = list(filter(lambda d: d is not None, room.doors))
+        for door in doors:
+            door.is_open = self._rand_bool()
+        self.check_objs_reachable()
+
+    def reset(self, **kwargs):
+        'override reset to preserve max_steps=64'
+        obs = super().reset(**kwargs)
+        self.max_steps = 64
+        return obs
+
+    def carrying_object(self):
+        'randomly choose if agent should carry, if so, randomly generate object'
+        carry = self._rand_bool()
+        if carry:
+            object = self._rand_elem([Key, Ball, Box])
+            color = self._rand_elem(['red', 'green', 'blue', 'purple', 'yellow', 'grey'])
+            return object(color)
+
+    def get_ObjDesc(self):
+        'select obj to goto'
+        room = self.get_room(1, 1)
+        doors = list(filter(lambda d: d is not None, room.doors))
+        obj = self._rand_elem(doors + room.objs + ['explore'])
+        if obj == 'explore':
+            return 'explore'
+        return ObjDesc(obj.type, obj.color)
+
+    def gen_mission(self):
+        'create instruction from description'
+        self.get_objs()
+        objDesc = self.get_ObjDesc()
+        carrying = self.carrying_object()
+        if objDesc == 'explore':
+            self.instrs = ExploreInstr(carrying=carrying, carry_inv=True)
+        elif self._rand_bool() or objDesc.type == 'door':
+            # we don't expect to drop anything next to do a door, so goto
+            self.instrs = GoToInstr(objDesc, carrying=carrying, carry_inv=True)
+        else:
+            room = self.get_room(1, 1)
+            self.instrs = GoNextToInstr(objDesc, carrying=carrying, carry_inv=True, objs=room.objs)
+
+
 class Level_GoToObjDoorCarry(Level_GoToObjDoor):
     """
     Go (next) to an object or door
