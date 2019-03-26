@@ -191,53 +191,64 @@ class Level_GoToObjDoor2(RoomGridLevel):
             max_steps=64
         )
 
-    def get_objs(self):
-        'find obj in environment and create description'
-        self.place_agent(1, 1)
-        self.connect_all()
-        self.add_distractors(num_distractors=18, all_unique=False)
-        room = self.get_room(1, 1)
-        doors = list(filter(lambda d: d is not None, room.doors))
-        for door in doors:
-            door.is_open = self._rand_bool()
-        self.check_objs_reachable()
-
     def reset(self, **kwargs):
         'override reset to preserve max_steps=64'
         obs = super().reset(**kwargs)
         self.max_steps = 64
         return obs
 
-    def carrying_object(self):
-        'randomly choose if agent should carry, if so, randomly generate object'
-        carry = self._rand_bool()
-        if carry:
-            object = self._rand_elem([Key, Ball, Box])
-            color = self._rand_elem(['red', 'green', 'blue', 'purple', 'yellow', 'grey'])
-            return object(color)
+    def place_agent(self, rand_dir=True):
+        'place agent in centremost room or facing a door inwards to the room'
+        # if self._rand_bool():
+        #     return super().place_agent(1, 1)
+        room = self.get_room(1, 1)
+        doors = zip(room.doors, range(4))
+        doors = list(filter(lambda d: d[0] is not None, doors))
 
-    def get_ObjDesc(self):
-        'select obj to goto'
+        pos, dir = self._rand_elem(doors)
+        pos = pos.cur_pos
+        dir = (dir + 2) % 4
+        vec = DIR_TO_VEC[dir]
+        
+        self.start_pos = pos - vec
+        self.start_dir = dir
+        return self.start_pos
+
+    def get_obj(self):
+        'find obj in environment and create description'
+        self.connect_all()
+        self.add_distractors(num_distractors=18, all_unique=False)
+        self.place_agent()
+
         room = self.get_room(1, 1)
         doors = list(filter(lambda d: d is not None, room.doors))
+        # also doors not adjacent to current position
         obj = self._rand_elem(doors + room.objs + ['explore'])
+
+        for door in doors:
+            door.is_open = self._rand_bool()
         if obj == 'explore':
             return 'explore'
         return ObjDesc(obj.type, obj.color)
 
+    def carrying_object(self):
+        'randomly choose if agent should carry, if so, randomly generate object'
+        if self._rand_bool():
+            object = self._rand_elem([Key, Ball, Box])
+            color = self._rand_color()
+            return object(color)
+
     def gen_mission(self):
         'create instruction from description'
-        self.get_objs()
-        objDesc = self.get_ObjDesc()
+        objDesc = self.get_obj()
         carrying = self.carrying_object()
         if objDesc == 'explore':
             self.instrs = ExploreInstr(carrying=carrying, carry_inv=True)
         elif self._rand_bool() or objDesc.type == 'door':
-            # we don't expect to drop anything next to do a door, so goto
             self.instrs = GoToInstr(objDesc, carrying=carrying, carry_inv=True)
         else:
-            room = self.get_room(1, 1)
-            self.instrs = GoNextToInstr(objDesc, carrying=carrying, carry_inv=True, objs=room.objs)
+            objs = self.get_room(1, 1).objs
+            self.instrs = GoNextToInstr(objDesc, carrying=carrying, carry_inv=True, objs=objs)
 
 
 class Level_GoToObjDoorCarry(Level_GoToObjDoor):

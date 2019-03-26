@@ -317,7 +317,8 @@ class ExploreInstr(ActionInstr):
     def completely_observed(self):
         'if number of squares seen is 64, then room completely observed'
         # currently only works for 6 * 6 rooms and if no doors are opened
-        seen = np.count_nonzero(self.vis_mask == True)
+        seen_room = self.vis_mask[7:15, 7:15]
+        seen = np.count_nonzero(seen_room == True)
         if seen == 64:
             return True
         return False
