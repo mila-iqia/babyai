@@ -661,17 +661,18 @@ class Bot:
 
         grid, vis_mask = self.mission.gen_obs_grid()
 
+        view_size = self.mission.agent_view_size
         pos = self.mission.agent_pos
         f_vec = self.mission.dir_vec
         r_vec = self.mission.right_vec
 
         # Compute the absolute coordinates of the top-left corner
         # of the agent's view area
-        top_left = pos + f_vec * (AGENT_VIEW_SIZE - 1) - r_vec * (AGENT_VIEW_SIZE // 2)
+        top_left = pos + f_vec * (view_size - 1) - r_vec * (view_size // 2)
 
         # Mark everything in front of us as visible
-        for vis_j in range(0, AGENT_VIEW_SIZE):
-            for vis_i in range(0, AGENT_VIEW_SIZE):
+        for vis_j in range(0, view_size):
+            for vis_i in range(0, view_size):
 
                 if not vis_mask[vis_i, vis_j]:
                     continue
