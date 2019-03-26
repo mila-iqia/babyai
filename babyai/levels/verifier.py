@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from enum import Enum
-from gym_minigrid.minigrid import COLOR_NAMES, DIR_TO_VEC, AGENT_VIEW_SIZE
+from gym_minigrid.minigrid import COLOR_NAMES, DIR_TO_VEC
 
 # Object types we are allowed to describe in language
 OBJ_TYPES = ['box', 'ball', 'key', 'door']
@@ -299,11 +299,12 @@ class ExploreInstr(ActionInstr):
         pos = self.env.agent_pos
         f_vec = self.env.dir_vec
         r_vec = self.env.right_vec
+        view_size = self.env.agent_view_size
         # Compute absolute coordinates of the top-left corner of the agent's view area
-        top_left = pos + f_vec * (AGENT_VIEW_SIZE - 1) - r_vec * (AGENT_VIEW_SIZE // 2)
+        top_left = pos + f_vec * (view_size - 1) - r_vec * (view_size // 2)
         # Mark everything in front of us as visible
-        for vis_j in range(0, AGENT_VIEW_SIZE):
-            for vis_i in range(0, AGENT_VIEW_SIZE):
+        for vis_j in range(0, view_size):
+            for vis_i in range(0, view_size):
                 if not vis_mask[vis_i, vis_j]:
                     continue
                 # Compute the world coordinates of this cell

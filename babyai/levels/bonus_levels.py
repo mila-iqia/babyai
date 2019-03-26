@@ -180,8 +180,8 @@ class Level_GoToObjDoor(RoomGridLevel):
 
 class Level_GoToObjDoor2(RoomGridLevel):
     """
-    Go to an object or door
-    (of a given type and color, in the current room)
+    go (next) to an object or door
+    from inside a room or from a door facing the room
     """
 
     def __init__(self, seed=None):
@@ -201,15 +201,15 @@ class Level_GoToObjDoor2(RoomGridLevel):
         'place agent in centremost room or facing a door inwards to the room'
         # if self._rand_bool():
         #     return super().place_agent(1, 1)
-        room = self.get_room(1, 1)
-        doors = zip(room.doors, range(4))
+        doors = zip(self.room.doors, range(4))
         doors = list(filter(lambda d: d[0] is not None, doors))
 
-        pos, dir = self._rand_elem(doors)
-        pos = pos.cur_pos
+        door, dir = self._rand_elem(doors)
+        door.is_open = True
+        pos = door.cur_pos
         dir = (dir + 2) % 4
         vec = DIR_TO_VEC[dir]
-        
+
         self.start_pos = pos - vec
         self.start_dir = dir
         return self.start_pos
@@ -218,15 +218,14 @@ class Level_GoToObjDoor2(RoomGridLevel):
         'find obj in environment and create description'
         self.connect_all()
         self.add_distractors(num_distractors=18, all_unique=False)
-        self.place_agent()
-
-        room = self.get_room(1, 1)
-        doors = list(filter(lambda d: d is not None, room.doors))
-        # also doors not adjacent to current position
-        obj = self._rand_elem(doors + room.objs + ['explore'])
-
+        self.room = self.get_room(1, 1)
+        doors = list(filter(lambda d: d is not None, self.room.doors))
         for door in doors:
             door.is_open = self._rand_bool()
+
+        pos = tuple(self.place_agent())
+        doors = list(filter(lambda d: not pos_next_to(d.cur_pos, pos), doors))
+        obj = self._rand_elem(doors + self.room.objs + ['explore'])
         if obj == 'explore':
             return 'explore'
         return ObjDesc(obj.type, obj.color)
@@ -247,8 +246,7 @@ class Level_GoToObjDoor2(RoomGridLevel):
         elif self._rand_bool() or objDesc.type == 'door':
             self.instrs = GoToInstr(objDesc, carrying=carrying, carry_inv=True)
         else:
-            objs = self.get_room(1, 1).objs
-            self.instrs = GoNextToInstr(objDesc, carrying=carrying, carry_inv=True, objs=objs)
+            self.instrs = GoNextToInstr(objDesc, carrying=carrying, carry_inv=True, objs=self.room.objs)
 
 
 class Level_GoToObjDoorCarry(Level_GoToObjDoor):
