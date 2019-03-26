@@ -178,7 +178,7 @@ class Level_GoToObjDoor(RoomGridLevel):
         self.instrs = GoToInstr(objDesc)
 
 
-class Level_GoToObjDoor2(RoomGridLevel):
+class Level_MonsterController(RoomGridLevel):
     """
     go (next) to an object or door
     from inside a room or from a door facing the room
@@ -200,8 +200,8 @@ class Level_GoToObjDoor2(RoomGridLevel):
 
     def place_agent(self, rand_dir=True):
         'place agent in centremost room or facing a door inwards to the room'
-        # if self._rand_bool():
-        #     return super().place_agent(1, 1)
+        if self._rand_bool():
+            return super().place_agent(1, 1)
         doors = zip(self.room.doors, range(4))
         doors = list(filter(lambda d: d[0] is not None, doors))
 
@@ -223,10 +223,10 @@ class Level_GoToObjDoor2(RoomGridLevel):
         for door in doors:
             door.is_open = self._rand_bool()
         pos = tuple(self.place_agent())
-        self.add_distractors(1, 1, num_distractors=1, all_unique=False)
+        self.add_distractors(num_distractors=18, all_unique=False)
 
         doors = list(filter(lambda d: not pos_next_to(d.cur_pos, pos), doors))
-        obj = self._rand_elem(doors + self.room.objs)# + ['explore'])
+        obj = self._rand_elem(doors + self.room.objs + ['explore'])
         if obj == 'explore':
             return 'explore'
         return ObjDesc(obj.type, obj.color)
