@@ -190,6 +190,7 @@ class Level_GoToObjDoor2(RoomGridLevel):
             seed=seed,
             max_steps=64
         )
+        self.doNotOpenBox=True
 
     def reset(self, **kwargs):
         'override reset to preserve max_steps=64'
@@ -214,18 +215,44 @@ class Level_GoToObjDoor2(RoomGridLevel):
         self.start_dir = dir
         return self.start_pos
 
+    def get_orient(self, obj):
+        'which wall is the door in'
+        if obj.cur_pos[0] == 14:
+            return 0
+        elif obj.cur_pos[1] == 14:
+            return 1
+        elif obj.cur_pos[0] == 7:
+            return 2
+        return 3
+
+    def get_loc(self, obj, pos):
+        'position of door relative to the agent'
+        orient = self.get_orient(obj)
+        loc = (self.start_dir - orient) % 4
+        if loc == 3:
+            return 'right'
+        elif loc == 1:
+            return 'left'
+        return 'front'
+
+    def multi_door_colors(self, color):
+        'check if there are two doors of the same color'
+        doors = doors = list(filter(lambda d: d is not None, self.room.doors))
+        colors = [d.color for d in doors if d != color]
+        return len(colors) > 1
+
     def get_obj(self):
         'find obj in environment and create description'
         self.connect_all()
-        self.add_distractors(num_distractors=18, all_unique=False)
         self.room = self.get_room(1, 1)
         doors = list(filter(lambda d: d is not None, self.room.doors))
         for door in doors:
             door.is_open = self._rand_bool()
-
         pos = tuple(self.place_agent())
+        self.add_distractors(1, 1, num_distractors=1, all_unique=False)
+
         doors = list(filter(lambda d: not pos_next_to(d.cur_pos, pos), doors))
-        obj = self._rand_elem(doors + self.room.objs + ['explore'])
+        obj = self._rand_elem(doors + self.room.objs)# + ['explore'])
         if obj == 'explore':
             return 'explore'
         return ObjDesc(obj.type, obj.color)
