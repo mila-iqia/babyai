@@ -279,13 +279,17 @@ class ExploreInstr(ActionInstr):
     Move around a room until all squares including walls and corners are seen
     """
 
-    def __init__(self, carrying=None, carry_inv=False):
+    def __init__(self, carrying=None, carry_inv=False, center=False):
         super().__init__()
         self.carry_inv = carry_inv
         self.carrying = carrying
+        self.center = center
 
     def surface(self, env):
-        return 'explore'
+        if self.center:
+            return 'explore'
+        else:
+            return 'explore forward'
 
     def reset_verifier(self, env):
         super().reset_verifier(env)

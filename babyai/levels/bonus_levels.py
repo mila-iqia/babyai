@@ -201,7 +201,7 @@ class Level_MonsterController(RoomGridLevel):
     def place_agent(self, rand_dir=True):
         'place agent in centremost room or facing a door inwards to the room'
         if self._rand_bool():
-            return super().place_agent(1, 1)
+            return super().place_agent(1, 1), True
         doors = zip(self.room.doors, range(4))
         doors = list(filter(lambda d: d[0] is not None, doors))
 
@@ -213,7 +213,7 @@ class Level_MonsterController(RoomGridLevel):
 
         self.start_pos = pos - vec
         self.start_dir = dir
-        return self.start_pos
+        return self.start_pos, False
 
     def get_obj(self):
         'find obj in environment and create description'
@@ -222,14 +222,15 @@ class Level_MonsterController(RoomGridLevel):
         doors = list(filter(lambda d: d is not None, self.room.doors))
         for door in doors:
             door.is_open = self._rand_bool()
-        pos = tuple(self.place_agent())
-        self.add_distractors(num_distractors=18, all_unique=False)
+        pos, center = self.place_agent()
+        pos = tuple(pos)
+        self.add_distractors(num_distractors=30, all_unique=False)
 
         doors = list(filter(lambda d: not pos_next_to(d.cur_pos, pos), doors))
         obj = self._rand_elem(doors + self.room.objs + ['explore'])
         if obj == 'explore':
-            return 'explore'
-        return ObjDesc(obj.type, obj.color)
+            return 'explore', center
+        return ObjDesc(obj.type, obj.color), center
 
     def carrying_object(self):
         'randomly choose if agent should carry, if so, randomly generate object'
@@ -240,10 +241,10 @@ class Level_MonsterController(RoomGridLevel):
 
     def gen_mission(self):
         'create instruction from description'
-        objDesc = self.get_obj()
+        objDesc, center = self.get_obj()
         carrying = self.carrying_object()
         if objDesc == 'explore':
-            self.instrs = ExploreInstr(carrying=carrying, carry_inv=True)
+            self.instrs = ExploreInstr(carrying=carrying, carry_inv=True, center=center)
         elif self._rand_bool() or objDesc.type == 'door':
             self.instrs = GoToInstr(objDesc, carrying=carrying, carry_inv=True)
         else:
