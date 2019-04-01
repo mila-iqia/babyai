@@ -104,16 +104,17 @@ while True:
         if 'dist' in result and 'value' in result:
             dist, value = result['dist'], result['value']
             dist_str = ", ".join("{:.4f}".format(float(p)) for p in dist.probs[0])
-            print("step: {}, mission: {}, dist: {}, entropy: {:.2f}, value: {:.2f}".format(
-                step, obs["mission"], dist_str, float(dist.entropy()), float(value)))
-        else:
-            print("step: {}, mission: {}".format(step, obs['mission']))
+        #     print("step: {}, mission: {}, dist: {}, entropy: {:.2f}, value: {:.2f}".format(
+        #         step, obs["mission"], dist_str, float(dist.entropy()), float(value)))
+        # else:
+        #     print("step: {}, mission: {}".format(step, obs['mission']))
         if done:
             print("Reward:", reward)
             episode_num += 1
             env.seed(args.seed + episode_num)
             obs = env.reset()
             agent.on_reset()
+            print("Mission: {}".format(obs["mission"]))
             step = 0
         else:
             step += 1

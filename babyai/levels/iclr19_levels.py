@@ -120,7 +120,9 @@ class Level_GoToLocal(RoomGridLevel):
         objs = self.add_distractors(num_distractors=self.num_dists, all_unique=False)
         self.check_objs_reachable()
         obj = self._rand_elem(objs)
-        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
+        objDesc = ObjDesc(obj.type, obj.color)
+        self.instrs = GoToInstr(objDesc)
+        # self.instrs = GoNextToInstr(objDesc, objs=objs)
 
 
 class Level_GoToLocalS5N2(Level_GoToLocal):
