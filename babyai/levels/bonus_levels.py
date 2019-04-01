@@ -326,15 +326,14 @@ class Level_BalancedMonster(RoomGridLevel):
             # go to door if there is a door to go to
             objDesc = self.create_desc(self.doors)
             self.instrs = GoToInstr(objDesc, carrying=carrying, carryInv=carryInv)
-        elif len(self.room.objs) > 0:
+        elif instrType == 1 and len(self.room.objs) > 0:
             # if there is an object to go to
             objDesc = self.create_desc(self.room.objs)
-            if instrType == 1:
-                # go to object
-                self.instrs = GoToInstr(objDesc, carrying=carrying, carryInv=carryInv)
-            elif instrType == 2:
-                # go next to object
-                self.instrs = GoNextToInstr(objDesc, carrying=carrying, carryInv=carryInv, objs=self.room.objs)
+            self.instrs = GoToInstr(objDesc, carrying=carrying, carryInv=carryInv)
+        elif instrType == 2 and len(self.room.objs) > 0:
+            # if there is an object to go next to
+            objDesc = self.create_desc(self.room.objs)
+            self.instrs = GoNextToInstr(objDesc, carrying=carrying, carryInv=carryInv, objs=self.room.objs)
         else:
             # otherwise explore the environment
             self.instrs = ExploreInstr(carrying=carrying, carryInv=carryInv, center=self.center)
