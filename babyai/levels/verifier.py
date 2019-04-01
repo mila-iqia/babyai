@@ -279,9 +279,9 @@ class ExploreInstr(ActionInstr):
     Move around a room until all squares including walls and corners are seen
     """
 
-    def __init__(self, carrying=None, carry_inv=False, center=False):
+    def __init__(self, carrying=None, carryInv=False, center=False):
         super().__init__()
-        self.carry_inv = carry_inv
+        self.carryInv = carryInv
         self.carrying = carrying
         self.center = center
 
@@ -331,7 +331,7 @@ class ExploreInstr(ActionInstr):
     def verify_action(self, action):
         self.process_obs()
         if self.completely_observed():
-            if not self.carry_inv:
+            if not self.carryInv:
                 return 'success'
             if self.env.carrying == self.carrying:
                 return 'success'
@@ -341,15 +341,15 @@ class ExploreInstr(ActionInstr):
 class GoToInstr(ActionInstr):
     """
     Go next to (and look towards) an object matching a given description
-    carry_inv(ariance) -- ensure agent carries same object at begining and end
+    carryInv(ariance) -- ensure agent carries same object at begining and end
     eg: go to the door
     """
 
-    def __init__(self, obj_desc, carrying=None, carry_inv=False):
+    def __init__(self, obj_desc, carrying=None, carryInv=False):
         super().__init__()
         self.desc = obj_desc
         self.carrying = carrying
-        self.carry_inv = carry_inv
+        self.carryInv = carryInv
 
     def surface(self, env):
         return 'go to ' + self.desc.surface(env)
@@ -366,7 +366,7 @@ class GoToInstr(ActionInstr):
             # If the agent is next to (and facing) the object
             if np.array_equal(pos, self.env.front_pos):
                 # check for carry invariance
-                if not self.carry_inv:
+                if not self.carryInv:
                     return 'success'
                 if self.carrying == self.env.carrying:
                     return 'success'
@@ -377,15 +377,15 @@ class GoNextToInstr(GoToInstr):
     """
     Look towards a cell adjacent to an object matching a given description
     such that anything carried can be placed next to the object
-    carry_inv(ariance) -- ensure agent carries same object at beginning and end
+    carryInv(ariance) -- ensure agent carries same object at beginning and end
     eg: go to the door
     """
 
-    def __init__(self, obj_desc, carrying=None, carry_inv=False, objs=None):
+    def __init__(self, obj_desc, carrying=None, carryInv=False, objs=None):
         super().__init__(
             obj_desc,
             carrying=carrying,
-            carry_inv=carry_inv
+            carryInv=carryInv
         )
         if objs is not None:
             self.objs = [ObjDesc(obj.type, obj.color) for obj in objs]
@@ -413,7 +413,7 @@ class GoNextToInstr(GoToInstr):
                 if self.is_not_empty(front_pos):
                     return 'continue'
                 # check for carry invariance
-                if not self.carry_inv:
+                if not self.carryInv:
                     return 'success'
                 if self.carrying == self.env.carrying:
                     return 'success'

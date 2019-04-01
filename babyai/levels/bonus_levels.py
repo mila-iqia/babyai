@@ -227,9 +227,7 @@ class Level_MonsterController(RoomGridLevel):
         self.add_distractors(num_distractors=30, all_unique=False)
 
         doors = list(filter(lambda d: not pos_next_to(d.cur_pos, pos), doors))
-        # obj = 'explore'
-        # obj = self._rand_elem(doors + self.room.objs + ['explore'])
-        obj = self._rand_elem(self.room.objs + ['explore'])
+        obj = self._rand_elem(doors + self.room.objs + ['explore'])
         if obj == 'explore':
             return True, center
         return ObjDesc(obj.type, obj.color), center
@@ -246,14 +244,11 @@ class Level_MonsterController(RoomGridLevel):
         carrying = self.carrying_object()
         objDesc, center = self.get_obj()
         if objDesc == True:
-            self.instrs = ExploreInstr(carrying=carrying, carry_inv=True, center=center)
+            self.instrs = ExploreInstr(carrying=carrying, carryInv=True, center=center)
+        elif self._rand_bool() or objDesc.type == 'door':
+            self.instrs = GoToInstr(objDesc, carrying=carrying, carryInv=True)
         else:
-            # self.instrs = GoToInstr(objDesc, carrying=carrying, carry_inv=True)
-            self.instrs = GoNextToInstr(objDesc, carrying=carrying, carry_inv=True, objs=self.room.objs)
-        # elif self._rand_bool() or objDesc.type == 'door':
-        #     self.instrs = GoToInstr(objDesc, carrying=carrying, carry_inv=True)
-        # else:
-        #     self.instrs = GoNextToInstr(objDesc, carrying=carrying, carry_inv=True, objs=self.room.objs)
+            self.instrs = GoNextToInstr(objDesc, carrying=carrying, carryInv=True, objs=self.room.objs)
 
 
 class Level_BalancedMonster(RoomGridLevel):
@@ -269,7 +264,8 @@ class Level_BalancedMonster(RoomGridLevel):
             seed=seed,
             max_steps=64
         )
-        self.doNotOpenBox=True
+        self.doNotOpenBox = True
+        self.doNotOpenDoor = True
 
     def reset(self, **kwargs):
         'override reset to preserve max_steps=64'
@@ -294,49 +290,54 @@ class Level_BalancedMonster(RoomGridLevel):
         self.start_dir = dir
         return self.start_pos, False
 
-    def gen_mission(self):
-        'create instruction from description'
-        instrType = self._rand_int()
-
-    def get_obj(self):
+    def get_objs(self):
         'find obj in environment and create description'
         self.connect_all()
         self.room = self.get_room(1, 1)
         doors = list(filter(lambda d: d is not None, self.room.doors))
         for door in doors:
             door.is_open = self._rand_bool()
-        pos, center = self.place_agent()
+        pos, self.center = self.place_agent()
         pos = tuple(pos)
         self.add_distractors(num_distractors=30, all_unique=False)
-
-        doors = list(filter(lambda d: not pos_next_to(d.cur_pos, pos), doors))
-        # obj = 'explore'
-        # obj = self._rand_elem(doors + self.room.objs + ['explore'])
-        obj = self._rand_elem(self.room.objs + ['explore'])
-        if obj == 'explore':
-            return True, center
-        return ObjDesc(obj.type, obj.color), center
+        self.doors = list(filter(lambda d: not pos_next_to(d.cur_pos, pos), doors))
 
     def carrying_object(self):
         'randomly choose if agent should carry, if so, randomly generate object'
         if self._rand_bool():
             object = self._rand_elem([Key, Ball, Box])
             color = self._rand_color()
-            return object(color)
+            obj = object(color)
+            return obj
+
+    def create_desc(self, objs):
+        'randomly select description to go to'
+        obj = self._rand_elem(objs)
+        objDesc = ObjDesc(obj.type, obj.color)
+        return objDesc
 
     def gen_mission(self):
         'create instruction from description'
+        carryInv = True
+        self.get_objs()
         carrying = self.carrying_object()
-        objDesc, center = self.get_obj()
-        if objDesc == True:
-            self.instrs = ExploreInstr(carrying=carrying, carry_inv=True, center=center)
+        instrType = self._rand_int(0, 4)
+        if instrType == 0 and len(self.doors) > 0:
+            # go to door if there is a door to go to
+            objDesc = self.create_desc(self.doors)
+            self.instrs = GoToInstr(objDesc, carrying=carrying, carryInv=carryInv)
+        elif len(self.room.objs) > 0:
+            # if there is an object to go to
+            objDesc = self.create_desc(self.room.objs)
+            if instrType == 1:
+                # go to object
+                self.instrs = GoToInstr(objDesc, carrying=carrying, carryInv=carryInv)
+            elif instrType == 2:
+                # go next to object
+                self.instrs = GoNextToInstr(objDesc, carrying=carrying, carryInv=carryInv, objs=self.room.objs)
         else:
-            # self.instrs = GoToInstr(objDesc, carrying=carrying, carry_inv=True)
-            self.instrs = GoNextToInstr(objDesc, carrying=carrying, carry_inv=True, objs=self.room.objs)
-        # elif self._rand_bool() or objDesc.type == 'door':
-        #     self.instrs = GoToInstr(objDesc, carrying=carrying, carry_inv=True)
-        # else:
-        #     self.instrs = GoNextToInstr(objDesc, carrying=carrying, carry_inv=True, objs=self.room.objs)
+            # otherwise explore the environment
+            self.instrs = ExploreInstr(carrying=carrying, carryInv=carryInv, center=self.center)
 
 
 class Level_GoToObjDoorCarry(Level_GoToObjDoor):
@@ -367,9 +368,9 @@ class Level_GoToObjDoorCarry(Level_GoToObjDoor):
         instr = self._rand_bool()
         if instr or objDesc.type == 'door':
             # we don't expect to drop anything next to do a door, so goto
-            self.instrs = GoToInstr(objDesc, carrying=carrying, carry_inv=True)
+            self.instrs = GoToInstr(objDesc, carrying=carrying, carryInv=True)
         else:
-            self.instrs = GoNextToInstr(objDesc, carrying=carrying, carry_inv=True, objs=objs)
+            self.instrs = GoNextToInstr(objDesc, carrying=carrying, carryInv=True, objs=objs)
 
 
 class Level_GoToObjDoorExplore(Level_GoToObjDoorCarry):
@@ -387,7 +388,7 @@ class Level_GoToObjDoorExplore(Level_GoToObjDoorCarry):
         'create instruction from description'
         carrying = self.carrying_object()
         self.get_objs()
-        self.instrs = ExploreInstr(carrying=carrying, carry_inv=True)
+        self.instrs = ExploreInstr(carrying=carrying, carryInv=True)
 
 
 class Level_AllControllerTasks(Level_GoToObjDoorCarry):
@@ -409,11 +410,11 @@ class Level_AllControllerTasks(Level_GoToObjDoorCarry):
 
         instr = self._rand_int(0, 3)
         if instr == 0 or desc.type == 'door':
-            self.instrs = GoToInstr(desc, carrying=carrying, carry_inv=True)
+            self.instrs = GoToInstr(desc, carrying=carrying, carryInv=True)
         elif instr == 1:
-            self.instrs = GoNextToInstr(desc, carrying=carrying, carry_inv=True, objs=objs)
+            self.instrs = GoNextToInstr(desc, carrying=carrying, carryInv=True, objs=objs)
         else:
-            self.instrs = ExploreInstr(carrying=carrying, carry_inv=True)
+            self.instrs = ExploreInstr(carrying=carrying, carryInv=True)
 
 
 class Level_ActionObjDoor(RoomGridLevel):
