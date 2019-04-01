@@ -393,7 +393,7 @@ class GoNextToInstr(GoToInstr):
             self.objs = [ObjDesc(obj.type, obj.color) for obj in objs]
 
     def surface(self, env):
-        return 'go next to ' + self.desc.surface(env)
+        return 'go next to ' + self.desc.surface(env, sameRoom=False)
 
     def is_not_empty(self, front_pos):
         'true if no object on square'

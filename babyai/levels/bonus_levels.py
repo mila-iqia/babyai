@@ -1,4 +1,5 @@
 import gym
+import operator
 from gym_minigrid.envs import Key, Ball, Box
 from .verifier import *
 from .levelgen import *
@@ -312,41 +313,28 @@ class Level_BalancedMonster(RoomGridLevel):
             obj = object(color)
             return obj
 
-    def get_orient(self, obj):
-        'which wall is the door in'
-        if obj.cur_pos[0] == 14:
-            return 0
-        elif obj.cur_pos[1] == 14:
-            return 1
-        elif obj.cur_pos[0] == 7:
-            return 2
-        return 3
-
-    def get_loc(self, obj, pos):
-        'position of door relative to the agent'
-        orient = self.get_orient(obj)
-        loc = (self.start_dir - orient) % 4
-        if loc == 3:
-            return 'right'
-        elif loc == 1:
-            return 'left'
-        elif loc == 0:
-            return 'front'
-        else:
-            return 'behind'
-
-    def multi_door_colors(self, color):
-        'check if there are two doors of the same color'
-        doors = list(filter(lambda d: d is not None, self.room.doors))
-        colors = [d.color for d in doors if d.color == color]
-        return len(colors) > 1
+    def get_loc(self, obj):
+        i, j = obj.cur_pos
+        x, y = self.pos
+        v = (i-x, j-y)
+        # (d1, d2) is an oriented orthonormal basis
+        d1 = DIR_TO_VEC[self.start_dir]
+        d2 = (-d1[1], d1[0])
+        # Check if object's position matches with location
+        pos_matches = {
+            "left": -dot_product(v, d2),
+            "right": dot_product(v, d2),
+            "front": dot_product(v, d1),
+            "behind": -dot_product(v, d1)
+        }
+        return max(pos_matches.items(), key=operator.itemgetter(1))[0]
 
     def create_desc(self, objs):
-        'randomly select description to go to'
+        'randomly select object to go to'
         obj = self._rand_elem(objs)
         loc = None
-        if obj.type == 'door' and self.multi_door_colors(obj.color):
-            loc = self.get_loc(obj, self.pos)
+        if self._rand_bool():
+            loc = self.get_loc(obj)
         objDesc = ObjDesc(obj.type, obj.color, loc)
         return objDesc
 
@@ -355,7 +343,7 @@ class Level_BalancedMonster(RoomGridLevel):
         carryInv = True
         self.get_objs()
         carrying = self.carrying_object()
-        instrType = 0#self._rand_int(0, 4)
+        instrType = self._rand_int(0, 4)
         if instrType == 0 and len(self.doors) > 0:
             # go to door if there is a door to go to
             objDesc = self.create_desc(self.doors)
