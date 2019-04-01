@@ -332,8 +332,9 @@ class Level_BalancedMonster(RoomGridLevel):
     def create_desc(self, objs):
         'randomly select object to go to'
         obj = self._rand_elem(objs)
+        colors = [o.color for o in objs if o.color == obj.color]
         loc = None
-        if self._rand_bool():
+        if self._rand_bool() or len(colors) > 1:
             loc = self.get_loc(obj)
         objDesc = ObjDesc(obj.type, obj.color, loc)
         return objDesc
