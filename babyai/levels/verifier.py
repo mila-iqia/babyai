@@ -61,12 +61,12 @@ class ObjDesc:
     def __repr__(self):
         return "{} {} {}".format(self.color, self.type, self.loc)
 
-    def surface(self, env):
+    def surface(self, env, sameRoom=True):
         """
         Generate a natural language representation of the object description
         """
 
-        self.find_matching_objs(env)
+        self.find_matching_objs(env, sameRoom=sameRoom)
         assert len(self.obj_set) > 0, "no object matching description"
 
         if self.type:
@@ -93,7 +93,7 @@ class ObjDesc:
 
         return s
 
-    def find_matching_objs(self, env, use_location=True):
+    def find_matching_objs(self, env, use_location=True, sameRoom=True):
         """
         Find the set of objects matching the description and their positions.
         When use_location is False, we only update the positions of already tracked objects, without taking into account
@@ -133,7 +133,9 @@ class ObjDesc:
                 if use_location and self.loc in ["left", "right", "front", "behind"]:
                     # Locations apply only to objects in the same room
                     # the agent starts in
-                    if not agent_room.pos_inside(i, j):
+                    if sameRoom and not agent_room.pos_inside(i, j):
+                        continue
+                    if pos_next_to((i, j), env.start_pos):
                         continue
 
                     # Direction from the agent to the object
@@ -352,7 +354,7 @@ class GoToInstr(ActionInstr):
         self.carryInv = carryInv
 
     def surface(self, env):
-        return 'go to ' + self.desc.surface(env)
+        return 'go to ' + self.desc.surface(env, sameRoom=False)
 
     def reset_verifier(self, env):
         super().reset_verifier(env)

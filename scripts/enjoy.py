@@ -29,8 +29,8 @@ parser.add_argument("--pause", type=float, default=0.1,
                     help="the pause between two consequent actions of an agent")
 parser.add_argument("--manual-mode", action="store_true", default=False,
                     help="Allows you to take control of the agent at any point of time")
-parser.add_argument("--meta", type=int, default=0,
-                    help="If 1, evaluate the bot meta policy on PutNextLocal")
+parser.add_argument("--verbose", type=int, default=0,
+                    help="If 1, print verbose information")
 
 args = parser.parse_args()
 
@@ -101,13 +101,14 @@ while True:
         result = agent.act(obs)
         obs, reward, done, _ = env.step(result['action'])
         agent.analyze_feedback(reward, done)
-        if 'dist' in result and 'value' in result:
-            dist, value = result['dist'], result['value']
-            dist_str = ", ".join("{:.4f}".format(float(p)) for p in dist.probs[0])
-        #     print("step: {}, mission: {}, dist: {}, entropy: {:.2f}, value: {:.2f}".format(
-        #         step, obs["mission"], dist_str, float(dist.entropy()), float(value)))
-        # else:
-        #     print("step: {}, mission: {}".format(step, obs['mission']))
+        # if verbose == 1:
+        #     if 'dist' in result and 'value' in result:
+        #         dist, value = result['dist'], result['value']
+        #         dist_str = ", ".join("{:.4f}".format(float(p)) for p in dist.probs[0])
+        #         print("step: {}, mission: {}, dist: {}, entropy: {:.2f}, value: {:.2f}".format(
+        #             step, obs["mission"], dist_str, float(dist.entropy()), float(value)))
+        #     else:
+        #         print("step: {}, mission: {}".format(step, obs['mission']))
         if done:
             print("Reward:", reward)
             episode_num += 1

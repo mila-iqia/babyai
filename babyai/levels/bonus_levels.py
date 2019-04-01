@@ -266,6 +266,7 @@ class Level_BalancedMonster(RoomGridLevel):
         )
         self.doNotOpenBox = True
         self.doNotOpenDoor = True
+        self.carryInv = True
 
     def reset(self, **kwargs):
         'override reset to preserve max_steps=64'
@@ -277,6 +278,7 @@ class Level_BalancedMonster(RoomGridLevel):
         'place agent in centremost room or facing a door inwards to the room'
         if self._rand_bool():
             return super().place_agent(1, 1), True
+        # place outside the room
         doors = zip(self.room.doors, range(4))
         doors = list(filter(lambda d: d[0] is not None, doors))
 
@@ -298,7 +300,7 @@ class Level_BalancedMonster(RoomGridLevel):
         for door in doors:
             door.is_open = self._rand_bool()
         pos, self.center = self.place_agent()
-        pos = tuple(pos)
+        self.pos = tuple(pos)
         self.add_distractors(num_distractors=30, all_unique=False)
         self.doors = list(filter(lambda d: not pos_next_to(d.cur_pos, pos), doors))
 
@@ -310,10 +312,42 @@ class Level_BalancedMonster(RoomGridLevel):
             obj = object(color)
             return obj
 
+    def get_orient(self, obj):
+        'which wall is the door in'
+        if obj.cur_pos[0] == 14:
+            return 0
+        elif obj.cur_pos[1] == 14:
+            return 1
+        elif obj.cur_pos[0] == 7:
+            return 2
+        return 3
+
+    def get_loc(self, obj, pos):
+        'position of door relative to the agent'
+        orient = self.get_orient(obj)
+        loc = (self.start_dir - orient) % 4
+        if loc == 3:
+            return 'right'
+        elif loc == 1:
+            return 'left'
+        elif loc == 0:
+            return 'front'
+        else:
+            return 'behind'
+
+    def multi_door_colors(self, color):
+        'check if there are two doors of the same color'
+        doors = list(filter(lambda d: d is not None, self.room.doors))
+        colors = [d.color for d in doors if d.color == color]
+        return len(colors) > 1
+
     def create_desc(self, objs):
         'randomly select description to go to'
         obj = self._rand_elem(objs)
-        objDesc = ObjDesc(obj.type, obj.color)
+        loc = None
+        if obj.type == 'door' and self.multi_door_colors(obj.color):
+            loc = self.get_loc(obj, self.pos)
+        objDesc = ObjDesc(obj.type, obj.color, loc)
         return objDesc
 
     def gen_mission(self):
@@ -321,7 +355,7 @@ class Level_BalancedMonster(RoomGridLevel):
         carryInv = True
         self.get_objs()
         carrying = self.carrying_object()
-        instrType = self._rand_int(0, 4)
+        instrType = 0#self._rand_int(0, 4)
         if instrType == 0 and len(self.doors) > 0:
             # go to door if there is a door to go to
             objDesc = self.create_desc(self.doors)
