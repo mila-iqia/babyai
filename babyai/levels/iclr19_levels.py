@@ -7,36 +7,6 @@ from .verifier import *
 from .levelgen import *
 
 
-class Level_GoToObj(RoomGridLevel):
-    """
-    Go to an object, inside a single room with no doors, no distractors
-    """
-
-    def __init__(self, room_size=8, seed=None):
-        super().__init__(
-            num_rows=1,
-            num_cols=1,
-            room_size=room_size,
-            seed=seed
-        )
-
-    def gen_mission(self):
-        self.place_agent()
-        objs = self.add_distractors(num_distractors=1)
-        obj = objs[0]
-        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
-
-
-class Level_GoToObjS4(Level_GoToObj):
-    def __init__(self, seed=None):
-        super().__init__(room_size=4, seed=seed)
-
-
-class Level_GoToObjS6(Level_GoToObj):
-    def __init__(self, seed=None):
-        super().__init__(room_size=6, seed=seed)
-
-
 class Level_GoToRedBallGrey(RoomGridLevel):
     """
     Go to the red ball, single room, with obstacles.
@@ -93,8 +63,42 @@ class Level_GoToRedBall(RoomGridLevel):
 
 
 class Level_GoToRedBallNoDists(Level_GoToRedBall):
+    """
+    Go to the red ball. No distractors present.
+    """
+
     def __init__(self, seed=None):
         super().__init__(room_size=8, num_dists=0, seed=seed)
+
+
+class Level_GoToObj(RoomGridLevel):
+    """
+    Go to an object, inside a single room with no doors, no distractors
+    """
+
+    def __init__(self, room_size=8, seed=None):
+        super().__init__(
+            num_rows=1,
+            num_cols=1,
+            room_size=room_size,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.place_agent()
+        objs = self.add_distractors(num_distractors=1)
+        obj = objs[0]
+        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
+
+
+class Level_GoToObjS4(Level_GoToObj):
+    def __init__(self, seed=None):
+        super().__init__(room_size=4, seed=seed)
+
+
+class Level_GoToObjS6(Level_GoToObj):
+    def __init__(self, seed=None):
+        super().__init__(room_size=6, seed=seed)
 
 
 class Level_GoToLocal(RoomGridLevel):
@@ -503,7 +507,7 @@ class Level_PickupLoc(LevelGen):
             instr_kinds=['action'],
             num_rows=1,
             num_cols=1,
-            num_dists=12,
+            num_dists=8,
             locked_room_prob=0,
             locations=True,
             unblocking=False
