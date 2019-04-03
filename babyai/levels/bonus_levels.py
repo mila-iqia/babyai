@@ -348,7 +348,7 @@ class Level_BalancedMonster(RoomGridLevel):
 
     def door_in_room(self):
         'if no door in room, add'
-        if len(self.doors) == 0:
+        while len(self.doors) == 0:
             self.add_door(1, 1)
             doors = list(filter(lambda d: d is not None, self.room.doors))
             self.doors = list(filter(lambda d: not pos_next_to(d.cur_pos, self.pos), doors))
