@@ -101,14 +101,14 @@ while True:
         result = agent.act(obs)
         obs, reward, done, _ = env.step(result['action'])
         agent.analyze_feedback(reward, done)
-        # if verbose == 1:
-        #     if 'dist' in result and 'value' in result:
-        #         dist, value = result['dist'], result['value']
-        #         dist_str = ", ".join("{:.4f}".format(float(p)) for p in dist.probs[0])
-        #         print("step: {}, mission: {}, dist: {}, entropy: {:.2f}, value: {:.2f}".format(
-        #             step, obs["mission"], dist_str, float(dist.entropy()), float(value)))
-        #     else:
-        #         print("step: {}, mission: {}".format(step, obs['mission']))
+        if verbose == 1:
+            if 'dist' in result and 'value' in result:
+                dist, value = result['dist'], result['value']
+                dist_str = ", ".join("{:.4f}".format(float(p)) for p in dist.probs[0])
+                print("step: {}, mission: {}, dist: {}, entropy: {:.2f}, value: {:.2f}".format(
+                    step, obs["mission"], dist_str, float(dist.entropy()), float(value)))
+            else:
+                print("step: {}, mission: {}".format(step, obs['mission']))
         if done:
             print("Reward:", reward)
             episode_num += 1

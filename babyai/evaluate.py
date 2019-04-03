@@ -85,7 +85,7 @@ class ManyEnvs(gym.Env):
 
 # Returns the performance of the agent on the environment for a particular number of episodes.
 def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
-    num_envs = min(256, episodes)
+    num_envs = 5# min(256, episodes)
 
     envs = []
     for i in range(num_envs):
@@ -106,6 +106,11 @@ def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
         env.seed(seeds)
 
         many_obs = env.reset()
+
+        print('reset now')
+        for mo in many_obs:
+            print(mo['mission'])
+        print('\n')
 
         cur_num_frames = 0
         num_frames = np.zeros((num_envs,), dtype='int64')
