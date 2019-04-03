@@ -91,10 +91,10 @@ class Level_OpenDoorColor(Level_OpenDoor):
         )
 
 
-#class Level_OpenDoorColorDebug(Level_OpenDoorColor, Level_OpenDoorDebug):
-    """
-    Same as OpenDoorColor but the level stops when any door is opened
-    """
+# class Level_OpenDoorColorDebug(Level_OpenDoorColor, Level_OpenDoorDebug):
+#     """
+#     Same as OpenDoorColor but the level stops when any door is opened
+#     """
 #    pass
 
 
@@ -262,13 +262,13 @@ class Level_BalancedMonster(RoomGridLevel):
     def __init__(self, seed=None):
         self.loc = True
         self.carryInv = True
-        self.doNotOpenBox = True
-        self.doNotOpenDoor = True
         super().__init__(
             room_size=8,
             seed=seed,
             max_steps=64
         )
+        self.doNotOpenBox = True
+        self.doNotOpenDoor = True
 
     def reset(self, **kwargs):
         'override reset to preserve max_steps=64'
@@ -303,8 +303,8 @@ class Level_BalancedMonster(RoomGridLevel):
             door.is_open = self._rand_bool()
         pos, self.center = self.place_agent()
         self.pos = tuple(pos)
-        self.add_distractors(num_distractors=30, all_unique=False)
         self.doors = list(filter(lambda d: not pos_next_to(d.cur_pos, pos), doors))
+        self.add_distractors(num_distractors=30, all_unique=False)
 
     def carrying_object(self):
         'randomly choose if agent should carry, if so, randomly generate object'
@@ -341,43 +341,62 @@ class Level_BalancedMonster(RoomGridLevel):
         objDesc = ObjDesc(obj.type, obj.color, loc)
         return objDesc
 
-    def gen_mission(self):
-        'create instruction from description'
+    def obj_in_room(self):
+        'if no obj in room, add'
+        if len(self.room.objs) == 0:
+            self.add_distractors(1, 1, num_distractors=1, all_unique=False)
+
+    def door_in_room(self):
+        'if no door in room, add'
+        if len(self.doors) == 0:
+            self.add_door(1, 1)
+            doors = list(filter(lambda d: d is not None, self.room.doors))
+            self.doors = list(filter(lambda d: not pos_next_to(d.cur_pos, self.pos), doors))
+
+    def gen_instr_type(self, carry):
+        'generate a random instruction type'
         self.get_objs()
-        carrying = self.carrying_object()
         instrType = self._rand_int(0, 4)
-        isObj = len(self.room.objs) > 0
-        if instrType == 0 and len(self.doors) > 0:
+        if instrType == 0:
             # go to door if there is a door to go to
+            self.door_in_room()
             objDesc = self.create_desc(self.doors)
-            self.instrs = GoToInstr(objDesc, carrying=carrying, carryInv=self.carryInv)
-        elif instrType == 1 and isObj:
+            self.instrs = GoToInstr(objDesc, **carry)
+        elif instrType == 1:
             # if there is an object to go to
+            self.obj_in_room()
             objDesc = self.create_desc(self.room.objs)
-            self.instrs = GoToInstr(objDesc, carrying=carrying, carryInv=self.carryInv)
-        elif instrType == 2 and isObj:
+            self.instrs = GoToInstr(objDesc, **carry)
+        elif instrType == 2:
             # if there is an object to go next to
+            self.obj_in_room()
             objDesc = self.create_desc(self.room.objs)
-            self.instrs = GoNextToInstr(objDesc, carrying=carrying, carryInv=self.carryInv, objs=self.room.objs)
+            self.instrs = GoNextToInstr(objDesc, **carry, objs=self.room.objs)
         else:
             # otherwise explore the environment
-            self.instrs = ExploreInstr(carrying=carrying, carryInv=self.carryInv, center=self.center)
+            self.instrs = ExploreInstr(center=self.center)
+
+    def gen_mission(self):
+        'create instruction from description'
+        self.carrying = self.carrying_object()
+        carry = dict(carrying=self.carrying, carryInv=self.carryInv)
+        self.gen_instr_type(carry)
 
 
 class Level_ControllerExplore(Level_BalancedMonster):
     """
     explore the middle room
-    this level and all descendents are useful for testing
+    this level and its descendents are for testing
     """
 
     def __init__(self, seed=None):
         super().__init__(
             seed=seed
         )
+        self.loc=False
 
     def gen_mission(self):
         'explore'
-        self.carryInv = True
         self.get_objs()
         self.carrying = self.carrying_object()
         self.instrs = ExploreInstr(carrying=self.carrying, carryInv=self.carryInv, center=self.center)
@@ -395,10 +414,12 @@ class Level_ControllerGoTo(Level_ControllerExplore):
 
     def gen_mission(self):
         'if object present, goto, otherwise explore'
-        super().gen_mission()
-        if len(self.room.objs) > 0:
-            objDesc = self.create_desc(self.room.objs)
-            self.instrs = GoToInstr(objDesc, carrying=self.carrying, carryInv=self.carryInv)
+        self.get_objs()
+        self.obj_in_room()
+        self.carrying = self.carrying_object()
+        carry = dict(carrying=self.carrying, carryInv=self.carryInv)
+        objDesc = self.create_desc(self.room.objs)
+        self.instrs = GoToInstr(objDesc, **carry)
 
 
 class Level_ControllerGoToDoor(Level_ControllerExplore):
@@ -413,10 +434,12 @@ class Level_ControllerGoToDoor(Level_ControllerExplore):
 
     def gen_mission(self):
         'if door present, goto, otherwise explore'
-        super().gen_mission()
-        if len(self.doors) > 0:
-            objDesc = self.create_desc(self.doors)
-            self.instrs = GoToInstr(objDesc, carrying=self.carrying, carryInv=self.carryInv)
+        self.get_objs()
+        self.carrying = self.carrying_object()
+        carry = dict(carrying=self.carrying, carryInv=self.carryInv)
+        self.door_in_room()
+        objDesc = self.create_desc(self.doors)
+        self.instrs = GoToInstr(objDesc, **carry)
 
 
 class Level_ControllerGoNextTo(Level_ControllerExplore):
@@ -431,11 +454,12 @@ class Level_ControllerGoNextTo(Level_ControllerExplore):
 
     def gen_mission(self):
         'if object present, go next to, otherwise explore'
-        super().gen_mission()
-        if len(self.room.objs) > 0:
-            objDesc = self.create_desc(self.room.objs)
-            self.instrs = GoNextToInstr(objDesc, carrying=self.carrying, carryInv=self.carryInv, objs=self.room.objs)
-
+        self.get_objs()
+        self.obj_in_room()
+        self.carrying = self.carrying_object()
+        carry = dict(carrying=self.carrying, carryInv=self.carryInv, objs=self.room.objs)
+        objDesc = self.create_desc(self.room.objs)
+        self.instrs = GoNextToInstr(objDesc, **carry)
 
 
 class Level_ActionObjDoor(RoomGridLevel):
