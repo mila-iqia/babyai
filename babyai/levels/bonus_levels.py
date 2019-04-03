@@ -260,7 +260,7 @@ class Level_BalancedMonster(RoomGridLevel):
     """
 
     def __init__(self, seed=None):
-        self.loc = True
+        self.loc = False
         self.carryInv = True
         super().__init__(
             room_size=8,
