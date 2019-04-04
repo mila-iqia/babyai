@@ -8,9 +8,9 @@ RUN apt-get install -y qt5-default qttools5-dev-tools git python3-pip
 RUN pip3 install --upgrade pip
 
 # code
-RUN git clone https://github.com/mila-udem/babyai.git
+RUN git clone --single-branch --branch iclr19 https://github.com/mila-udem/babyai.git
 WORKDIR babyai
-RUN pip3 install --process-dependency-links --editable .
+RUN pip3 install --editable .
 
-# copy models
+# copy models into the docker image
 COPY models models/
