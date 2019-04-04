@@ -76,6 +76,7 @@ class ManyEnvs(gym.Env):
                         for i, (env, action, done)
                         in enumerate(zip(self.envs, actions, self.done))]
         self.done = [result[2] for result in self.results]
+        print([result[1] for result in self.results])
         self.last_results = self.results
         return zip(*self.results)
 
@@ -85,7 +86,7 @@ class ManyEnvs(gym.Env):
 
 # Returns the performance of the agent on the environment for a particular number of episodes.
 def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
-    num_envs = 5# min(256, episodes)
+    num_envs = 2#min(256, episodes)
 
     envs = []
     for i in range(num_envs):
@@ -107,10 +108,9 @@ def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
 
         many_obs = env.reset()
 
-        print('reset now')
+        print('')
         for mo in many_obs:
             print(mo['mission'])
-        print('\n')
 
         cur_num_frames = 0
         num_frames = np.zeros((num_envs,), dtype='int64')
@@ -122,17 +122,21 @@ def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
         while (num_frames == 0).any():
             action = agent.act_batch(many_obs)['action']
             if return_obss_actions:
-                for _ in range(num_envs):
-                    if not already_done[_]:
-                        obss[_].append(many_obs[_])
-                        actions[_].append(action[_].item())
+                for i in range(num_envs):
+                    if not already_done[i]:
+                        obss[i].append(many_obs[i])
+                        actions[i].append(action[i].item())
             many_obs, reward, done, _ = env.step(action)
+            print(done)
             agent.analyze_feedback(reward, done)
             done = np.array(done)
+            # print(done)
             just_done = done & (~already_done)
+            print(reward)
             returns += reward * just_done
             cur_num_frames += 1
             num_frames[just_done] = cur_num_frames
+            # print(num_frames)
             already_done[done] = True
 
         logs["num_frames_per_episode"].extend(list(num_frames))
