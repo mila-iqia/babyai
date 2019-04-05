@@ -256,6 +256,8 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
     def _get_instr_embedding(self, instr):
         if self.lang_model == 'gru':
             _, hidden = self.instr_rnn(self.word_embedding(instr))
+            x = (instr <= 0).sum(dim=1)
+            print(x)
             return hidden[-1]
 
         elif self.lang_model in ['bigru', 'attgru']:
