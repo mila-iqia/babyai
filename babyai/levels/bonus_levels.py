@@ -304,7 +304,11 @@ class Level_BalancedMonster(RoomGridLevel):
         pos, self.center = self.place_agent()
         self.pos = tuple(pos)
         self.doors = list(filter(lambda d: not pos_next_to(d.cur_pos, pos), doors))
-        self.add_distractors(num_distractors=30, all_unique=False)
+        self.add_distractors(num_distractors=18, all_unique=False)
+        if self._rand_bool():
+            self.add_distractors(1, 1, num_distractors=5, all_unique=False)
+        if self._rand_bool():
+            self.add_distractors(1, 1, num_distractors=5, all_unique=False)
 
     def carrying_object(self):
         'randomly choose if agent should carry, if so, randomly generate object'
