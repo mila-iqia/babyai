@@ -294,6 +294,14 @@ class Level_BalancedMonster(RoomGridLevel):
         self.start_dir = dir
         return self.start_pos, False
 
+    def add_obstructors(self):
+        'add obstructors to environment'
+        self.add_distractors(num_distractors=18, all_unique=False)
+        if self._rand_bool():
+            self.add_distractors(1, 1, num_distractors=5, all_unique=False)
+        if self._rand_bool():
+            self.add_distractors(1, 1, num_distractors=5, all_unique=False)
+
     def get_objs(self):
         'find obj in environment and create description'
         self.connect_all()
@@ -304,11 +312,7 @@ class Level_BalancedMonster(RoomGridLevel):
         pos, self.center = self.place_agent()
         self.pos = tuple(pos)
         self.doors = list(filter(lambda d: not pos_next_to(d.cur_pos, pos), doors))
-        self.add_distractors(num_distractors=18, all_unique=False)
-        if self._rand_bool():
-            self.add_distractors(1, 1, num_distractors=5, all_unique=False)
-        if self._rand_bool():
-            self.add_distractors(1, 1, num_distractors=5, all_unique=False)
+        self.add_obstructors()
 
     def carrying_object(self):
         'randomly choose if agent should carry, if so, randomly generate object'
@@ -385,6 +389,52 @@ class Level_BalancedMonster(RoomGridLevel):
         self.carrying = self.carrying_object()
         carry = dict(carrying=self.carrying, carryInv=self.carryInv)
         self.gen_instr_type(carry)
+
+
+class Level_BalancedMonsterSmall(Level_BalancedMonster):
+    """
+    BalancedMonster without exploration
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            seed=seed
+        )
+
+    def gen_instr_type(self, carry):
+        'generate a random instruction type'
+        self.get_objs()
+        instrType = self._rand_int(0, 3)
+        if instrType == 0:
+            # go to door if there is a door to go to
+            self.door_in_room()
+            objDesc = self.create_desc(self.doors)
+            self.instrs = GoToInstr(objDesc, **carry)
+        elif instrType == 1:
+            # if there is an object to go to
+            self.obj_in_room()
+            objDesc = self.create_desc(self.room.objs)
+            self.instrs = GoToInstr(objDesc, **carry)
+        else:
+            # if there is an object to go next to
+            self.obj_in_room()
+            objDesc = self.create_desc(self.room.objs)
+            self.instrs = GoNextToInstr(objDesc, **carry, objs=self.room.objs)
+
+
+class Level_BalancedMonsterSparse(Level_BalancedMonsterSmall):
+    """
+    BalancedMonster without exploration
+    """
+
+    def __init__(self, seed=None):
+        super().__init__(
+            seed=seed
+        )
+
+    def add_obstructors(self):
+        'fewer obstructors'
+        self.add_distractors(num_distractors=30, all_unique=False)
 
 
 class Level_ControllerExplore(Level_BalancedMonster):
