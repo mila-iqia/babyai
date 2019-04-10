@@ -254,12 +254,13 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         return {'dist': dist, 'value': value, 'memory': memory, 'extra_predictions': extra_predictions}
 
     def _get_instr_embedding(self, instr):
+        lengths = (instr != 0).sum(1).long()
         if self.lang_model == 'gru':
-            _, hidden = self.instr_rnn(self.word_embedding(instr))
-            return hidden[-1]
+            out, _ = self.instr_rnn(self.word_embedding(instr))
+            hidden = out[range(len(lengths)), lengths-1, :]
+            return hidden
 
         elif self.lang_model in ['bigru', 'attgru']:
-            lengths = (instr != 0).sum(1).long()
             masks = (instr != 0).float()
 
             if lengths.shape[0] > 1:
