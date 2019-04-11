@@ -179,82 +179,9 @@ class Level_GoToObjDoor(RoomGridLevel):
         self.instrs = GoToInstr(objDesc)
 
 
-class Level_MonsterController(RoomGridLevel):
+class Level_ControllerAllTasks(RoomGridLevel):
     """
-    go (next) to an object or door
-    from inside a room or from a door facing the room
-    """
-
-    def __init__(self, seed=None):
-        super().__init__(
-            room_size=8,
-            seed=seed,
-            max_steps=64
-        )
-        self.doNotOpenBox=True
-
-    def reset(self, **kwargs):
-        'override reset to preserve max_steps=64'
-        obs = super().reset(**kwargs)
-        self.max_steps = 64
-        return obs
-
-    def place_agent(self, rand_dir=True):
-        'place agent in centremost room or facing a door inwards to the room'
-        if self._rand_bool():
-            return super().place_agent(1, 1), True
-        doors = zip(self.room.doors, range(4))
-        doors = list(filter(lambda d: d[0] is not None, doors))
-
-        door, dir = self._rand_elem(doors)
-        door.is_open = True
-        pos = door.cur_pos
-        dir = (dir + 2) % 4
-        vec = DIR_TO_VEC[dir]
-
-        self.start_pos = pos - vec
-        self.start_dir = dir
-        return self.start_pos, False
-
-    def get_obj(self):
-        'find obj in environment and create description'
-        self.connect_all()
-        self.room = self.get_room(1, 1)
-        doors = list(filter(lambda d: d is not None, self.room.doors))
-        for door in doors:
-            door.is_open = self._rand_bool()
-        pos, center = self.place_agent()
-        pos = tuple(pos)
-        self.add_distractors(num_distractors=30, all_unique=False)
-
-        doors = list(filter(lambda d: not pos_next_to(d.cur_pos, pos), doors))
-        obj = self._rand_elem(doors + self.room.objs + ['explore'])
-        if obj == 'explore':
-            return True, center
-        return ObjDesc(obj.type, obj.color), center
-
-    def carrying_object(self):
-        'randomly choose if agent should carry, if so, randomly generate object'
-        if self._rand_bool():
-            object = self._rand_elem([Key, Ball, Box])
-            color = self._rand_color()
-            return object(color)
-
-    def gen_mission(self):
-        'create instruction from description'
-        carrying = self.carrying_object()
-        objDesc, center = self.get_obj()
-        if objDesc == True:
-            self.instrs = ExploreInstr(carrying=carrying, carryInv=True, center=center)
-        elif self._rand_bool() or objDesc.type == 'door':
-            self.instrs = GoToInstr(objDesc, carrying=carrying, carryInv=True)
-        else:
-            self.instrs = GoNextToInstr(objDesc, carrying=carrying, carryInv=True, objs=self.room.objs)
-
-
-class Level_BalancedMonster(RoomGridLevel):
-    """
-    go (next) to an object or door
+    <explore> or <go (next) to obj / door>
     from inside a room or from a door facing the room
     such that all possible interpretations of the instruction are equiprobable
     """
@@ -296,11 +223,10 @@ class Level_BalancedMonster(RoomGridLevel):
 
     def add_obstructors(self):
         'add obstructors to environment'
-        self.add_distractors(num_distractors=18, all_unique=False)
-        if self._rand_bool():
-            self.add_distractors(1, 1, num_distractors=5, all_unique=False)
-        if self._rand_bool():
-            self.add_distractors(1, 1, num_distractors=5, all_unique=False)
+        for i in range(3):
+            for j in range(3):
+                num_dist = self._rand_int(0, 9)
+                self.add_distractors(i, j, num_distractors=num_dist, all_unique=False)
 
     def get_objs(self):
         'find obj in environment and create description'
@@ -391,9 +317,9 @@ class Level_BalancedMonster(RoomGridLevel):
         self.gen_instr_type(carry)
 
 
-class Level_BalancedMonsterSmall(Level_BalancedMonster):
+class Level_ControllerAllGoToTasks(Level_ControllerAllTasks):
     """
-    BalancedMonster without exploration
+    go (next) to obj / door
     """
 
     def __init__(self, seed=None):
@@ -410,34 +336,17 @@ class Level_BalancedMonsterSmall(Level_BalancedMonster):
             self.door_in_room()
             objDesc = self.create_desc(self.doors)
             self.instrs = GoToInstr(objDesc, **carry)
-        elif instrType == 1:
+        else:
             # if there is an object to go to
             self.obj_in_room()
             objDesc = self.create_desc(self.room.objs)
-            self.instrs = GoToInstr(objDesc, **carry)
-        else:
-            # if there is an object to go next to
-            self.obj_in_room()
-            objDesc = self.create_desc(self.room.objs)
-            self.instrs = GoNextToInstr(objDesc, **carry, objs=self.room.objs)
+            if instrType == 1:
+                self.instrs = GoToInstr(objDesc, **carry)
+            else:
+                self.instrs = GoNextToInstr(objDesc, **carry, objs=self.room.objs)
 
 
-class Level_BalancedMonsterSparse(Level_BalancedMonsterSmall):
-    """
-    BalancedMonster without exploration
-    """
-
-    def __init__(self, seed=None):
-        super().__init__(
-            seed=seed
-        )
-
-    def add_obstructors(self):
-        'fewer obstructors'
-        self.add_distractors(num_distractors=30, all_unique=False)
-
-
-class Level_ControllerExplore(Level_BalancedMonster):
+class Level_ControllerExplore(Level_ControllerAllTasks):
     """
     explore the middle room
     this level and its descendents are for testing
@@ -447,7 +356,6 @@ class Level_ControllerExplore(Level_BalancedMonster):
         super().__init__(
             seed=seed
         )
-        self.loc=False
 
     def gen_mission(self):
         'explore'

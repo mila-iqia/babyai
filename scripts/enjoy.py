@@ -31,6 +31,8 @@ parser.add_argument("--manual-mode", action="store_true", default=False,
                     help="Allows you to take control of the agent at any point of time")
 parser.add_argument("--verbose", action="store_true", default=False,
                     help="Allows you to see verbose information")
+parser.add_argument("--episodes", type=int, default=1000,
+                    help="set the number of episodes")
 
 args = parser.parse_args()
 
@@ -92,7 +94,7 @@ def keyDownCb(keyName):
 
 step = 0
 episode_num = 0
-while True:
+while episode_num < args.episodes:
     time.sleep(args.pause)
     renderer = env.render("human")
     if args.manual_mode and renderer.window is not None:
@@ -116,6 +118,7 @@ while True:
             obs = env.reset()
             agent.on_reset()
             print("Mission: {}".format(obs["mission"]))
+            print(args.seed + episode_num)
             step = 0
         else:
             step += 1

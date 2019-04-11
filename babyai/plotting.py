@@ -47,7 +47,7 @@ def load_logs(root):
     return dfs
 
 
-def plot_average_impl(df, regexps, y_value='return_mean', window=1, agg='mean', 
+def plot_average_impl(df, regexps, y_value='return_mean', window=1, agg='mean',
                       x_value='frames'):
     """Plot averages over groups of runs  defined by regular expressions."""
     df = df.dropna(subset=[y_value])
@@ -82,7 +82,7 @@ def plot_average_impl(df, regexps, y_value='return_mean', window=1, agg='mean',
 
 
 def plot_average(*args, **kwargs):
-    """Plot averages over groups of runs  defined by regular expressions."""
+    """Plot averages over groups of runs defined by regular expressions."""
     pyplot.figure(figsize=(15, 5))
     plot_average_impl(*args, **kwargs)
     pyplot.legend()
@@ -108,5 +108,28 @@ def plot_all_runs(df, regex, quantity='return_mean', x_axis='frames', window=1, 
                     label=model,
                     **kwargs)
         print(model, df_model[x_axis].max())
-
     pyplot.legend()
+
+
+def controller():
+    """controller logs"""
+    storage = os.environ['BABYAI_STORAGE'] + 'logs/'
+    dfs = load_logs(storage)
+    df = pandas.concat(dfs, sort=True)
+    regex = re.compile('.*controller*')
+    plot_all_runs(df, regex, window=10)
+
+
+def monsters():
+    """plot all monster training"""
+    storage = '/home/dyth/Downloads/repositories/logs/logs'
+    dfs = load_logs(storage)
+    df = pandas.concat(dfs, sort=True)
+    regex = re.compile('.*')
+    plot_all_runs(df, regex, window=25)
+
+
+if __name__ == '__main__':
+    controller()
+    monsters()
+    pyplot.show()
