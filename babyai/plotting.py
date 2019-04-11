@@ -111,25 +111,15 @@ def plot_all_runs(df, regex, quantity='return_mean', x_axis='frames', window=1, 
     pyplot.legend()
 
 
-def controller():
-    """controller logs"""
-    storage = os.environ['BABYAI_STORAGE'] + 'logs/'
+def main():
+    """plot all monster training"""
+    storage = '/home/dyth/Downloads/repositories/logs/cluster'
     dfs = load_logs(storage)
     df = pandas.concat(dfs, sort=True)
     regex = re.compile('.*controller*')
-    plot_all_runs(df, regex, window=10)
-
-
-def monsters():
-    """plot all monster training"""
-    storage = '/home/dyth/Downloads/repositories/logs/logs'
-    dfs = load_logs(storage)
-    df = pandas.concat(dfs, sort=True)
-    regex = re.compile('.*')
     plot_all_runs(df, regex, window=25)
 
 
 if __name__ == '__main__':
-    controller()
-    monsters()
+    main()
     pyplot.show()

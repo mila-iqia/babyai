@@ -362,8 +362,8 @@ class GoToInstr(ActionInstr):
         'has to go to object in middle room'
         pos = self.env.front_pos
         x, y = pos[0], pos[1]
-        x_in = x > 7 and x < 15
-        y_in = y > 7 and y < 15
+        x_in = x > 6 and x < 15
+        y_in = y > 6 and y < 15
         if x_in and y_in:
             return True
         else:
