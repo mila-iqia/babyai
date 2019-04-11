@@ -308,7 +308,7 @@ class Level_ControllerAllTasks(RoomGridLevel):
             self.instrs = GoNextToInstr(objDesc, **carry, objs=self.room.objs)
         else:
             # otherwise explore
-            self.instrs = ExploreInstr(center=self.center)
+            self.instrs = ExploreInstr()
 
     def gen_mission(self):
         'create instruction from description'
@@ -361,7 +361,7 @@ class Level_ControllerExplore(Level_ControllerAllTasks):
         'explore'
         self.get_objs()
         self.carrying = self.carrying_object()
-        self.instrs = ExploreInstr(carrying=self.carrying, carryInv=self.carryInv, center=self.center)
+        self.instrs = ExploreInstr(carrying=self.carrying, carryInv=self.carryInv)
 
 
 class Level_ControllerGoTo(Level_ControllerExplore):
