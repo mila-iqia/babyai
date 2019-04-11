@@ -362,12 +362,25 @@ class GoToInstr(ActionInstr):
         self.desc.find_matching_objs(env)
         self.env.carrying = self.carrying
 
+    def in_middle_room(self):
+        'has to go to object in middle room'
+        pos = self.env.front_pos
+        x, y = pos[0], pos[1]
+        x_in = x > 7 and x < 15
+        y_in = y > 7 and y < 15
+        if x_in and y_in:
+            return True
+        else:
+            return False
+
     def verify_action(self, action):
         # For each object position
         for pos in self.desc.obj_poss:
             # If the agent is next to (and facing) the object
             if np.array_equal(pos, self.env.front_pos):
                 # check for carry invariance
+                if not self.in_middle_room():
+                    return 'continue'
                 if not self.carryInv:
                     return 'success'
                 if self.carrying == self.env.carrying:
@@ -411,6 +424,8 @@ class GoNextToInstr(GoToInstr):
         for pos in self.desc.obj_poss:
             # If the agent is next to (and facing) the object
             if pos_next_to(pos, front_pos):
+                if not self.in_middle_room():
+                    return 'continue'
                 # if cell in front is empty
                 if self.is_not_empty(front_pos):
                     return 'continue'

@@ -292,22 +292,22 @@ class Level_ControllerAllTasks(RoomGridLevel):
         self.get_objs()
         instrType = self._rand_int(0, 4)
         if instrType == 0:
-            # go to door if there is a door to go to
+            # create door if none exists then go to
             self.door_in_room()
             objDesc = self.create_desc(self.doors)
             self.instrs = GoToInstr(objDesc, **carry)
         elif instrType == 1:
-            # if there is an object to go to
+            # create object if none exists then go to
             self.obj_in_room()
             objDesc = self.create_desc(self.room.objs)
             self.instrs = GoToInstr(objDesc, **carry)
         elif instrType == 2:
-            # if there is an object to go next to
+            # create object if none exists then go next to
             self.obj_in_room()
             objDesc = self.create_desc(self.room.objs)
             self.instrs = GoNextToInstr(objDesc, **carry, objs=self.room.objs)
         else:
-            # otherwise explore the environment
+            # otherwise explore
             self.instrs = ExploreInstr(center=self.center)
 
     def gen_mission(self):
@@ -332,12 +332,12 @@ class Level_ControllerAllGoToTasks(Level_ControllerAllTasks):
         self.get_objs()
         instrType = self._rand_int(0, 3)
         if instrType == 0:
-            # go to door if there is a door to go to
+            # create door if none exists then go to
             self.door_in_room()
             objDesc = self.create_desc(self.doors)
             self.instrs = GoToInstr(objDesc, **carry)
         else:
-            # if there is an object to go to
+            # create object if none exists then go to
             self.obj_in_room()
             objDesc = self.create_desc(self.room.objs)
             if instrType == 1:
@@ -377,9 +377,9 @@ class Level_ControllerGoTo(Level_ControllerExplore):
     def gen_mission(self):
         'if object present, goto, otherwise explore'
         self.get_objs()
-        self.obj_in_room()
         self.carrying = self.carrying_object()
         carry = dict(carrying=self.carrying, carryInv=self.carryInv)
+        self.obj_in_room()
         objDesc = self.create_desc(self.room.objs)
         self.instrs = GoToInstr(objDesc, **carry)
 
@@ -417,9 +417,9 @@ class Level_ControllerGoNextTo(Level_ControllerExplore):
     def gen_mission(self):
         'if object present, go next to, otherwise explore'
         self.get_objs()
-        self.obj_in_room()
         self.carrying = self.carrying_object()
         carry = dict(carrying=self.carrying, carryInv=self.carryInv, objs=self.room.objs)
+        self.obj_in_room()
         objDesc = self.create_desc(self.room.objs)
         self.instrs = GoNextToInstr(objDesc, **carry)
 
