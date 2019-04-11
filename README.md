@@ -17,7 +17,7 @@ A platform for simulating language learning with a human in the loop. This is an
 
 ## Replicating ICLR19 Results
 
-If you are looking to replicate the ICLR19 BabyAI paper results, we recommend that you use the prebuilt docker image and pre-generated demonstration dataset that we provide. The code in the docker container should ideally be run from within the container, and not copied outside of the container. This is the best way to ensure that your results match ours.
+If you are looking to replicate the [ICLR19 BabyAI paper](https://openreview.net/forum?id=rJeXCo0cYX) results, we recommend that you use the prebuilt docker image and pre-generated demonstration dataset that we provide. The code in the docker container should ideally be run from within the container, and not copied outside of the container. This is the best way to ensure that your results match ours.
 
 ### Docker Container
 
@@ -181,4 +181,4 @@ To contribute to this project, you should first create your own fork, and rememb
 ## About this Project
 
 BabyAI is an open-ended grounded language acquisition effort at [Mila](https://mila.quebec/en/). The current BabyAI platform was designed to study data-effiency of existing methods under the assumption that a human provides all teaching signals
-(i.e. demonstrations, rewards, etc.). For more information, see the paper (http://arxiv.org/abs/1810.08272).
+(i.e. demonstrations, rewards, etc.). For more information, see the paper (https://openreview.net/forum?id=rJeXCo0cYX).
