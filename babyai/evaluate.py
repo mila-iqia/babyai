@@ -76,7 +76,6 @@ class ManyEnvs(gym.Env):
                         for i, (env, action, done)
                         in enumerate(zip(self.envs, actions, self.done))]
         self.done = [result[2] for result in self.results]
-        # print([result[1] for result in self.results])
         self.last_results = self.results
         return zip(*self.results)
 
