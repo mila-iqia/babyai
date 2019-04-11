@@ -15,7 +15,33 @@ A platform for simulating language learning with a human in the loop. This is an
 }
 ```
 
-## Installation
+## Replicating ICLR19 Results
+
+If you are looking to replicate the ICLR19 BabyAI paper results, we recommend that you use the prebuilt docker image and pre-generated demonstration dataset that we provide. The code in the docker container should ideally be run from within the container, and not copied outside of the container. This is the best way to ensure that your results match ours.
+
+### Docker Container
+
+A prebuilt docker image is available [on Docker Hub](https://hub.docker.com/r/maximecb/babyai/). You can download this image by executing:
+
+```
+docker pull maximecb/babyai
+```
+
+You should run the image with `nvidia-docker` (which allows you to use CUDA):
+
+```
+nvidia-docker run -it maximecb/babyai bash
+```
+
+Pretrained IL and RL models can be found in the `models` directory of the image.
+
+### Demonstration Dataset
+
+**NOTE 2018-10-18:** we are in the process of improving the heuristic agent (bot) and will be releasing a new dataset of higher-quality demonstrations soon.
+
+Generating demonstrations takes a sizeable amount of computational resources. A gzipped archive containing the demonstrations used for the ICLR 2019 submission is [available here](http://lisaweb.iro.umontreal.ca/transfert/lisa/users/chevalma/iclr19-demos.tar.gz) (14GB download).
+
+## Manual Installation
 
 Requirements:
 - Python 3.5+
@@ -53,22 +79,6 @@ cd ../babyai
 pip3 install --editable .
 ```
 
-### Docker Container
-
-A prebuilt docker image is available [on Docker Hub](https://hub.docker.com/r/maximecb/babyai/). You can download this image by executing:
-
-```
-docker pull maximecb/babyai
-```
-
-You should run the image with `nvidia-docker` (which allows you to use CUDA):
-
-```
-nvidia-docker run -it maximecb/babyai bash
-```
-
-Pretrained IL and RL models can be found in the `models` directory of the image.
-
 ### BabyAI Storage Path
 
 Add this line to `.bashrc` (Linux), or `.bash_profile` (Mac).
@@ -80,12 +90,6 @@ export BABYAI_STORAGE='/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>'
 where `/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>` is the folder where you typed `git clone https://github.com/mila-iqia/babyai.git` earlier.
 
 Models, logs and demos will be produced in this directory, in the folders `models`, `logs` and `demos` respectively.
-
-### Demonstration Dataset
-
-**NOTE 2018-10-18:** we are in the process of improving the heuristic agent (bot) and will be releasing a new dataset of higher-quality demonstrations soon.
-
-Generating demonstrations takes a sizeable amount of computational resources. A gzipped archive containing the demonstrations used for the ICLR 2019 submission is [available here](http://lisaweb.iro.umontreal.ca/transfert/lisa/users/chevalma/iclr19-demos.tar.gz) (14GB download).
 
 ## Structure of the Codebase
 
