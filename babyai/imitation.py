@@ -418,3 +418,5 @@ class ImitationLearning(object):
                     self.acmodel.cuda()
                 with open(status_path, 'w') as dst:
                     json.dump(status, dst)
+
+    return best_success_rate
