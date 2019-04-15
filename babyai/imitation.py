@@ -481,4 +481,4 @@ class ImitationLearning(object):
                 with open(status_path, 'w') as dst:
                     json.dump(status, dst)
 
-    return best_success_rate
+        return best_success_rate
