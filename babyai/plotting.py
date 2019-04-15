@@ -37,13 +37,26 @@ def load_log(dir_):
     df['model'] = dir_
     return df
 
+def load_multiphase_log(dir_):
+    df = load_log(dir_)
+    phases = []
+    cur_phase = 0
+    prev_upd = 0
+    for i in range(len(df)):
+        upd = df.iloc[i]['update']
+        if upd < prev_upd:
+            cur_phase += 1
+        phases.append(cur_phase)
+        prev_upd = upd
+    df['phase'] = phases
+    return df
 
-def load_logs(root):
+def load_logs(root, multiphase=False):
     dfs = []
     for root, dirs, files in os.walk(root, followlinks=True):
         for file_ in files:
             if file_ == 'log.csv':
-                dfs.append(load_log(root))
+                dfs.append(load_multiphase_log(root) if multiphase else load_log(root))
     return dfs
 
 
