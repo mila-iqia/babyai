@@ -239,13 +239,9 @@ def main(args):
         # Train the imitation learning agent
         if len(il_learn.train_demos) > 0:
             train_status_path = os.path.join(utils.get_log_dir(args.model), 'status.json')
-            il_learn.train(il_learn.train_demos, writer, csv_writer, train_status_path, header)
+            best_success_rate = il_learn.train(il_learn.train_demos, writer, csv_writer, train_status_path, header)
 
-        # Stopping criterion
-        valid_log = il_learn.validate(args.val_episodes)
-        success_rate = np.mean([1 if r > 0 else 0 for r in valid_log[0]['return_per_episode']])
-
-        if success_rate >= 0.99:
+        if best_success_rate >= 0.99:
             logger.info("Reached target success rate with {} demos, stopping".format(len(il_learn.train_demos)))
             break
 
