@@ -117,7 +117,9 @@ def main():
     dfs = load_logs(storage)
     df = pandas.concat(dfs, sort=True)
     regex = re.compile('.*controller*')
-    plot_all_runs(df, regex, window=25)
+    window = 25
+    plot_all_runs(df, regex, window=window, quantity='success_rate')
+    plot_all_runs(df, regex, window=window)
 
 
 if __name__ == '__main__':
