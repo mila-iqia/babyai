@@ -394,11 +394,11 @@ class ImitationLearning(object):
             # Learning rate scheduler
             self.scheduler.step()
 
-            log = self.run_epoch_recurrence(
-                train_demos, is_training=True, indices=index_sampler.get_epoch_indices(status['i']))
+            indices = index_sampler.get_epoch_indices(status['i'])
+            log = self.run_epoch_recurrence(train_demos, is_training=True, indices=indices)
             total_len = sum([len(item[3]) for item in train_demos])
 
-            status['num_frames'] += total_len
+            status['num_frames'] += len(indices)
             status['i'] += 1
 
             update_end_time = time.time()
