@@ -17,6 +17,67 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import numpy
+
+
+class EpochIndexSampler:
+    """
+    Generate smart indices for epochs that are smaller than the data size.
+
+    The usecase: you have a code that has a strongly baken in notion of an epoch,
+    e.g. you can only validate in the end of the epoch. That ties a lot of
+    aspects of training to the size of the dataset. You may want to validate
+    more often than once per a complete pass over the dataset.
+
+    This class helps you by generating a sequence of smaller epochs that
+    do are using different subsets of the dataset, as long as this is possible.
+    This allows you to keep the small advantage that sampling without replacement
+    provides, but also enjoy smaller epochs.
+
+    """
+    def __init__(self, n_examples, epoch_n_examples):
+        self.n_examples = n_examples
+        self.epoch_n_examples = epoch_n_examples
+
+        if epoch_n_examples > n_examples:
+            raise ValueError("an epoch must be less than the number of examples")
+
+        self._last_seed = None
+
+    def _reseed_indices_if_needed(self, seed):
+        if seed == self._last_seed:
+            return
+
+        rng = numpy.random.RandomState(seed)
+        self._indices = list(range(self.n_examples))
+        rng.shuffle(self._indices)
+        logger.info('reshuffle the dataset')
+
+        self._last_seed = seed
+
+    def _initial_seed_for_epoch(self, epoch):
+        return epoch * self.epoch_n_examples // self.n_examples
+
+    def get_epoch_indices(self, epoch):
+        """Return indices corresponding to a particular epoch.
+
+        Tip: if you call this function with consecutive epoch numbers,
+        you will avoid expensive reshuffling of the index list.
+
+        """
+        initial_seed = self._initial_seed_for_epoch(epoch)
+        self._reseed_indices_if_needed(initial_seed)
+
+        offset = epoch * self.epoch_n_examples
+        overhead = max(0, self.epoch_n_examples - (self.n_examples - offset))
+
+        indices = self._indices[offset: min(self.n_examples, offset + self.epoch_n_examples)]
+        if overhead:
+            self._reseed_indices_if_needed(initial_seed + 1)
+            indices += self._indices[:overhead]
+
+        return indices
+
 
 class ImitationLearning(object):
     def __init__(self, args, ):
@@ -131,10 +192,11 @@ class ImitationLearning(object):
         else:
             return np.arange(0, num_frames, self.args.recurrence)[:-1]
 
-    def run_epoch_recurrence(self, demos, is_training=False):
-        indices = list(range(len(demos)))
-        if is_training:
-            np.random.shuffle(indices)
+    def run_epoch_recurrence(self, demos, is_training=False, indices=None):
+        if not indices:
+            indices = list(range(len(demos)))
+            if is_training:
+                np.random.shuffle(indices)
         batch_size = min(self.args.batch_size, len(demos))
         offset = 0
 
@@ -319,6 +381,11 @@ class ImitationLearning(object):
         best_success_rate, patience, i = 0, 0, 0
         total_start_time = time.time()
 
+        epoch_length = self.args.epoch_length
+        if not epoch_length:
+            epoch_length = len(train_demos)
+        index_sampler = EpochIndexSampler(len(train_demos), epoch_length)
+
         while status['i'] < getattr(self.args, 'epochs', int(1e9)):
             if 'patience' not in status:  # if for some reason you're finetuining with IL an RL pretrained agent
                 status['patience'] = 0
@@ -328,16 +395,17 @@ class ImitationLearning(object):
             if status['num_frames'] > self.args.frames:
                 break
 
-            status['i'] += 1
-            i = status['i']
             update_start_time = time.time()
 
             # Learning rate scheduler
             self.scheduler.step()
 
-            log = self.run_epoch_recurrence(train_demos, is_training=True)
+            log = self.run_epoch_recurrence(
+                train_demos, is_training=True, indices=index_sampler.get_epoch_indices(status['i']))
             total_len = sum([len(item[3]) for item in train_demos])
+
             status['num_frames'] += total_len
+            status['i'] += 1
 
             update_end_time = time.time()
 
