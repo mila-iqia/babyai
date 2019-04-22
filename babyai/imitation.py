@@ -39,9 +39,6 @@ class EpochIndexSampler:
         self.n_examples = n_examples
         self.epoch_n_examples = epoch_n_examples
 
-        if epoch_n_examples > n_examples:
-            raise ValueError("an epoch must be less than the number of examples")
-
         self._last_seed = None
 
     def _reseed_indices_if_needed(self, seed):
@@ -55,9 +52,6 @@ class EpochIndexSampler:
 
         self._last_seed = seed
 
-    def _initial_seed_for_epoch(self, epoch):
-        return epoch * self.epoch_n_examples // self.n_examples
-
     def get_epoch_indices(self, epoch):
         """Return indices corresponding to a particular epoch.
 
@@ -65,16 +59,16 @@ class EpochIndexSampler:
         you will avoid expensive reshuffling of the index list.
 
         """
-        initial_seed = self._initial_seed_for_epoch(epoch)
-        self._reseed_indices_if_needed(initial_seed)
+        seed = epoch * self.epoch_n_examples // self.n_examples
+        offset = epoch * self.epoch_n_examples % self.n_examples
 
-        offset = epoch * self.epoch_n_examples
-        overhead = max(0, self.epoch_n_examples - (self.n_examples - offset))
-
-        indices = self._indices[offset: min(self.n_examples, offset + self.epoch_n_examples)]
-        if overhead:
-            self._reseed_indices_if_needed(initial_seed + 1)
-            indices += self._indices[:overhead]
+        indices = []
+        while len(indices) < self.epoch_n_examples:
+            self._reseed_indices_if_needed(seed)
+            n_lacking = self.epoch_n_examples - len(indices)
+            indices += self._indices[offset:offset + min(n_lacking, self.n_examples - offset)]
+            offset = 0
+            seed += 1
 
         return indices
 
