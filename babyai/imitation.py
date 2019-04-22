@@ -215,6 +215,7 @@ class ImitationLearning(object):
             log["accuracy"].append(_log["accuracy"])
 
             offset += batch_size
+        log['total_frames'] = frames
 
         if not is_training:
             self.acmodel.train()
@@ -396,9 +397,8 @@ class ImitationLearning(object):
 
             indices = index_sampler.get_epoch_indices(status['i'])
             log = self.run_epoch_recurrence(train_demos, is_training=True, indices=indices)
-            total_len = sum([len(item[3]) for item in train_demos])
 
-            status['num_frames'] += len(indices)
+            status['num_frames'] += log['total_frames']
             status['i'] += 1
 
             update_end_time = time.time()
@@ -407,7 +407,7 @@ class ImitationLearning(object):
             if status['i'] % self.args.log_interval == 0:
                 total_ellapsed_time = int(time.time() - total_start_time)
 
-                fps = total_len / (update_end_time - update_start_time)
+                fps = log['total_frames'] / (update_end_time - update_start_time)
                 duration = datetime.timedelta(seconds=total_ellapsed_time)
 
                 for key in log:
