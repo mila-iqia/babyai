@@ -47,7 +47,7 @@ def load_logs(root):
     return dfs
 
 
-def plot_average_impl(df, regexps, y_value='return_mean', window=1, agg='mean', 
+def plot_average_impl(df, regexps, y_value='return_mean', window=1, agg='mean',
                       x_value='frames'):
     """Plot averages over groups of runs  defined by regular expressions."""
     df = df.dropna(subset=[y_value])
@@ -94,15 +94,16 @@ def plot_all_runs(df, regex, quantity='return_mean', x_axis='frames', window=1, 
 
     df = df.dropna(subset=[quantity])
 
-    kwargs = {}
-    if color:
-        kwargs['color'] = color
     unique_models = df['model'].unique()
     models = [m for m in unique_models if re.match(regex, m)]
     df_re = df[df['model'].isin(models)]
     for model, df_model in df_re.groupby('model'):
         values = df_model[quantity]
-        values = values.rolling(window).mean()
+        values = values.rolling(window, center=True).mean()
+
+        kwargs = {}
+        if color:
+            kwargs['color'] = color(model)
         pyplot.plot(df_model[x_axis],
                     values,
                     label=model,
@@ -110,3 +111,63 @@ def plot_all_runs(df, regex, quantity='return_mean', x_axis='frames', window=1, 
         print(model, df_model[x_axis].max())
 
     pyplot.legend()
+
+
+def model_num_samples(model):
+    # the number of samples is mangled in the name
+    return int(re.findall('_([0-9]+)', model)[0])
+
+
+def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=None):
+    print()
+    print(regex)
+    models = [model for model in df['model'].unique() if re.match(regex, model)]
+    num_samples = [model_num_samples(model) for model in models]
+    # sort models according to the number of samples
+    models, num_samples = zip(*sorted(list(zip(models, num_samples)), key=lambda tupl: tupl[1]))
+
+    # choose normal time
+    max_samples = max(num_samples)
+    limits = []
+    for model, num in zip(models, num_samples):
+        if num == max_samples:
+            df_model = df[df['model'] == model]
+            success_rate = df_model['validation_success_rate'].rolling(window, center=True).mean()
+            if success_rate.max() < 0.99:
+                print('not solved yet')
+                return
+            first_solved = (success_rate > 0.99).to_numpy().nonzero()[0][0]
+            row = df_model.iloc[first_solved]
+            print("the model with {} samples first solved after {} epochs ({} seconds, {} frames)".format(
+                max_samples, row['update'], row['duration'], row['frames']))
+            limits.append(patience * row[limit] + 1)
+    if not normal_time:
+        normal_time = np.mean(limits)
+        print('using {} as normal time'.format(normal_time))
+
+    # check how many examples is required to succeed within normal time
+    min_samples_required = None
+    need_more_time = False
+    for model, num in zip(models, num_samples):
+        df_model = df[df['model'] == model]
+        success_rate = df_model['validation_success_rate'].rolling(window, center=True).mean()
+        max_within_normal_time = success_rate[df_model[limit] < normal_time].max()
+        if max_within_normal_time > 0.99:
+            min_samples_required = min(num, min_samples_required
+                                       if min_samples_required
+                                       else int(1e9))
+        if df_model[limit].max() < normal_time:
+            need_more_time = True
+        print("{: <100} {: <5.4g} {: <5.4g} {: <5.3g} {:.3g}".format(
+            model.split('/')[-1],
+            max_within_normal_time * 100,
+            success_rate.max() * 100,
+            df_model[limit].max() / normal_time,
+            df_model['duration'].max() / 86400))
+
+    print("min samples required is {}".format(min_samples_required))
+    if min(num_samples) == min_samples_required:
+        print('should be run with less samples!')
+    if need_more_time:
+        print('should be run for more time!')
+    return min_samples_required, normal_time
