@@ -35,6 +35,13 @@ cd babyai
 pip3 install --editable .
 ```
 
+Or alternatively (with `pip3`),
+```
+git clone https://github.com/mila-iqia/babyai.git
+cd babyai
+pip3 install -r requirements.txt
+```
+
 ### Installation using Conda (Alternative Method)
 
 If you are using conda, you can create a `babyai` environment with all the dependencies by running:
