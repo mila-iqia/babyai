@@ -2,7 +2,22 @@
 
 [![Build Status](https://travis-ci.org/mila-iqia/babyai.svg?branch=master)](https://travis-ci.org/mila-iqia/babyai)
 
-A platform for simulating language learning with a human in the loop. This is an ongoing research project based at [Mila](https://mila.quebec/en/). If you use this platform in your research, please cite:
+A platform for simulating language learning with a human in the loop. This is an ongoing research project based at [Mila](https://mila.quebec/en/). 
+
+Contents:
+- [Citation](#citation)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Demo Dataset](docs/demo-dataset.md)
+- [Codebase Structure](docs/codebase.md)
+- [Levels](#the-levels)
+- [Training and Evaluation](docs/train-eval.md)
+- [Contributing](CONTRIBUTING.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [About](#about-this-project)
+
+## Citation
+If you use this platform in your research, please cite:
 
 ```
 @inproceedings{
@@ -90,33 +105,6 @@ where `/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>` is the folder where you type
 
 Models, logs and demos will be produced in this directory, in the folders `models`, `logs` and `demos` respectively.
 
-### Demonstration Dataset
-
-**NOTE 2018-10-18:** we are in the process of improving the heuristic agent (bot) and will be releasing a new dataset of higher-quality demonstrations soon.
-
-Generating demonstrations takes a sizeable amount of computational resources. A gzipped archive containing the demonstrations used for the ICLR 2019 submission is [available here](http://lisaweb.iro.umontreal.ca/transfert/lisa/users/chevalma/iclr19-demos.tar.gz) (14GB download). Please note that these demonstrations can only be used with the ICLR 2019 [docker image](https://github.com/mila-iqia/babyai#docker-image) as they are no longer compatible with the source code on the master branch of this repository. If you wish to work with latest BabyAI source code, you should generate a new demonstration dataset.
-
-Once downloaded, extract the `.pkl` files to `/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>/demos`.
-
-## Structure of the Codebase
-
-In `babyai`:
-- `levels` contains the code for all levels
-- `bot.py` is a heuristic stack-based bot that can solve all levels
-- `imitation.py` is an imitation learning implementation
-- `rl` contains an implementation of the Proximal Policy Optimization (PPO) RL algorithm
-- `model.py` contains the neural network code
-
-In `scripts`:
-- use `train_il.py` to train an agent with imitation learning, using demonstrations from the bot, from another agent or even provided by a human
-- use `train_rl.py` to train an agent with reinforcement learning
-- use `make_agent_demos.py` to generate demonstrations with the bot or with another agent
-- use `make_human_demos.py` to make and save human demonstrations
-- use `train_intelligent_expert.py` to train an agent with an interactive imitation learning algorithm that incrementally grows the training set by adding demonstrations for the missions that the agent currently fails
-- use `evaluate.py` to evaluate a trained agent
-- use `enjoy.py` to visualze an agent's behavior
-- use `gui.py` or `test_mission_gen.py` to see example missions from BabyAI levels
-
 ## Usage
 
 To run the interactive GUI application that illustrates the platform:
@@ -131,45 +119,6 @@ The level being run can be selected with the `--env` option, eg:
 scripts/gui.py --env BabyAI-UnlockPickup-v0
 ```
 
-### Training
-
-To train an RL agent run e.g.
-
-```
-scripts/train_rl.py --env BabyAI-GoToLocal-v0
-```
-
-Folders `logs/` and `models/` will be created in the current directory. The default name
-for the model is chosen based on the level name, the current time and the other settings (e.g.
-`BabyAI-GoToLocal-v0_ppo_expert_filmcnn_gru_mem_seed1_18-10-12-12-45-02`). You can also choose the model
-name by setting `--model`. After 5 hours of training you should be getting a success rate of 97-99\%.
-A machine readable log can be found in `logs/<MODEL>/log.csv`, a human readable in `logs/<MODEL>/log.log`.
-
-To train an agent with imitation learning first make sure that you have your demonstrations in
-`demos/<DEMOS>`. Then run e.g.
-
-```
-scripts/train_il.py --env BabyAI-GoToLocal-v0 --demos <DEMOS>
-```
-
-In the example above we run scripts from the root of the repository, but if you have installed BabyAI as
-described above, you can also run all scripts with commands like `<PATH-TO-BABYAI-REPO>/scripts/train_il.py`.
-
-### Evaluation
-
-In the same directory where you trained your model run e.g.
-
-```
-scripts/evaluate.py --env BabyAI-GoToLocal-v0 --model <MODEL>
-```
-
-to evaluate the performance of your model named `<MODEL>` on 1000 episodes. If you want to see
-your agent performing, run
-
-```
-scripts/enjoy.py --env BabyAI-GoToLocal-v0 --model <MODEL>
-```
-
 ### The Levels
 
 Documentation for the ICLR19 levels can be found in
@@ -177,13 +126,6 @@ Documentation for the ICLR19 levels can be found in
 There are also older levels documented in
 [docs/bonus_levels.md](docs/bonus_levels.md).
 
-### Troubleshooting
-
-If you run into error messages relating to OpenAI gym or PyQT, it may be that the version of those libraries that you have installed is incompatible. You can try upgrading specific libraries with pip3, eg: `pip3 install --upgrade gym`. If the problem persists, please [open an issue](https://github.com/mila-iqia/babyai/issues) on this repository and paste a *complete* error message, along with some information about your platform (are you running Windows, Mac, Linux? Are you running this on a Mila machine?).
-
-## Instructions for Committers
-
-To contribute to this project, you should first create your own fork, and remember to periodically [sync changes from this repository](https://stackoverflow.com/questions/7244321/how-do-i-update-a-github-forked-repository). You can then create [pull requests](https://yangsu.github.io/pull-request-tutorial/) for modifications you have made. Your changes will be tested and reviewed before they are merged into this repository. If you are not familiar with forks and pull requests, we recommend doing a Google or YouTube search to find many useful tutorials on the topic.
 
 ## About this Project
 
