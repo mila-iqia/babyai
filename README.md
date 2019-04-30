@@ -8,7 +8,7 @@ Contents:
 - [Citation](#citation)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Demo Dataset](doc/demo-dataset.md)
+- [Demo Dataset](docs/demo-dataset.md)
 - [Codebase Structure](docs/codebase.md)
 - [Levels](#the-levels)
 - [Training and Evaluation](docs/train-eval.md)
