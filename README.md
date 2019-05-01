@@ -2,13 +2,13 @@
 
 [![Build Status](https://travis-ci.org/mila-iqia/babyai.svg?branch=master)](https://travis-ci.org/mila-iqia/babyai)
 
-A platform for simulating language learning with a human in the loop. This is an ongoing research project based at [Mila](https://mila.quebec/en/). 
+A platform for simulating language learning with a human in the loop. This is an ongoing research project based at [Mila](https://mila.quebec/en/).
 
 Contents:
 - [Citation](#citation)
+- [Replicating ICLR19 Results](#replicating-iclr19-results)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Demo Dataset](docs/demo-dataset.md)
 - [Codebase Structure](docs/codebase.md)
 - [Levels](#the-levels)
 - [Training and Evaluation](docs/train-eval.md)
@@ -29,6 +29,10 @@ If you use this platform in your research, please cite:
   url={https://openreview.net/forum?id=rJeXCo0cYX},
 }
 ```
+
+## Replicating ICLR19 Results
+
+The master branch of this repository is updated frequently. If you are looking to replicate or compare against the results from the [ICLR19 BabyAI paper](https://openreview.net/forum?id=rJeXCo0cYX), please use the docker image, demonstration dataset and source code from the [iclr19 branch](https://github.com/mila-iqia/babyai/tree/iclr19) of this repository.
 
 ## Installation
 
@@ -77,22 +81,6 @@ cd ../babyai
 pip install --editable .
 ```
 
-### Docker Image
-
-A prebuilt docker image is available [on Docker Hub](https://hub.docker.com/r/maximecb/babyai/). You can download this image by executing:
-
-```
-docker pull maximecb/babyai
-```
-
-You should run the image with `nvidia-docker` (which allows you to use CUDA):
-
-```
-nvidia-docker run -it maximecb/babyai bash
-```
-
-Pretrained IL and RL models can be found in the `models` directory of the image.
-
 ### BabyAI Storage Path
 
 Add this line to `.bashrc` (Linux), or `.bash_profile` (Mac).
@@ -125,7 +113,6 @@ Documentation for the ICLR19 levels can be found in
 [docs/iclr19_levels.md](docs/iclr19_levels.md).
 There are also older levels documented in
 [docs/bonus_levels.md](docs/bonus_levels.md).
-
 
 ## About this Project
 
