@@ -37,9 +37,7 @@ Pretrained IL and RL models can be found in the `models` directory of the image.
 
 ### Demonstration Dataset
 
-**NOTE 2018-10-18:** we are in the process of improving the heuristic agent (bot) and will be releasing a new dataset of higher-quality demonstrations soon.
-
-Generating demonstrations takes a sizeable amount of computational resources. A gzipped archive containing the demonstrations used for the ICLR 2019 submission is [available here](http://lisaweb.iro.umontreal.ca/transfert/lisa/users/chevalma/iclr19-demos.tar.gz) (14GB download).
+Generating demonstrations takes a significant amount of computational resources, on the orde of 24 hours on one machine for some of the harder levels. A gzipped archive containing the demonstrations used for the ICLR 2019 submission is [available here](ftp://ssh.mila.quebec/babyai/demos_iclr19_v2.tar.gz) (31GB download).
 
 ## Manual Installation
 
