@@ -37,7 +37,9 @@ Pretrained IL and RL models can be found in the `models` directory of the image.
 
 ### Demonstration Dataset
 
-Generating demonstrations takes a significant amount of computational resources, on the orde of 24 hours on one machine for some of the harder levels. A gzipped archive containing the demonstrations used for the ICLR 2019 submission is [available here](ftp://ssh.mila.quebec/babyai/demos_iclr19_v2.tar.gz) (31GB download).
+Generating demonstrations takes a significant amount of computational resources, on the orde of 24 hours on one machine for some of the harder levels. A gzipped archive containing the demonstrations used for the ICLR 2019 submission can be downloaded as follows (31GB download):
+
+```wget ftp://ssh.mila.quebec/babyai/demos_iclr19_v2.tar.gz```
 
 ## Manual Installation
 
