@@ -14,7 +14,7 @@ LOC_NAMES = ['left', 'right', 'front', 'behind']
 
 # Environment flag to indicate that done actions should be
 # used by the verifier
-use_done_actions = os.environ.get('BABYAI_DONE_ACTIONS', True)
+use_done_actions = os.environ.get('BABYAI_DONE_ACTIONS', False)
 
 
 def dot_product(v1, v2):

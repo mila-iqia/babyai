@@ -91,13 +91,6 @@ class Level_OpenDoorColor(Level_OpenDoor):
         )
 
 
-# class Level_OpenDoorColorDebug(Level_OpenDoorColor, Level_OpenDoorDebug):
-#     """
-#     Same as OpenDoorColor but the level stops when any door is opened
-#     """
-#    pass
-
-
 class Level_OpenDoorLoc(Level_OpenDoor):
     """
     Go to the door

@@ -39,6 +39,7 @@ def main(args, seed, episodes):
     utils.seed(seed)
 
     # Define agent
+
     env = gym.make(args.env)
     env.seed(seed)
     agent = utils.load_agent(env, args.model, args.demos, args.demos_origin, args.argmax, args.env)
@@ -53,6 +54,7 @@ def main(args, seed, episodes):
         logs = evaluate(agent, env, episodes, False)
     else:
         logs = batch_evaluate(agent, args.env, seed, episodes)
+
 
     return logs
 
