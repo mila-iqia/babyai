@@ -10,7 +10,8 @@ import time
 import datetime
 
 import babyai.utils as utils
-from babyai.evaluate import evaluate_demo_agent, batch_evaluate, evaluate
+from babyai.meta_evaluate import evaluate_meta
+from babyai.utils.meta_agent import HandcraftedMetacontroller
 # Parse arguments
 
 parser = argparse.ArgumentParser()
@@ -46,14 +47,9 @@ def main(args, seed, episodes):
         # Set the number of episodes to be the number of demos
         episodes = len(agent.demos)
 
-    # Evaluate
-    if isinstance(agent, utils.DemoAgent):
-        logs = evaluate_demo_agent(agent, episodes)
-    elif isinstance(agent, utils.BotAgent) or args.contiguous_episodes:
-        logs = evaluate(agent, env, episodes, False)
-    else:
-        logs = batch_evaluate(agent, args.env, seed, episodes)
-
+    # Evaluate PutNextLocal with GoToLocal model + bot stack
+    meta_agent = HandcraftedMetacontroller(env, agent)
+    logs = evaluate_meta(meta_agent, env, episodes, verbose=False)
     return logs
 
 
