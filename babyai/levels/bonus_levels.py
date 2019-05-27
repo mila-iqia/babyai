@@ -306,7 +306,7 @@ class Level_ControllerAllTasks(RoomGridLevel):
     def gen_mission(self):
         'create instruction from description'
         self.carrying = self.carrying_object()
-        carry = dict(carrying=self.carrying, carryInv=self.carryInv)
+        carry = dict(carrying=self.carrying, carryInv=self.carryInv, middle=True)
         self.gen_instr_type(carry)
 
 
@@ -371,7 +371,7 @@ class Level_ControllerGoTo(Level_ControllerExplore):
         'if object present, goto, otherwise explore'
         self.get_objs()
         self.carrying = self.carrying_object()
-        carry = dict(carrying=self.carrying, carryInv=self.carryInv)
+        carry = dict(carrying=self.carrying, carryInv=self.carryInv, middle=True)
         self.obj_in_room()
         objDesc = self.create_desc(self.room.objs)
         self.instrs = GoToInstr(objDesc, **carry)
@@ -391,7 +391,7 @@ class Level_ControllerGoToDoor(Level_ControllerExplore):
         'if door present, goto, otherwise explore'
         self.get_objs()
         self.carrying = self.carrying_object()
-        carry = dict(carrying=self.carrying, carryInv=self.carryInv)
+        carry = dict(carrying=self.carrying, carryInv=self.carryInv, middle=True)
         self.door_in_room()
         objDesc = self.create_desc(self.doors)
         self.instrs = GoToInstr(objDesc, **carry)
@@ -411,7 +411,7 @@ class Level_ControllerGoNextTo(Level_ControllerExplore):
         'if object present, go next to, otherwise explore'
         self.get_objs()
         self.carrying = self.carrying_object()
-        carry = dict(carrying=self.carrying, carryInv=self.carryInv, objs=self.room.objs)
+        carry = dict(carrying=self.carrying, carryInv=self.carryInv, objs=self.room.objs, middle=True)
         self.obj_in_room()
         objDesc = self.create_desc(self.room.objs)
         self.instrs = GoNextToInstr(objDesc, **carry)

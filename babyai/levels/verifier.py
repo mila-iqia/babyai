@@ -133,9 +133,9 @@ class ObjDesc:
                 if use_location and self.loc in ["left", "right", "front", "behind"]:
                     # Locations apply only to objects in the same room
                     # the agent starts in
+                    # if pos_next_to((i, j), env.start_pos):
+                    #     continue
                     if sameRoom and not agent_room.pos_inside(i, j):
-                        continue
-                    if pos_next_to((i, j), env.start_pos):
                         continue
 
                     # Direction from the agent to the object
@@ -343,11 +343,12 @@ class GoToInstr(ActionInstr):
     eg: go to the door
     """
 
-    def __init__(self, obj_desc, carrying=None, carryInv=False):
+    def __init__(self, obj_desc, carrying=None, carryInv=False, middle=False):
         super().__init__()
         self.desc = obj_desc
         self.carrying = carrying
         self.carryInv = carryInv
+        self.middle = middle
 
     def surface(self, env):
         return 'go to ' + self.desc.surface(env, sameRoom=False)
@@ -375,7 +376,7 @@ class GoToInstr(ActionInstr):
             # If the agent is next to (and facing) the object
             if np.array_equal(pos, self.env.front_pos):
                 # check for carry invariance
-                if not self.in_middle_room():
+                if self.middle and not self.in_middle_room():
                     return 'continue'
                 if not self.carryInv:
                     return 'success'
@@ -392,11 +393,12 @@ class GoNextToInstr(GoToInstr):
     eg: go to the door
     """
 
-    def __init__(self, obj_desc, carrying=None, carryInv=False, objs=None):
+    def __init__(self, obj_desc, carrying=None, carryInv=False, objs=None, middle=False):
         super().__init__(
             obj_desc,
             carrying=carrying,
-            carryInv=carryInv
+            carryInv=carryInv,
+            middle=middle
         )
         if objs is not None:
             self.objs = [ObjDesc(obj.type, obj.color) for obj in objs]
@@ -420,7 +422,7 @@ class GoNextToInstr(GoToInstr):
         for pos in self.desc.obj_poss:
             # If the agent is next to (and facing) the object
             if pos_next_to(pos, front_pos):
-                if not self.in_middle_room():
+                if self.middle and not self.in_middle_room():
                     return 'continue'
                 # if cell in front is empty
                 if self.is_not_empty(front_pos):
