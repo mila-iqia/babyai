@@ -53,6 +53,8 @@ parser.add_argument("--num-eval-demos", type=int, default=1000,
                     help="number of demos used for evaluation while growing the training set")
 parser.add_argument("--phases", type=int, default=1000,
                     help="maximum number of phases to train for")
+parser.add_argument("--epoch-length", type=int, default=0,
+                    help="number of examples per epoch; the whole dataset is used by if 0")
 
 logger = logging.getLogger(__name__)
 
