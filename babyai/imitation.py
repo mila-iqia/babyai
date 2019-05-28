@@ -78,6 +78,7 @@ class ImitationLearning(object):
         self.args = args
 
         utils.seed(self.args.seed)
+        self.val_seed = self.args.val_seed
 
         # args.env is a list when training on multiple environments
         if getattr(args, 'multi_env', None):
@@ -321,9 +322,6 @@ class ImitationLearning(object):
         return log
 
     def validate(self, episodes, verbose=True):
-        # Seed needs to be reset for each validation, to ensure consistency
-        utils.seed(self.args.val_seed)
-
         if verbose:
             logger.info("Validating the model")
         if getattr(self.args, 'multi_env', None):
@@ -339,7 +337,8 @@ class ImitationLearning(object):
 
         for env_name in ([self.args.env] if not getattr(self.args, 'multi_env', None)
                          else self.args.multi_env):
-            logs += [batch_evaluate(agent, env_name, self.args.val_seed, episodes)]
+            logs += [batch_evaluate(agent, env_name, self.val_seed, episodes)]
+            self.val_seed += episodes
         agent.model.train()
 
         return logs
