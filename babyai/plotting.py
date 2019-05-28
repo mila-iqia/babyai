@@ -133,8 +133,8 @@ def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=N
         if num == max_samples:
             df_model = df[df['model'] == model]
             success_rate = df_model['validation_success_rate'].rolling(window, center=True).mean()
-            if success_rate.max() < 0.99:
-                print('not solved yet')
+            if np.isnan(success_rate.max()) or success_rate.max() < 0.99:
+                print('{} has not solved the level yet'.format(model))
                 return
             first_solved = (success_rate > 0.99).to_numpy().nonzero()[0][0]
             row = df_model.iloc[first_solved]
