@@ -255,7 +255,7 @@ def main(args):
             il_learn,
             il_learn.train_demos,
             eval_seed,
-            int(args.start_demos * args.demo_grow_factor ** phase) - len(il_learn.train_demos),
+            int(args.start_demos * args.demo_grow_factor ** phase_no) - len(il_learn.train_demos),
             args.num_eval_demos
         )
 
