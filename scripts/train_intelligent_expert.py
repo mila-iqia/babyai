@@ -45,10 +45,10 @@ parser.add_argument("--demos-origin", required=False,
 parser.add_argument("--episodes", type=int, default=0,
                     help="number of episodes of demonstrations to use"
                          "(default: 0, meaning all demos)")
-parser.add_argument("--start-demos", type=int, default=5000,
-                    help="the starting number of demonstrations")
 parser.add_argument("--demo-grow-factor", type=float, default=1.2,
                     help="number of demos to add to the training set")
+parser.add_argument("--finish-demos", type=int, default=None,
+                    help="stop when reaching this many demos; if None, quit when success rate is >99%")
 parser.add_argument("--num-eval-demos", type=int, default=1000,
                     help="number of demos used for evaluation while growing the training set")
 parser.add_argument("--phases", type=int, default=1000,
@@ -241,9 +241,13 @@ def main(args):
             train_status_path = os.path.join(utils.get_log_dir(args.model), 'status.json')
             best_success_rate = il_learn.train(il_learn.train_demos, writer, csv_writer, train_status_path, header)
 
-        if best_success_rate >= 0.99:
-            logger.info("Reached target success rate with {} demos, stopping".format(len(il_learn.train_demos)))
-            break
+        if args.finish_demos is not None:
+            if len(il_learn.train_demos) > args.finish_demos:
+                break
+        else:
+            if best_success_rate >= 0.99:
+                logger.info("Reached target success rate with {} demos, stopping".format(len(il_learn.train_demos)))
+                break
 
         eval_seed = grow_training_set(
             il_learn,
