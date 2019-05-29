@@ -45,6 +45,9 @@ parser.add_argument("--demos-origin", required=False,
 parser.add_argument("--episodes", type=int, default=0,
                     help="number of episodes of demonstrations to use"
                          "(default: 0, meaning all demos)")
+parser.add_argument("--start-demos", type=float, default=None,
+                    help="Initial number of demos, can be float."
+                          "Will be multiplied by a power of --demo-grow-factor and rounded for each stage.")
 parser.add_argument("--demo-grow-factor", type=float, default=1.2,
                     help="number of demos to add to the training set")
 parser.add_argument("--finish-demos", type=int, default=None,
@@ -146,14 +149,13 @@ def generate_demos(env_name, seeds):
     return demos
 
 
-def grow_training_set(il_learn, train_demos, eval_seed, grow_factor, num_eval_demos):
+def grow_training_set(il_learn, train_demos, eval_seed, num_new_demos, num_eval_demos):
     """
     Grow the training set of demonstrations by some factor
     We specifically generate demos on which the agent fails
     """
 
-    new_train_set_size = int(len(train_demos) * grow_factor)
-    num_new_demos = new_train_set_size - len(train_demos)
+    new_train_set_size = len(train_demos) + num_new_demos
 
     logger.info("Generating {} new demos for {}".format(num_new_demos, il_learn.args.env))
 
@@ -253,7 +255,7 @@ def main(args):
             il_learn,
             il_learn.train_demos,
             eval_seed,
-            args.demo_grow_factor,
+            int(args.start_demos * args.demo_grow_factor ** phase) - len(il_learn.train_demos),
             args.num_eval_demos
         )
 
