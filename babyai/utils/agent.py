@@ -63,7 +63,7 @@ class ModelAgent(Agent):
             self.memory = model_results['memory']
 
         if self.argmax:
-            action = dist.probs.max(1, keepdim=True)[1]
+            action = dist.probs.max(1, keepdim=True)[1][:, 0]
         else:
             action = dist.sample()
 
