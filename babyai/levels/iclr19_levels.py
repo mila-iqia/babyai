@@ -342,7 +342,7 @@ class Level_GoToImpUnlock(RoomGridLevel):
         # The agent must be placed after all the object to respect constraints
         while True:
             self.place_agent()
-            start_room = self.room_from_pos(*self.start_pos)
+            start_room = self.room_from_pos(*self.agent_pos)
             # Ensure that we are not placing the agent in the locked room
             if start_room is locked_room:
                 continue
@@ -462,7 +462,7 @@ class Level_Unlock(RoomGridLevel):
         # The agent must be placed after all the object to respect constraints
         while True:
             self.place_agent()
-            start_room = self.room_from_pos(*self.start_pos)
+            start_room = self.room_from_pos(*self.agent_pos)
             # Ensure that we are not placing the agent in the locked room
             if start_room is locked_room:
                 continue

@@ -25,8 +25,8 @@ class Level_TestGoToBlocked(RoomGridLevel):
 
     def gen_mission(self):
         self.place_agent()
-        self.start_pos = np.array([3, 3])
-        self.start_dir = 0
+        self.agent_pos = np.array([3, 3])
+        self.agent_dir = 0
         obj = Ball('yellow')
         self.grid.set(1, 1, obj)
         for i in (1, 2, 3):
@@ -52,8 +52,8 @@ class Level_TestPutNextToBlocked(RoomGridLevel):
 
     def gen_mission(self):
         self.place_agent()
-        self.start_pos = np.array([3, 3])
-        self.start_dir = 0
+        self.agent_pos = np.array([3, 3])
+        self.agent_dir = 0
         obj1 = Ball('yellow')
         obj2 = Ball('blue')
         self.place_obj(obj1, (4, 4), (1, 1))
@@ -79,8 +79,8 @@ class Level_TestPutNextToCloseToDoor1(RoomGridLevel):
         )
 
     def gen_mission(self):
-        self.start_pos = np.array([3, 3])
-        self.start_dir = 0
+        self.agent_pos = np.array([3, 3])
+        self.agent_dir = 0
         door, pos = self.add_door(0, 0, None, 'red', False)
         self.obj1 = Ball('yellow')
         self.obj2 = Ball('blue')
@@ -120,8 +120,8 @@ class Level_TestPutNextToIdentical(RoomGridLevel):
         )
 
     def gen_mission(self):
-        self.start_pos = np.array([3, 3])
-        self.start_dir = 0
+        self.agent_pos = np.array([3, 3])
+        self.agent_dir = 0
         self.place_obj(Box('yellow'), (1, 1), (1, 1))
         self.place_obj(Ball('blue'), (4, 4), (1, 1))
         self.place_obj(Ball('red'), (2, 2), (1, 1))
@@ -144,8 +144,8 @@ class Level_TestUnblockingLoop(RoomGridLevel):
         )
 
     def gen_mission(self):
-        self.start_pos = np.array([15, 4])
-        self.start_dir = 2
+        self.agent_pos = np.array([15, 4])
+        self.agent_dir = 2
         door, pos = self.add_door(0, 0, 1, 'red', False)
         door, pos = self.add_door(0, 1, 0, 'red', False)
         door, pos = self.add_door(1, 1, 3, 'blue', False)
@@ -171,8 +171,8 @@ class Level_TestPutNextCloseToDoor(RoomGridLevel):
         )
 
     def gen_mission(self):
-        self.start_pos = np.array([5, 10])
-        self.start_dir = 2
+        self.agent_pos = np.array([5, 10])
+        self.agent_dir = 2
         door, pos1 = self.add_door(0, 0, 1, 'red', False)
         door, pos2 = self.add_door(0, 1, 0, 'red', False)
         door, pos3 = self.add_door(1, 1, 3, 'blue', False)
@@ -201,8 +201,8 @@ class Level_TestLotsOfBlockers(RoomGridLevel):
         )
 
     def gen_mission(self):
-        self.start_pos = np.array([5, 5])
-        self.start_dir = 0
+        self.agent_pos = np.array([5, 5])
+        self.agent_dir = 0
         self.place_obj(Box('yellow'), (2, 1), (1, 1))
         self.place_obj(Box('yellow'), (2, 2), (1, 1))
         self.place_obj(Box('yellow'), (2, 3), (1, 1))

@@ -209,7 +209,7 @@ class RoomGridLevel(RoomGrid):
         reachable = set()
 
         # Work list
-        stack = [self.start_pos]
+        stack = [self.agent_pos]
 
         while len(stack) > 0:
             i, j = stack.pop()
@@ -301,7 +301,7 @@ class LevelGen(RoomGridLevel):
         # The agent must be placed after all the object to respect constraints
         while True:
             self.place_agent()
-            start_room = self.room_from_pos(*self.start_pos)
+            start_room = self.room_from_pos(*self.agent_pos)
             # Ensure that we are not placing the agent in the locked room
             if start_room is self.locked_room:
                 continue
@@ -319,18 +319,12 @@ class LevelGen(RoomGridLevel):
         )
 
     def add_locked_room(self):
-        start_room = self.room_from_pos(*self.start_pos)
-
         # Until we've successfully added a locked room
         while True:
             i = self._rand_int(0, self.num_cols)
             j = self._rand_int(0, self.num_rows)
             door_idx = self._rand_int(0, 4)
             self.locked_room = self.get_room(i, j)
-
-            # Don't lock the room the agent starts in
-            if self.locked_room is start_room:
-                continue
 
             # Don't add a locked door in an external wall
             if self.locked_room.neighbors[door_idx] is None:
