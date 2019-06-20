@@ -107,7 +107,7 @@ class ObjDesc:
 
         self.obj_poss = []
 
-        agent_room = env.room_from_pos(*env.start_pos)
+        agent_room = env.room_from_pos(*env.agent_pos)
 
         for i in range(env.grid.width):
             for j in range(env.grid.height):
@@ -137,10 +137,10 @@ class ObjDesc:
                         continue
 
                     # Direction from the agent to the object
-                    v = (i - env.start_pos[0], j - env.start_pos[1])
+                    v = (i - env.agent_pos[0], j - env.agent_pos[1])
 
                     # (d1, d2) is an oriented orthonormal basis
-                    d1 = DIR_TO_VEC[env.start_dir]
+                    d1 = DIR_TO_VEC[env.agent_dir]
                     d2 = (-d1[1], d1[0])
 
                     # Check if object's position matches with location
