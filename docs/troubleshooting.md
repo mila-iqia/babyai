@@ -4,4 +4,18 @@ If you run into error messages relating to OpenAI gym or PyQT, it may be that th
 
 ## If you cannot install PyQT
 
-If you can't install PyQT using pip, another option is to install it using conda instead. If that doesn't work, note that PyQT is only needed to produce graphics for human viewing, and isn't needed during training. As such, it's possible to install BabyAI without PyQT and train a policy. To do so, you can comment out the `gym_minigrid` dependency in `setup.py`, clone the [gym-minigrid repository](https://github.com/maximecb/gym-minigrid) manually, and comment out the `pyqt5` dependency in the `setup.py` of the minigrid repository.
+If you cannot install PyQT using pip, another option is to install it using conda instead:
+
+```
+conda install -c anaconda pyqt 
+```
+
+Alternatively, it is also possible to install PyQT5 manually:
+
+```
+wget https://files.pythonhosted.org/packages/98/61/fcd53201a23dd94a1264c29095821fdd55c58b4cd388dc7115e5288866db/PyQt5-5.12.1-5.12.2-cp35.cp36.cp37.cp38-abi3-manylinux1_x86_64.whl
+PYTHONPATH=""
+pip3 install --user PyQt5-5.12.1-5.12.2-cp35.cp36.cp37.cp38-abi3-manylinux1_x86_64.whl
+```
+
+Finally, if none of the above options work, note that PyQT is only needed to produce graphics for human viewing, and isn't needed during training. As such, it's possible to install BabyAI without PyQT and train a policy. To do so, you can comment out the `gym_minigrid` dependency in `setup.py`, clone the [gym-minigrid repository](https://github.com/maximecb/gym-minigrid) manually, and comment out the `pyqt5` dependency in the `setup.py` of the minigrid repository.
