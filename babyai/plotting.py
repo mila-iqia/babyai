@@ -131,7 +131,7 @@ def model_num_samples(model):
     return int(re.findall('_([0-9]+)', model)[0])
 
 
-def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=None):
+def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=None, summary_path='summary.csv'):
     print()
     print(regex)
     models = [model for model in df['model'].unique() if re.match(regex, model)]
@@ -158,6 +158,8 @@ def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=N
         normal_time = np.mean(limits)
         print('using {} as normal time'.format(normal_time))
 
+    summary_data = []
+
     # check how many examples is required to succeed within normal time
     min_samples_required = None
     need_more_time = False
@@ -177,6 +179,10 @@ def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=N
             success_rate.max() * 100,
             df_model[limit].max() / normal_time,
             df_model['duration'].max() / 86400))
+        summary_data.append((num, max_within_normal_time))
+
+    summary_df = pandas.DataFrame(summary_data, columns=('num_samples', 'success_rate'))
+    summary_df.to_csv(summary_path)
 
     print("min samples required is {}".format(min_samples_required))
     if min(num_samples) == min_samples_required:
