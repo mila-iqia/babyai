@@ -136,7 +136,7 @@ def model_num_samples(model):
     return int(re.findall('_([0-9]+)', model)[0])
 
 
-def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=None, summary_path='summary.csv'):
+def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=None, summary_path=None):
     print()
     print(regex)
     models = [model for model in df['model'].unique() if re.match(regex, model)]
@@ -168,6 +168,8 @@ def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=N
     # check how many examples is required to succeed within normal time
     min_samples_required = None
     need_more_time = False
+    print("{: <100} {}\t{}\t{}\t{}".format(
+        'model_name', 'sr_nt', 'sr', 'dur_nt', 'dur_days'))
     for model, num in zip(models, num_samples):
         df_model = df[df['model'] == model]
         success_rate = df_model['validation_success_rate'].rolling(window, center=True).mean()
@@ -178,7 +180,7 @@ def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=N
                                        else int(1e9))
         if df_model[limit].max() < normal_time:
             need_more_time = True
-        print("{: <100} {: <5.4g} {: <5.4g} {: <5.3g} {:.3g}".format(
+        print("{: <100} {: <5.4g}\t{: <5.4g}\t{: <5.3g}\t{:.3g}".format(
             model.split('/')[-1],
             max_within_normal_time * 100,
             success_rate.max() * 100,
@@ -187,7 +189,8 @@ def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=N
         summary_data.append((num, max_within_normal_time))
 
     summary_df = pandas.DataFrame(summary_data, columns=('num_samples', 'success_rate'))
-    summary_df.to_csv(summary_path)
+    if summary_path:
+        summary_df.to_csv(summary_path)
 
     if min(num_samples) == min_samples_required:
         print('should be run with less samples!')
@@ -287,4 +290,5 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     pyplot.tight_layout()
     if figure_path:
         pyplot.savefig(figure_path)
-    return mean_n_min, std_n_min, probs
+    return {'mean_log2': mean_n_min, 'std_log2': std_n_min,
+            'min': 2 ** left, 'max': 2 ** right}
