@@ -196,7 +196,7 @@ def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=N
         print('should be run with less samples!')
     if need_more_time:
         print('should be run for more time!')
-    return summary_df
+    return summary_df, normal_time
 
 
 def estimate_sample_efficiency(df, visualize=False, figure_path=None):
@@ -268,7 +268,6 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     cut_grid = grid[:len(probs)]
     mean_n_min = (probs * cut_grid).sum()
     mean_n_min_squared = (probs * cut_grid ** 2).sum()
-    print(mean_n_min_squared, mean_n_min ** 2)
     std_n_min = (mean_n_min_squared - mean_n_min ** 2) ** 0.5
     print('N_min mean and std: ({}, {})'.format(mean_n_min, std_n_min))
 
