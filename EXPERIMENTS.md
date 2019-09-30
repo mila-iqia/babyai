@@ -25,6 +25,7 @@ for i in [1, 2, 3]:
 main('BabyAI-GoToRedBallGrey-v0', 100, total_time, int(2 ** 12), int(2 ** 15), step_size=2 ** 0.2)
 ```
 
+
 `total_time` is the total number of examples in all the batches that the model is trained on. This is not to be confused with the number of invidiual examples. The above code will run 
 -  3 jobs with 1M demonstrations (these are used to compute the ``normal'' time it takes to train the model on a given level, see the paper for more details)
 - 16 jobs with the number of demonstrations varied from `2 ** 12` to `2 ** 15` using the log-scale step of ``2 ** 0.2``
@@ -39,15 +40,17 @@ scripts/il_dataeff.py --regex '.*-GoToRedBallGrey-.*' --window 10 gotoredballgre
 `--window 10` means that results of 10 subsequent validations are averaged to make sure that the 99% threshold is crossed robustly. When you have many models in one directory, use `--regex` to select the models that were trained on a specific level, in this case GoToRedBallGrey. `gotoredballgrey` directory will contain 3 files:
 - `summary.csv` summarizes the results of all runs that were taken into consideration
 - `visualization.png` illustrates the GP-based interpolation and the estimated credible interval
-- `result.json` describes the resulting sample efficiency estimate. `min` and `max` are the boundaries of the 99% credible interval 
+- `result.json` describes the resulting sample efficiency estimate. `min` and `max` are the boundaries of the 99% credible interval. The estimatation is done by using Gaussian Process interpolation, see the paper for more details.
 
 If you wish to compare sample efficiencies of two models `M1` and `M2`, use `scripts/compare_dataeff.py`:
 
 ```
-scripts/compare_dataeff.py M1 M2
+scripts/compare\_dataeff.py M1 M2
 ```
 
 Here, `M1` and `M2` are report directories created by `scripts/il_dataeff.py`.
+
+Note: use `level_type='big'` in your `main` call to train big models of the kind that we use for big 3x3 maze levels.
 
 ### Curriculum learning sample efficiency.
 TODO
