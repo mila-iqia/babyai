@@ -271,7 +271,7 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     std_n_min = (mean_n_min_squared - mean_n_min ** 2) ** 0.5
     print('N_min mean and std: ({}, {})'.format(mean_n_min, std_n_min))
 
-    left, right = (mean_n_min - 3 * std_n_min, mean_n_min + 3 * std_n_min)
+    left, right = (mean_n_min - 2.58 * std_n_min, mean_n_min + 2.58 * std_n_min)
     print("Confidence interval (log):", left, mean_n_min, right)
     print("Confidence interval:", 2 ** left, 2 ** mean_n_min, 2 ** right)
 

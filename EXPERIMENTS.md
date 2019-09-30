@@ -11,7 +11,34 @@ the default value `--window=100` makes sense, but for `GoToRedBallGrey` we used 
 ## Imitation learning 
 
 ### Sample efficiency
-Use `main` from `babyai/efficiency.py` to create your launch script. Run the experiments. Use `scripts/il_dataeff.py`.
+
+To measure the sample efficiency you will have to train the model using different numbers of samples.
+The `main` function from `babyai/efficiency.py` can do it for you. For it to work, you have to create a file `babyai/cluster_specific.py` and implement a `launch_job` function in it that launches the job at the cluster that you have at your disposal. 
+
+Here is an example launch script for the `GoToRedBallGrey` level:
+
+```
+total_time = int(1e6)
+for i in [1, 2, 3]:
+    main('BabyAI-GoToRedBallGrey-v0', 100 + i, total_time, 1000000)
+main('BabyAI-GoToRedBallGrey-v0', 100, total_time, int(2 ** 12), int(2 ** 15), step_size=2 ** 0.2)
+```
+
+`total_time` is the total number of examples in all the batches that the model is trained on. This is not to be confused with the number of invidiual examples. The above code will run 
+-  3 jobs with 1 million demonstrations (there are used to compute the ``normal'' time it takes to train the model on the given level, see the paper for more details)
+- 16 jobs with the number of demonstrations varied from `2 ** 12` to `2 ** 15` using the log-scale step of ``2 ** 0.2``
+
+When all the jobs finish, use `scripts/il_dataeff.py` to estimate the minimum number of demonstrations that
+are required to achieve the 99% success rate:
+
+```
+scripts/il_dataeff.py --regex '.*-GoToRedBallGrey-.*' --window 10 gotoredballgrey
+```
+
+`--window 10` means that results of 10 subsequent validation will be averaged to make sure that the 99% threshold is crossed robustly. Use `--regex` to select the models trained on the level of interest, in this case GoToRedBallGrey. `gotoredballgrey` directory will contain a report that will consists of 3 files:
+- `summary.csv` summarizes the results of all runs that were taken into consideration
+- `visualization.png` illustrates the GP-based interpolation and the estimated credible interval
+- `result.json` contains the results of the experiment. `min` and `max` are the left and the right boundaries of the 99%credible interval 
 
 ### Curriculum learning sample efficiency.
 TODO
