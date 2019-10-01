@@ -15,16 +15,17 @@ the default value `--window=100` makes sense, but for `GoToRedBallGrey` we used 
 To measure sample efficiency of imitation learning you have to train the model using different numbers of samples.
 The `main` function from `babyai/efficiency.py` can help with you this. In order to use `main`, you have to create a file `babyai/cluster_specific.py` and implement a `launch_job` function in it that launches the job at the cluster that you have at your disposal. 
 
-Here is an example launch script for the `GoToRedBallGrey` level:
+Below is an example launch script for the `GoToRedBallGrey` level. Before running the script, make sure the demonstrations are located in `./demos`.
 
-```
+``` python
 from babyai.efficiency import main
 total_time = int(1e6)
 for i in [1, 2, 3]:
-    main('BabyAI-GoToRedBallGrey-v0', 100 + i, total_time, 1000000)
-main('BabyAI-GoToRedBallGrey-v0', 100, total_time, int(2 ** 12), int(2 ** 15), step_size=2 ** 0.2)
+    # i is the random seed
+    main('BabyAI-GoToRedBallGrey-v0', i, total_time, 1000000)
+# 'main' will use a different seed for each of experiment of this series
+main('BabyAI-GoToRedBallGrey-v0', 1, total_time, int(2 ** 12), int(2 ** 15), step_size=2 ** 0.2)
 ```
-
 
 `total_time` is the total number of examples in all the batches that the model is trained on. This is not to be confused with the number of invidiual examples. The above code will run 
 -  3 jobs with 1M demonstrations (these are used to compute the ``normal'' time it takes to train the model on a given level, see the paper for more details)
