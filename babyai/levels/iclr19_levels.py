@@ -9,9 +9,9 @@ from .levelgen import *
 
 class Level_GoToRedBallGrey(RoomGridLevel):
     """
-    Go to the red ball, single room, with obstacles.
-    The obstacles/distractors are all grey boxes, to eliminate
-    perceptual complexity. No unblocking required.
+    Go to the red ball, single room, with distractors.
+    The distractors are all grey to reduce perceptual complexity.
+    This level has distractors but doesn't make use of language.
     """
 
     def __init__(self, room_size=8, num_dists=7, seed=None):
@@ -26,9 +26,10 @@ class Level_GoToRedBallGrey(RoomGridLevel):
     def gen_mission(self):
         self.place_agent()
         obj, _ = self.add_object(0, 0, 'ball', 'red')
+        dists = self.add_distractors(num_distractors=self.num_dists, all_unique=False)
 
-        for i in range(self.num_dists):
-            self.add_object(0, 0, 'box', 'grey')
+        for dist in dists:
+            dist.color = 'grey'
 
         # Make sure no unblocking is required
         self.check_objs_reachable()
