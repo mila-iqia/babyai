@@ -4,6 +4,29 @@ from .verifier import *
 from .levelgen import *
 
 
+class Level_GoToRedBlueBall(RoomGridLevel):
+    """
+    Go to the red ball or to the blue ball.
+    Simple level with language and exactly two different objects.
+    """
+
+    def __init__(self, room_size=8, seed=None):
+        super().__init__(
+            num_rows=1,
+            num_cols=1,
+            room_size=room_size,
+            seed=seed
+        )
+
+    def gen_mission(self):
+        self.place_agent()
+        red_ball, _ = self.add_object(0, 0, 'ball', 'red')
+        blue_ball, _ = self.add_object(0, 0, 'ball', 'blue')
+
+        obj = self._rand_elem([red_ball, blue_ball])
+        self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
+
+
 class Level_OpenRedDoor(RoomGridLevel):
     """
     Go to the red door
