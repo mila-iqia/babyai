@@ -4,6 +4,7 @@ import os
 import argparse
 import pandas
 import json
+import re
 
 from babyai import plotting
 
@@ -17,12 +18,14 @@ parser.add_argument("--grow-factor", type=float, default=2 ** 0.25)
 parser.add_argument("report", default=None)
 args = parser.parse_args()
 
-def summarize_results(master_df):
+def summarize_results(master_df, regex):
     data = {
         'num_samples': [],
         'success_rate': []
     }
-    for model in sorted(master_df['model'].unique()):
+    models = [model for model in master_df['model'].unique()
+              if re.match(regex, model)]
+    for model in models:
         print(model)
         df = master_df[master_df['model'] == model]
         solved = False
@@ -41,7 +44,7 @@ figure_path = os.path.join(args.report, 'visualization.png')
 result_path = os.path.join(args.report, 'result.json')
 
 df = pandas.concat(plotting.load_logs(args.path, multiphase=True), sort=True)
-summary_df = summarize_results(df)
+summary_df = summarize_results(df, args.regex)
 result = plotting.estimate_sample_efficiency(
     summary_df, visualize=True, figure_path=figure_path)
 

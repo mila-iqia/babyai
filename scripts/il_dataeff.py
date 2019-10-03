@@ -14,12 +14,13 @@ parser.add_argument("--regex", default='.*')
 parser.add_argument("--patience", default=2, type=int)
 parser.add_argument("--window", default=1, type=int)
 parser.add_argument("--limit", default="frames")
-parser.add_argument("report", default=None)
+parser.add_argument("report")
 args = parser.parse_args()
 
 if os.path.exists(args.report):
     raise ValueError("report directory already exists")
 os.mkdir(args.report)
+
 summary_path = os.path.join(args.report, 'summary.csv')
 figure_path = os.path.join(args.report, 'visualization.png')
 result_path = os.path.join(args.report, 'result.json')
