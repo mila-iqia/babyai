@@ -7,7 +7,7 @@ from .levelgen import *
 class Level_GoToRedBlueBall(RoomGridLevel):
     """
     Go to the red ball or to the blue ball.
-    Simple level with language and exactly two different objects.
+    There is only one object, and therefore language is not required.
     """
 
     def __init__(self, room_size=8, seed=None):
@@ -20,10 +20,8 @@ class Level_GoToRedBlueBall(RoomGridLevel):
 
     def gen_mission(self):
         self.place_agent()
-        red_ball, _ = self.add_object(0, 0, 'ball', 'red')
-        blue_ball, _ = self.add_object(0, 0, 'ball', 'blue')
-
-        obj = self._rand_elem([red_ball, blue_ball])
+        color = self._rand_elem(['red', 'blue'])
+        obj, _ = self.add_object(0, 0, 'ball', color)
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
 
