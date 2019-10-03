@@ -152,8 +152,8 @@ def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=N
             df_model = df[df['model'] == model]
             success_rate = df_model['validation_success_rate'].rolling(window, center=True).mean()
             if np.isnan(success_rate.max()) or success_rate.max() < 0.99:
-                print('{} has not solved the level yet'.format(model))
-                return
+                raise ValueError('{} has not solved the level yet, only at {} so far'.format(
+                    model, success_rate.max()))
             first_solved = (success_rate > 0.99).to_numpy().nonzero()[0][0]
             row = df_model.iloc[first_solved]
             print("the model with {} samples first solved after {} epochs ({} seconds, {} frames)".format(
@@ -243,9 +243,6 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     total_p = 0.
     print("Estimating N_min using a grid of {} points".format(len(grid)))
     for j in range(len(grid)):
-        if j and j % 10 == 0:
-            print('{} points done'.format(j))
-            print(" ".join(["{:.3g}".format(p) for p in probs[-10:]]))
         mu = y_grid_mean[:j + 1].copy()
         mu[j] *= -1
         sigma = f_grid_cov[:j + 1, :j + 1].copy()
@@ -255,7 +252,12 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
         p = stats.multivariate_normal.cdf(np.zeros_like(mu), mu, sigma, abseps=1e-3, releps=1e-3)
         probs.append(p)
         total_p += p
-        if total_p.sum() > 0.999:
+
+        can_stop = total_p.sum() > 0.999
+        if j and (can_stop or j % 10 == 0):
+            print('{} points done'.format(j))
+            print(" ".join(["{:.3g}".format(p) for p in probs[-10:]]))
+        if can_stop:
             print('the rest is unlikely')
             break
     probs = np.array(probs)
