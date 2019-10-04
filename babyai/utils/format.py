@@ -103,7 +103,7 @@ class ObssPreprocessor:
         self.instr_preproc = InstructionsPreprocessor(model_name, load_vocab_from)
         self.vocab = self.instr_preproc.vocab
         self.obs_space = {
-            "image": 147,
+            "image": 20,
             "instr": self.vocab.max_size
         }
 

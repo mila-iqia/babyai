@@ -41,6 +41,20 @@ class ExpertControllerFiLM(nn.Module):
         return out
 
 
+class ImageBOWEmbedding(nn.Module):
+
+   def __init__(self, max_value, embedding_dim):
+       super(ImageBOWEmbedding, self).__init__()
+       self.max_value = max_value
+       self.embedding_dim = embedding_dim
+       self.embedding = nn.Embedding(3 * max_value, embedding_dim)
+
+   def forward(self, inputs):
+       offsets = torch.Tensor([0, self.max_value, 2 * self.max_value]).to(inputs.device)
+       inputs = (inputs + offsets[None, :, None, None]).long()
+       return self.embedding(inputs).sum(1).permute(0, 3, 1, 2)
+
+
 class ACModel(nn.Module, babyai.rl.RecurrentACModel):
     def __init__(self, obs_space, action_space,
                  image_dim=128, memory_dim=128, instr_dim=128,
@@ -74,8 +88,12 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             if not self.use_instr:
                 raise ValueError("FiLM architecture can be used when instructions are enabled")
 
-            self.image_conv = nn.Sequential(
-                nn.Conv2d(in_channels=3, out_channels=128, kernel_size=(2, 2), padding=1),
+            n_channels_bow = 32
+            use_bow = arch.endswith('bow')
+
+            layers = [
+                nn.Conv2d(in_channels=n_channels_bow if use_bow else 3,
+                          out_channels=128, kernel_size=(2, 2), padding=1),
                 nn.BatchNorm2d(128),
                 nn.ReLU(),
                 nn.MaxPool2d(kernel_size=(2, 2), stride=2),
@@ -83,7 +101,10 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 nn.BatchNorm2d(128),
                 nn.ReLU(),
                 nn.MaxPool2d(kernel_size=(2, 2), stride=2)
-            )
+            ]
+            if arch.endswith('bow'):
+                layers = [ImageBOWEmbedding(obs_space['image'], n_channels_bow)] + layers
+            self.image_conv = nn.Sequential(*layers)
             self.film_pool = nn.MaxPool2d(kernel_size=(2, 2), stride=2)
         else:
             raise ValueError("Incorrect architecture name: {}".format(arch))
@@ -120,10 +141,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             self.embedding_size += self.final_instr_dim
 
         if arch.startswith("expert_filmcnn"):
-            if arch == "expert_filmcnn":
-                num_module = 2
-            else:
-                num_module = int(arch[(arch.rfind('_') + 1):])
+            num_module = 2
             self.controllers = []
             for ni in range(num_module):
                 if ni < num_module-1:
