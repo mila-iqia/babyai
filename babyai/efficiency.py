@@ -16,7 +16,7 @@ SMALL_MODEL_PARAMS = '--batch-size=256'
 
 def main(env, seed, training_time, min_demos, max_demos=None,
          step_size=math.sqrt(2), pretrained_model=None, level_type='small',
-         val_episodes=512):
+         val_episodes=512, extra_cmd="")
     demos = env
 
     if not max_demos:
@@ -48,6 +48,8 @@ def main(env, seed, training_time, min_demos, max_demos=None,
                ' --val-interval 1 --log-interval 1 --epoch-length {epoch_length}'
                ' --model {model_name} --episodes {demo_count} --epochs {epochs} --patience {epochs}'
           .format(**locals()))
+        if extra_cmd:
+            cmd = cmd + " " + extra_cmd
         if pretrained_model:
             cmd += ' --pretrained-model {}'.format(pretrained_model)
         launch_job(cmd, jobname)
