@@ -7,10 +7,13 @@ from .levelgen import *
 class Level_GoToRedBlueBall(RoomGridLevel):
     """
     Go to the red ball or to the blue ball.
-    There is only one object, and therefore language is not required.
+    There is exactly one red or blue ball, and some distractors.
+    The distractors are guaranteed not to be red or blue balls.
+    Language is not required to solve this level.
     """
 
-    def __init__(self, room_size=8, seed=None):
+    def __init__(self, room_size=8, num_dists=7, seed=None):
+        self.num_dists = num_dists
         super().__init__(
             num_rows=1,
             num_cols=1,
@@ -20,8 +23,20 @@ class Level_GoToRedBlueBall(RoomGridLevel):
 
     def gen_mission(self):
         self.place_agent()
+
+        dists = self.add_distractors(num_distractors=self.num_dists, all_unique=False)
+
+        # Ensure there is only one red or blue ball
+        for dist in dists:
+            if dist.type == 'ball' and (dist.color == 'blue' or dist.color == 'red'):
+                raise RejectSampling('can only have one blue or red ball')
+
         color = self._rand_elem(['red', 'blue'])
         obj, _ = self.add_object(0, 0, 'ball', color)
+
+        # Make sure no unblocking is required
+        self.check_objs_reachable()
+
         self.instrs = GoToInstr(ObjDesc(obj.type, obj.color))
 
 
