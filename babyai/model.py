@@ -17,15 +17,24 @@ def initialize_parameters(m):
         if m.bias is not None:
             m.bias.data.fill_(0)
 
+def norm_factory(norm, n_channels):
+    if norm == 'bnorm':
+        return nn.BatchNorm2d(n_channels)
+    elif norm == 'lnorm':
+        return nn.GroupNorm(1, n_channels)
+    else:
+        raise ValueError()
+
 
 # Inspired by FiLMedBlock from https://arxiv.org/abs/1709.07871
 class ExpertControllerFiLM(nn.Module):
-    def __init__(self, in_features, out_features, in_channels, imm_channels):
+    def __init__(self, in_features, out_features, in_channels, imm_channels, norm):
         super().__init__()
+
         self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=imm_channels, kernel_size=(3, 3), padding=1)
-        self.bn1 = nn.BatchNorm2d(imm_channels)
+        self.bn1 = norm_factory(norm, imm_channels)
         self.conv2 = nn.Conv2d(in_channels=imm_channels, out_channels=out_features, kernel_size=(3, 3), padding=1)
-        self.bn2 = nn.BatchNorm2d(out_features)
+        self.bn2 = norm_factory(norm, out_features)
 
         self.weight = nn.Linear(in_features, out_features)
         self.bias = nn.Linear(in_features, out_features)
@@ -71,8 +80,8 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         self.image_dim = image_dim
         self.memory_dim = memory_dim
         self.instr_dim = instr_dim
-
         self.obs_space = obs_space
+        norm = 'lnorm' if 'lnorm' in arch else 'bnorm'
 
         if arch == "cnn1":
             self.image_conv = nn.Sequential(
@@ -94,11 +103,11 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             layers = [
                 nn.Conv2d(in_channels=n_channels_bow if use_bow else 3,
                           out_channels=128, kernel_size=(2, 2), padding=1),
-                nn.BatchNorm2d(128),
+                norm_factory(norm, 128),
                 nn.ReLU(),
                 nn.MaxPool2d(kernel_size=(2, 2), stride=2),
                 nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), padding=1),
-                nn.BatchNorm2d(128),
+                norm_factory(norm, 128),
                 nn.ReLU(),
                 nn.MaxPool2d(kernel_size=(2, 2), stride=2)
             ]
@@ -147,11 +156,13 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 if ni < num_module-1:
                     mod = ExpertControllerFiLM(
                         in_features=self.final_instr_dim,
-                        out_features=128, in_channels=128, imm_channels=128)
+                        out_features=128, in_channels=128, imm_channels=128,
+                        norm=norm)
                 else:
                     mod = ExpertControllerFiLM(
                         in_features=self.final_instr_dim, out_features=self.image_dim,
-                        in_channels=128, imm_channels=128)
+                        in_channels=128, imm_channels=128,
+                        norm=norm)
                 self.controllers.append(mod)
                 self.add_module('FiLM_Controler_' + str(ni), mod)
 

@@ -16,7 +16,7 @@ SMALL_MODEL_PARAMS = '--batch-size=256'
 
 def main(env, seed, training_time, min_demos, max_demos=None,
          step_size=math.sqrt(2), pretrained_model=None, level_type='small',
-         val_episodes=512, extra_cmd="")
+         val_episodes=512, extra_cmd=""):
     demos = env
 
     if not max_demos:
