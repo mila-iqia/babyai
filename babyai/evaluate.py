@@ -79,6 +79,7 @@ class ManyEnvs(gym.Env):
     def render(self):
         raise NotImplementedError
 
+from gym_minigrid.wrappers import RGBImgPartialObsWrapper
 
 # Returns the performance of the agent on the environment for a particular number of episodes.
 def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
@@ -87,6 +88,7 @@ def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
     envs = []
     for i in range(num_envs):
         env = gym.make(env_name)
+        env = RGBImgPartialObsWrapper(env)
         envs.append(env)
     env = ManyEnvs(envs)
 

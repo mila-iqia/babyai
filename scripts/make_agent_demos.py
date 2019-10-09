@@ -68,11 +68,16 @@ def print_demo_lengths(demos):
         np.mean(num_frames_per_episode), np.std(num_frames_per_episode)))
 
 
+
+from gym_minigrid.wrappers import RGBImgPartialObsWrapper
+
+
 def generate_demos(n_episodes, valid, seed, shift=0):
     utils.seed(seed)
 
     # Generate environment
     env = gym.make(args.env)
+    env = RGBImgPartialObsWrapper(env)
 
     agent = utils.load_agent(env, args.model, args.demos, 'agent', args.argmax, args.env)
     demos_path = utils.get_demos_path(args.demos, args.env, 'agent', valid)
@@ -95,7 +100,7 @@ def generate_demos(n_episodes, valid, seed, shift=0):
         agent.on_reset()
 
         actions = []
-        mission = obs["mission"]
+        mission = env.mission
         images = []
         directions = []
 
@@ -109,7 +114,7 @@ def generate_demos(n_episodes, valid, seed, shift=0):
 
                 actions.append(action)
                 images.append(obs['image'])
-                directions.append(obs['direction'])
+                directions.append(0)
 
                 obs = new_obs
             if reward > 0 and (args.filter_steps == 0 or len(images) <= args.filter_steps):

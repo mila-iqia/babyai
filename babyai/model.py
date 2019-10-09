@@ -40,6 +40,14 @@ class ExpertControllerFiLM(nn.Module):
         out = F.relu(out)
         return out
 
+class Flatten(nn.Module):
+    """
+    Flatten layer, to flatten convolutional layer output
+    """
+
+    def forward(self, input):
+        return input.view(input.size(0), -1)
+
 
 class ACModel(nn.Module, babyai.rl.RecurrentACModel):
     def __init__(self, obs_space, action_space,
@@ -62,13 +70,20 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
         if arch == "cnn1":
             self.image_conv = nn.Sequential(
-                nn.Conv2d(in_channels=3, out_channels=16, kernel_size=(2, 2)),
+                nn.Conv2d(in_channels=3, out_channels=32, kernel_size=5),
                 nn.ReLU(),
-                nn.MaxPool2d(kernel_size=(2, 2), stride=2),
-                nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(2, 2)),
+                nn.MaxPool2d(kernel_size=2, stride=2),
+
+                nn.Conv2d(in_channels=32, out_channels=32, kernel_size=5, stride=2),
                 nn.ReLU(),
-                nn.Conv2d(in_channels=32, out_channels=image_dim, kernel_size=(2, 2)),
-                nn.ReLU()
+
+                nn.Conv2d(in_channels=32, out_channels=16, kernel_size=5, stride=2),
+                nn.ReLU(),
+
+                Flatten(),
+
+                nn.Linear(256, image_dim),
+                nn.ReLU(),
             )
         elif arch.startswith("expert_filmcnn"):
             if not self.use_instr:
@@ -225,9 +240,17 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 x = controler(x, instr_embedding)
             x = F.relu(self.film_pool(x))
         else:
+            #print(x.size())
+
             x = self.image_conv(x)
 
+            #print('post conv')
+
+        #print(x.size())
+
         x = x.reshape(x.shape[0], -1)
+
+        #print(x.size())
 
         if self.use_memory:
             hidden = (memory[:, :self.semi_memory_size], memory[:, self.semi_memory_size:])

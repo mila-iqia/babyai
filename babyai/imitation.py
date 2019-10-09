@@ -17,6 +17,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from gym_minigrid.wrappers import RGBImgPartialObsWrapper
+
 
 class ImitationLearning(object):
     def __init__(self, args, ):
@@ -26,7 +28,7 @@ class ImitationLearning(object):
 
         # args.env is a list when training on multiple environments
         if getattr(args, 'multi_env', None):
-            self.env = [gym.make(item) for item in args.multi_env]
+            self.env = [RGBImgPartialObsWrapper(gym.make(item)) for item in args.multi_env]
 
             self.train_demos = []
             for demos, episodes in zip(args.multi_demos, args.multi_episodes):
@@ -56,7 +58,7 @@ class ImitationLearning(object):
             action_space = self.env[0].action_space
 
         else:
-            self.env = gym.make(self.args.env)
+            self.env = RGBImgPartialObsWrapper(gym.make(self.args.env))
 
             demos_path = utils.get_demos_path(args.demos, args.env, args.demos_origin, valid=False)
             demos_path_valid = utils.get_demos_path(args.demos, args.env, args.demos_origin, valid=True)
