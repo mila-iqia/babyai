@@ -205,6 +205,12 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     print("{} datapoints".format(len(df)))
     x = np.log2(df['num_samples'].values)
     y = (df['success_rate'] - 0.99).values * 100
+    if y.min() < -4:
+        print("dropping {} data points with too low performance".format((y < -4).sum()))
+        keep_indices = y > -4
+        x = x[keep_indices]
+        y = y[keep_indices]
+
     print("min x: {}, max x: {}, min y: {}, max y: {}".format(x.min(), x.max(), y.min(), y.max()))
 
     if (y < 0).sum() < 5:
