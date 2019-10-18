@@ -61,7 +61,7 @@ class ImageBOWEmbedding(nn.Module):
    def forward(self, inputs):
        assert inputs.max().long().item() < self.max_value
        offsets = torch.Tensor([0, self.max_value, 2 * self.max_value]).to(inputs.device)
-       inputs = (inputs + offsets[None, :, None, None]).long() * (inputs > 0)
+       inputs = (inputs + offsets[None, :, None, None]).long() * (inputs > 0).long()
        return self.embedding(inputs).sum(1).permute(0, 3, 1, 2)
 
 
