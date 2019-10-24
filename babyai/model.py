@@ -98,7 +98,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             if not self.use_instr:
                 raise ValueError("FiLM architecture can be used when instructions are enabled")
 
-            n_channels_bow = 32
+            n_channels_bow = 128
             use_bow = arch.endswith('bow')
 
             layers = [
