@@ -63,7 +63,8 @@ class ImageBOWEmbedding(nn.Module):
        offsets = torch.Tensor([0, self.max_value, 2 * self.max_value]).to(inputs.device)
        indices = (inputs + offsets[None, :, None, None]).long()
        ones = torch.ones_like(inputs)
-       output = torch.zeros((inputs.shape[0], 3 * self.max_value, inputs.shape[2], inputs.shape[3]))
+       output = torch.zeros((inputs.shape[0], 3 * self.max_value, inputs.shape[2], inputs.shape[3]),
+                            device=inputs.device)
        output.scatter_(1, indices, ones)
        return output
 
