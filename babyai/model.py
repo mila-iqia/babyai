@@ -61,8 +61,11 @@ class ImageBOWEmbedding(nn.Module):
    def forward(self, inputs):
        assert inputs.max().long().item() < self.max_value
        offsets = torch.Tensor([0, self.max_value, 2 * self.max_value]).to(inputs.device)
-       inputs = (inputs + offsets[None, :, None, None]).long() * (inputs > 0).long()
-       return self.embedding(inputs).sum(1).permute(0, 3, 1, 2)
+       indices = (inputs + offsets[None, :, None, None]).long()
+       ones = torch.ones_like(inputs)
+       output = torch.zeros((inputs.shape[0], 3 * self.max_value, inputs.shape[2], inputs.shape[3]))
+       output.scatter_(1, indices, ones)
+       return output
 
 
 class ACModel(nn.Module, babyai.rl.RecurrentACModel):
@@ -98,7 +101,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             if not self.use_instr:
                 raise ValueError("FiLM architecture can be used when instructions are enabled")
 
-            n_channels_bow = 128
+            n_channels_bow = 3 * obs_space['image']
             use_bow = arch.endswith('bow')
 
             layers = [
