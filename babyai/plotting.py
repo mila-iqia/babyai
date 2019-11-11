@@ -193,9 +193,9 @@ def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=N
         summary_df.to_csv(summary_path)
 
     if min(num_samples) == min_samples_required:
-        print('should be run with less samples!')
+        raise ValueError('should be run with less samples!')
     if need_more_time:
-        print('should be run for more time!')
+        raise ValueError('should be run for more time!')
     return summary_df, normal_time
 
 
@@ -208,11 +208,11 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     print("min x: {}, max x: {}, min y: {}, max y: {}".format(x.min(), x.max(), y.min(), y.max()))
 
     if (y < 0).sum() < 5:
-        print("ATTENTION: you have less than 5 datapoints below the threshold.")
-        print("Consider running experiments with less data.")
+        raise ValueError("You have less than 5 datapoints below the threshold.\n"
+                         "Consider running experiments with less examples.")
     if (y > 0).sum() < 5:
-        print("ATTENTION: you have less than 5 datapoints above the threshold.")
-        print("Consider running experiments with more data.")
+        raise ValueError("You have less than 5 datapoints above the threshold.\n"
+                         "Consider running experiments with more examples.")
 
     kernel = 1.0 * RBF() + WhiteKernel(noise_level_bounds=(1e-10, 1))
     gp = GaussianProcessRegressor(kernel=kernel, alpha=0, normalize_y=False).fit(x[:, None], y)
