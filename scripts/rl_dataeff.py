@@ -7,7 +7,7 @@ import pandas
 import argparse
 import json
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser("Analyze data efficiency of reinforcement learning")
 parser.add_argument("--path", default='.')
 parser.add_argument("--regex", default='.*')
 parser.add_argument("--window", type=int, default=100)

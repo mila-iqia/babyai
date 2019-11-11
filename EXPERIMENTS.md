@@ -54,14 +54,13 @@ Here, `M1` and `M2` are report directories created by `scripts/il_dataeff.py`.
 Note: use `level_type='big'` in your `main` call to train big models of the kind that we use for big 3x3 maze levels.
 
 ### Curriculum learning sample efficiency.
-TODO
+Use the `pretrained_model` argument of `main` from `babyai/efficiency.py`.
 
 ### Big baselines for all Levels
-Just like above, but always use a big model. Train for 20 passes over the dataset.
+Just like above, but always use a big model. 
 
-## Imitation learning from an RL expert
+To reproduce results in the paper, trained for 20 passes over 1M examples for big levels and 40 passes for small levels.
+
+### Imitation learning from an RL expert
 
 Generate 1M demos from the agents that were trained for ~24 hours. Do same as above.
-
-## Interactive Imitation Learning
-TODO

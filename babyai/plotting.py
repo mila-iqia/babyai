@@ -136,7 +136,17 @@ def model_num_samples(model):
     return int(re.findall('_([0-9]+)', model)[0])
 
 
-def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=None, summary_path=None):
+def best_within_normal_time(df, regex, patience, limit='epochs', window=1, normal_time=None, summary_path=None):
+    """
+    Compute the best success rate that is achieved in all runs within the normal time.
+
+    The normal time is defined as `patience * T`, where `T` is the time it takes for the run
+    with the most demonstrations to converge. `window` is the size of the sliding window that is
+    used for smoothing.
+
+    Returns a dataframe with the best success rate for the runs that match `regex`.
+
+    """
     print()
     print(regex)
     models = [model for model in df['model'].unique() if re.match(regex, model)]
@@ -200,6 +210,13 @@ def min_num_samples(df, regex, patience, limit='epochs', window=1, normal_time=N
 
 
 def estimate_sample_efficiency(df, visualize=False, figure_path=None):
+    """
+    Estimate sample efficiency and its uncertainty using Gaussian Process.
+
+    This function interpolates between data points given in `df` using a Gaussian Process.
+    It returns a 99% interval based on the GP predictions.
+
+    """
     f, axes = pyplot.subplots(1, 2, figsize=(15, 5))
 
     print("{} datapoints".format(len(df)))

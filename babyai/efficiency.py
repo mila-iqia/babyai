@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-
 """
-scripts/launch_demo_count.py --env BabyAI-GoToLocal-v0 --demos GoToLocal-bot-1m
+Code for launching imitation learning sample efficiency experiments.
 """
 
 import os

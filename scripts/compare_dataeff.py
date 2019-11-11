@@ -8,7 +8,7 @@ from scipy import stats
 from babyai import plotting
 
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser("Compare data efficiency of two approaches")
 parser.add_argument("report1", default=None)
 parser.add_argument("report2", default=None)
 args = parser.parse_args()

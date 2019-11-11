@@ -9,7 +9,7 @@ import re
 from babyai import plotting
 
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser("Analyze data efficiency of interactive imitation learning")
 parser.add_argument("--path", default='.')
 parser.add_argument("--regex", default='.*')
 parser.add_argument("--window", default=1, type=int)
