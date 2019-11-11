@@ -6,6 +6,7 @@ import babyai.plotting as bp
 import pandas
 import argparse
 import json
+import numpy
 
 parser = argparse.ArgumentParser("Analyze data efficiency of reinforcement learning")
 parser.add_argument("--path", default='.')
@@ -37,7 +38,8 @@ for model in models:
     eff = float(dataeff(x, args.window))
     print(model, eff)
     data.append(eff)
+data = numpy.array(data)
 
-result = {'min': min(data), 'max': max(data)}
+result = {'mean': data.mean(), 'std': data.std()}
 with open(os.path.join(args.report, 'result.json'), 'w') as dst:
     json.dump(result, dst)
