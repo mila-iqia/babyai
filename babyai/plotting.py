@@ -308,5 +308,4 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     pyplot.tight_layout()
     if figure_path:
         pyplot.savefig(figure_path)
-    return {'mean_log2': mean_n_min, 'std_log2': std_n_min,
-            'min': 2 ** left, 'max': 2 ** right}
+    return {'mean_log2': mean_n_min, 'std_log2': std_n_min}
