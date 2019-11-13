@@ -217,13 +217,22 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     It returns a 99% interval based on the GP predictions.
 
     """
-    f, axes = pyplot.subplots(1, 2, figsize=(15, 5))
+    f, axes = pyplot.subplots(1, 3, figsize=(15, 5))
 
+    # preprocess the data
     print("{} datapoints".format(len(df)))
     x = np.log2(df['num_samples'].values)
     y = (df['success_rate'] - 0.99).values * 100
-    print("min x: {}, max x: {}, min y: {}, max y: {}".format(x.min(), x.max(), y.min(), y.max()))
+    indices = np.argsort(x)
+    x = x[indices]
+    y = y[indices]
 
+    if y.min() < -4:
+        print("dropping {} data points with too low performance".format((y < -4).sum()))
+        keep_indices = y > -4
+        x = x[keep_indices]
+        y = y[keep_indices]
+    print("min x: {}, max x: {}, min y: {}, max y: {}".format(x.min(), x.max(), y.min(), y.max()))
     if (y < 0).sum() < 5:
         raise ValueError("You have less than 5 datapoints below the threshold.\n"
                          "Consider running experiments with less examples.")
@@ -231,12 +240,15 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
         raise ValueError("You have less than 5 datapoints above the threshold.\n"
                          "Consider running experiments with more examples.")
 
+    # fit an RBF GP
     kernel = 1.0 * RBF() + WhiteKernel(noise_level_bounds=(1e-10, 1))
     gp = GaussianProcessRegressor(kernel=kernel, alpha=0, normalize_y=False).fit(x[:, None], y)
     print("Kernel:", gp.kernel_)
     print("Marginal likelihood:", gp.log_marginal_likelihood_value_)
 
-    grid = np.arange(x[0], x[-1], 0.02)
+    # compute the success rate posterior
+    grid_step = 0.02
+    grid = np.arange(x[0], x[-1], grid_step)
     y_grid_mean, y_grid_cov = gp.predict(grid[:, None], return_cov=True)
     noise_level = gp.kernel_.k2.noise_level
     f_grid_cov = y_grid_cov - np.diag(np.ones_like(y_grid_cov[0]) * noise_level)
@@ -256,6 +268,7 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
                  alpha=0.2, color='g')
         axis.hlines(0, x[0], x[-1])
 
+    # compute the N_min posterior
     probs = []
     total_p = 0.
     print("Estimating N_min using a grid of {} points".format(len(grid)))
@@ -284,15 +297,24 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
         # probs should sum to 1, but there is always a bit of error
         probs = probs / probs.sum()
 
-    cut_grid = grid[:len(probs)]
-    mean_n_min = (probs * cut_grid).sum()
-    mean_n_min_squared = (probs * cut_grid ** 2).sum()
-    std_n_min = (mean_n_min_squared - mean_n_min ** 2) ** 0.5
-    print('N_min mean and std: ({}, {})'.format(mean_n_min, std_n_min))
+    if visualize:
+        # visualize the N_min posterior density
+        axis = axes[2]
+        first_prob = (probs > 1e-3).nonzero()[0][0]
+        subgrid = grid[first_prob:len(probs)]
+        subprobs = probs[first_prob:]
+        axis.plot(subgrid, subprobs)
+        # visualize the non-Gaussianity of N_min posterior density
+        mean_n_min = (subprobs * subgrid).sum()
+        mean_n_min_squared = (subprobs * subgrid ** 2).sum()
+        std_n_min = (mean_n_min_squared - mean_n_min ** 2) ** 0.5
+        axis.plot(subgrid, stats.norm.pdf(subgrid, mean_n_min, std_n_min) * grid_step)
 
-    left, right = (mean_n_min - 2.58 * std_n_min, mean_n_min + 2.58 * std_n_min)
-    print("Confidence interval (log):", left, mean_n_min, right)
-    print("Confidence interval:", 2 ** left, 2 ** mean_n_min, 2 ** right)
+    # compute the credible interval
+    cdf = np.cumsum(probs)
+    left = grid[(cdf > 0.01).nonzero()[0][0]]
+    right = grid[(cdf > 0.99).nonzero()[0][0]]
+    print("99% credible interval for N_min:", 2 ** left,  2 ** right)
 
     if visualize:
         axis = axes[1]
@@ -308,4 +330,5 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     pyplot.tight_layout()
     if figure_path:
         pyplot.savefig(figure_path)
-    return {'mean_log2': mean_n_min, 'std_log2': std_n_min}
+    return {'min': 2 ** left, 'max': 2 ** right,
+            'mean_log2': mean_n_min, 'std_log2': std_n_min}
