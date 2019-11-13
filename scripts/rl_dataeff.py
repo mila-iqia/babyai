@@ -40,6 +40,8 @@ for model in models:
     data.append(eff)
 data = numpy.array(data)
 
-result = {'mean': data.mean(), 'std': data.std()}
+Z = 2.576
+result = {'mean': data.mean(), 'std': data.std(),
+          'min': data.mean() - Z * data.std(), 'max': data.mean() + Z * data.std()}
 with open(os.path.join(args.report, 'result.json'), 'w') as dst:
     json.dump(result, dst)
