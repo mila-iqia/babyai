@@ -279,6 +279,8 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
         sigma[j, :j] *= -1
         sigma[:j, j] *= -1
         sigma[np.diag_indices_from(sigma)] += 1e-6
+        # the probability that the first time the success rate crosses the threshold
+        # will be between grid[j - 1] and grid[j]
         p = stats.multivariate_normal.cdf(np.zeros_like(mu), mu, sigma, abseps=1e-3, releps=1e-3)
         probs.append(p)
         total_p += p
@@ -297,17 +299,17 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
         # probs should sum to 1, but there is always a bit of error
         probs = probs / probs.sum()
 
+    first_prob = (probs > 1e-10).nonzero()[0][0]
+    subgrid = grid[first_prob:len(probs)]
+    subprobs = probs[first_prob:]
+    mean_n_min = (subprobs * subgrid).sum()
+    mean_n_min_squared = (subprobs * subgrid ** 2).sum()
+    std_n_min = (mean_n_min_squared - mean_n_min ** 2) ** 0.5
     if visualize:
         # visualize the N_min posterior density
-        axis = axes[2]
-        first_prob = (probs > 1e-3).nonzero()[0][0]
-        subgrid = grid[first_prob:len(probs)]
-        subprobs = probs[first_prob:]
-        axis.plot(subgrid, subprobs)
         # visualize the non-Gaussianity of N_min posterior density
-        mean_n_min = (subprobs * subgrid).sum()
-        mean_n_min_squared = (subprobs * subgrid ** 2).sum()
-        std_n_min = (mean_n_min_squared - mean_n_min ** 2) ** 0.5
+        axis = axes[2]
+        axis.plot(subgrid, subprobs)
         axis.plot(subgrid, stats.norm.pdf(subgrid, mean_n_min, std_n_min) * grid_step)
 
     # compute the credible interval
