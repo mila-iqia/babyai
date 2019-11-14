@@ -300,7 +300,9 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
         probs = probs / probs.sum()
 
     first_prob = (probs > 1e-10).nonzero()[0][0]
-    subgrid = grid[first_prob:len(probs)]
+    # as we are perfoming numerical integration, each bucket
+    # should be represented by the middle
+    subgrid = grid[first_prob:len(probs)] - grid_step / 2
     subprobs = probs[first_prob:]
     mean_n_min = (subprobs * subgrid).sum()
     mean_n_min_squared = (subprobs * subgrid ** 2).sum()
