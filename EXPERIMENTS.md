@@ -46,7 +46,7 @@ scripts/il_dataeff.py --regex '.*-GoToRedBallGrey-.*' --window 10 gotoredballgre
 If you wish to compare sample efficiencies of two models `M1` and `M2`, use `scripts/compare_dataeff.py`:
 
 ```
-scripts/compare\_dataeff.py M1 M2
+scripts/compare_dataeff.py M1 M2
 ```
 
 Here, `M1` and `M2` are report directories created by `scripts/il_dataeff.py`.
