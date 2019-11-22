@@ -34,6 +34,8 @@ parser.add_argument("--multi-demos", nargs='*', default=None,
                     help="demos filenames for envs to train on (REQUIRED when multi-env is specified)")
 parser.add_argument("--multi-episodes", type=int, nargs='*', default=None,
                     help="number of episodes of demos to use from each file (REQUIRED when multi-env is specified)")
+parser.add_argument("--epoch-length", type=int,
+                    help="number of examples per epoch")
 
 
 def main(args):
