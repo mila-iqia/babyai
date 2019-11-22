@@ -22,7 +22,7 @@ import numpy
 
 class EpochIndexSampler:
     """
-    Generate smart indices for epochs that are smaller than the data size.
+    Generate smart indices for epochs that are smaller than the dataset size.
 
     The usecase: you have a code that has a strongly baken in notion of an epoch,
     e.g. you can only validate in the end of the epoch. That ties a lot of
@@ -30,10 +30,9 @@ class EpochIndexSampler:
     more often than once per a complete pass over the dataset.
 
     This class helps you by generating a sequence of smaller epochs that
-    do are using different subsets of the dataset, as long as this is possible.
+    use different subsets of the dataset, as long as this is possible.
     This allows you to keep the small advantage that sampling without replacement
     provides, but also enjoy smaller epochs.
-
     """
     def __init__(self, n_examples, epoch_n_examples):
         self.n_examples = n_examples
