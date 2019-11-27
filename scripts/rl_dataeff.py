@@ -7,6 +7,7 @@ import pandas
 import argparse
 import json
 import numpy
+import scipy
 
 parser = argparse.ArgumentParser("Analyze data efficiency of reinforcement learning")
 parser.add_argument("--path", default='.')
@@ -40,8 +41,8 @@ for model in models:
     data.append(eff)
 data = numpy.array(data)
 
-Z = 2.576
+ratio = scipy.stats.t.ppf(0.995, len(data) - 1) / len(data) ** 0.5
 result = {'mean': data.mean(), 'std': data.std(),
-          'min': data.mean() - Z * data.std(), 'max': data.mean() + Z * data.std()}
+          'min': data.mean() - ratio * data.std(), 'max': data.mean() + ratio * data.std()}
 with open(os.path.join(args.report, 'result.json'), 'w') as dst:
     json.dump(result, dst)
