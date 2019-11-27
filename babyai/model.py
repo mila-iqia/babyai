@@ -75,16 +75,14 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 raise ValueError("FiLM architecture can be used when instructions are enabled")
 
             self.image_conv = nn.Sequential(
-                nn.Conv2d(in_channels=3, out_channels=128, kernel_size=(2, 2), padding=1),
+                nn.Conv2d(in_channels=3, out_channels=128, kernel_size=(3, 3), padding=1),
                 nn.BatchNorm2d(128),
                 nn.ReLU(),
-                nn.MaxPool2d(kernel_size=(2, 2), stride=2),
                 nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), padding=1),
                 nn.BatchNorm2d(128),
                 nn.ReLU(),
-                nn.MaxPool2d(kernel_size=(2, 2), stride=2)
             )
-            self.film_pool = nn.MaxPool2d(kernel_size=(2, 2), stride=2)
+            self.film_pool = nn.MaxPool2d(kernel_size=(7, 7), stride=2)
         else:
             raise ValueError("Incorrect architecture name: {}".format(arch))
 
