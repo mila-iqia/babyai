@@ -257,8 +257,8 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
         axis = axes[0]
         axis.plot(x, y, 'o')
         axis.plot(grid, y_grid_mean)
-        axis.set_xlabel('log2(N)')
-        axis.set_ylabel('accuracy minus 99%')
+        axis.set_xlabel('log2(k)')
+        axis.set_ylabel('s(k) - 99')
         axis.set_title('Data Points & Posterior')
         axis.fill_between(grid, y_grid_mean - np.sqrt(np.diag(y_grid_cov)),
                          y_grid_mean + np.sqrt(np.diag(y_grid_cov)),
@@ -323,8 +323,8 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     if visualize:
         axis = axes[1]
         axis.plot(x, y, 'o')
-        axis.set_xlabel('log2(N)')
-        axis.set_ylabel('accuracy minus 99%')
+        axis.set_xlabel('log2(k)')
+        axis.set_ylabel('s(k) - 99')
         axis.hlines(0, x[0], x[-1])
         axis.vlines(left, min(y), max(y), color='r')
         axis.vlines(mean_n_min, min(y), max(y), color='k')
