@@ -14,4 +14,4 @@ In `scripts`:
 - use `train_intelligent_expert.py` to train an agent with an interactive imitation learning algorithm that incrementally grows the training set by adding demonstrations for the missions that the agent currently fails
 - use `evaluate.py` to evaluate a trained agent
 - use `enjoy.py` to visualze an agent's behavior
-- use `gui.py` or `test_mission_gen.py` to see example missions from BabyAI levels
+- use `manual_control.py` to visualize example missions from BabyAI levels
