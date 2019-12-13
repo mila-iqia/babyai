@@ -40,8 +40,8 @@ Requirements:
 - Python 3.5+
 - OpenAI Gym
 - NumPy
-- PyQT5
 - PyTorch 0.4.1+
+- blosc
 
 Start by manually installing PyTorch. See the [PyTorch website](http://pytorch.org/)
 for installation instructions specific to your platform.
@@ -98,13 +98,13 @@ Models, logs and demos will be produced in this directory, in the folders `model
 To run the interactive GUI application that illustrates the platform:
 
 ```
-scripts/gui.py
+scripts/manual_control.py
 ```
 
 The level being run can be selected with the `--env` option, eg:
 
 ```
-scripts/gui.py --env BabyAI-UnlockPickup-v0
+scripts/manual_control.py --env BabyAI-UnlockPickup-v0
 ```
 
 ### The Levels
