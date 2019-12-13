@@ -11,11 +11,15 @@ import copy
 import random
 from optparse import OptionParser
 
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QInputDialog
-from PyQt5.QtWidgets import QLabel, QTextEdit, QFrame
-from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
-from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
+try:
+    from PyQt5.QtCore import Qt, QTimer
+    from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QInputDialog
+    from PyQt5.QtWidgets import QLabel, QTextEdit, QFrame
+    from PyQt5.QtWidgets import QPushButton, QSlider, QHBoxLayout, QVBoxLayout
+    from PyQt5.QtGui import QImage, QPixmap, QPainter, QColor
+except:
+    print("To run this script, you should install pyqt5, eg:")
+    print("> pip3 install pyqt5")
 
 # Gym environment used by the Baby AI Game
 import gym
