@@ -114,6 +114,19 @@ Documentation for the ICLR19 levels can be found in
 There are also older levels documented in
 [docs/bonus_levels.md](docs/bonus_levels.md).
 
+### Pixel Observations
+
+Please note that the default observation format is a partially observable view of the environment using a compact encoding, with 3 input values per visible grid cell, 7x7x3 values total. These values are **not pixels**. If you want to obtain an array of RGB pixels as observations instead, use the `RGBImgPartialObsWrapper`. You can use it as follows:
+
+```
+import babyai
+from gym_minigrid.wrappers import *
+env = gym.make('BabyAI-GoToRedBall-v0')
+env = RGBImgPartialObsWrapper(env)
+```
+
+This wrapper, as well as other wrappers to change the observation format can be [found here](https://github.com/maximecb/gym-minigrid/blob/master/gym_minigrid/wrappers.py).
+
 ## About this Project
 
 BabyAI is an open-ended grounded language acquisition effort at [Mila](https://mila.quebec/en/). The current BabyAI platform was designed to study data-effiency of existing methods under the assumption that a human provides all teaching signals
