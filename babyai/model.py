@@ -74,17 +74,22 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             if not self.use_instr:
                 raise ValueError("FiLM architecture can be used when instructions are enabled")
 
-            self.image_conv = nn.Sequential(
-                nn.Conv2d(in_channels=3, out_channels=128, kernel_size=(2, 2), padding=1),
+            endpool = 'endpool' in arch
+
+            self.image_conv = nn.Sequential(*[
+                nn.Conv2d(in_channels=3, out_channels=128,
+                    kernel_size=(3, 3) if endpool else (2, 2), padding=1),
                 nn.BatchNorm2d(128),
                 nn.ReLU(),
-                nn.MaxPool2d(kernel_size=(2, 2), stride=2),
+                *([] if endpool else [nn.MaxPool2d(kernel_size=(2, 2), stride=2)]),
                 nn.Conv2d(in_channels=128, out_channels=128, kernel_size=(3, 3), padding=1),
                 nn.BatchNorm2d(128),
                 nn.ReLU(),
-                nn.MaxPool2d(kernel_size=(2, 2), stride=2)
-            )
-            self.film_pool = nn.MaxPool2d(kernel_size=(2, 2), stride=2)
+                *([] if endpool else [nn.MaxPool2d(kernel_size=(2, 2), stride=2)])
+            ])
+
+            self.film_pool = nn.MaxPool2d(kernel_size=(7, 7) if endpool else (2, 2), stride=2)
+
         else:
             raise ValueError("Incorrect architecture name: {}".format(arch))
 
@@ -119,21 +124,13 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         if self.use_instr and not "filmcnn" in arch:
             self.embedding_size += self.final_instr_dim
 
-        if arch.startswith("expert_filmcnn"):
-            if arch == "expert_filmcnn":
-                num_module = 2
-            else:
-                num_module = int(arch[(arch.rfind('_') + 1):])
+        if "expert_filmcnn" in arch:
+            num_module = 2
             self.controllers = []
             for ni in range(num_module):
-                if ni < num_module-1:
-                    mod = ExpertControllerFiLM(
-                        in_features=self.final_instr_dim,
-                        out_features=128, in_channels=128, imm_channels=128)
-                else:
-                    mod = ExpertControllerFiLM(
-                        in_features=self.final_instr_dim, out_features=self.image_dim,
-                        in_channels=128, imm_channels=128)
+                mod = ExpertControllerFiLM(
+                    in_features=self.final_instr_dim,
+                    out_features=128, in_channels=128, imm_channels=128)
                 self.controllers.append(mod)
                 self.add_module('FiLM_Controler_' + str(ni), mod)
 
@@ -221,8 +218,11 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
         if self.arch.startswith("expert_filmcnn"):
             x = self.image_conv(x)
-            for controler in self.controllers:
-                x = controler(x, instr_embedding)
+            for controller in self.controllers:
+                out = controller(x, instr_embedding)
+                if self.arch.endswith('res'):
+                    out += x
+                x = out
             x = F.relu(self.film_pool(x))
         else:
             x = self.image_conv(x)
