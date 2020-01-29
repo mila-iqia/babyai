@@ -54,7 +54,7 @@ for installation instructions specific to your platform.
 Then, clone this repository and install the other dependencies with `pip3`:
 
 ```
-git clone -b iclr19 https://github.com/mila-iqia/babyai.git
+git clone -b dyth-baselines https://github.com/mila-iqia/babyai.git
 cd babyai
 pip3 install --editable .
 ```
@@ -64,7 +64,7 @@ pip3 install --editable .
 If you are using conda, you can create a `babyai` environment with all the dependencies by running:
 
 ```
-git clone -b iclr19 https://github.com/mila-iqia/babyai.git
+git clone -b dyth-baselines https://github.com/mila-iqia/babyai.git
 cd babyai
 conda env create -f environment.yaml
 source activate babyai
