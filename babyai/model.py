@@ -41,6 +41,20 @@ class ExpertControllerFiLM(nn.Module):
         return out
 
 
+class ImageBOWEmbedding(nn.Module):
+   def __init__(self, max_value, embedding_dim):
+       super().__init__()
+       self.max_value = max_value
+       self.embedding_dim = embedding_dim
+       self.embedding = nn.Embedding(3 * max_value, embedding_dim)
+       self.apply(initialize_parameters)
+
+   def forward(self, inputs):
+       offsets = torch.Tensor([0, self.max_value, 2 * self.max_value]).to(inputs.device)
+       inputs = (inputs + offsets[None, :, None, None]).long()
+       return self.embedding(inputs).sum(1).permute(0, 3, 1, 2)
+
+
 class ACModel(nn.Module, babyai.rl.RecurrentACModel):
     def __init__(self, obs_space, action_space,
                  image_dim=128, memory_dim=128, instr_dim=128,
@@ -75,9 +89,11 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 raise ValueError("FiLM architecture can be used when instructions are enabled")
 
             endpool = 'endpool' in arch
+            use_bow = 'bow' in arch
 
+            self.BOW = ImageBOWEmbedding(obs_space['image'], 128)
             self.image_conv = nn.Sequential(*[
-                nn.Conv2d(in_channels=3, out_channels=128,
+                nn.Conv2d(in_channels=128 if use_bow else 3, out_channels=128,
                     kernel_size=(3, 3) if endpool else (2, 2), padding=1),
                 nn.BatchNorm2d(128),
                 nn.ReLU(),
@@ -87,7 +103,6 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 nn.ReLU(),
                 *([] if endpool else [nn.MaxPool2d(kernel_size=(2, 2), stride=2)])
             ])
-
             self.film_pool = nn.MaxPool2d(kernel_size=(7, 7) if endpool else (2, 2), stride=2)
 
         else:
@@ -216,11 +231,17 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
         x = torch.transpose(torch.transpose(obs.image, 1, 3), 2, 3)
 
+
         if self.arch.startswith("expert_filmcnn"):
-            x = self.image_conv(x)
+            if 'bow' in self.arch:
+                x = self.BOW(x)
+            out = self.image_conv(x)
+            if 'res' in self.arch and 'bow' in self.arch:
+                out += x
+            x = out
             for controller in self.controllers:
                 out = controller(x, instr_embedding)
-                if self.arch.endswith('res'):
+                if 'res' in self.arch:
                     out += x
                 x = out
             x = F.relu(self.film_pool(x))
