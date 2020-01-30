@@ -37,7 +37,7 @@ Pretrained IL and RL models can be found in the `models` directory of the image.
 
 ### Demonstration Dataset
 
-Generating demonstrations takes a significant amount of computational resources, on the orde of 24 hours on one machine for some of the harder levels. The demonstrations used for the ICLR 2019 submission can be downloaded from a shared [Google Drive folder](https://drive.google.com/drive/folders/124DhBJ5BdiLyRowkYnVtfcYHKre9ouSp?usp=sharing).
+Generating demonstrations takes a significant amount of computational resources, on the order of 24 hours on one machine for some of the harder levels. The demonstrations used for the ICLR 2019 submission can be downloaded from a shared [Google Drive folder](https://drive.google.com/drive/folders/124DhBJ5BdiLyRowkYnVtfcYHKre9ouSp?usp=sharing).
 
 ## Manual Installation
 
@@ -67,7 +67,16 @@ If you are using conda, you can create a `babyai` environment with all the depen
 git clone -b dyth-baselines https://github.com/mila-iqia/babyai.git
 cd babyai
 conda env create -f environment.yaml
-source activate babyai
+source activate babyai1
+```
+
+After that, execute the following commands to setup the environment.
+
+```
+cd ..
+git clone https://github.com/maximecb/gym-minigrid.git
+cd gym-minigrid
+pip install --editable .
 ```
 
 The last command installs the repository in editable mode. Move back to the `babyai` repository and install that in editable mode as well.
@@ -82,12 +91,10 @@ pip3 install --editable .
 Add this line to `.bashrc` (Linux), or `.bash_profile` (Mac).
 
 ```
-export BABYAI_STORAGE='/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>'
+export BABYAI_STORAGE='/<PATH>/<TO>/<BABYAI>/<STORAGE>'
 ```
 
-where `/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>` is the folder where you typed `git clone https://github.com/mila-iqia/babyai.git` earlier.
-
-Models, logs and demos will be produced in this directory, in the folders `models`, `logs` and `demos` respectively.
+Models, logs and demos will be produced in this directory, under the subdirectories `models`, `logs` and `demos` respectively.
 
 ## Structure of the Codebase
 
