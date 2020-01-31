@@ -291,11 +291,6 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 outputs = outputs[iperm_idx]
                 final_states = final_states[iperm_idx]
 
-            if outputs.shape[1] < masks.shape[1]:
-                masks = masks[:, :(outputs.shape[1]-masks.shape[1])]
-                # the packing truncated the original length
-                # so we need to change mask to fit it
-
             return outputs if self.lang_model == 'attgru' else final_states
 
         else:
