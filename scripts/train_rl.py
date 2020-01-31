@@ -22,6 +22,7 @@ from babyai.arguments import ArgumentParser
 from babyai.model import ACModel
 from babyai.evaluate import batch_evaluate
 from babyai.utils.agent import ModelAgent
+from gym_minigrid.wrappers import RGBImgPartialObsWrapper
 
 
 # Parse arguments
@@ -52,6 +53,8 @@ utils.seed(args.seed)
 envs = []
 for i in range(args.procs):
     env = gym.make(args.env)
+    if 'pixel' in args.arch:
+        env = RGBImgPartialObsWrapper(env)
     env.seed(100 * args.seed + i)
     envs.append(env)
 
