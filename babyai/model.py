@@ -211,6 +211,10 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             # outputs: B x L x D
             # memory: B x M
             mask = (obs.instr != 0).float()
+            # quick fix adapted from:      self._get_instr_embedding(obs.instr)
+            if instr_embedding.shape[1] < mask.shape[1]:
+                mask = mask[:, :(instr_embedding.shape[1] - mask.shape[1])]
+
             instr_embedding = instr_embedding[:, :mask.shape[1]]
             keys = self.memory2key(memory)
             pre_softmax = (keys[:, None, :] * instr_embedding).sum(2) + 1000 * mask
