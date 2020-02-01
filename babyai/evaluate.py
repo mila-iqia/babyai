@@ -1,5 +1,6 @@
 import numpy as np
 import gym
+from gym_minigrid.wrappers import RGBImgPartialObsWrapper
 
 
 # Returns the performance of the agent on the environment for a particular number of episodes.
@@ -81,12 +82,14 @@ class ManyEnvs(gym.Env):
 
 
 # Returns the performance of the agent on the environment for a particular number of episodes.
-def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False):
+def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False, pixel=False):
     num_envs = min(256, episodes)
 
     envs = []
     for i in range(num_envs):
         env = gym.make(env_name)
+        if pixel:
+            env = RGBImgPartialObsWrapper(env)
         envs.append(env)
     env = ManyEnvs(envs)
 

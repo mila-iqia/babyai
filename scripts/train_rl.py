@@ -51,9 +51,10 @@ utils.seed(args.seed)
 
 # Generate environments
 envs = []
+use_pixel = 'pixel' in args.arch
 for i in range(args.procs):
     env = gym.make(args.env)
-    if 'pixel' in args.arch:
+    if use_pixel:
         env = RGBImgPartialObsWrapper(env)
     env.seed(100 * args.seed + i)
     envs.append(env)
@@ -233,7 +234,7 @@ while status['num_frames'] < args.frames:
         agent = ModelAgent(args.model, obss_preprocessor, argmax=True)
         agent.model = acmodel
         agent.model.eval()
-        logs = batch_evaluate(agent, test_env_name, args.val_seed, args.val_episodes)
+        logs = batch_evaluate(agent, test_env_name, args.val_seed, args.val_episodes, pixel=use_pixel)
         agent.model.train()
         mean_return = np.mean(logs["return_per_episode"])
         success_rate = np.mean([1 if r > 0 else 0 for r in logs['return_per_episode']])
