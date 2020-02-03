@@ -211,7 +211,11 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             # outputs: B x L x D
             # memory: B x M
             mask = (obs.instr != 0).float()
-            instr_embedding = instr_embedding[:, :mask.shape[1]]
+
+            # The mask tensor should be always at least a big as instr_embedding.
+            # It can be too big though, because instr_embeddings might be shorter than obs.instr
+            # when the last position in a batch is all zeros.
+            mask = mask[:, :instr_embedding.shape[1]]
             keys = self.memory2key(memory)
             pre_softmax = (keys[:, None, :] * instr_embedding).sum(2) + 1000 * mask
             attention = F.softmax(pre_softmax, dim=1)
@@ -286,11 +290,6 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 outputs, _ = pad_packed_sequence(outputs, batch_first=True)
                 outputs = outputs[iperm_idx]
                 final_states = final_states[iperm_idx]
-
-            if outputs.shape[1] < masks.shape[1]:
-                masks = masks[:, :(outputs.shape[1]-masks.shape[1])]
-                # the packing truncated the original length
-                # so we need to change mask to fit it
 
             return outputs if self.lang_model == 'attgru' else final_states
 
