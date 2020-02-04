@@ -234,7 +234,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
         if self.arch.startswith("expert_filmcnn"):
             if 'pixel' in self.arch:
-                x /= 256
+                x /= 256.0
             if 'bow' in self.arch:
                 x = self.BOW(x)
             out = self.image_conv(x)
