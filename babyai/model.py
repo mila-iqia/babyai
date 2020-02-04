@@ -233,6 +233,8 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         x = torch.transpose(torch.transpose(obs.image, 1, 3), 2, 3)
 
         if self.arch.startswith("expert_filmcnn"):
+            if 'pixel' in self.arch:
+                x /= 256
             if 'bow' in self.arch:
                 x = self.BOW(x)
             out = self.image_conv(x)
