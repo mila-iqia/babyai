@@ -90,11 +90,16 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             endpool = 'endpool' in arch
             use_bow = 'bow' in arch
             self.BOW = ImageBOWEmbedding(obs_space['image'], 128)
+            kernel_size = (2, 2)
+            if 'pixel' in arch:
+                kernel_size = (8, 8)
+            elif endpool:
+                kernel_size = (3, 3)
             self.image_conv = nn.Sequential(*[
                 nn.Conv2d(
                     in_channels=128 if use_bow else 3,
                     out_channels=128,
-                    kernel_size=(3, 3) if endpool else (2, 2),
+                    kernel_size=kernel_size,
                     stride=8 if 'pixel' in arch else 1,
                     padding=1),
                 nn.BatchNorm2d(128),
