@@ -89,9 +89,11 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 raise ValueError("FiLM architecture can be used when instructions are enabled")
             endpool = 'endpool' in arch
             use_bow = 'bow' in arch
-            self.BOW = ImageBOWEmbedding(obs_space['image'], 128)
+            pixel = 'pixel' in arch
+            if use_bow:
+                self.BOW = ImageBOWEmbedding(obs_space['image'], 128)
             kernel_size = (2, 2)
-            if 'pixel' in arch:
+            if pixel:
                 kernel_size = (8, 8)
             elif endpool:
                 kernel_size = (3, 3)
@@ -100,8 +102,8 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                     in_channels=128 if use_bow else 3,
                     out_channels=128,
                     kernel_size=kernel_size,
-                    stride=8 if 'pixel' in arch else 1,
-                    padding=1),
+                    stride=8 if pixel else 1,
+                    padding=0 if pixel else 1),
                 nn.BatchNorm2d(128),
                 nn.ReLU(),
                 *([] if endpool else [nn.MaxPool2d(kernel_size=(2, 2), stride=2)]),
