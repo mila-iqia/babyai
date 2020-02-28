@@ -211,11 +211,14 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             # outputs: B x L x D
             # memory: B x M
             mask = (obs.instr != 0).float()
-
-            # The mask tensor should be always at least a big as instr_embedding.
-            # It can be too big though, because instr_embeddings might be shorter than obs.instr
-            # when the last position in a batch is all zeros.
+            # The mask tensor can be both shorter and longer than instr_embedding.
+            # It can be longer if instr_embedding is computed for of obs.instr.
+            # It can be shorter if obs.instr is a subbatch of the batch that instr_embeddings
+            # was computed for.
+            # We make sure the have equal length along dimesion 1.
             mask = mask[:, :instr_embedding.shape[1]]
+            instr_embedding = instr_embedding[:, :mask.shape[1]]
+
             keys = self.memory2key(memory)
             pre_softmax = (keys[:, None, :] * instr_embedding).sum(2) + 1000 * mask
             attention = F.softmax(pre_softmax, dim=1)
