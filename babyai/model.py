@@ -248,10 +248,11 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 x /= 256.0
             if 'bow' in self.arch:
                 x = self.BOW(x)
-            out = self.image_conv(x)
-            if 'res' in self.arch and 'bow' in self.arch:
-                out += x
-            x = out
+            if 'small' not in self.arch and 'bow' in self.arch:
+                out = self.image_conv(x)
+                if 'res' in self.arch and 'bow' in self.arch and 'not_conv' not in self.arch:
+                    out += x
+                x = out
             for controller in self.controllers:
                 out = controller(x, instr_embedding)
                 if 'res' in self.arch:
