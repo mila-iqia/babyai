@@ -248,7 +248,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 x /= 256.0
             if 'bow' in self.arch:
                 x = self.BOW(x)
-            if 'small' not in self.arch and 'bow' in self.arch:
+            if 'small' not in self.arch:
                 out = self.image_conv(x)
                 if 'res' in self.arch and 'bow' in self.arch and 'not_conv' not in self.arch:
                     out += x
