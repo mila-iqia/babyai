@@ -15,7 +15,7 @@ SMALL_MODEL_PARAMS = '--batch-size=256'
 
 def main(env, seed, training_time, min_demos, max_demos=None,
          step_size=math.sqrt(2), pretrained_model=None, level_type='small',
-         val_episodes=512):
+         val_episodes=512, extra_args=""):
     demos = env
 
     if not max_demos:
@@ -42,11 +42,11 @@ def main(env, seed, training_time, min_demos, max_demos=None,
             model_name += '_{}'.format(pretrained_model)
         jobname = '{}_efficiency'.format(demos, min_demos, max_demos)
         model_params = BIG_MODEL_PARAMS if level_type == 'big' else SMALL_MODEL_PARAMS
-        cmd = ('{model_params} --val-episodes {val_episodes}'
-               ' --seed {seed} --env {env} --demos {demos}'
-               ' --val-interval 1 --log-interval 1 --epoch-length {epoch_length}'
-               ' --model {model_name} --episodes {demo_count} --epochs {epochs} --patience {epochs}'
-          .format(**locals()))
+        cmd = (f'{model_params} --val-episodes {val_episodes}'
+               f' --seed {seed} --env {env} --demos {demos}'
+               f' --val-interval 1 --log-interval 1 --epoch-length {epoch_length}'
+               f' --model {model_name} --episodes {demo_count} --epochs {epochs} --patience {epochs}'
+               f' {extra_args}')
         if pretrained_model:
             cmd += ' --pretrained-model {}'.format(pretrained_model)
         launch_job(cmd, jobname)
