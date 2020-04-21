@@ -17,9 +17,9 @@ parser.add_argument("--limit", default="frames")
 parser.add_argument("report")
 args = parser.parse_args()
 
-if os.path.exists(args.report):
-    raise ValueError("report directory already exists")
-os.mkdir(args.report)
+# if os.path.exists(args.report):
+#     raise ValueError("report directory already exists")
+# os.mkdir(args.report)
 
 summary_path = os.path.join(args.report, 'summary.csv')
 figure_path = os.path.join(args.report, 'visualization.png')
@@ -29,10 +29,10 @@ df_logs = pandas.concat(plotting.load_logs(args.path), sort=True)
 df_success_rate, normal_time = plotting.best_within_normal_time(
     df_logs, args.regex,
     patience=args.patience, window=args.window, limit=args.limit,
-    summary_path=summary_path)
+    summary_path=None)
 result = plotting.estimate_sample_efficiency(
     df_success_rate, visualize=True, figure_path=figure_path)
 result['normal_time'] = normal_time
 
-with open(result_path, 'w') as dst:
-    json.dump(result, dst)
+# with open(result_path, 'w') as dst:
+#     json.dump(result, dst)
