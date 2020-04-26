@@ -241,6 +241,10 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     # try to throw away the extra points with low performance
     # the model is not suitable for handling those
     while True:
+        # ok, what does this if condition do?
+        # first part ensures that we have enough datapoints above the threshold
+        # second part ensures that we have enough datapoints between the almost and success threshold
+        # we keep chopping off data to ensure we have the smallest sample
         if ((y[1:] > success_threshold).sum() >= min_datapoints
                 and ((y[1:] > almost_threshold) & (y[1:] < success_threshold)).sum()
                         >= min_datapoints):
@@ -250,6 +254,9 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
         else:
             break
 
+    # indices = [i for i, y_ in enumerate(y) if y_ < almost_threshold]
+    # x = np.delete(x, indices)
+    # y = np.delete(y, indices)
     print("min x: {}, max x: {}, min y: {}, max y: {}".format(x.min(), x.max(), y.min(), y.max()))
     y = (y - success_threshold) * 100
 
