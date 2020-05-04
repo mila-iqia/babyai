@@ -27,7 +27,7 @@ import pandas
 import scipy
 from scipy import stats
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, WhiteKernel
+from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel, Exponentiation
 from scipy.linalg import cholesky, cho_solve, solve_triangular
 
 
@@ -261,7 +261,10 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     y = (y - success_threshold) * 100
 
     # fit an RBF GP
-    kernel = 1.0 * RBF() + WhiteKernel(noise_level_bounds=(1e-10, 1))
+    # noise1 = WhiteKernel(noise_level=0.1, noise_level_bounds=(1e-10, 0.1))
+    noise1 = WhiteKernel(noise_level_bounds=(1e-10, 1))
+    noise2 = WhiteKernel(noise_level=10, noise_level_bounds=(1e-3, 100))
+    kernel = 1.0 * RBF() + noise1 + noise2
     gp = GaussianProcessRegressor(kernel=kernel, alpha=0, normalize_y=False).fit(x[:, None], y)
     print("Kernel:", gp.kernel_)
     print("Marginal likelihood:", gp.log_marginal_likelihood_value_)
