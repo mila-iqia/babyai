@@ -27,7 +27,7 @@ import pandas
 import scipy
 from scipy import stats
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, WhiteKernel, ConstantKernel, Exponentiation
+from sklearn.gaussian_process.kernels import RBF, WhiteKernel, DotProduct
 from scipy.linalg import cholesky, cho_solve, solve_triangular
 
 
@@ -257,15 +257,33 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     # indices = [i for i, y_ in enumerate(y) if y_ < almost_threshold]
     # x = np.delete(x, indices)
     # y = np.delete(y, indices)
+    for xp, yp in zip(x, y):
+        print(xp, yp)
     print("min x: {}, max x: {}, min y: {}, max y: {}".format(x.min(), x.max(), y.min(), y.max()))
     y = (y - success_threshold) * 100
 
     # fit an RBF GP
-    # noise1 = WhiteKernel(noise_level=0.1, noise_level_bounds=(1e-10, 0.1))
-    noise1 = WhiteKernel(noise_level_bounds=(1e-10, 1))
-    noise2 = WhiteKernel(noise_level=10, noise_level_bounds=(1e-3, 100))
-    kernel = 1.0 * RBF() + noise1 + noise2
+    # noise = WhiteKernel(noise_level=0.501, noise_level_bounds=(1e-10, 1000))
+    # noise = WhiteKernel(noise_level_bounds=(1e-10, 1))
+    noise = WhiteKernel(noise_level=0.0, noise_level_bounds=(1e-10, 5))
+    noise = WhiteKernel(noise_level_bounds=(1e-10, 5))
+    kernel = 1.0 * RBF() + noise
     gp = GaussianProcessRegressor(kernel=kernel, alpha=0, normalize_y=False).fit(x[:, None], y)
+
+    # scale = 1.0
+    # scale = 4.0
+    # nash = RBF()(x[:, None]) + scale * np.eye(x.shape[0])
+    # nash = np.linalg.inv(nash)
+    # nash = np.matmul(nash, y).reshape(nash.shape[0], -1)
+
+    # grid_step = 0.02
+    # grid = np.arange(x[0], x[-1], grid_step)
+    # nash2 = RBF()(grid, x) + scale * np.eye(x.shape[0])
+
+    # pyplot.imshow(nash)
+    # pyplot.colorbar(orientation='vertical')
+    # pyplot.show()
+
     print("Kernel:", gp.kernel_)
     print("Marginal likelihood:", gp.log_marginal_likelihood_value_)
 

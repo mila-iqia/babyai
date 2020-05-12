@@ -4,6 +4,7 @@ import argparse
 import pandas
 import os
 import json
+import shutil
 
 from babyai import plotting
 
@@ -18,7 +19,8 @@ parser.add_argument("report")
 args = parser.parse_args()
 
 if os.path.exists(args.report):
-    raise ValueError("report directory already exists")
+    shutil.rmtree(args.report)
+    # raise ValueError("report directory already exists")
 os.mkdir(args.report)
 
 summary_path = os.path.join(args.report, 'summary.csv')
