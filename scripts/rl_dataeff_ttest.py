@@ -24,19 +24,19 @@ model2 = 'expert_filmcnn_endpool'
 model1 = 'expert_filmcnn_endpool'
 model2 = 'expert_filmcnn_endpool_res/lr-0.0001'
 
-model1 = 'expert_filmcnn_endpool_res/lr-0.0001'
-model2 = 'expert_filmcnn_endpool_res_not_conv_bow/lr-0.0001'
+# model1 = 'expert_filmcnn_endpool_res/lr-0.0001'
+# model2 = 'expert_filmcnn_endpool_res_not_conv_bow/lr-0.0001'
 # model1 = 'expert_filmcnn_endpool_res/lr-0.0001'
 # model2 = 'expert_filmcnn_endpool_res_pixels/lr-0.0001'
 # model1 = 'expert_filmcnn_endpool_res_not_conv_bow/lr-0.0001'
 # model2 = 'expert_filmcnn_endpool_res_pixels/lr-0.0001'
 
-model1 = 'expert_filmcnn_endpool_res/lr-0.00005'
-model2 = 'expert_filmcnn_endpool_res_not_conv_bow/lr-0.00005'
-model1 = 'expert_filmcnn_endpool_res/lr-0.00005'
-model2 = 'expert_filmcnn_endpool_res_pixels/lr-0.00005'
-model1 = 'expert_filmcnn_endpool_res_not_conv_bow/lr-0.00005'
-model2 = 'expert_filmcnn_endpool_res_pixels/lr-0.00005'
+# model1 = 'expert_filmcnn_endpool_res/lr-0.00005'
+# model2 = 'expert_filmcnn_endpool_res_not_conv_bow/lr-0.00005'
+# model1 = 'expert_filmcnn_endpool_res/lr-0.00005'
+# model2 = 'expert_filmcnn_endpool_res_pixels/lr-0.00005'
+# model1 = 'expert_filmcnn_endpool_res_not_conv_bow/lr-0.00005'
+# model2 = 'expert_filmcnn_endpool_res_pixels/lr-0.00005'
 
 # model1 = 'expert_filmcnn_endpool_res_not_conv_bow/lr-0.0001'
 # model2 = 'expert_filmcnn_endpool_res_bow/lr-0.0001'
@@ -44,8 +44,8 @@ model2 = 'expert_filmcnn_endpool_res_pixels/lr-0.00005'
 # model2 = 'expert_filmcnn_endpool_res_bow/lr-0.00005'
 
 
-path1 = [f'../beluga/logs/rl/{level}/{model1}' for level in levels]
-path2 = [f'../beluga/logs/rl/{level}/{model2}' for level in levels]
+path1 = [f'../beluga/rl/{level}/{model1}' for level in levels]
+path2 = [f'../beluga/rl/{level}/{model2}' for level in levels]
 windows = [levels[i] for i in levels]
 
 

@@ -133,7 +133,7 @@ def plot_all_runs(df, regex, quantity='return_mean', x_axis='frames', window=1, 
 
 def model_num_samples(model):
     # the number of samples is mangled in the name
-    return int(re.findall('([0-9]+)', model)[0])
+    return int(re.findall('_([0-9]+)', model)[0])
 
 
 def best_within_normal_time(df, regex, patience, limit='epochs', window=1, normal_time=None, summary_path=None):
@@ -190,7 +190,7 @@ def best_within_normal_time(df, regex, patience, limit='epochs', window=1, norma
                                        else int(1e9))
         if df_model[limit].max() < normal_time:
             need_more_time = True
-        print("{: <100} {: <5.4g}\t{: <5.4g}\t{: <5.3g}\t{:.3g}".format(
+        print("{: <50} {: <5.4g}\t{: <5.4g}\t{: <5.3g}\t{:.3g}".format(
             model.split('/')[-1],
             max_within_normal_time * 100,
             success_rate.max() * 100,
@@ -222,26 +222,39 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     # preprocess the data
     print("{} datapoints".format(len(df)))
     x = np.log2(df['num_samples'].values)
-    y = (df['success_rate'] - 0.99).values * 100
+    y = df['success_rate']
     indices = np.argsort(x)
     x = x[indices]
-    y = y[indices]
+    y = y[indices].values
 
-    if y.min() < -4:
-        print("dropping {} data points with too low performance".format((y < -4).sum()))
-        keep_indices = y > -4
-        x = x[keep_indices]
-        y = y[keep_indices]
-    print("min x: {}, max x: {}, min y: {}, max y: {}".format(x.min(), x.max(), y.min(), y.max()))
-    if (y < 0).sum() < 5:
-        raise ValueError("You have less than 5 datapoints below the threshold.\n"
-                         "Consider running experiments with less examples.")
-    if (y > 0).sum() < 5:
-        raise ValueError("You have less than 5 datapoints above the threshold.\n"
+    success_threshold = 0.99
+    min_datapoints = 5
+    almost_threshold = 0.95
+
+    if (y > success_threshold).sum() < min_datapoints:
+        raise ValueError(f"You have less than {min_datapoints} datapoints above the threshold.\n"
                          "Consider running experiments with more examples.")
+    if ((y > almost_threshold) & (y < success_threshold)).sum() < min_datapoints:
+        raise ValueError(f"You have less than {min_datapoints} datapoints"
+              " for which the threshold is almost crossed.\n"
+              "Consider running experiments with less examples.")
+    # try to throw away the extra points with low performance
+    # the model is not suitable for handling those
+    while True:
+        if ((y[1:] > success_threshold).sum() >= min_datapoints
+                and ((y[1:] > almost_threshold) & (y[1:] < success_threshold)).sum()
+                        >= min_datapoints):
+            print('throwing away x={}, y={}'.format(x[0], y[0]))
+            x = x[1:]
+            y = y[1:]
+        else:
+            break
+
+    print("min x: {}, max x: {}, min y: {}, max y: {}".format(x.min(), x.max(), y.min(), y.max()))
+    y = (y - success_threshold) * 100
 
     # fit an RBF GP
-    kernel = 1.0 * RBF() + WhiteKernel(noise_level_bounds=(1e-10, 1))
+    kernel = 1.0 * RBF() + WhiteKernel(noise_level_bounds=(1e-10, 3))
     gp = GaussianProcessRegressor(kernel=kernel, alpha=0, normalize_y=False).fit(x[:, None], y)
     print("Kernel:", gp.kernel_)
     print("Marginal likelihood:", gp.log_marginal_likelihood_value_)
