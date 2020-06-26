@@ -136,6 +136,12 @@ def model_num_samples(model):
     return int(re.findall('_([0-9]+)', model)[0])
 
 
+def get_fps(df):
+    data = df['FPS']
+    data = data.tolist()
+    return np.array(data)
+
+
 def best_within_normal_time(df, regex, patience, limit='epochs', window=1, normal_time=None, summary_path=None):
     """
     Compute the best success rate that is achieved in all runs within the normal time.
@@ -254,7 +260,7 @@ def estimate_sample_efficiency(df, visualize=False, figure_path=None):
     y = (y - success_threshold) * 100
 
     # fit an RBF GP
-    kernel = 1.0 * RBF() + WhiteKernel(noise_level_bounds=(1e-10, 3))
+    kernel = 1.0 * RBF() + WhiteKernel(noise_level_bounds=(1e-10, 10))
     gp = GaussianProcessRegressor(kernel=kernel, alpha=0, normalize_y=False).fit(x[:, None], y)
     print("Kernel:", gp.kernel_)
     print("Marginal likelihood:", gp.log_marginal_likelihood_value_)
