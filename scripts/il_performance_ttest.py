@@ -33,8 +33,7 @@ def best_within_normal_time_mutilated(df, regex, patience, limit='epochs', windo
 
     """
     models = [model for model in df['model'].unique() if re.match(regex, model)]
-    num_samples = [model_num_samples(model) for model in models]
-    print(len(num_samples))
+    num_samples = range(len(models))
     # sort models according to the number of samples
     models, num_samples = zip(*sorted(list(zip(models, num_samples)), key=lambda tupl: tupl[1]))
 
@@ -42,7 +41,6 @@ def best_within_normal_time_mutilated(df, regex, patience, limit='epochs', windo
     for model, num in zip(models, num_samples):
         df_model = df[df['model'] == model]
         success_rate = df_model['validation_success_rate'].rolling(window, center=True).mean()
-        # print(success_rate.tolist())
         success_rate = success_rate[np.logical_not(np.isnan(success_rate))]
         maxes.append(max(success_rate))
     return maxes
