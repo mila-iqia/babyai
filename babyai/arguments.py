@@ -71,7 +71,7 @@ class ArgumentParser(argparse.ArgumentParser):
                             help="arch to encode instructions, possible values: gru, bigru, conv, bow (default: gru)")
         self.add_argument("--no-mem", action="store_true", default=False,
                             help="don't use memory in the model")
-        self.add_argument("--arch", default='expert_filmcnn',
+        self.add_argument("--arch", default='bow_endpool_res',
                             help="image embedding architecture")
 
         # Validation parameters
