@@ -1,23 +1,16 @@
-# BabyAI Platform
+# BabyAI v1.1 Platform
 
 [![Build Status](https://travis-ci.org/mila-iqia/babyai.svg?branch=master)](https://travis-ci.org/mila-iqia/babyai)
 
-A platform for simulating language learning with a human in the loop. This is an ongoing research project based at [Mila](https://mila.quebec/en/).
+BabyAI is a platform used to study the sample efficiency of grounded language acquisition, created at [Mila](https://mila.quebec/en/).
 
-Contents:
-- [Citation](#citation)
-- [Replicating ICLR19 Results](#replicating-iclr19-results)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Codebase Structure](docs/codebase.md)
-- [Levels](#the-levels)
-- [Training and Evaluation](docs/train-eval.md)
-- [Contributing](CONTRIBUTING.md)
-- [Troubleshooting](docs/troubleshooting.md)
-- [About](#about-this-project)
+To replicate or compare against our current baseline results, we recommend you use the [BabyAI 1.1 branch](TODO) and cite both:
 
-## Citation
-If you use this platform in your research, please cite:
+```
+TODO: technical report details
+```
+
+and the [ICLR19 paper](https://openreview.net/forum?id=rJeXCo0cYX), which details the experimental setup and BabyAI 1.0 baseline results.  Its source code is in the [iclr19 branch](https://github.com/mila-iqia/babyai/tree/iclr19):
 
 ```
 @inproceedings{
@@ -30,31 +23,16 @@ If you use this platform in your research, please cite:
 }
 ```
 
-## Replicating ICLR19 Results
+This README covers instructions for [installation](##installation) and [troubleshooting](##troubleshooting).  Other instructions are:
 
-The master branch of this repository is updated frequently. If you are looking to replicate or compare against the results from the [ICLR19 BabyAI paper](https://openreview.net/forum?id=rJeXCo0cYX), please use the docker image, demonstration dataset and source code from the [iclr19 branch](https://github.com/mila-iqia/babyai/tree/iclr19) of this repository.
+- [Instructions on how to contribute](CONTRIBUTING.md)
+- [Codebase Structure](babyai/README.md)
+- [Training, Evaluation and Reproducing Baseline Results](scripts/README.md)
+- [BabyAI 1.0+ levels](docs/iclr19_levels.md) and [older levels](docs/bonus_levels.md).
 
 ## Installation
 
-Requirements:
-- Python 3.5+
-- OpenAI Gym
-- NumPy
-- PyTorch 0.4.1+
-- blosc
-
-Start by manually installing PyTorch. See the [PyTorch website](http://pytorch.org/)
-for installation instructions specific to your platform.
-
-Then, clone this repository and install the other dependencies with `pip3`:
-
-```
-git clone https://github.com/mila-iqia/babyai.git
-cd babyai
-pip3 install --editable .
-```
-
-### Installation using Conda (Alternative Method)
+### Conda (Recommended)
 
 If you are using conda, you can create a `babyai` environment with all the dependencies by running:
 
@@ -81,6 +59,29 @@ cd ../babyai
 pip install --editable .
 ```
 
+Finally, [follow these instructions](###babyai-storage-path)
+
+### Manual Installation
+
+Requirements:
+- Python 3.6+
+- OpenAI Gym
+- NumPy
+- PyTorch 0.4.1+
+- blosc
+
+First install [PyTorch](http://pytorch.org/) for on your platform.
+
+Then, clone this repository and install the other dependencies with `pip3`:
+
+```
+git clone https://github.com/mila-iqia/babyai.git
+cd babyai
+pip3 install --editable .
+```
+
+Finally, [follow these instructions](###babyai-storage-path)
+
 ### BabyAI Storage Path
 
 Add this line to `.bashrc` (Linux), or `.bash_profile` (Mac).
@@ -93,26 +94,27 @@ where `/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>` is the folder where you type
 
 Models, logs and demos will be produced in this directory, in the folders `models`, `logs` and `demos` respectively.
 
-## Usage
+## Troubleshooting
 
-To run the interactive GUI application that illustrates the platform:
+If you run into error messages relating to OpenAI gym or PyQT, it may be that the version of those libraries that you have installed is incompatible. You can try upgrading specific libraries with pip3, eg: `pip3 install --upgrade gym`. If the problem persists, please [open an issue](https://github.com/mila-iqia/babyai/issues/new) on this repository and paste a *complete* error message, along with some information about your platform (are you running Windows, Mac, Linux? Are you running this on a Mila machine?).
 
-```
-scripts/manual_control.py
-```
+### If you cannot install PyQT
 
-The level being run can be selected with the `--env` option, eg:
+If you cannot install PyQT using pip, another option is to install it using conda instead:
 
 ```
-scripts/manual_control.py --env BabyAI-UnlockPickup-v0
+conda install -c anaconda pyqt
 ```
 
-### The Levels
+Alternatively, it is also possible to install PyQT5 manually:
 
-Documentation for the ICLR19 levels can be found in
-[docs/iclr19_levels.md](docs/iclr19_levels.md).
-There are also older levels documented in
-[docs/bonus_levels.md](docs/bonus_levels.md).
+```
+wget https://files.pythonhosted.org/packages/98/61/fcd53201a23dd94a1264c29095821fdd55c58b4cd388dc7115e5288866db/PyQt5-5.12.1-5.12.2-cp35.cp36.cp37.cp38-abi3-manylinux1_x86_64.whl
+PYTHONPATH=""
+pip3 install --user PyQt5-5.12.1-5.12.2-cp35.cp36.cp37.cp38-abi3-manylinux1_x86_64.whl
+```
+
+Finally, if none of the above options work, note that PyQT is only needed to produce graphics for human viewing, and isn't needed during training. As such, it's possible to install BabyAI without PyQT and train a policy. To do so, you can comment out the `gym_minigrid` dependency in `setup.py`, clone the [gym-minigrid repository](https://github.com/maximecb/gym-minigrid) manually, and comment out the `pyqt5` dependency in the `setup.py` of the minigrid repository.
 
 ### Pixel Observations
 
@@ -126,8 +128,3 @@ env = RGBImgPartialObsWrapper(env)
 ```
 
 This wrapper, as well as other wrappers to change the observation format can be [found here](https://github.com/maximecb/gym-minigrid/blob/master/gym_minigrid/wrappers.py).
-
-## About this Project
-
-BabyAI is an open-ended grounded language acquisition effort at [Mila](https://mila.quebec/en/). The current BabyAI platform was designed to study data-effiency of existing methods under the assumption that a human provides all teaching signals
-(i.e. demonstrations, rewards, etc.). For more information, see the [ICLR19 paper](https://openreview.net/forum?id=rJeXCo0cYX).
