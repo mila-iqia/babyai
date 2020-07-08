@@ -66,13 +66,18 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                  arch="bow_endpool_res", aux_info=None):
         super().__init__()
 
+        endpool = 'endpool' in arch
+        use_bow = 'bow' in arch
+        pixel = 'pixel' in arch
+        self.res = 'res' in arch
+
         # Decide which components are enabled
         self.use_instr = use_instr
         self.use_memory = use_memory
         self.arch = arch
         self.lang_model = lang_model
         self.aux_info = aux_info
-        self.image_dim = image_dim
+        self.image_dim = 128 if self.res else image_dim
         self.memory_dim = memory_dim
         self.instr_dim = instr_dim
 
@@ -82,11 +87,8 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             if part not in ['original', 'bow', 'pixel', 'endpool', 'res']:
                 raise ValueError("Incorrect architecture name: {}".format(self.arch))
 
-        if not self.use_instr:
-            raise ValueError("FiLM architecture can be used when instructions are enabled")
-        endpool = 'endpool' in self.arch
-        use_bow = 'bow' in self.arch
-        pixel = 'pixel' in self.arch
+        # if not self.use_instr:
+        #     raise ValueError("FiLM architecture can be used when instructions are enabled")
         self.image_conv = nn.Sequential(*[
             *([ImageBOWEmbedding(obs_space['image'], 128)] if use_bow else []),
             *([nn.Conv2d(
@@ -127,22 +129,21 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             if self.lang_model == 'attgru':
                 self.memory2key = nn.Linear(self.memory_size, self.final_instr_dim)
 
-        # Define memory
+            num_module = 2
+            self.controllers = []
+            for ni in range(num_module):
+                mod = FiLM(
+                    in_features=self.final_instr_dim,
+                    out_features=128 if ni < num_module-1 else self.image_dim,
+                    in_channels=128, imm_channels=128)
+                self.controllers.append(mod)
+                self.add_module('FiLM_' + str(ni), mod)
+
+        # Define memory and resize image embedding
+        self.embedding_size = self.image_dim
         if self.use_memory:
             self.memory_rnn = nn.LSTMCell(self.image_dim, self.memory_dim)
-
-        # Resize image embedding
-        self.embedding_size = self.semi_memory_size
-
-        num_module = 2
-        self.controllers = []
-        for ni in range(num_module):
-            mod = FiLM(
-                in_features=self.final_instr_dim,
-                out_features=128 if ni < num_module-1 else self.image_dim,
-                in_channels=128, imm_channels=128)
-            self.controllers.append(mod)
-            self.add_module('FiLM_' + str(ni), mod)
+            self.embedding_size = self.semi_memory_size
 
         # Define actor's model
         self.actor = nn.Sequential(
@@ -239,11 +240,12 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         if 'pixel' in self.arch:
             x /= 256.0
         x = self.image_conv(x)
-        for controller in self.controllers:
-            out = controller(x, instr_embedding)
-            if 'res' in self.arch:
-                out += x
-            x = out
+        if self.use_instr:
+            for controller in self.controllers:
+                out = controller(x, instr_embedding)
+                if self.res:
+                    out += x
+                x = out
         x = F.relu(self.film_pool(x))
         x = x.reshape(x.shape[0], -1)
 

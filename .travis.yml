@@ -22,7 +22,7 @@ script:
     - ./run_tests.py
 
     # Quickly exercise the RL training code
-    - time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --procs 4 --batch-size 80 --log-interval 1 --save-interval 2 --val-episodes 10 --frames 300 --arch original
+    - time python3 -m scripts.train_rl --env BabyAI-GoToObj-v0 --algo ppo --procs 4 --batch-size 80 --log-interval 1 --save-interval 2 --val-episodes 10 --frames 300 --arch original --instr-dim 16 --image-dim 16 --memory-dim 16
 
     # Check that the bot works on a few episodes of Boss Level
     - python3 -m scripts.eval_bot --level BossLevel --num_runs 50

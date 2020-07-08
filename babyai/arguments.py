@@ -60,7 +60,7 @@ class ArgumentParser(argparse.ArgumentParser):
 
         # Model parameters
         self.add_argument("--image-dim", type=int, default=128,
-                            help="dimensionality of the image embedding")
+                            help="dimensionality of the image embedding.  Defaults to 128 in residual architectures")
         self.add_argument("--memory-dim", type=int, default=128,
                             help="dimensionality of the memory LSTM")
         self.add_argument("--instr-dim", type=int, default=128,
