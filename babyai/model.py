@@ -139,7 +139,8 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         for ni in range(num_module):
             mod = FiLM(
                 in_features=self.final_instr_dim,
-                out_features=128, in_channels=128, imm_channels=128)
+                out_features=128 if ni < num_module-1 else self.image_dim,
+                in_channels=128, imm_channels=128)
             self.controllers.append(mod)
             self.add_module('FiLM_' + str(ni), mod)
 
