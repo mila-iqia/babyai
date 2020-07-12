@@ -94,6 +94,13 @@ where `/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>` is the folder where you type
 
 Models, logs and demos will be produced in this directory, in the folders `models`, `logs` and `demos` respectively.
 
+### Downloading the demos
+
+These can be downloaded at TODO:
+
+**Using the `pixels` architecture does not work with imitation learning**, because the demonstrations were not generated to use pixels.
+
+
 ## Troubleshooting
 
 If you run into error messages relating to OpenAI gym or PyQT, it may be that the version of those libraries that you have installed is incompatible. You can try upgrading specific libraries with pip3, eg: `pip3 install --upgrade gym`. If the problem persists, please [open an issue](https://github.com/mila-iqia/babyai/issues/new) on this repository and paste a *complete* error message, along with some information about your platform (are you running Windows, Mac, Linux? Are you running this on a Mila machine?).

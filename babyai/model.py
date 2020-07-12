@@ -84,7 +84,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         self.obs_space = obs_space
 
         for part in self.arch.split('_'):
-            if part not in ['original', 'bow', 'pixel', 'endpool', 'res']:
+            if part not in ['original', 'bow', 'pixels', 'endpool', 'res']:
                 raise ValueError("Incorrect architecture name: {}".format(self.arch))
 
         # if not self.use_instr:

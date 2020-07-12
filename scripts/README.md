@@ -66,6 +66,7 @@ To train an agent with IL (imitation learning) first make sure that you have you
 ```
 scripts/train_il.py --env BabyAI-GoToLocal-v0 --demos <DEMOS>
 ```
+**Using the `pixels` architecture does not work with imitation learning**, because the demonstrations were not generated to use pixels.
 
 ### Imitation Learning Performance
 
