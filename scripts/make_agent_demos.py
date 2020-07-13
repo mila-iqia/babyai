@@ -23,7 +23,6 @@ import numpy as np
 import blosc
 import torch
 
-from gym_minigrid.wrappers import *
 import babyai.utils as utils
 
 # Parse arguments
@@ -57,9 +56,6 @@ parser.add_argument("--job-script", type=str, default=None,
 parser.add_argument("--jobs", type=int, default=0,
                     help="Split generation in that many jobs")
 
-parser.add_argument("--pixels", action="store_true", default=False,
-                    help="use pixels")
-
 args = parser.parse_args()
 logger = logging.getLogger(__name__)
 
@@ -77,8 +73,6 @@ def generate_demos(n_episodes, valid, seed, shift=0):
 
     # Generate environment
     env = gym.make(args.env)
-    if args.pixels:
-        env = RGBImgPartialObsWrapper(env)
 
     agent = utils.load_agent(env, args.model, args.demos, 'agent', args.argmax, args.env)
     demos_path = utils.get_demos_path(args.demos, args.env, 'agent', valid)

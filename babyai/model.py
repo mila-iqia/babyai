@@ -77,7 +77,9 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         self.arch = arch
         self.lang_model = lang_model
         self.aux_info = aux_info
-        self.image_dim = 128 if self.res else image_dim
+        if self.res and image_dim != 128:
+            raise ValueError(f"image_dim is {image_dim}, expected 128")
+        self.image_dim = image_dim
         self.memory_dim = memory_dim
         self.instr_dim = instr_dim
 
