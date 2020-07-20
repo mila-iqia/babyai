@@ -24,8 +24,6 @@ args = parser.parse_args()
 
 
 def dataeff(df_model, window):
-    # print(df_model['success_rate'].tolist())
-    # print(c)
     smoothed_sr = df_model['success_rate'].rolling(window, center=True).mean()
     if smoothed_sr.max() < 0.99:
         print('not done, success rate is only {}% so far'.format(100 * smoothed_sr.max()))
@@ -52,7 +50,7 @@ def get_data(path, regex):
 
 
 
-if args.ttest is not None:
+if args.other is not None:
     print("is this architecture better")
 
 Z = 2.576
@@ -62,9 +60,9 @@ result = {'samples': len(data), 'mean': data.mean(), 'std': data.std(),
           'fps_mean': fps.mean(), 'fps_std': fps.std()}
 print(result)
 
-if args.ttest is not None:
+if args.other is not None:
     print("\nthan this one")
-    data_ttest, fps = get_data(args.ttest, args.ttest_regex)
+    data_ttest, fps = get_data(args.other, args.other_regex)
     result = {'samples': len(data_ttest),
         'mean': data_ttest.mean(), 'std': data_ttest.std(),
         'min': data_ttest.mean() - Z * data_ttest.std(),

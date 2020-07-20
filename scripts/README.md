@@ -43,6 +43,7 @@ A machine readable log can be found in `logs/<MODEL>/log.csv`, a human readable 
 
 To reproduce our results, use `scripts/train_rl.py` to run several jobs for each level (and don't forget to vary `--seed`).  The jobs don't stop by themselves, cancel them when you feel like.
 
+
 ### Reinforcement Learning Sample Efficiency
 
 To measure how many episodes is required to get 100% performance, do:
@@ -66,7 +67,24 @@ To train an agent with IL (imitation learning) first make sure that you have you
 ```
 scripts/train_il.py --env BabyAI-GoToLocal-v0 --demos <DEMOS>
 ```
-**Using the `pixels` architecture does not work with imitation learning**, because the demonstrations were not generated to use pixels.
+For simple levels (`GoToRedBallGrey`, `GoToRedBall`, `GoToLocal`, `PickupLoc`, `PutNextLocal`), we used the **small** architectural configuration:
+```
+--batch-size=256 --val-episodes 512 --val-interval 1 --log-interval 1 --epoch-length 25600
+```
+
+For all other levels, we use the **big** architectural configuration:
+```
+--memory-dim=2048 --recurrence=80 --batch-size=128 --instr-arch=attgru --instr-dim=256 --val-interval 1 --log-interval 1  --epoch-length 51200
+```
+
+Optional arguments for this script are
+```
+--episodes <NUMBER_OF_DEMOS> --arch <ARCH> --seed <SEED>
+```
+If `<SEED> = 0`, a random seed is automatically generated.  Otherwise, manually set a seed.
+
+`<ARCH>` is one of `original`, `original_endpool_res`, `bow_endpool_res`.  **Using the `pixels` architecture does not work with imitation learning**, because the demonstrations were not generated to use pixels.
+
 
 ### Imitation Learning Performance
 

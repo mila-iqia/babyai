@@ -42,7 +42,7 @@ def get_data(path, regex):
 
 
 
-if args.ttest is not None:
+if args.other is not None:
     print("is this architecture better")
 print(args.regex)
 maxes, fps = get_data(args.path, args.regex)
@@ -50,9 +50,9 @@ result = {'samples': len(maxes), 'mean': maxes.mean(), 'std': maxes.std(),
           'fps_mean': fps.mean(), 'fps_std': fps.std()}
 print(result)
 
-if args.ttest is not None:
+if args.other is not None:
     print("\nthan this one")
-    maxes_ttest, fps = get_data(args.ttest, args.ttest_regex)
+    maxes_ttest, fps = get_data(args.other, args.other_regex)
     result = {'samples': len(maxes_ttest),
         'mean': maxes_ttest.mean(), 'std': maxes_ttest.std(),
         'fps_mean': fps.mean(), 'fps_std': fps.std()}
