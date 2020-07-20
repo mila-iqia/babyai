@@ -14,9 +14,9 @@ parser.add_argument("--path", default='.',
     help="path to model logs")
 parser.add_argument("--regex", default='.*',
     help="filter out some logs")
-parser.add_argument("--ttest", default=None,
-    help="path to model logs for comparison")
-parser.add_argument("--ttest_regex", default='.*',
+parser.add_argument("--other", default=None,
+    help="path to model logs for ttest comparison")
+parser.add_argument("--other_regex", default='.*',
     help="filter out some logs from comparison")
 parser.add_argument("--window", type=int, default=100,
     help="size of sliding window average, 10 for GoToRedBallGrey, 100 otherwise")

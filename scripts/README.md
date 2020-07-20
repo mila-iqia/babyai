@@ -83,6 +83,8 @@ For most levels the default value `--window=100` makes sense, but for `GoToRedBa
 
 ### Sample efficiency
 
+In BabyAI 1.1 (PAPER LINK TODO), we do not evaluate using this process.  See [Imitation Learning Performance](###-imitation-learning-performance) instead.
+
 To measure sample efficiency of imitation learning you have to train the model using different numbers of samples.  The `main` function from `babyai/efficiency.py` can help with you this. In order to use `main`, you have to create a file `babyai/cluster_specific.py` and implement a `launch_job` function in it that launches the job at the cluster that you have at your disposal.
 
 Below is an example launch script for the `GoToRedBallGrey` level. Before running the script, make sure the [official demonstration files](https://drive.google.com/drive/folders/124DhBJ5BdiLyRowkYnVtfcYHKre9ouSp) are located in `./demos`.
