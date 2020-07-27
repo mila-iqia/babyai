@@ -74,7 +74,7 @@ For simple levels (`GoToRedBallGrey`, `GoToRedBall`, `GoToLocal`, `PickupLoc`, `
 
 For all other levels, we use the **big** architectural configuration:
 ```
---memory-dim=2048 --recurrence=80 --batch-size=128 --instr-arch=attgru --instr-dim=256 --val-interval 1 --log-interval 1  --epoch-length 51200
+--memory-dim=2048 --recurrence=80 --batch-size=128 --instr-arch=attgru --instr-dim=256 --val-interval 1 --log-interval 1  --epoch-length 51200 --lr 5e-5
 ```
 
 Optional arguments for this script are
