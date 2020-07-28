@@ -17,12 +17,67 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+import numpy
+
+
+class EpochIndexSampler:
+    """
+    Generate smart indices for epochs that are smaller than the dataset size.
+
+    The usecase: you have a code that has a strongly baken in notion of an epoch,
+    e.g. you can only validate in the end of the epoch. That ties a lot of
+    aspects of training to the size of the dataset. You may want to validate
+    more often than once per a complete pass over the dataset.
+
+    This class helps you by generating a sequence of smaller epochs that
+    use different subsets of the dataset, as long as this is possible.
+    This allows you to keep the small advantage that sampling without replacement
+    provides, but also enjoy smaller epochs.
+    """
+    def __init__(self, n_examples, epoch_n_examples):
+        self.n_examples = n_examples
+        self.epoch_n_examples = epoch_n_examples
+
+        self._last_seed = None
+
+    def _reseed_indices_if_needed(self, seed):
+        if seed == self._last_seed:
+            return
+
+        rng = numpy.random.RandomState(seed)
+        self._indices = list(range(self.n_examples))
+        rng.shuffle(self._indices)
+        logger.info('reshuffle the dataset')
+
+        self._last_seed = seed
+
+    def get_epoch_indices(self, epoch):
+        """Return indices corresponding to a particular epoch.
+
+        Tip: if you call this function with consecutive epoch numbers,
+        you will avoid expensive reshuffling of the index list.
+
+        """
+        seed = epoch * self.epoch_n_examples // self.n_examples
+        offset = epoch * self.epoch_n_examples % self.n_examples
+
+        indices = []
+        while len(indices) < self.epoch_n_examples:
+            self._reseed_indices_if_needed(seed)
+            n_lacking = self.epoch_n_examples - len(indices)
+            indices += self._indices[offset:offset + min(n_lacking, self.n_examples - offset)]
+            offset = 0
+            seed += 1
+
+        return indices
+
 
 class ImitationLearning(object):
     def __init__(self, args, ):
         self.args = args
 
         utils.seed(self.args.seed)
+        self.val_seed = self.args.val_seed
 
         # args.env is a list when training on multiple environments
         if getattr(args, 'multi_env', None):
@@ -84,7 +139,6 @@ class ImitationLearning(object):
         self.acmodel = utils.load_model(args.model, raise_not_found=False)
         if self.acmodel is None:
             if getattr(self.args, 'pretrained_model', None):
-                logger.info("Loading pretrained model")
                 self.acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
             else:
                 logger.info('Creating new model')
@@ -132,14 +186,11 @@ class ImitationLearning(object):
         else:
             return np.arange(0, num_frames, self.args.recurrence)[:-1]
 
-    def run_epoch_recurrence(self, demos, is_training=False):
-        if self.args.epoch_length == 0:
+    def run_epoch_recurrence(self, demos, is_training=False, indices=None):
+        if not indices:
             indices = list(range(len(demos)))
-        else:
-            indices = np.random.choice(len(demos), self.args.epoch_length)
-        if is_training:
-            np.random.shuffle(indices)
-
+            if is_training:
+                np.random.shuffle(indices)
         batch_size = min(self.args.batch_size, len(demos))
         offset = 0
 
@@ -162,9 +213,9 @@ class ImitationLearning(object):
             log["entropy"].append(_log["entropy"])
             log["policy_loss"].append(_log["policy_loss"])
             log["accuracy"].append(_log["accuracy"])
-            log["frames"] = frames
 
             offset += batch_size
+        log['total_frames'] = frames
 
         if not is_training:
             self.acmodel.train()
@@ -270,9 +321,6 @@ class ImitationLearning(object):
         return log
 
     def validate(self, episodes, verbose=True):
-        # Seed needs to be reset for each validation, to ensure consistency
-        utils.seed(self.args.val_seed)
-
         if verbose:
             logger.info("Validating the model")
         if getattr(self.args, 'multi_env', None):
@@ -288,7 +336,8 @@ class ImitationLearning(object):
 
         for env_name in ([self.args.env] if not getattr(self.args, 'multi_env', None)
                          else self.args.multi_env):
-            logs += [batch_evaluate(agent, env_name, self.args.val_seed, episodes)]
+            logs += [batch_evaluate(agent, env_name, self.val_seed, episodes)]
+            self.val_seed += episodes
         agent.model.train()
 
         return logs
@@ -325,6 +374,11 @@ class ImitationLearning(object):
         best_success_rate, patience, i = 0, 0, 0
         total_start_time = time.time()
 
+        epoch_length = self.args.epoch_length
+        if not epoch_length:
+            epoch_length = len(train_demos)
+        index_sampler = EpochIndexSampler(len(train_demos), epoch_length)
+
         while status['i'] < getattr(self.args, 'epochs', int(1e9)):
             if 'patience' not in status:  # if for some reason you're finetuining with IL an RL pretrained agent
                 status['patience'] = 0
@@ -334,15 +388,16 @@ class ImitationLearning(object):
             if status['num_frames'] > self.args.frames:
                 break
 
-            status['i'] += 1
-            i = status['i']
             update_start_time = time.time()
 
+            indices = index_sampler.get_epoch_indices(status['i'])
+            log = self.run_epoch_recurrence(train_demos, is_training=True, indices=indices)
+            
             # Learning rate scheduler
             self.scheduler.step()
 
-            log = self.run_epoch_recurrence(train_demos, is_training=True)
-            status['num_frames'] += log['frames']
+            status['num_frames'] += log['total_frames']
+            status['i'] += 1
 
             update_end_time = time.time()
 
@@ -350,7 +405,7 @@ class ImitationLearning(object):
             if status['i'] % self.args.log_interval == 0:
                 total_ellapsed_time = int(time.time() - total_start_time)
 
-                fps = log['frames'] / (update_end_time - update_start_time)
+                fps = log['total_frames'] / (update_end_time - update_start_time)
                 duration = datetime.timedelta(seconds=total_ellapsed_time)
 
                 for key in log:
@@ -415,9 +470,6 @@ class ImitationLearning(object):
                     logger.info(
                         "Losing patience, new value={}, limit={}".format(status['patience'], self.args.patience))
 
-
-            if status['i'] % self.args.save_interval == 0:
-                logger.info("Saving current model")
                 if torch.cuda.is_available():
                     self.acmodel.cpu()
                 utils.save_model(self.acmodel, self.args.model)
@@ -426,3 +478,5 @@ class ImitationLearning(object):
                     self.acmodel.cuda()
                 with open(status_path, 'w') as dst:
                     json.dump(status, dst)
+
+        return best_success_rate

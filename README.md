@@ -1,23 +1,23 @@
-# BabyAI Platform
+# BabyAI 1.1
 
 [![Build Status](https://travis-ci.org/mila-iqia/babyai.svg?branch=master)](https://travis-ci.org/mila-iqia/babyai)
 
-A platform for simulating language learning with a human in the loop. This is an ongoing research project based at [Mila](https://mila.quebec/en/).
+BabyAI is a platform used to study the sample efficiency of grounded language acquisition, created at [Mila](https://mila.quebec/en/).
 
-Contents:
-- [Citation](#citation)
-- [Replicating ICLR19 Results](#replicating-iclr19-results)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Codebase Structure](docs/codebase.md)
-- [Levels](#the-levels)
-- [Training and Evaluation](docs/train-eval.md)
-- [Contributing](CONTRIBUTING.md)
-- [Troubleshooting](docs/troubleshooting.md)
-- [About](#about-this-project)
+The master branch of this repository is updated frequently.  If you are looking to replicate or compare against the [baseline results](http://arxiv.org/abs/2007.12770), we recommend you use the [BabyAI 1.1 branch](https://github.com/mila-iqia/babyai/tree/dyth-v1.1-and-baselines) and cite both:
 
-## Citation
-If you use this platform in your research, please cite:
+```
+@misc{hui2020babyai,
+    title={BabyAI 1.1},
+    author={David Yu-Tung Hui and Maxime Chevalier-Boisvert and Dzmitry Bahdanau and Yoshua Bengio},
+    year={2020},
+    eprint={2007.12770},
+    archivePrefix={arXiv},
+    primaryClass={cs.AI}
+}
+```
+
+and the [ICLR19 paper](https://openreview.net/forum?id=rJeXCo0cYX), which details the experimental setup and BabyAI 1.0 baseline results.  Its source code is in the [iclr19 branch](https://github.com/mila-iqia/babyai/tree/iclr19):
 
 ```
 @inproceedings{
@@ -30,31 +30,16 @@ If you use this platform in your research, please cite:
 }
 ```
 
-## Replicating ICLR19 Results
+This README covers instructions for [installation](##installation) and [troubleshooting](##troubleshooting).  Other instructions are:
 
-The master branch of this repository is updated frequently. If you are looking to replicate or compare against the results from the [ICLR19 BabyAI paper](https://openreview.net/forum?id=rJeXCo0cYX), please use the docker image, demonstration dataset and source code from the [iclr19 branch](https://github.com/mila-iqia/babyai/tree/iclr19) of this repository.
+- [Instructions on how to contribute](CONTRIBUTING.md)
+- [Codebase Structure](babyai/README.md)
+- [Training, Evaluation and Reproducing Baseline Results](scripts/README.md)
+- [BabyAI 1.0+ levels](docs/iclr19_levels.md) and [older levels](docs/bonus_levels.md).
 
 ## Installation
 
-Requirements:
-- Python 3.5+
-- OpenAI Gym
-- NumPy
-- PyTorch 0.4.1+
-- blosc
-
-Start by manually installing PyTorch. See the [PyTorch website](http://pytorch.org/)
-for installation instructions specific to your platform.
-
-Then, clone this repository and install the other dependencies with `pip3`:
-
-```
-git clone https://github.com/mila-iqia/babyai.git
-cd babyai
-pip3 install --editable .
-```
-
-### Installation using Conda (Alternative Method)
+### Conda (Recommended)
 
 If you are using conda, you can create a `babyai` environment with all the dependencies by running:
 
@@ -81,6 +66,29 @@ cd ../babyai
 pip install --editable .
 ```
 
+Finally, [follow these instructions](###babyai-storage-path)
+
+### Manual Installation
+
+Requirements:
+- Python 3.6+
+- OpenAI Gym
+- NumPy
+- PyTorch 0.4.1+
+- blosc
+
+First install [PyTorch](http://pytorch.org/) for on your platform.
+
+Then, clone this repository and install the other dependencies with `pip3`:
+
+```
+git clone https://github.com/mila-iqia/babyai.git
+cd babyai
+pip3 install --editable .
+```
+
+Finally, [follow these instructions](###babyai-storage-path)
+
 ### BabyAI Storage Path
 
 Add this line to `.bashrc` (Linux), or `.bash_profile` (Mac).
@@ -93,26 +101,24 @@ where `/<PATH>/<TO>/<BABYAI>/<REPOSITORY>/<PARENT>` is the folder where you type
 
 Models, logs and demos will be produced in this directory, in the folders `models`, `logs` and `demos` respectively.
 
-## Usage
+### Downloading the demos
 
-To run the interactive GUI application that illustrates the platform:
+These can be [downloaded here](https://drive.google.com/file/d/1NeJX8ZCUEnhwO1rmefqkMEizhWxyQLEX/view?usp=sharing)
 
+Ensure the downloaded file has the following md5 checksum (obtained via `md5sum`): `1df202ef2bbf2de768633059ed8db64c`
+
+before extraction:
 ```
-scripts/manual_control.py
-```
-
-The level being run can be selected with the `--env` option, eg:
-
-```
-scripts/manual_control.py --env BabyAI-UnlockPickup-v0
+gunzip -c copydemos.tar.gz | tar xvf -
 ```
 
-### The Levels
 
-Documentation for the ICLR19 levels can be found in
-[docs/iclr19_levels.md](docs/iclr19_levels.md).
-There are also older levels documented in
-[docs/bonus_levels.md](docs/bonus_levels.md).
+**Using the `pixels` architecture does not work with imitation learning**, because the demonstrations were not generated to use pixels.
+
+
+## Troubleshooting
+
+If you run into error messages relating to OpenAI gym, it may be that the version of those libraries that you have installed is incompatible. You can try upgrading specific libraries with pip3, eg: `pip3 install --upgrade gym`. If the problem persists, please [open an issue](https://github.com/mila-iqia/babyai/issues/new) on this repository and paste a *complete* error message, along with some information about your platform (are you running Windows, Mac, Linux? Are you running this on a Mila machine?).
 
 ### Pixel Observations
 
@@ -126,8 +132,3 @@ env = RGBImgPartialObsWrapper(env)
 ```
 
 This wrapper, as well as other wrappers to change the observation format can be [found here](https://github.com/maximecb/gym-minigrid/blob/master/gym_minigrid/wrappers.py).
-
-## About this Project
-
-BabyAI is an open-ended grounded language acquisition effort at [Mila](https://mila.quebec/en/). The current BabyAI platform was designed to study data-effiency of existing methods under the assumption that a human provides all teaching signals
-(i.e. demonstrations, rewards, etc.). For more information, see the [ICLR19 paper](https://openreview.net/forum?id=rJeXCo0cYX).
