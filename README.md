@@ -4,10 +4,17 @@
 
 BabyAI is a platform used to study the sample efficiency of grounded language acquisition, created at [Mila](https://mila.quebec/en/).
 
-The master branch of this repository is updated frequently.  If you are looking to replicate or compare against the baseline results as reported in TODO, we recommend you use the [BabyAI 1.1 branch](https://github.com/mila-iqia/babyai/tree/babyai-v1.1) and cite both:
+The master branch of this repository is updated frequently.  If you are looking to replicate or compare against the [baseline results](http://arxiv.org/abs/2007.12770), we recommend you use the [BabyAI 1.1 branch](https://github.com/mila-iqia/babyai/tree/babyai-v1.1) and cite both:
 
 ```
-TODO: technical report link
+@misc{hui2020babyai,
+    title={BabyAI 1.1},
+    author={David Yu-Tung Hui and Maxime Chevalier-Boisvert and Dzmitry Bahdanau and Yoshua Bengio},
+    year={2020},
+    eprint={2007.12770},
+    archivePrefix={arXiv},
+    primaryClass={cs.AI}
+}
 ```
 
 and the [ICLR19 paper](https://openreview.net/forum?id=rJeXCo0cYX), which details the experimental setup and BabyAI 1.0 baseline results.  Its source code is in the [iclr19 branch](https://github.com/mila-iqia/babyai/tree/iclr19):
