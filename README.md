@@ -103,7 +103,15 @@ Models, logs and demos will be produced in this directory, in the folders `model
 
 ### Downloading the demos
 
-These can be downloaded at TODO:
+These can be [downloaded here](https://drive.google.com/file/d/1NeJX8ZCUEnhwO1rmefqkMEizhWxyQLEX/view?usp=sharing)
+
+Ensure the downloaded file has the following md5 checksum (obtained via `md5sum`): `1df202ef2bbf2de768633059ed8db64c`
+
+before extraction:
+```
+gunzip -c copydemos.tar.gz | tar xvf -
+```
+
 
 **Using the `pixels` architecture does not work with imitation learning**, because the demonstrations were not generated to use pixels.
 
