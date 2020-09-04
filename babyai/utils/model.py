@@ -15,7 +15,10 @@ def get_model_path(model_name):
 def load_model(model_name, raise_not_found=True):
     path = get_model_path(model_name)
     try:
-        model = torch.load(path)
+        if torch.cuda.is_available():
+            model = torch.load(path)
+        else:
+            model = torch.load(path, map_location=torch.device("cpu"))
         model.eval()
         return model
     except FileNotFoundError:
