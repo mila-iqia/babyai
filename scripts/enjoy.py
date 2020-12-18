@@ -33,12 +33,12 @@ parser.add_argument("--manual-mode", action="store_true", default=False,
 args = parser.parse_args()
 
 action_map = {
-    "LEFT"   : "left",
-    "RIGHT"  : "right",
-    "UP"     : "forward",
-    "PAGE_UP": "pickup",
-    "PAGE_DOWN": "drop",
-    "SPACE": "toggle"
+    "left"   : "left",
+    "right"  : "right",
+    "up"     : "forward",
+    "p"      : "pickup",
+    "d"      : "drop",
+    " "      : "toggle"
 }
 
 assert args.model is not None or args.demos is not None, "--model or --demos must be specified."
@@ -67,18 +67,24 @@ done = True
 
 action = None
 
-def keyDownCb(keyName):
+def keyDownCb(event):
     global obs
+
+    keyName = event.key
+    print(keyName)
+
     # Avoiding processing of observation by agent for wrong key clicks
-    if keyName not in action_map and keyName != "RETURN":
+    if keyName not in action_map and keyName != "enter":
         return
 
     agent_action = agent.act(obs)['action']
 
+    # Map the key to an action
     if keyName in action_map:
         action = env.actions[action_map[keyName]]
 
-    elif keyName == "RETURN":
+    # Enter executes the agent's action
+    elif keyName == "enter":
         action = agent_action
 
     obs, reward, done, _ = env.step(action)
@@ -88,14 +94,17 @@ def keyDownCb(keyName):
         obs = env.reset()
         print("Mission: {}".format(obs["mission"]))
 
+
+if args.manual_mode:
+    env.render('human')
+    env.window.reg_key_handler(keyDownCb)
+
 step = 0
 episode_num = 0
 while True:
     time.sleep(args.pause)
-    renderer = env.render("human")
-    if args.manual_mode and renderer.window is not None:
-        renderer.window.setKeyDownCb(keyDownCb)
-    else:
+    env.render("human")
+    if not args.manual_mode:
         result = agent.act(obs)
         obs, reward, done, _ = env.step(result['action'])
         agent.analyze_feedback(reward, done)
@@ -116,5 +125,5 @@ while True:
         else:
             step += 1
 
-    if renderer.window is None:
+    if env.window.closed:
         break
