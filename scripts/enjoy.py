@@ -33,12 +33,14 @@ parser.add_argument("--manual-mode", action="store_true", default=False,
 args = parser.parse_args()
 
 action_map = {
-    "left"   : "left",
-    "right"  : "right",
-    "up"     : "forward",
-    "p"      : "pickup",
-    "d"      : "drop",
-    " "      : "toggle"
+    "left"      : "left",
+    "right"     : "right",
+    "up"        : "forward",
+    "p"         : "pickup",
+    "pageup"    : "pickup",
+    "d"         : "drop",
+    "pagedown"  : "drop",
+    " "         : "toggle"
 }
 
 assert args.model is not None or args.demos is not None, "--model or --demos must be specified."

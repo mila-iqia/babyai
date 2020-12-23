@@ -62,10 +62,10 @@ def key_handler(event):
     if event.key == ' ':
         step(env.actions.toggle)
         return
-    if event.key == 'pageup':
+    if event.key == 'pageup' or event.key == 'p':
         step(env.actions.pickup)
         return
-    if event.key == 'pagedown':
+    if event.key == 'pagedown' or event.key == 'd':
         step(env.actions.drop)
         return
 
