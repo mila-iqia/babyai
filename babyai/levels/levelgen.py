@@ -110,7 +110,7 @@ class RoomGridLevel(RoomGrid):
             colors_of_locked_doors = []
             for i in range(self.num_rows):
                 for j in range(self.num_cols):
-                    room = self.get_room(i, j)
+                    room = self.get_room(j, i)
                     for door in room.doors:
                         if door and door.is_locked:
                             colors_of_locked_doors.append(door.color)
@@ -193,7 +193,7 @@ class RoomGridLevel(RoomGrid):
 
         for i in range(self.num_rows):
             for j in range(self.num_cols):
-                room = self.get_room(i, j)
+                room = self.get_room(j, i)
                 for door in room.doors:
                     if door:
                         door.is_open = True

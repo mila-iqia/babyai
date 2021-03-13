@@ -312,8 +312,8 @@ class Level_GoToImpUnlock(RoomGridLevel):
         # Add a locked door to a random room
         id = self._rand_int(0, self.num_rows)
         jd = self._rand_int(0, self.num_cols)
-        door, pos = self.add_door(id, jd, locked=True)
-        locked_room = self.get_room(id, jd)
+        door, pos = self.add_door(jd, id, locked=True)
+        locked_room = self.get_room(jd, id)
 
         # Add the key to a different room
         while True:
@@ -321,7 +321,7 @@ class Level_GoToImpUnlock(RoomGridLevel):
             jk = self._rand_int(0, self.num_cols)
             if ik is id and jk is jd:
                 continue
-            self.add_object(ik, jk, 'key', door.color)
+            self.add_object(jk, ik, 'key', door.color)
             break
 
         self.connect_all()
@@ -406,7 +406,7 @@ class Level_Open(RoomGridLevel):
         doors = []
         for i in range(self.num_rows):
             for j in range(self.num_cols):
-                room = self.get_room(i, j)
+                room = self.get_room(j, i)
                 for door in room.doors:
                     if door:
                         doors.append(door)
@@ -426,8 +426,8 @@ class Level_Unlock(RoomGridLevel):
         # Add a locked door to a random room
         id = self._rand_int(0, self.num_rows)
         jd = self._rand_int(0, self.num_cols)
-        door, pos = self.add_door(id, jd, locked=True)
-        locked_room = self.get_room(id, jd)
+        door, pos = self.add_door(jd, id, locked=True)
+        locked_room = self.get_room(jd, id)
 
         # Add the key to a different room
         while True:
@@ -435,7 +435,7 @@ class Level_Unlock(RoomGridLevel):
             jk = self._rand_int(0, self.num_cols)
             if ik is id and jk is jd:
                 continue
-            self.add_object(ik, jk, 'key', door.color)
+            self.add_object(jk, ik, 'key', door.color)
             break
 
         # With 50% probability, ensure that the locked door is the only
