@@ -108,9 +108,9 @@ class RoomGridLevel(RoomGrid):
         # Gather the colors of locked doors
         if hasattr(self, 'unblocking') and self.unblocking:
             colors_of_locked_doors = []
-            for i in range(self.num_rows):
-                for j in range(self.num_cols):
-                    room = self.get_room(j, i)
+            for i in range(self.num_cols):
+                for j in range(self.num_rows):
+                    room = self.get_room(i, j)
                     for door in room.doors:
                         if door and door.is_locked:
                             colors_of_locked_doors.append(door.color)
@@ -191,9 +191,9 @@ class RoomGridLevel(RoomGrid):
         Open all the doors in the maze
         """
 
-        for i in range(self.num_rows):
-            for j in range(self.num_cols):
-                room = self.get_room(j, i)
+        for i in range(self.num_cols):
+            for j in range(self.num_rows):
+                room = self.get_room(i, j)
                 for door in room.doors:
                     if door:
                         door.is_open = True
