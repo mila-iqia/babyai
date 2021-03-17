@@ -435,7 +435,7 @@ class Level_Unlock(RoomGridLevel):
             jk = self._rand_int(0, self.num_rows)
             if ik is id and jk is jd:
                 continue
-            self.add_object(jk, ik, 'key', door.color)
+            self.add_object(ik, jk, 'key', door.color)
             break
 
         # With 50% probability, ensure that the locked door is the only
