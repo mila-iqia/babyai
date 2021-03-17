@@ -310,15 +310,15 @@ class Level_GoToImpUnlock(RoomGridLevel):
 
     def gen_mission(self):
         # Add a locked door to a random room
-        id = self._rand_int(0, self.num_rows)
-        jd = self._rand_int(0, self.num_cols)
+        id = self._rand_int(0, self.num_cols)
+        jd = self._rand_int(0, self.num_rows)
         door, pos = self.add_door(id, jd, locked=True)
         locked_room = self.get_room(id, jd)
 
         # Add the key to a different room
         while True:
-            ik = self._rand_int(0, self.num_rows)
-            jk = self._rand_int(0, self.num_cols)
+            ik = self._rand_int(0, self.num_cols)
+            jk = self._rand_int(0, self.num_rows)
             if ik is id and jk is jd:
                 continue
             self.add_object(ik, jk, 'key', door.color)
@@ -330,8 +330,8 @@ class Level_GoToImpUnlock(RoomGridLevel):
         # We do this to speed up the reachability test,
         # which otherwise will reject all levels with
         # objects in the locked room.
-        for i in range(self.num_rows):
-            for j in range(self.num_cols):
+        for i in range(self.num_cols):
+            for j in range(self.num_rows):
                 if i is not id or j is not jd:
                     self.add_distractors(
                         i,
@@ -404,8 +404,8 @@ class Level_Open(RoomGridLevel):
 
         # Collect a list of all the doors in the environment
         doors = []
-        for i in range(self.num_rows):
-            for j in range(self.num_cols):
+        for i in range(self.num_cols):
+            for j in range(self.num_rows):
                 room = self.get_room(i, j)
                 for door in room.doors:
                     if door:
@@ -424,15 +424,15 @@ class Level_Unlock(RoomGridLevel):
 
     def gen_mission(self):
         # Add a locked door to a random room
-        id = self._rand_int(0, self.num_rows)
-        jd = self._rand_int(0, self.num_cols)
+        id = self._rand_int(0, self.num_cols)
+        jd = self._rand_int(0, self.num_rows)
         door, pos = self.add_door(id, jd, locked=True)
         locked_room = self.get_room(id, jd)
 
         # Add the key to a different room
         while True:
-            ik = self._rand_int(0, self.num_rows)
-            jk = self._rand_int(0, self.num_cols)
+            ik = self._rand_int(0, self.num_cols)
+            jk = self._rand_int(0, self.num_rows)
             if ik is id and jk is jd:
                 continue
             self.add_object(ik, jk, 'key', door.color)
@@ -450,8 +450,8 @@ class Level_Unlock(RoomGridLevel):
         # We do this to speed up the reachability test,
         # which otherwise will reject all levels with
         # objects in the locked room.
-        for i in range(self.num_rows):
-            for j in range(self.num_cols):
+        for i in range(self.num_cols):
+            for j in range(self.num_rows):
                 if i is not id or j is not jd:
                     self.add_distractors(
                         i,
