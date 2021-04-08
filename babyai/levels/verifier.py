@@ -7,7 +7,7 @@ from gym_minigrid.minigrid import COLOR_NAMES, DIR_TO_VEC
 OBJ_TYPES = ['box', 'ball', 'key', 'door']
 
 # Object types we are allowed to describe in language
-OBJ_TYPES_NOT_DOOR = list(filter(lambda t: t is not 'door', OBJ_TYPES))
+OBJ_TYPES_NOT_DOOR = list(filter(lambda t: t != 'door', OBJ_TYPES))
 
 # Locations are all relative to the agent's starting position
 LOC_NAMES = ['left', 'right', 'front', 'behind']
@@ -311,7 +311,7 @@ class PickupInstr(ActionInstr):
 
     def __init__(self, obj_desc, strict=False):
         super().__init__()
-        assert obj_desc.type is not 'door'
+        assert obj_desc.type != 'door'
         self.desc = obj_desc
         self.strict = strict
 
@@ -358,7 +358,7 @@ class PutNextInstr(ActionInstr):
 
     def __init__(self, obj_move, obj_fixed, strict=False):
         super().__init__()
-        assert obj_move.type is not 'door'
+        assert obj_move.type != 'door'
         self.desc_move = obj_move
         self.desc_fixed = obj_fixed
         self.strict = strict
@@ -534,10 +534,10 @@ class AndInstr(SeqInstr):
         self.b_done = False
 
     def verify(self, action):
-        if self.a_done is not 'success':
+        if self.a_done != 'success':
             self.a_done = self.instr_a.verify(action)
 
-        if self.b_done is not 'success':
+        if self.b_done != 'success':
             self.b_done = self.instr_b.verify(action)
 
         if use_done_actions and action is self.env.actions.done:
