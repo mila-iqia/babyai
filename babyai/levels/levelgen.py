@@ -17,7 +17,7 @@ class RejectSampling(Exception):
 class RoomGridLevel(RoomGrid):
     """
     Base for levels based on RoomGrid
-    A level, given a random seed, generates missions generated from
+    A level, generates missions generated from
     one or more patterns. Levels should produce a family of missions
     of approximately similar difficulty.
     """
@@ -271,7 +271,7 @@ class LevelGen(RoomGridLevel):
         implicit_unlock=True,
         action_kinds=['goto', 'pickup', 'open', 'putnext'],
         instr_kinds=['action', 'and', 'seq'],
-        seed=None
+        **kwargs
     ):
         self.num_dists = num_dists
         self.locked_room_prob = locked_room_prob
@@ -287,7 +287,7 @@ class LevelGen(RoomGridLevel):
             room_size=room_size,
             num_rows=num_rows,
             num_cols=num_cols,
-            seed=seed
+            **kwargs
         )
 
     def gen_mission(self):
@@ -503,7 +503,9 @@ def test():
         rng = random.Random(0)
         num_episodes = 0
         for i in range(0, 15):
-            mission = level(seed=i)
+            mission = level()
+            mission = gym.make(level.gym_id)
+            _ = mission.reset(seed=i)
 
             # Check that the surface form was generated
             assert isinstance(mission.surface, str)
@@ -529,8 +531,10 @@ def test():
             num_episodes += 1
 
         # The same seed should always yield the same mission
-        m0 = level(seed=0)
-        m1 = level(seed=0)
+        m0 = gym.make(level.gym_id)
+        _ = m0.reset(seed=0)
+        m1 = gym.make(level.gym_id)
+        _ = m1.reset(seed=0)
         grid1 = m0.unwrapped.grid
         grid2 = m1.unwrapped.grid
         assert grid1 == grid2

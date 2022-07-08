@@ -56,7 +56,7 @@ for i in range(args.procs):
     env = gym.make(args.env)
     if use_pixel:
         env = RGBImgPartialObsWrapper(env)
-    env.seed(100 * args.seed + i)
+    _ = env.reset(seed=100 * args.seed + i)
     envs.append(env)
 
 # Define model name

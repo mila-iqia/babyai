@@ -88,10 +88,9 @@ def generate_demos(n_episodes, valid, seed, shift=0):
         done = False
         if just_crashed:
             logger.info("reset the environment to find a mission that the bot can solve")
-            env.reset()
+            obs = env.reset()
         else:
-            env.seed(seed + len(demos))
-        obs = env.reset()
+            obs = env.reset(seed=seed + len(demos))
         agent.on_reset()
 
         actions = []

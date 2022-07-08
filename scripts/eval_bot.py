@@ -15,7 +15,7 @@ eval_boy.py --advise_mode --bad_action_proba .8 --non_optimal_steps 10 --random_
 
 """
 
-import random
+import gym
 import time
 import traceback
 from optparse import OptionParser
@@ -107,7 +107,9 @@ for level_name in level_list:
         level = level_dict[level_name]
 
         mission_seed = options.seed + run_no
-        mission = level(seed=mission_seed)
+        mission = level()
+        mission = gym.make(mission.gym_id)
+        _ = mission.reset(seed=mission_seed)
         expert = Bot(mission)
 
         if options.verbose:

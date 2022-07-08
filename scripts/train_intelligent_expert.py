@@ -112,8 +112,7 @@ def generate_demos(env_name, seeds):
         # Run the expert for one episode
         done = False
 
-        env.seed(int(seed))
-        obs = env.reset()
+        obs = env.reset(int(seed))
         agent.on_reset()
 
         actions = []
@@ -179,7 +178,7 @@ def grow_training_set(il_learn, train_demos, eval_seed, grow_factor, num_eval_de
 def get_bot_mean(env_name, episodes_to_evaluate_mean, seed):
     logger.info("Evaluating the average number of steps using {} episodes".format(episodes_to_evaluate_mean))
     env = gym.make(env_name)
-    env.seed(seed)
+    _ = env.reset(seed=seed)
     agent = BotAgent(env)
     logs = evaluate(agent, env, episodes_to_evaluate_mean, model_agent=False)
     average_number_of_steps = np.mean(logs["num_frames_per_episode"])

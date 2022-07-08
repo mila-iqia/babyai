@@ -61,11 +61,8 @@ class ManyEnvs(gym.Env):
         self.envs = envs
         self.done = [False] * len(self.envs)
 
-    def seed(self, seeds):
-        [env.seed(seed) for seed, env in zip(seeds, self.envs)]
-
-    def reset(self):
-        many_obs = [env.reset() for env in self.envs]
+    def reset(self, seeds):
+        many_obs = [env.reset(seed=seed) for seed, env in zip(seeds, self.envs)]
         self.done = [False] * len(self.envs)
         return many_obs
 
@@ -103,9 +100,8 @@ def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False, p
 
     for i in range((episodes + num_envs - 1) // num_envs):
         seeds = range(seed + i * num_envs, seed + (i + 1) * num_envs)
-        env.seed(seeds)
 
-        many_obs = env.reset()
+        many_obs = env.reset(seeds)
 
         cur_num_frames = 0
         num_frames = np.zeros((num_envs,), dtype='int64')

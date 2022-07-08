@@ -11,15 +11,16 @@ import babyai
 
 def redraw(img):
     if not args.agent_view:
-        img = env.render('rgb_array', tile_size=args.tile_size)
+        img = env.render(tile_size=args.tile_size)
 
     window.show_img(img)
 
 def reset():
-    if args.seed != -1:
-        env.seed(args.seed)
-
-    obs = env.reset()
+    if args.seed == -1:
+        seed = None
+    else:
+        seed = args.seed
+    obs = env.reset(seed=seed)
 
     if hasattr(env, 'mission'):
         print('Mission: %s' % env.mission)
@@ -100,7 +101,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-env = gym.make(args.env)
+env = gym.make(args.env, render_mode='rgb_array')
 
 if args.agent_view:
     env = RGBImgPartialObsWrapper(env)

@@ -53,11 +53,10 @@ utils.seed(args.seed)
 
 # Generate environment
 
-env = gym.make(args.env)
-env.seed(args.seed)
+env = gym.make(args.env, render_mode='human')
 
 global obs
-obs = env.reset()
+obs = env.reset(seed=args.seed)
 print("Mission: {}".format(obs["mission"]))
 
 # Define agent
@@ -98,14 +97,14 @@ def keyDownCb(event):
 
 
 if args.manual_mode:
-    env.render('human')
+    env.render()
     env.window.reg_key_handler(keyDownCb)
 
 step = 0
 episode_num = 0
 while True:
     time.sleep(args.pause)
-    env.render("human")
+    env.render()
     if not args.manual_mode:
         result = agent.act(obs)
         obs, reward, done, _ = env.step(result['action'])
@@ -120,8 +119,7 @@ while True:
         if done:
             print("Reward:", reward)
             episode_num += 1
-            env.seed(args.seed + episode_num)
-            obs = env.reset()
+            obs = env.reset(seed=args.seed + episode_num)))
             agent.on_reset()
             step = 0
         else:

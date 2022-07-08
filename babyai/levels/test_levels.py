@@ -15,12 +15,12 @@ class Level_TestGoToBlocked(RoomGridLevel):
     Go to a yellow ball that is blocked with a lot of red balls.
     """
 
-    def __init__(self, seed=None):
+    def __init__(self, **kwargs):
         super().__init__(
             num_rows=1,
             num_cols=1,
             room_size=9,
-            seed=seed
+            **kwargs
         )
 
     def gen_mission(self):
@@ -42,12 +42,12 @@ class Level_TestPutNextToBlocked(RoomGridLevel):
     Pick up a yellow ball and put it next to a blocked blue ball.
     """
 
-    def __init__(self, seed=None):
+    def __init__(self, **kwargs):
         super().__init__(
             num_rows=1,
             num_cols=1,
             room_size=9,
-            seed=seed
+            **kwargs
         )
 
     def gen_mission(self):
@@ -70,12 +70,12 @@ class Level_TestPutNextToCloseToDoor1(RoomGridLevel):
     But blue ball is right next to a door.
     """
 
-    def __init__(self, seed=None):
+    def __init__(self, **kwargs):
         super().__init__(
             num_rows=2,
             num_cols=1,
             room_size=9,
-            seed=seed
+            **kwargs
         )
 
     def gen_mission(self):
@@ -111,12 +111,12 @@ class Level_TestPutNextToIdentical(RoomGridLevel):
     two identical objects.
     """
 
-    def __init__(self, seed=None):
+    def __init__(self, **kwargs):
         super().__init__(
             num_rows=1,
             num_cols=1,
             room_size=9,
-            seed=seed
+            **kwargs
         )
 
     def gen_mission(self):
@@ -135,12 +135,12 @@ class Level_TestPutNextToIdentical(RoomGridLevel):
 class Level_TestUnblockingLoop(RoomGridLevel):
     """Test that unblocking does not results into an infinite loop."""
 
-    def __init__(self, seed=None):
+    def __init__(self, **kwargs):
         super().__init__(
             num_rows=2,
             num_cols=2,
             room_size=9,
-            seed=seed
+            **kwargs
         )
 
     def gen_mission(self):
@@ -162,12 +162,12 @@ class Level_TestUnblockingLoop(RoomGridLevel):
 class Level_TestPutNextCloseToDoor(RoomGridLevel):
     """Test putting next when there is door where the object should be put."""
 
-    def __init__(self, seed=None):
+    def __init__(self, **kwargs):
         super().__init__(
             num_rows=2,
             num_cols=2,
             room_size=9,
-            seed=seed
+            **kwargs
         )
 
     def gen_mission(self):
@@ -192,12 +192,12 @@ class Level_TestLotsOfBlockers(RoomGridLevel):
     two identical objects.
     """
 
-    def __init__(self, seed=None):
+    def __init__(self, **kwargs):
         super().__init__(
             num_rows=1,
             num_cols=1,
             room_size=8,
-            seed=seed
+            **kwargs
         )
 
     def gen_mission(self):

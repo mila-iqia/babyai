@@ -14,13 +14,13 @@ class Level_GoToRedBallGrey(RoomGridLevel):
     This level has distractors but doesn't make use of language.
     """
 
-    def __init__(self, room_size=8, num_dists=7, seed=None):
+    def __init__(self, room_size=8, num_dists=7, **kwargs):
         self.num_dists = num_dists
         super().__init__(
             num_rows=1,
             num_cols=1,
             room_size=room_size,
-            seed=seed
+            **kwargs
         )
 
     def gen_mission(self):
@@ -43,13 +43,13 @@ class Level_GoToRedBall(RoomGridLevel):
     This level has distractors but doesn't make use of language.
     """
 
-    def __init__(self, room_size=8, num_dists=7, seed=None):
+    def __init__(self, room_size=8, num_dists=7, **kwargs):
         self.num_dists = num_dists
         super().__init__(
             num_rows=1,
             num_cols=1,
             room_size=room_size,
-            seed=seed
+            **kwargs
         )
 
     def gen_mission(self):
@@ -68,8 +68,8 @@ class Level_GoToRedBallNoDists(Level_GoToRedBall):
     Go to the red ball. No distractors present.
     """
 
-    def __init__(self, seed=None):
-        super().__init__(room_size=8, num_dists=0, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=8, num_dists=0, **kwargs)
 
 
 class Level_GoToObj(RoomGridLevel):
@@ -77,12 +77,12 @@ class Level_GoToObj(RoomGridLevel):
     Go to an object, inside a single room with no doors, no distractors
     """
 
-    def __init__(self, room_size=8, seed=None):
+    def __init__(self, room_size=8, **kwargs):
         super().__init__(
             num_rows=1,
             num_cols=1,
             room_size=room_size,
-            seed=seed
+            **kwargs
         )
 
     def gen_mission(self):
@@ -93,13 +93,13 @@ class Level_GoToObj(RoomGridLevel):
 
 
 class Level_GoToObjS4(Level_GoToObj):
-    def __init__(self, seed=None):
-        super().__init__(room_size=4, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=4, **kwargs)
 
 
 class Level_GoToObjS6(Level_GoToObj):
-    def __init__(self, seed=None):
-        super().__init__(room_size=6, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=6, **kwargs)
 
 
 class Level_GoToLocal(RoomGridLevel):
@@ -107,13 +107,13 @@ class Level_GoToLocal(RoomGridLevel):
     Go to an object, inside a single room with no doors, no distractors
     """
 
-    def __init__(self, room_size=8, num_dists=8, seed=None):
+    def __init__(self, room_size=8, num_dists=8, **kwargs):
         self.num_dists = num_dists
         super().__init__(
             num_rows=1,
             num_cols=1,
             room_size=room_size,
-            seed=seed
+            **kwargs
         )
 
     def gen_mission(self):
@@ -125,63 +125,63 @@ class Level_GoToLocal(RoomGridLevel):
 
 
 class Level_GoToLocalS5N2(Level_GoToLocal):
-    def __init__(self, seed=None):
-        super().__init__(room_size=5, num_dists=2, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=5, num_dists=2, **kwargs)
 
 
 class Level_GoToLocalS6N2(Level_GoToLocal):
-    def __init__(self, seed=None):
-        super().__init__(room_size=6, num_dists=2, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=6, num_dists=2, **kwargs)
 
 
 class Level_GoToLocalS6N3(Level_GoToLocal):
-    def __init__(self, seed=None):
-        super().__init__(room_size=6, num_dists=3, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=6, num_dists=3, **kwargs)
 
 
 class Level_GoToLocalS6N4(Level_GoToLocal):
-    def __init__(self, seed=None):
-        super().__init__(room_size=6, num_dists=4, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=6, num_dists=4, **kwargs)
 
 
 class Level_GoToLocalS7N4(Level_GoToLocal):
-    def __init__(self, seed=None):
-        super().__init__(room_size=7, num_dists=4, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=7, num_dists=4, **kwargs)
 
 
 class Level_GoToLocalS7N5(Level_GoToLocal):
-    def __init__(self, seed=None):
-        super().__init__(room_size=7, num_dists=5, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=7, num_dists=5, **kwargs)
 
 
 class Level_GoToLocalS8N2(Level_GoToLocal):
-    def __init__(self, seed=None):
-        super().__init__(room_size=8, num_dists=2, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=8, num_dists=2, **kwargs)
 
 
 class Level_GoToLocalS8N3(Level_GoToLocal):
-    def __init__(self, seed=None):
-        super().__init__(room_size=8, num_dists=3, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=8, num_dists=3, **kwargs)
 
 
 class Level_GoToLocalS8N4(Level_GoToLocal):
-    def __init__(self, seed=None):
-        super().__init__(room_size=8, num_dists=4, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=8, num_dists=4, **kwargs)
 
 
 class Level_GoToLocalS8N5(Level_GoToLocal):
-    def __init__(self, seed=None):
-        super().__init__(room_size=8, num_dists=5, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=8, num_dists=5, **kwargs)
 
 
 class Level_GoToLocalS8N6(Level_GoToLocal):
-    def __init__(self, seed=None):
-        super().__init__(room_size=8, num_dists=6, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=8, num_dists=6, **kwargs)
 
 
 class Level_GoToLocalS8N7(Level_GoToLocal):
-    def __init__(self, seed=None):
-        super().__init__(room_size=8, num_dists=7, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=8, num_dists=7, **kwargs)
 
 
 class Level_PutNextLocal(RoomGridLevel):
@@ -190,13 +190,13 @@ class Level_PutNextLocal(RoomGridLevel):
     with no doors, no distractors
     """
 
-    def __init__(self, room_size=8, num_objs=8, seed=None):
+    def __init__(self, room_size=8, num_objs=8, **kwargs):
         self.num_objs = num_objs
         super().__init__(
             num_rows=1,
             num_cols=1,
-            room_size=room_size,
-            seed=seed
+            room_size=room_size, 
+            **kwargs
         )
 
     def gen_mission(self):
@@ -212,13 +212,13 @@ class Level_PutNextLocal(RoomGridLevel):
 
 
 class Level_PutNextLocalS5N3(Level_PutNextLocal):
-    def __init__(self, seed=None):
-        super().__init__(room_size=5, num_objs=3, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=5, num_objs=3, **kwargs)
 
 
 class Level_PutNextLocalS6N4(Level_PutNextLocal):
-    def __init__(self, seed=None):
-        super().__init__(room_size=6, num_objs=4, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=6, num_objs=4, **kwargs)
 
 
 class Level_GoTo(RoomGridLevel):
@@ -232,16 +232,16 @@ class Level_GoTo(RoomGridLevel):
         num_rows=3,
         num_cols=3,
         num_dists=18,
-        doors_open=False,
-        seed=None
+        doors_open=False, 
+        **kwargs
     ):
         self.num_dists = num_dists
         self.doors_open = doors_open
         super().__init__(
             num_rows=num_rows,
             num_cols=num_cols,
-            room_size=room_size,
-            seed=seed
+            room_size=room_size, 
+            **kwargs
         )
 
     def gen_mission(self):
@@ -258,8 +258,8 @@ class Level_GoTo(RoomGridLevel):
 
 
 class Level_GoToOpen(Level_GoTo):
-    def __init__(self, seed=None):
-        super().__init__(doors_open=True, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(doors_open=True, **kwargs)
 
 
 class Level_GoToObjMaze(Level_GoTo):
@@ -267,38 +267,38 @@ class Level_GoToObjMaze(Level_GoTo):
     Go to an object, the object may be in another room. No distractors.
     """
 
-    def __init__(self, seed=None):
-        super().__init__(num_dists=1, doors_open=False, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(num_dists=1, doors_open=False, **kwargs)
 
 
 class Level_GoToObjMazeOpen(Level_GoTo):
-    def __init__(self, seed=None):
-        super().__init__(num_dists=1, doors_open=True, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(num_dists=1, doors_open=True, **kwargs)
 
 
 class Level_GoToObjMazeS4R2(Level_GoTo):
-    def __init__(self, seed=None):
-        super().__init__(num_dists=1, room_size=4, num_rows=2, num_cols=2, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(num_dists=1, room_size=4, num_rows=2, num_cols=2, **kwargs)
 
 
 class Level_GoToObjMazeS4(Level_GoTo):
-    def __init__(self, seed=None):
-        super().__init__(num_dists=1, room_size=4, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(num_dists=1, room_size=4, **kwargs)
 
 
 class Level_GoToObjMazeS5(Level_GoTo):
-    def __init__(self, seed=None):
-        super().__init__(num_dists=1, room_size=5, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(num_dists=1, room_size=5, **kwargs)
 
 
 class Level_GoToObjMazeS6(Level_GoTo):
-    def __init__(self, seed=None):
-        super().__init__(num_dists=1, room_size=6, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(num_dists=1, room_size=6, **kwargs)
 
 
 class Level_GoToObjMazeS7(Level_GoTo):
-    def __init__(self, seed=None):
-        super().__init__(num_dists=1, room_size=7, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(num_dists=1, room_size=7, **kwargs)
 
 
 class Level_GoToImpUnlock(RoomGridLevel):
@@ -499,11 +499,10 @@ class Level_PickupLoc(LevelGen):
     Competencies: PickUp, Loc. No unblocking.
     """
 
-    def __init__(self, seed=None):
+    def __init__(self, **kwargs):
         # We add many distractors to increase the probability
         # of ambiguous locations within the same room
         super().__init__(
-            seed=seed,
             action_kinds=['pickup'],
             instr_kinds=['action'],
             num_rows=1,
@@ -511,7 +510,8 @@ class Level_PickupLoc(LevelGen):
             num_dists=8,
             locked_room_prob=0,
             locations=True,
-            unblocking=False
+            unblocking=False, 
+            **kwargs
         )
 
 
@@ -530,25 +530,25 @@ class Level_GoToSeq(LevelGen):
         room_size=8,
         num_rows=3,
         num_cols=3,
-        num_dists=18,
-        seed=None
+        num_dists=18, 
+        **kwargs
     ):
         super().__init__(
             room_size=room_size,
             num_rows=num_rows,
             num_cols=num_cols,
             num_dists=num_dists,
-            seed=seed,
             action_kinds=['goto'],
             locked_room_prob=0,
             locations=False,
-            unblocking=False
+            unblocking=False, 
+            **kwargs
         )
 
 
 class Level_GoToSeqS5R2(Level_GoToSeq):
-    def __init__(self, seed=None):
-        super().__init__(room_size=5, num_rows=2, num_cols=2, num_dists=4, seed=seed)
+    def __init__(self, **kwargs):
+        super().__init__(room_size=5, num_rows=2, num_cols=2, num_dists=4, **kwargs)
 
 
 class Level_Synth(LevelGen):
@@ -565,8 +565,8 @@ class Level_Synth(LevelGen):
         room_size=8,
         num_rows=3,
         num_cols=3,
-        num_dists=18,
-        seed=None
+        num_dists=18, 
+        **kwargs
     ):
         # We add many distractors to increase the probability
         # of ambiguous locations within the same room
@@ -575,22 +575,22 @@ class Level_Synth(LevelGen):
             num_rows=num_rows,
             num_cols=num_cols,
             num_dists=num_dists,
-            seed=seed,
             instr_kinds=['action'],
             locations=False,
             unblocking=True,
-            implicit_unlock=False
+            implicit_unlock=False, 
+            **kwargs
         )
 
 
 class Level_SynthS5R2(Level_Synth):
-    def __init__(self, seed=None):
+    def __init__(self, **kwargs):
         super().__init__(
             room_size=5,
             num_rows=2,
             num_cols=2,
-            num_dists=7,
-            seed=seed
+            num_dists=7, 
+            **kwargs
         )
 
 
@@ -602,15 +602,15 @@ class Level_SynthLoc(LevelGen):
     Competencies: Maze, Unblock, Unlock, GoTo, PickUp, PutNext, Open, Loc
     """
 
-    def __init__(self, seed=None):
+    def __init__(self, **kwargs):
         # We add many distractors to increase the probability
         # of ambiguous locations within the same room
         super().__init__(
-            seed=seed,
             instr_kinds=['action'],
             locations=True,
             unblocking=True,
-            implicit_unlock=False
+            implicit_unlock=False, 
+            **kwargs
         )
 
 
@@ -622,42 +622,40 @@ class Level_SynthSeq(LevelGen):
     Competencies: Maze, Unblock, Unlock, GoTo, PickUp, PutNext, Open, Loc, Seq
     """
 
-    def __init__(self, seed=None):
+    def __init__(self, **kwargs):
         # We add many distractors to increase the probability
         # of ambiguous locations within the same room
         super().__init__(
-            seed=seed,
             locations=True,
             unblocking=True,
-            implicit_unlock=False
+            implicit_unlock=False, 
+            **kwargs
         )
 
 
 class Level_MiniBossLevel(LevelGen):
-    def __init__(self, seed=None):
+    def __init__(self, **kwargs):
         super().__init__(
-            seed=seed,
             num_cols=2,
             num_rows=2,
             room_size=5,
             num_dists=7,
-            locked_room_prob=0.25
+            locked_room_prob=0.25, 
+            **kwargs
         )
 
 
 class Level_BossLevel(LevelGen):
-    def __init__(self, seed=None):
-        super().__init__(
-            seed=seed
-        )
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 class Level_BossLevelNoUnlock(LevelGen):
-    def __init__(self, seed=None):
+    def __init__(self, **kwargs):
         super().__init__(
-            seed=seed,
             locked_room_prob=0,
-            implicit_unlock=False
+            implicit_unlock=False, 
+            **kwargs
         )
 
 

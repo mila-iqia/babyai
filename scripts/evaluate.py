@@ -41,7 +41,7 @@ def main(args, seed, episodes):
     # Define agent
 
     env = gym.make(args.env)
-    env.seed(seed)
+    _ = env.reset(seed=seed)
     agent = utils.load_agent(env, args.model, args.demos, args.demos_origin, args.argmax, args.env)
     if args.model is None and args.episodes > len(agent.demos):
         # Set the number of episodes to be the number of demos
