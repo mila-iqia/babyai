@@ -7,10 +7,10 @@ setup(
     keywords='memory, environment, agent, rl, openaigym, openai-gym, gym',
     packages=['babyai', 'babyai.levels', 'babyai.utils'],
     install_requires=[
-        'gym>=0.9.6',
+        'gym>=0.24.1',
         'numpy>=1.17.0',
-        "torch>=0.4.1",
+        "torch>=0.11",
         'blosc>=1.5.1',
-        'gym_minigrid @ https://github.com/maximecb/gym-minigrid/archive/master.zip'
+        'gym_minigrid @ https://github.com/saleml/gym-minigrid/archive/minigrid-no-warning.zip'
     ],
 )

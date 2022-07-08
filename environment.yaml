@@ -3,11 +3,12 @@ channels:
     - pytorch
     - defaults
 dependencies:
-    - python=3.6
-    - pytorch=1.4
+    - python=3.10
+    - pytorch=1.12
     - numpy
     - blosc
     - pip
     - pip:
-        - gym
+        - git+https://github.com/pseudo-rnd-thoughts/gym.git@fixed-env-checker
         - scikit-build
+        - gym[other]
