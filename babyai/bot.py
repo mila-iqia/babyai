@@ -529,7 +529,7 @@ class Bot:
         self.grid = Grid(mission.width, mission.height)
 
         # Visibility mask. True for explored/seen, false for unexplored.
-        self.vis_mask = np.zeros(shape=(mission.width, mission.height), dtype=np.bool)
+        self.vis_mask = np.zeros(shape=(mission.width, mission.height), dtype=bool)
 
         # Stack of tasks/subtasks to complete (tuples)
         self.stack = []
