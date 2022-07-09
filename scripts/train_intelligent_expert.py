@@ -112,7 +112,7 @@ def generate_demos(env_name, seeds):
         # Run the expert for one episode
         done = False
 
-        obs = env.reset(int(seed))
+        obs = env.reset(seed=int(seed))
         agent.on_reset()
 
         actions = []
