@@ -15,6 +15,8 @@ import torch
 import numpy as np
 import subprocess
 
+from gym.vector.async_vector_env import AsyncVectorEnv
+
 import babyai
 import babyai.utils as utils
 import babyai.rl
@@ -58,6 +60,16 @@ for i in range(args.procs):
         env = RGBImgPartialObsWrapper(env)
     _ = env.reset(seed=100 * args.seed + i)
     envs.append(env)
+
+env_fns = []
+for i in range(args.procs):
+    if use_pixel:
+        env_fns.append(lambda: RGBImgPartialObsWrapper(gym.make(args.env)))
+    else:
+        env_fns.append(lambda: gym.make(args.env))
+    enf_fn = lambda: gym.make(args.env)
+envs = AsyncVectorEnv(env_fns, shared_memory=False)
+_ = envs.reset(seed=[100 * args.seed + i for i in range(args.procs)])
 
 # Define model name
 suffix = datetime.datetime.now().strftime("%y-%m-%d-%H-%M-%S")
