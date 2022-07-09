@@ -244,10 +244,10 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         x = self.image_conv(x)
         if self.use_instr:
             for controller in self.controllers:
-                out = controller(x, instr_embedding)
                 if self.res:
-                    out += x
-                x = out
+                    x = controller(x, instr_embedding) + x
+                else:
+                    x = controller(x, instr_embedding)
         x = F.relu(self.film_pool(x))
         x = x.reshape(x.shape[0], -1)
 
