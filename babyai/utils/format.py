@@ -103,7 +103,7 @@ class ObssPreprocessor:
         self.instr_preproc = InstructionsPreprocessor(model_name, load_vocab_from)
         self.vocab = self.instr_preproc.vocab
         self.obs_space = {
-            "image": 147,
+            "image": numpy.array(obs_space['image'].shape[-3:]).prod(),
             "instr": self.vocab.max_size
         }
 
