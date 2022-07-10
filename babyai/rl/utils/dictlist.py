@@ -22,3 +22,6 @@ class DictList(dict):
     def __setitem__(self, index, d):
         for key, value in d.items():
             dict.__getitem__(self, key)[index] = value
+
+    def __repr__(self):
+        return 'DictList with keys {}'.format(dict.keys(self))

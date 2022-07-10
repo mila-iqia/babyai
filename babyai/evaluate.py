@@ -1,6 +1,7 @@
 import numpy as np
 import gym
 from gym_minigrid.wrappers import RGBImgPartialObsWrapper
+from gym.vector import SyncVectorEnv
 
 
 # Returns the performance of the agent on the environment for a particular number of episodes.
@@ -55,40 +56,18 @@ def evaluate_demo_agent(agent, episodes):
     return logs
 
 
-class ManyEnvs(gym.Env):
-
-    def __init__(self, envs):
-        self.envs = envs
-        self.done = [False] * len(self.envs)
-
-    def reset(self, seeds):
-        many_obs = [env.reset(seed=seed) for seed, env in zip(seeds, self.envs)]
-        self.done = [False] * len(self.envs)
-        return many_obs
-
-    def step(self, actions):
-        self.results = [env.step(action) if not done else self.last_results[i]
-                        for i, (env, action, done)
-                        in enumerate(zip(self.envs, actions, self.done))]
-        self.done = [result[2] for result in self.results]
-        self.last_results = self.results
-        return zip(*self.results)
-
-    def render(self):
-        raise NotImplementedError
-
-
 # Returns the performance of the agent on the environment for a particular number of episodes.
 def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False, pixel=False):
     num_envs = min(256, episodes)
 
-    envs = []
+    env_fns = []
     for i in range(num_envs):
         env = gym.make(env_name)
         if pixel:
-            env = RGBImgPartialObsWrapper(env)
-        envs.append(env)
-    env = ManyEnvs(envs)
+            env_fns.append(lambda: RGBImgPartialObsWrapper(gym.make(env_name)))
+        else:
+            env_fns.append(lambda: gym.make(env_name))
+    env = SyncVectorEnv(env_fns)
 
     logs = {
         "num_frames_per_episode": [],
@@ -101,7 +80,7 @@ def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False, p
     for i in range((episodes + num_envs - 1) // num_envs):
         seeds = range(seed + i * num_envs, seed + (i + 1) * num_envs)
 
-        many_obs = env.reset(seeds)
+        many_obs = env.reset(seed=seeds)
 
         cur_num_frames = 0
         num_frames = np.zeros((num_envs,), dtype='int64')
@@ -119,7 +98,6 @@ def batch_evaluate(agent, env_name, seed, episodes, return_obss_actions=False, p
                         actions[i].append(action[i].item())
             many_obs, reward, done, _ = env.step(action)
             agent.analyze_feedback(reward, done)
-            done = np.array(done)
             just_done = done & (~already_done)
             returns += reward * just_done
             cur_num_frames += 1

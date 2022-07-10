@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 import torch
+import numpy as np
 from .. import utils
 from babyai.bot import Bot
 from babyai.model import ACModel
@@ -49,10 +51,13 @@ class ModelAgent(Agent):
         self.memory = None
 
     def act_batch(self, many_obs):
+        assert isinstance(many_obs, OrderedDict)
+        n_envs = len(list(many_obs.values())[0])
+        assert all([len(value) == n_envs for value in many_obs.values()])
         if self.memory is None:
             self.memory = torch.zeros(
-                len(many_obs), self.model.memory_size, device=self.device)
-        elif self.memory.shape[0] != len(many_obs):
+                n_envs, self.model.memory_size, device=self.device)
+        elif self.memory.shape[0] != n_envs:
             raise ValueError("stick to one batch size for the lifetime of an agent")
         preprocessed_obs = self.obss_preprocessor(many_obs, device=self.device)
 
@@ -72,15 +77,15 @@ class ModelAgent(Agent):
                 'value': value}
 
     def act(self, obs):
-        return self.act_batch([obs])
+        # make obs an OrderedDict
+        batch_obs = OrderedDict([(key, np.array([obs[key]])) for key in obs])
+        return self.act_batch(batch_obs)
 
     def analyze_feedback(self, reward, done):
-        if isinstance(done, tuple):
-            for i in range(len(done)):
-                if done[i]:
-                    self.memory[i, :] *= 0.
-        else:
-            self.memory *= (1 - done)
+        assert isinstance(reward, np.ndarray) and isinstance(done, np.ndarray)
+        for i in range(len(done)):
+            if done[i]:
+                self.memory[i, :] *= 0.
 
 
 class RandomAgent:

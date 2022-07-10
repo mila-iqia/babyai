@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
 from torch.distributions.categorical import Categorical
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from einops import rearrange
+from gym.spaces import MultiDiscrete, Discrete
 import babyai.rl
 from babyai.rl.utils.supervised_losses import required_heads
 
@@ -85,6 +86,13 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
 
         self.obs_space = obs_space
 
+        if isinstance(action_space, Discrete):
+            n_actions = action_space.n
+        elif isinstance(action_space, MultiDiscrete):
+            n_actions = action_space.nvec[0]
+        else:
+            raise ValueError("Action space not supported")
+
         for part in self.arch.split('_'):
             if part not in ['original', 'bow', 'pixels', 'endpool', 'res']:
                 raise ValueError("Incorrect architecture name: {}".format(self.arch))
@@ -151,7 +159,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
         self.actor = nn.Sequential(
             nn.Linear(self.embedding_size, 64),
             nn.Tanh(),
-            nn.Linear(64, action_space.n)
+            nn.Linear(64, n_actions)
         )
 
         # Define critic's model
@@ -237,7 +245,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
             attention = F.softmax(pre_softmax, dim=1)
             instr_embedding = (instr_embedding * attention[:, :, None]).sum(1)
 
-        x = torch.transpose(torch.transpose(obs.image, 1, 3), 2, 3)
+        x = rearrange(obs.image, 'b h w c ->  b c h w')
 
         if 'pixel' in self.arch:
             x /= 256.0
@@ -299,8 +307,7 @@ class ACModel(nn.Module, babyai.rl.RecurrentACModel):
                 instr = instr[:, 0:lengths[0]]
                 outputs, final_states = self.instr_rnn(self.word_embedding(instr))
                 iperm_idx = None
-            final_states = final_states.transpose(0, 1).contiguous()
-            final_states = final_states.view(final_states.shape[0], -1)
+            final_states = rearrange(final_states, 'b B d -> B (b d)')
             if iperm_idx is not None:
                 outputs, _ = pad_packed_sequence(outputs, batch_first=True)
                 outputs = outputs[iperm_idx]

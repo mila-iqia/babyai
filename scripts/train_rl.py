@@ -15,7 +15,7 @@ import torch
 import numpy as np
 import subprocess
 
-from gym.vector.async_vector_env import AsyncVectorEnv
+from gym.vector import AsyncVectorEnv
 
 import babyai
 import babyai.utils as utils
@@ -88,9 +88,9 @@ logger = logging.getLogger(__name__)
 
 # Define obss preprocessor
 if 'emb' in args.arch:
-    obss_preprocessor = utils.IntObssPreprocessor(args.model, envs[0].observation_space, args.pretrained_model)
+    obss_preprocessor = utils.IntObssPreprocessor(args.model, envs.observation_space, args.pretrained_model)
 else:
-    obss_preprocessor = utils.ObssPreprocessor(args.model, envs[0].observation_space, args.pretrained_model)
+    obss_preprocessor = utils.ObssPreprocessor(args.model, envs.observation_space, args.pretrained_model)
 
 # Define actor-critic model
 acmodel = utils.load_model(args.model, raise_not_found=False)
@@ -98,7 +98,7 @@ if acmodel is None:
     if args.pretrained_model:
         acmodel = utils.load_model(args.pretrained_model, raise_not_found=True)
     else:
-        acmodel = ACModel(obss_preprocessor.obs_space, envs[0].action_space,
+        acmodel = ACModel(obss_preprocessor.obs_space, envs.action_space,
                           args.image_dim, args.memory_dim, args.instr_dim,
                           not args.no_instr, args.instr_arch, not args.no_mem, args.arch)
 
@@ -110,7 +110,7 @@ if torch.cuda.is_available():
 
 # Define actor-critic algo
 
-reshape_reward = lambda _0, _1, reward, _2: args.reward_scale * reward
+reshape_reward = lambda _0, _1, reward, _2: args.reward_scale * reward  # reward is either a scalar or a numpy array
 if args.algo == "ppo":
     algo = babyai.rl.PPOAlgo(envs, acmodel, args.frames_per_proc, args.discount, args.lr, args.beta1, args.beta2,
                              args.gae_lambda,

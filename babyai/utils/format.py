@@ -1,5 +1,6 @@
 import os
 import json
+from collections import OrderedDict
 import numpy
 import re
 import torch
@@ -60,13 +61,16 @@ class InstructionsPreprocessor(object):
         raw_instrs = []
         max_instr_len = 0
 
-        for obs in obss:
-            tokens = re.findall("([a-z]+)", obs["mission"].lower())
+        assert isinstance(obss, OrderedDict)
+        missions = obss['mission']
+
+        for mission in missions:
+            tokens = re.findall("([a-z]+)", mission.lower())
             instr = numpy.array([self.vocab[token] for token in tokens])
             raw_instrs.append(instr)
             max_instr_len = max(len(instr), max_instr_len)
 
-        instrs = numpy.zeros((len(obss), max_instr_len))
+        instrs = numpy.zeros((len(missions), max_instr_len))
 
         for i, instr in enumerate(raw_instrs):
             instrs[i, :len(instr)] = instr
@@ -77,7 +81,7 @@ class InstructionsPreprocessor(object):
 
 class RawImagePreprocessor(object):
     def __call__(self, obss, device=None):
-        images = numpy.array([obs["image"] for obs in obss])
+        images = obss['image']
         images = torch.tensor(images, device=device, dtype=torch.float)
         return images
 
@@ -90,7 +94,7 @@ class IntImagePreprocessor(object):
         self.max_size = int(num_channels * max_high)
 
     def __call__(self, obss, device=None):
-        images = numpy.array([obs["image"] for obs in obss])
+        images = obss['image']
         # The padding index is 0 for all the channels
         images = (images + self.offsets) * (images > 0)
         images = torch.tensor(images, device=device, dtype=torch.long)
@@ -108,6 +112,7 @@ class ObssPreprocessor:
         }
 
     def __call__(self, obss, device=None):
+        assert isinstance(obss, OrderedDict)
         obs_ = babyai.rl.DictList()
 
         if "image" in self.obs_space.keys():
@@ -132,6 +137,7 @@ class IntObssPreprocessor(object):
         }
 
     def __call__(self, obss, device=None):
+        assert isinstance(obss, OrderedDict)
         obs_ = babyai.rl.DictList()
 
         if "image" in self.obs_space.keys():

@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 import torch
 import numpy
+from einops import rearrange
 
 from babyai.rl.format import default_preprocess_obss
-from babyai.rl.utils import DictList, ParallelEnv
+from babyai.rl.utils import DictList
 from babyai.rl.utils.supervised_losses import ExtraInfoCollector
 
 
@@ -17,8 +19,8 @@ class BaseAlgo(ABC):
 
         Parameters:
         ----------
-        envs : list
-            a list of environments that will be run in parallel
+        envs : gym.vector.VectorEnv
+            a Vectorized Environment
         acmodel : torch.Module
             the model
         num_frames_per_proc : int
@@ -51,7 +53,6 @@ class BaseAlgo(ABC):
         """
         # Store parameters
 
-        # self.env = ParallelEnv(envs)
         self.env = envs
         self.acmodel = acmodel
         self.acmodel.train()
@@ -70,7 +71,7 @@ class BaseAlgo(ABC):
         # Store helpers values
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.num_procs = len(envs)
+        self.num_procs = envs.num_envs
         self.num_frames = self.num_frames_per_proc * self.num_procs
 
 
@@ -160,10 +161,7 @@ class BaseAlgo(ABC):
             self.actions[i] = action
             self.values[i] = value
             if self.reshape_reward is not None:
-                self.rewards[i] = torch.tensor([
-                    self.reshape_reward(obs_, action_, reward_, done_)
-                    for obs_, action_, reward_, done_ in zip(obs, action, reward, done)
-                ], device=self.device)
+                self.rewards[i] = torch.tensor(self.reshape_reward(self.obs, action, reward, done), device=self.device)
             else:
                 self.rewards[i] = torch.tensor(reward, device=self.device)
             self.log_probs[i] = dist.log_prob(action)
@@ -206,24 +204,29 @@ class BaseAlgo(ABC):
         # each episode's data is a continuous chunk
 
         exps = DictList()
-        exps.obs = [self.obss[i][j]
-                    for j in range(self.num_procs)
-                    for i in range(self.num_frames_per_proc)]
+
+        exps.obs = OrderedDict({key: rearrange(
+                                               numpy.array([self.obss[i][key] for i in range(len(self.obss))]),
+                                               'T P ... -> (P T) ...'
+                                               ) 
+                                for key in self.obss[0].keys()
+                               }
+                              )
         # In commments below T is self.num_frames_per_proc, P is self.num_procs,
         # D is the dimensionality
 
-        # T x P x D -> P x T x D -> (P * T) x D
-        exps.memory = self.memories.transpose(0, 1).reshape(-1, *self.memories.shape[2:])
-        # T x P -> P x T -> (P * T) x 1
-        exps.mask = self.masks.transpose(0, 1).reshape(-1).unsqueeze(1)
-
-        # for all tensors below, T x P -> P x T -> P * T
-        exps.action = self.actions.transpose(0, 1).reshape(-1)
-        exps.value = self.values.transpose(0, 1).reshape(-1)
-        exps.reward = self.rewards.transpose(0, 1).reshape(-1)
-        exps.advantage = self.advantages.transpose(0, 1).reshape(-1)
+         # T x P x D -> P x T x D -> (P * T) x D
+        exps.memory = rearrange(self.memories, 'T P D -> (P T) D')
+         # T x P -> P x T -> (P * T) x 1
+        exps.mask = rearrange(self.masks, 'T P -> (P T) 1')
+ 
+         # for all tensors below, T x P -> P x T -> P * T
+        exps.action = rearrange(self.actions, 'T P -> (P T)')
+        exps.value = rearrange(self.values, 'T P -> (P T)')
+        exps.reward = rearrange(self.rewards, 'T P -> (P T)')
+        exps.advantage = rearrange(self.advantages, 'T P -> (P T)')
         exps.returnn = exps.value + exps.advantage
-        exps.log_prob = self.log_probs.transpose(0, 1).reshape(-1)
+        exps.log_prob = rearrange(self.log_probs, 'T P -> (P T)')
 
         if self.aux_info:
             exps = self.aux_info_collector.end_collection(exps)
