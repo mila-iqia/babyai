@@ -8,7 +8,7 @@ before_install:
 
 # command to install dependencies
 install:
-    - pip3 install torch==1.5.1+cpu torchvision==0.6.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+    - pip3 install torch==1.12+cpu torchvision==0.13.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
     - pip3 install flake8
     - pip3 install scikit-build
     - pip3 install --editable .

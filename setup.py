@@ -9,8 +9,9 @@ setup(
     install_requires=[
         'gym>=0.24.1',
         'numpy>=1.17.0',
-        "torch>=0.11",
+        "torch>=0.12",
         'blosc>=1.5.1',
+        'einops>=0.4',
         'gym_minigrid @ https://github.com/saleml/gym-minigrid/archive/minigrid-no-warning.zip'
     ],
 )
