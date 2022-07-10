@@ -119,7 +119,7 @@ while True:
         if done:
             print("Reward:", reward)
             episode_num += 1
-            obs = env.reset(seed=args.seed + episode_num)))
+            obs = env.reset(seed=args.seed + episode_num)
             agent.on_reset()
             step = 0
         else:
