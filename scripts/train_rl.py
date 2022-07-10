@@ -52,14 +52,7 @@ args = parser.parse_args()
 utils.seed(args.seed)
 
 # Generate environments
-envs = []
 use_pixel = 'pixel' in args.arch
-for i in range(args.procs):
-    env = gym.make(args.env)
-    if use_pixel:
-        env = RGBImgPartialObsWrapper(env)
-    _ = env.reset(seed=100 * args.seed + i)
-    envs.append(env)
 
 env_fns = []
 for i in range(args.procs):
