@@ -100,19 +100,11 @@ class IntImagePreprocessor(object):
         images = torch.tensor(images, device=device, dtype=torch.long)
         return images
 
-
-class ObssPreprocessor:
-    def __init__(self, model_name, obs_space=None, load_vocab_from=None):
-        self.image_preproc = RawImagePreprocessor()
-        self.instr_preproc = InstructionsPreprocessor(model_name, load_vocab_from)
-        self.vocab = self.instr_preproc.vocab
-        self.obs_space = {
-            "image": numpy.array(obs_space['image'].shape[-3:]).prod(),
-            "instr": self.vocab.max_size
-        }
-
+class AbstractObssPreprocessor:
     def __call__(self, obss, device=None):
-        assert isinstance(obss, OrderedDict)
+        if not isinstance(obss, OrderedDict):
+            assert isinstance(obss, numpy.ndarray) and isinstance(obss[0], dict)
+            obss = OrderedDict({key: numpy.array([obss[i][key] for i in range(len(obss))]) for key in obss[0].keys()})
         obs_ = babyai.rl.DictList()
 
         if "image" in self.obs_space.keys():
@@ -123,8 +115,17 @@ class ObssPreprocessor:
 
         return obs_
 
+class ObssPreprocessor(AbstractObssPreprocessor):
+    def __init__(self, model_name, obs_space=None, load_vocab_from=None):
+        self.image_preproc = RawImagePreprocessor()
+        self.instr_preproc = InstructionsPreprocessor(model_name, load_vocab_from)
+        self.vocab = self.instr_preproc.vocab
+        self.obs_space = {
+            "image": numpy.array(obs_space['image'].shape[-3:]).prod(),
+            "instr": self.vocab.max_size
+        }
 
-class IntObssPreprocessor(object):
+class IntObssPreprocessor(AbstractObssPreprocessor):
     def __init__(self, model_name, obs_space, load_vocab_from=None):
         image_obs_space = obs_space.spaces["image"]
         self.image_preproc = IntImagePreprocessor(image_obs_space.shape[-1],
@@ -135,15 +136,3 @@ class IntObssPreprocessor(object):
             "image": self.image_preproc.max_size,
             "instr": self.vocab.max_size
         }
-
-    def __call__(self, obss, device=None):
-        assert isinstance(obss, OrderedDict)
-        obs_ = babyai.rl.DictList()
-
-        if "image" in self.obs_space.keys():
-            obs_.image = self.image_preproc(obss, device=device)
-
-        if "instr" in self.obs_space.keys():
-            obs_.instr = self.instr_preproc(obss, device=device)
-
-        return obs_
