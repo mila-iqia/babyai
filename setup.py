@@ -7,7 +7,7 @@ setup(
     keywords='memory, environment, agent, rl, openaigym, openai-gym, gym',
     packages=['babyai', 'babyai.levels', 'babyai.utils'],
     install_requires=[
-        'gym>=0.24.1',
+        'gym>=0.25.0',
         'numpy>=1.17.0',
         "torch>=0.12",
         'blosc>=1.5.1',

@@ -5,10 +5,9 @@ channels:
 dependencies:
     - python=3.10
     - pytorch=1.12
+    - gym=0.25
     - numpy
     - blosc
     - pip
     - pip:
-        - git+https://github.com/pseudo-rnd-thoughts/gym.git@fixed-env-checker
         - scikit-build
-        - gym[other]
