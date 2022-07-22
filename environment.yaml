@@ -5,9 +5,9 @@ channels:
 dependencies:
     - python=3.10
     - pytorch=1.12
-    - gym=0.25
     - numpy
     - blosc
     - pip
     - pip:
         - scikit-build
+        - gym==0.25
