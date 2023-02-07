@@ -1,6 +1,17 @@
+[![Build Status](https://travis-ci.org/mila-iqia/babyai.svg?branch=master)](https://travis-ci.org/mila-iqia/babyai)
+
+# 2023 update
+
+All BabyAI environments are now part of the [Minigrid library](https://github.com/Farama-Foundation/Minigrid). **This repository is not actively maintained.**
+
+Training RL agents on Minigrid (and BabyAI) environments can be done using [this repository](https://github.com/lcswillems/rl-starter-files).
+
+This repository still contains scripts which, if adapted to the Minigrid library, could be used to:
+- Produce demonstrations using the [BabyAI bot](babyai/bot.py),
+- [Train Imitation Learning agents](babyai/imitation.py) using the bot-generated demonstrations as training trajectories.
+
 # BabyAI 1.1
 
-[![Build Status](https://travis-ci.org/mila-iqia/babyai.svg?branch=master)](https://travis-ci.org/mila-iqia/babyai)
 
 BabyAI is a platform used to study the sample efficiency of grounded language acquisition, created at [Mila](https://mila.quebec/en/).
 
