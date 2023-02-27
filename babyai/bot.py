@@ -606,6 +606,8 @@ class Bot:
         best_obj = None
 
         for i in range(len(obj_desc.obj_set)):
+            if obj_desc.obj_set[i].type == 'wall':
+                continue
             try:
                 if obj_desc.obj_set[i] == self.mission.carrying:
                     continue
