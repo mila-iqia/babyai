@@ -10,6 +10,6 @@ warnings.warn(
     "(see https://github.com/Farama-Foundation/Minigrid/tree/master/minigrid/envs/babyai). \n"
     "This maintained version includes documentation, support for current versions of Python,\n"
     "numerous bug fixes, support for installation via pip, and numerous other large quality of life improvements.\n"
-    "We encourage researchers to switch to this maintained version for all purposes other than comparing "
+    "We encourage researchers to switch to this maintained version for all purposes other than comparing\n"
     "to results run on this version of the environments. \n"
 )
