@@ -294,13 +294,13 @@ class GoNextToSubgoal(Subgoal):
 
     def replan_before_action(self):
         target_obj = None
-        if isinstance(self.datum, ObjDesc):
+        if 'ObjDesc' in type(self.datum).__name__:
             target_obj, target_pos = self.bot._find_obj_pos(self.datum, self.reason == 'PutNext')
             if not target_pos:
                 # No path found -> Explore the world
                 self.bot.stack.append(ExploreSubgoal(self.bot))
                 return
-        elif isinstance(self.datum, WorldObj):
+        elif 'WorldObj' in type(self.datum).__name__:
             target_obj = self.datum
             target_pos = target_obj.cur_pos
         else:
@@ -379,7 +379,7 @@ class GoNextToSubgoal(Subgoal):
 
         # So there is a path (blocker, or non-blockers)
         # -> try following it
-        next_cell = path[0]
+        next_cell = np.asarray(path[0])
 
         # Choose the action in the case when the forward cell
         # is the one we should go next to
@@ -529,7 +529,7 @@ class Bot:
         self.grid = Grid(mission.width, mission.height)
 
         # Visibility mask. True for explored/seen, false for unexplored.
-        self.vis_mask = np.zeros(shape=(mission.width, mission.height), dtype=np.bool)
+        self.vis_mask = np.zeros(shape=(mission.width, mission.height), dtype=bool)
 
         # Stack of tasks/subtasks to complete (tuples)
         self.stack = []
@@ -904,16 +904,16 @@ class Bot:
         Translate instructions into an internal form the agent can execute
         """
 
-        if isinstance(instr, GoToInstr):
+        if 'GoToInstr' in type(instr).__name__:
             self.stack.append(GoNextToSubgoal(self, instr.desc))
             return
 
-        if isinstance(instr, OpenInstr):
+        if 'OpenInstr' in type(instr).__name__:
             self.stack.append(OpenSubgoal(self))
             self.stack.append(GoNextToSubgoal(self, instr.desc, reason='Open'))
             return
 
-        if isinstance(instr, PickupInstr):
+        if 'PickupInstr' in type(instr).__name__:
             # We pick up and immediately drop so
             # that we may carry other objects
             self.stack.append(DropSubgoal(self))
@@ -921,19 +921,20 @@ class Bot:
             self.stack.append(GoNextToSubgoal(self, instr.desc))
             return
 
-        if isinstance(instr, PutNextInstr):
+        if 'PutNextInstr' in type(instr).__name__:
             self.stack.append(DropSubgoal(self))
             self.stack.append(GoNextToSubgoal(self, instr.desc_fixed, reason='PutNext'))
             self.stack.append(PickupSubgoal(self))
             self.stack.append(GoNextToSubgoal(self, instr.desc_move))
             return
 
-        if isinstance(instr, BeforeInstr) or isinstance(instr, AndInstr):
+        if 'BeforeInstr' in type(instr).__name__ \
+        or 'AndInstr' in type(instr).__name__:
             self._process_instr(instr.instr_b)
             self._process_instr(instr.instr_a)
             return
 
-        if isinstance(instr, AfterInstr):
+        if 'AfterInstr' in type(instr).__name__:
             self._process_instr(instr.instr_a)
             self._process_instr(instr.instr_b)
             return

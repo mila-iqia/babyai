@@ -1,5 +1,6 @@
 import gym
-from gym_minigrid.envs import Key, Ball, Box
+#from gym_minigrid.envs import Key, Ball, Box
+from gym_minigrid.minigrid import Key, Ball, Box
 from .verifier import *
 from .levelgen import *
 
