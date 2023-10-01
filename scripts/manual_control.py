@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
 
-import time
 import argparse
-import numpy as np
 import gym
 import gym_minigrid
 from gym_minigrid.wrappers import *
 from gym_minigrid.window import Window
 import babyai
+
+# Define key-action mappings
+KEY_ACTIONS = {
+    'left': 'left',
+    'right': 'right',
+    'up': 'forward',
+    ' ': 'toggle',
+    'pageup': 'pickup',
+    'pagedown': 'drop',
+    'enter': 'done',
+}
 
 def redraw(img):
     if not args.agent_view:
@@ -22,14 +31,14 @@ def reset():
     obs = env.reset()
 
     if hasattr(env, 'mission'):
-        print('Mission: %s' % env.mission)
+        print('Mission:', env.mission)
         window.set_caption(env.mission)
 
     redraw(obs)
 
 def step(action):
     obs, reward, done, info = env.step(action)
-    print('step=%s, reward=%.2f' % (env.step_count, reward))
+    print(f'step={env.step_count}, reward={reward:.2f}')
 
     if done:
         print('done!')
@@ -38,66 +47,26 @@ def step(action):
         redraw(obs)
 
 def key_handler(event):
-    print('pressed', event.key)
+    key = event.key
 
-    if event.key == 'escape':
+    if key == 'escape':
         window.close()
         return
 
-    if event.key == 'backspace':
+    if key == 'backspace':
         reset()
         return
 
-    if event.key == 'left':
-        step(env.actions.left)
-        return
-    if event.key == 'right':
-        step(env.actions.right)
-        return
-    if event.key == 'up':
-        step(env.actions.forward)
-        return
+    action = KEY_ACTIONS.get(key)
+    if action:
+        step(env.actions[action])
 
-    # Spacebar
-    if event.key == ' ':
-        step(env.actions.toggle)
-        return
-    if event.key == 'pageup' or event.key == 'p':
-        step(env.actions.pickup)
-        return
-    if event.key == 'pagedown' or event.key == 'd':
-        step(env.actions.drop)
-        return
-
-    if event.key == 'enter':
-        step(env.actions.done)
-        return
-
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--env",
-    help="gym environment to load",
-    default='BabyAI-BossLevel-v0'
-)
-parser.add_argument(
-    "--seed",
-    type=int,
-    help="random seed to generate the environment with",
-    default=-1
-)
-parser.add_argument(
-    "--tile_size",
-    type=int,
-    help="size at which to render tiles",
-    default=32
-)
-parser.add_argument(
-    '--agent_view',
-    default=False,
-    help="draw the agent sees (partially observable view)",
-    action='store_true'
-)
-
+# Improve argument parsing
+parser = argparse.ArgumentParser(description="MiniGrid Gym Environment")
+parser.add_argument("--env", default='BabyAI-BossLevel-v0', help="Gym environment to load")
+parser.add_argument("--seed", type=int, default=-1, help="Random seed for environment generation")
+parser.add_argument("--tile_size", type=int, default=32, help="Size at which to render tiles")
+parser.add_argument('--agent_view', action='store_true', help="Draw the agent's partially observable view")
 args = parser.parse_args()
 
 env = gym.make(args.env)
@@ -106,7 +75,7 @@ if args.agent_view:
     env = RGBImgPartialObsWrapper(env)
     env = ImgObsWrapper(env)
 
-window = Window('gym_minigrid - ' + args.env)
+window = Window(f'gym_minigrid - {args.env}')
 window.reg_key_handler(key_handler)
 
 reset()
