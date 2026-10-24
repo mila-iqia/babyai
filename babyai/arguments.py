@@ -89,6 +89,10 @@ class ArgumentParser(argparse.ArgumentParser):
 
         args = super().parse_args()
 
+        for name in ("procs", "frames_per_proc", "val_episodes"):
+            if getattr(args, name) <= 0:
+                self.error("--{} must be a positive integer".format(name.replace("_", "-")))
+
         # Set seed for all randomness sources
         if args.seed == 0:
             args.seed = np.random.randint(10000)
